@@ -1,5 +1,7 @@
+import { Chat } from "@/components/Chat";
+import { generateId } from "ai";
+
 export default function IndexPage() {
-  return (
-    <h1>hello world</h1>
-  )
+  const id = generateId();
+  return <Chat id={id} />;
 }
