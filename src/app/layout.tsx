@@ -1,13 +1,9 @@
-import type { Metadata } from "next";
-import { Geist, Ubuntu } from "next/font/google";
 import "./globals.css";
+
+import type { Metadata } from "next";
+import { Ubuntu } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
-
-const geistSans = Geist({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
 
 const ubuntu = Ubuntu({
   weight: ["300", "400", "500", "700"],
