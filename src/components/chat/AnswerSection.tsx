@@ -13,13 +13,6 @@ export interface AnswerSectionProps {
 }
 
 export function AnswerSection({ content, isOpen, onOpenChange, chatId }: AnswerSectionProps) {
-    const header = (
-        <div className="flex items-center gap-1">
-            <Text />
-            <div>Answer</div>
-        </div>
-    );
-
     const message = content ? (
         <div className="flex flex-col gap-1">
             <BotMessage message={content} />
@@ -32,7 +25,6 @@ export function AnswerSection({ content, isOpen, onOpenChange, chatId }: AnswerS
         <CollapsibleMessage
             role="assistant"
             isCollapsible={false}
-            header={header}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             showBorder={false}

@@ -1,10 +1,8 @@
 'use client';
 
 import rehypeExternalLinks from 'rehype-external-links';
-
 import rehypeKatex from 'rehype-katex';
-// import 'katex/dist/katex.min.css';
-
+import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
@@ -12,6 +10,8 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { twilight } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 
 import { MemoizedReactMarkdown } from '@/components/ui/markdown';
+import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -19,7 +19,6 @@ import { cn } from '@/lib/utils';
 import {
     Table,
     TableBody,
-    TableCaption,
     TableCell,
     TableHead,
     TableHeader,
@@ -31,12 +30,7 @@ const markdownComponents = {
     code: ({ node, inline, className, children, ...props }: any) => {
         const match = /language-(\w+)/.exec(className || '');
         return !inline && match ? (
-            <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="relative w-full my-4"
-            >
+            <div className="relative w-full my-4">
                 <SyntaxHighlighter
                     {...props}
                     style={twilight}
@@ -46,27 +40,75 @@ const markdownComponents = {
                     className="!rounded-lg"
                     customStyle={{
                         fontSize: '0.875rem',
+                        background: 'hsl(var(--background))',
+                        padding: '1.5rem',
                     }}
                 >
                     {String(children).replace(/\n$/, '')}
                 </SyntaxHighlighter>
-            </motion.div>
+            </div>
         ) : (
-            <code className={`${className} text-sm bg-zinc-900 py-0.5 px-1 rounded`} {...props}>
+            <code className={cn('text-sm bg-zinc-900 py-0.5 px-1 rounded', className)} {...props}>
                 {children}
             </code>
         );
     },
-    table: ({ children }: any) => (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-            <Table className="border">{children}</Table>
-        </motion.div>
-    ),
+    table: ({ children }: any) => <Table className="border">{children}</Table>,
     thead: ({ children }: any) => <TableHeader className="bg-black">{children}</TableHeader>,
     tbody: ({ children }: any) => <TableBody>{children}</TableBody>,
     tr: ({ children }: any) => <TableRow>{children}</TableRow>,
     th: ({ children }: any) => <TableHead>{children}</TableHead>,
     td: ({ children }: any) => <TableCell>{children}</TableCell>,
+    h1: ({ node, children, ...props }: any) => (
+        <>
+            <h1 className="text-2xl font-bold" {...props}>
+                {children}
+            </h1>
+            <Separator />
+        </>
+    ),
+    h2: ({ node, children, ...props }: any) => (
+        <h2 className="pt-4 text-lg text-zinc-200" {...props}>
+            {children}
+        </h2>
+    ),
+    p: ({ node, children, ...props }: any) => (
+        <p className="text-sm" {...props}>
+            {children}
+        </p>
+    ),
+    ol: ({ node, children, ...props }: any) => (
+        <ol className="list-decimal list-outside ml-4" {...props}>
+            {children}
+        </ol>
+    ),
+    ul: ({ node, children, ...props }: any) => (
+        <ul className="list-decimal list-outside ml-4" {...props}>
+            {children}
+        </ul>
+    ),
+    li: ({ node, children, ...props }: any) => (
+        <li className="py-1" {...props}>
+            {children}
+        </li>
+    ),
+    blockquote: ({ node, children, ...props }: any) => (
+        <p className="pl-4 py-2 border-l italic text-xs bg-gradient-to-r from-zinc-900 to-transparent">
+            {children}
+        </p>
+    ),
+    a: ({ node, children, href, ...props }: any) => (
+        <Link className="font-light hover:underline" href={href || ''} {...props}>
+            {children}
+        </Link>
+    ),
+    strong: ({ node, children, ...props }: any) => (
+        <strong className="font-bold" {...props}>
+            {children}
+        </strong>
+    ),
+    inlineMath: ({ value }: { value: string }) => <span className="math math-inline">{value}</span>,
+    math: ({ value }: { value: string }) => <div className="math math-display">{value}</div>,
 };
 
 interface BotMessageProps {
@@ -80,8 +122,10 @@ export function BotMessage({ message, className }: BotMessageProps) {
 
     const commonProps = {
         className: cn(
-            'prose-sm prose-neutral prose-a:text-accent-foreground/50 transition-all duration-200',
-            'text-zinc-800 dark:text-zinc-300 w-full flex flex-col gap-4',
+            'prose prose-neutral dark:prose-invert max-w-none',
+            'prose-p:leading-relaxed prose-pre:p-0',
+            'prose-code:px-1 prose-code:font-normal',
+            'prose-code:before:content-none prose-code:after:content-none',
             className
         ),
         components: markdownComponents,
@@ -90,7 +134,7 @@ export function BotMessage({ message, className }: BotMessageProps) {
     const content = containsLaTeX ? (
         <MemoizedReactMarkdown
             {...commonProps}
-            rehypePlugins={[[rehypeExternalLinks, { target: '_blank' }], [rehypeKatex]]}
+            rehypePlugins={[[rehypeExternalLinks, { target: '_blank' }], rehypeKatex, rehypeRaw]}
             remarkPlugins={[remarkGfm, remarkMath]}
         >
             {processedData}
@@ -98,30 +142,14 @@ export function BotMessage({ message, className }: BotMessageProps) {
     ) : (
         <MemoizedReactMarkdown
             {...commonProps}
-            rehypePlugins={[[rehypeExternalLinks, { target: '_blank' }]]}
+            rehypePlugins={[[rehypeExternalLinks, { target: '_blank' }], rehypeRaw]}
             remarkPlugins={[remarkGfm]}
         >
             {message}
         </MemoizedReactMarkdown>
     );
 
-    return (
-        <motion.div
-            initial={{ y: 5, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-            className="w-full max-w-2xl first-of-type:mt-10"
-        >
-            <motion.div
-                initial={{ y: 5, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="flex flex-col items-start justify-start gap-2 w-full h-full"
-            >
-                {content}
-            </motion.div>
-        </motion.div>
-    );
+    return <div className="flex flex-col items-start justify-start gap-4 w-full">{content}</div>;
 }
 
 const preprocessLaTeX = (content: string) => {

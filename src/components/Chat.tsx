@@ -5,6 +5,7 @@ import { Message, useChat } from '@ai-sdk/react';
 import { Input as InputPanel } from '@/components/Input';
 import { cn } from '@/lib/utils';
 import { ChatMessages } from '@/components/chat/Messages';
+import { toast } from 'sonner';
 
 export function Chat({
     id,
@@ -32,7 +33,9 @@ export function Chat({
         onFinish: () => {
             window.history.replaceState({}, '', `/c/${id}`);
         },
-        onError: (error) => {},
+        onError: (error) => {
+            toast.error('uh oh!', { description: error.message });
+        },
         sendExtraMessageFields: false,
     });
 

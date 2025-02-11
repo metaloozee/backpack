@@ -7,6 +7,8 @@ export const env = createEnv({
         NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
         DATABASE_URL: z.string().min(1),
 
+        OPENROUTER_API_KEY: z.string().min(1).startsWith("sk-"),
+
         NEXTAUTH_SECRET:
             process.env.NODE_ENV === 'production'
                 ? z.string().min(1)

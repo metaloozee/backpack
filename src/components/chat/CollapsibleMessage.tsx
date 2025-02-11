@@ -37,7 +37,11 @@ const MessageIcon = ({ role, showIcon }: { role: 'user' | 'assistant'; showIcon:
                     </AvatarFallback>
                 </Avatar>
             ) : (
-                <Bot />
+                <Avatar>
+                    <AvatarFallback className="text-xs">
+                        <Bot />
+                    </AvatarFallback>
+                </Avatar>
             )}
         </motion.div>
     );

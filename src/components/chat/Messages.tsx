@@ -108,9 +108,9 @@ export function ChatMessages({
                     duration: 0.3,
                 },
             }}
-            className="relative mx-auto px-4 w-full"
+            className="relative mx-auto px-4 w-full mb-48"
         >
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence>
                 {messages.map((message) => (
                     <motion.div
                         key={message.id}
@@ -121,7 +121,7 @@ export function ChatMessages({
                             duration: 0.3,
                             ease: [0.32, 0.72, 0, 1],
                         }}
-                        className="mb-4 flex flex-col gap-4"
+                        className=" flex flex-col gap-4"
                     >
                         <RenderMessage
                             message={message}

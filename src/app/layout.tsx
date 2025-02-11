@@ -4,12 +4,9 @@ import type { Metadata } from 'next';
 import { Ubuntu } from 'next/font/google';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { cn } from '@/lib/utils';
+import { Toaster } from '@/components/ui/sonner';
 
-const ubuntu = Ubuntu({
-    weight: ['300', '400', '500', '700'],
-    subsets: ['latin'],
-    variable: '--font-ubuntu',
-});
+import { GeistSans } from 'geist/font/sans';
 
 export const metadata: Metadata = {
     title: 'Backpack',
@@ -24,7 +21,10 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <body
-                className={cn('min-h-screen bg-background font-sans antialiased', ubuntu.variable)}
+                className={cn(
+                    'min-h-screen bg-background font-sans antialiased',
+                    GeistSans.className
+                )}
                 suppressHydrationWarning
             >
                 <ThemeProvider
@@ -33,7 +33,8 @@ export default function RootLayout({
                     enableSystem
                     disableTransitionOnChange
                 >
-                    {children}
+                    <Toaster richColors position="top-center" />
+                    <main className="container">{children}</main>
                 </ThemeProvider>
             </body>
         </html>
