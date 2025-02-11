@@ -44,16 +44,16 @@ interface InputPanelProps {
 
 const geminiModels = [
     {
-        value: 'gemini-2.0-flash',
-        label: 'Quality',
-        description: 'gemini-2.0-flash',
-        icon: Brain,
-    },
-    {
         value: 'gemini-2.0-flash-lite-preview-02-05',
         label: 'Speed',
         description: 'gemini-2.0-flash-lite-preview-02-05',
         icon: Zap,
+    },
+    {
+        value: 'gemini-2.0-flash',
+        label: 'Quality',
+        description: 'gemini-2.0-flash',
+        icon: Brain,
     },
 ] as const;
 
@@ -139,9 +139,16 @@ export function Input({
             )}
             <form
                 onSubmit={handleSubmit}
-                className={cn('max-w-3xl w-full mx-auto', messages.length > 0 ? 'px-2 py-4' : '')}
+                className={cn('max-w-3xl w-full mx-auto', messages.length > 0 && 'max-w-2xl')}
             >
-                <div className="relative flex flex-col w-full gap-2 border-2 border-input bg-zinc-900/50 rounded-lg p-4 focus-within:border-zinc-700/70 hover:border-zinc-700/70 transition-all duration-200">
+                <div
+                    className={cn(
+                        'relative flex flex-col w-full gap-2 border-input bg-zinc-900/50 p-4 focus-within:border-zinc-700/70 hover:border-zinc-700/70 transition-all duration-200',
+                        messages.length > 0
+                            ? 'border-t-2 border-x-2 rounded-t-lg'
+                            : 'border-2 rounded-lg'
+                    )}
+                >
                     <Textarea
                         ref={inputRef}
                         name="input"
