@@ -110,18 +110,32 @@ export function Input({
     }, [query]);
 
     return (
-        <div
+        <motion.div
+            layout
+            transition={{
+                duration: 0.3,
+                ease: [0.32, 0.72, 0, 1],
+                layout: {
+                    duration: 0.3,
+                },
+            }}
             className={cn(
                 'mx-auto w-full',
                 messages.length > 0
                     ? 'fixed bottom-0 left-0 right-0'
-                    : 'flex flex-col items-center justify-center'
+                    : 'flex flex-col items-center justify-center mb-20'
             )}
         >
             {messages.length === 0 && (
-                <div className="mb-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="mb-6"
+                >
                     <h1 className="text-3xl">Where Knowledge Begins</h1>
-                </div>
+                </motion.div>
             )}
             <form
                 onSubmit={handleSubmit}
@@ -166,7 +180,7 @@ export function Input({
 
                     <div className="w-full flex justify-between items-center">
                         <Popover open={open} onOpenChange={setOpen}>
-                            <PopoverTrigger asChild>
+                            <PopoverTrigger disabled={messages.length !== 0} asChild>
                                 <Button
                                     variant="outline"
                                     role="combobox"
@@ -259,27 +273,37 @@ export function Input({
                                 </Command>
                             </PopoverContent>
                         </Popover>
-                        <Button size={'icon'} type="submit" disabled={isLoading}>
-                            <motion.div
-                                initial={{ opacity: 0, y: -20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{
-                                    opacity: 0,
-                                    y: -20,
-                                }}
-                                transition={{
-                                    delay: 0.1,
-                                    type: 'spring',
-                                    stiffness: 400,
-                                    damping: 10,
-                                }}
-                            >
-                                <SendHorizonalIcon />
-                            </motion.div>
-                        </Button>
+                        <AnimatePresence>
+                            {input && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ delay: 0.1 }}
+                                >
+                                    <Button type="submit" disabled={isLoading}>
+                                        <motion.div
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{
+                                                x: 20,
+                                            }}
+                                            transition={{
+                                                delay: 0.2,
+                                                type: 'spring',
+                                                stiffness: 400,
+                                                damping: 10,
+                                            }}
+                                        >
+                                            <SendHorizonalIcon />
+                                        </motion.div>
+                                    </Button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
             </form>
-        </div>
+        </motion.div>
     );
 }
