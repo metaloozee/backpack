@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Message, useChat } from '@ai-sdk/react';
 import { Input as InputPanel } from '@/components/Input';
 import { cn } from '@/lib/utils';
+import { ChatMessages } from '@/components/chat/Messages';
 
 export function Chat({
     id,
@@ -59,6 +60,13 @@ export function Chat({
                 messages.length === 0 ? ' h-screen justify-center items-center' : ''
             )}
         >
+            <ChatMessages
+                messages={messages}
+                data={data}
+                onQuerySelect={onQuerySelect}
+                isLoading={isLoading}
+                chatId={id}
+            />
             <InputPanel
                 input={input}
                 handleInputChange={handleInputChange}
