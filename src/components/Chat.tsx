@@ -60,17 +60,23 @@ export function Chat({
     return (
         <div
             className={cn(
-                'flex flex-col w-full max-w-3xl container stretch',
-                messages.length === 0 ? 'h-screen justify-center items-center' : ''
+                'h-screen flex flex-col w-full container stretch space-y-5',
+                messages.length === 0
+                    ? 'justify-center items-center'
+                    : 'items-center justify-between'
             )}
         >
-            <ChatMessages
-                messages={messages}
-                data={data}
-                onQuerySelect={onQuerySelect}
-                isLoading={isLoading}
-                chatId={id}
-            />
+            {messages.length > 0 && (
+                <ScrollArea className="w-full flex-grow max-w-2xl">
+                    <ChatMessages
+                        messages={messages}
+                        data={data}
+                        onQuerySelect={onQuerySelect}
+                        isLoading={isLoading}
+                        chatId={id}
+                    />
+                </ScrollArea>
+            )}
             <InputPanel
                 input={input}
                 handleInputChange={handleInputChange}

@@ -70,44 +70,42 @@ export function ChatMessages({
     const showLoading = isLoading && messages[messages.length - 1].role === 'user';
 
     return (
-        <motion.div className="px-4 w-full mb-48">
-            <ScrollArea className="flex-grow">
-                {messages.map((message) => (
-                    <RenderMessage
-                        key={message.id}
-                        message={message}
-                        messageId={message.id}
-                        getIsOpen={() => true}
-                        onOpenChange={() => {}}
-                        onQuerySelect={onQuerySelect}
-                        chatId={chatId}
-                    />
-                ))}
+        <div className="px-4 w-full max-w-2xl mt-10">
+            {messages.map((message) => (
+                <RenderMessage
+                    key={message.id}
+                    message={message}
+                    messageId={message.id}
+                    getIsOpen={() => true}
+                    onOpenChange={() => {}}
+                    onQuerySelect={onQuerySelect}
+                    chatId={chatId}
+                />
+            ))}
 
-                <AnimatePresence>
-                    {showLoading && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{
-                                duration: 0.2,
-                                ease: [0.32, 0.72, 0, 1],
-                            }}
-                            className="flex justify-center"
-                        >
-                            {lastToolData ? (
-                                <div></div>
-                            ) : (
-                                <div className="animate-spin">
-                                    <LoaderIcon className="size-4" />
-                                </div>
-                            )}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </ScrollArea>
+            <AnimatePresence>
+                {showLoading && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{
+                            duration: 0.2,
+                            ease: [0.32, 0.72, 0, 1],
+                        }}
+                        className="flex justify-center"
+                    >
+                        {lastToolData ? (
+                            <div></div>
+                        ) : (
+                            <div className="animate-spin">
+                                <LoaderIcon className="size-4" />
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
             <div ref={messageEndRef} />
-        </motion.div>
+        </div>
     );
 }

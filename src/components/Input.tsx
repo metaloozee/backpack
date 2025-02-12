@@ -122,7 +122,7 @@ export function Input({
             className={cn(
                 'mx-auto w-full bg-background',
                 messages.length > 0
-                    ? 'fixed bottom-0 left-0 right-0'
+                    ? 'bottom-0 left-0 right-0'
                     : 'flex flex-col items-center justify-center'
             )}
         >
@@ -134,7 +134,7 @@ export function Input({
                     transition={{ duration: 0.2 }}
                     className="mb-6"
                 >
-                    <h1 className="text-3xl">Where Knowledge Begins</h1>
+                    <h1 className="text-3xl">Your Research, Simplified.</h1>
                 </motion.div>
             )}
             <form onSubmit={handleSubmit} className={cn('max-w-2xl w-full mx-auto')}>

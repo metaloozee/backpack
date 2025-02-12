@@ -3,6 +3,8 @@ import { Message, ToolInvocation } from 'ai';
 import { Tool } from '@/components/chat/Tool';
 import { UserMessage } from '@/components/chat/UserMessage';
 import { BotMessage } from '@/components/chat/Message';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { BotIcon } from 'lucide-react';
 
 interface RenderMessageProps {
     message: Message;
@@ -63,7 +65,13 @@ export function RenderMessage({
     }
 
     return (
-        <>
+        <div className="w-full flex justify-start items-start">
+            <Avatar className="mr-2">
+                <AvatarFallback className="bg-zinc-900">
+                    <BotIcon className="size-5" />
+                </AvatarFallback>
+            </Avatar>
+
             {toolData.map((tool) => (
                 <Tool
                     key={tool.toolCallId}
@@ -73,6 +81,6 @@ export function RenderMessage({
                 />
             ))}
             {message.content && <BotMessage message={message.content} />}
-        </>
+        </div>
     );
 }

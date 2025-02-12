@@ -102,7 +102,16 @@ export function BotMessage({ message, className }: BotMessageProps) {
         </MemoizedReactMarkdown>
     );
 
-    return <div className="flex flex-col items-start justify-start gap-4 w-full">{content}</div>;
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', damping: 10, stiffness: 400 }}
+            className="flex-1 p-2 break-words w-full"
+        >
+            {content}
+        </motion.div>
+    );
 }
 
 const preprocessLaTeX = (content: string) => {
