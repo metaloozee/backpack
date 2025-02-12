@@ -10,7 +10,7 @@ export const UserMessage: React.FC<{ message: string }> = ({ message }) => {
         <div className="w-full flex justify-start items-start py-4">
             <Avatar className="mr-2">
                 <AvatarFallback className="bg-zinc-900">
-                    <UserCircleIcon className="size-5 text-muted-foreground" />
+                    <UserCircleIcon className="size-4 text-muted-foreground" />
                 </AvatarFallback>
             </Avatar>
             <motion.div

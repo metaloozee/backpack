@@ -4,7 +4,7 @@ import { Tool } from '@/components/chat/Tool';
 import { UserMessage } from '@/components/chat/UserMessage';
 import { BotMessage } from '@/components/chat/Message';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import { BotIcon } from 'lucide-react';
+import { BrainIcon } from 'lucide-react';
 
 interface RenderMessageProps {
     message: Message;
@@ -68,7 +68,7 @@ export function RenderMessage({
         <div className="w-full flex justify-start items-start">
             <Avatar className="mr-2">
                 <AvatarFallback className="bg-zinc-900">
-                    <BotIcon className="size-5" />
+                    <BrainIcon className="size-4" />
                 </AvatarFallback>
             </Avatar>
 
