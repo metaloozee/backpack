@@ -79,6 +79,7 @@ export function BotMessage({ message, className }: BotMessageProps) {
             'prose-p:leading-relaxed prose-pre:p-0',
             'prose-code:px-1 prose-code:font-normal',
             'prose-code:before:content-none prose-code:after:content-none',
+            'break-words leading-7 break-all hyphens-auto',
             className
         ),
         components: markdownComponents,

@@ -140,7 +140,7 @@ export function Input({
             <form onSubmit={handleSubmit} className={cn('max-w-2xl w-full mx-auto')}>
                 <div
                     className={cn(
-                        'relative flex flex-col w-full gap-4 border-input bg-zinc-900/50 p-4 focus-within:border-zinc-700/70 hover:border-zinc-700/70 transition-all duration-200',
+                        'relative flex flex-col w-full p-4 gap-4 border-input bg-zinc-900/50 focus-within:border-zinc-700/70 hover:border-zinc-700/70 transition-all duration-200',
                         messages.length > 0
                             ? 'border-t-2 border-x-2 rounded-t-lg'
                             : 'border-2 rounded-lg'
@@ -149,14 +149,14 @@ export function Input({
                     <Textarea
                         ref={inputRef}
                         name="input"
-                        rows={3}
+                        rows={2}
                         tabIndex={0}
                         onCompositionStart={handlerCompositionStart}
                         onCompositionEnd={handleCompositionEnd}
                         placeholder="Ask me anything..."
                         spellCheck={true}
                         value={input}
-                        className="resize-none w-full max-h-10 bg-transparent ring-0 border-0 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="resize-none w-full bg-transparent ring-0 border-0 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
                         onChange={(e) => {
                             handleInputChange(e);
                             setShowEmptyScreen(e.target.value.length === 0);
@@ -186,14 +186,15 @@ export function Input({
                         <Popover open={open} onOpenChange={setOpen}>
                             <PopoverTrigger disabled={messages.length !== 0} asChild>
                                 <Button
+                                    size={'sm'}
                                     variant="outline"
                                     role="combobox"
                                     aria-expanded={open}
                                     className={cn(
-                                        'w-[150px] justify-between truncate bg-zinc-800/50 transition-all duration-200'
+                                        'justify-between truncate bg-zinc-800/50 transition-all duration-200'
                                     )}
                                 >
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 text-xs">
                                         {selectedModel && (
                                             <div className="flex items-center">
                                                 {React.createElement(
@@ -278,32 +279,40 @@ export function Input({
                             </PopoverContent>
                         </Popover>
                         <AnimatePresence>
-                            {input && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ delay: 0.1 }}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ delay: 0.1 }}
+                            >
+                                <Button
+                                    className="px-4"
+                                    size={'sm'}
+                                    type="submit"
+                                    variant={input ? 'default' : 'secondary'}
+                                    disabled={isLoading}
                                 >
-                                    <Button type="submit" disabled={isLoading}>
-                                        <motion.div
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{
-                                                x: 20,
-                                            }}
-                                            transition={{
-                                                delay: 0.2,
-                                                type: 'spring',
-                                                stiffness: 400,
-                                                damping: 10,
-                                            }}
-                                        >
-                                            <SendHorizonalIcon />
-                                        </motion.div>
-                                    </Button>
-                                </motion.div>
-                            )}
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{
+                                            x: 20,
+                                        }}
+                                        transition={{
+                                            delay: 0.2,
+                                            type: 'spring',
+                                            stiffness: 400,
+                                            damping: 10,
+                                        }}
+                                    >
+                                        <CornerDownLeftIcon
+                                            className={cn(
+                                                input ? 'text-background' : 'text-muted-foreground'
+                                            )}
+                                        />
+                                    </motion.div>
+                                </Button>
+                            </motion.div>
                         </AnimatePresence>
                     </div>
                 </div>
