@@ -59,54 +59,7 @@ const markdownComponents = {
     tr: ({ children }: any) => <TableRow>{children}</TableRow>,
     th: ({ children }: any) => <TableHead>{children}</TableHead>,
     td: ({ children }: any) => <TableCell>{children}</TableCell>,
-    h1: ({ node, children, ...props }: any) => (
-        <>
-            <h1 className="text-2xl font-bold" {...props}>
-                {children}
-            </h1>
-            <Separator />
-        </>
-    ),
-    h2: ({ node, children, ...props }: any) => (
-        <h2 className="pt-4 text-lg text-zinc-200" {...props}>
-            {children}
-        </h2>
-    ),
-    p: ({ node, children, ...props }: any) => (
-        <p className="text-sm" {...props}>
-            {children}
-        </p>
-    ),
-    ol: ({ node, children, ...props }: any) => (
-        <ol className="list-decimal list-outside ml-4" {...props}>
-            {children}
-        </ol>
-    ),
-    ul: ({ node, children, ...props }: any) => (
-        <ul className="list-decimal list-outside ml-4" {...props}>
-            {children}
-        </ul>
-    ),
-    li: ({ node, children, ...props }: any) => (
-        <li className="py-1" {...props}>
-            {children}
-        </li>
-    ),
-    blockquote: ({ node, children, ...props }: any) => (
-        <p className="pl-4 py-2 border-l italic text-xs bg-gradient-to-r from-zinc-900 to-transparent">
-            {children}
-        </p>
-    ),
-    a: ({ node, children, href, ...props }: any) => (
-        <Link className="font-light hover:underline" href={href || ''} {...props}>
-            {children}
-        </Link>
-    ),
-    strong: ({ node, children, ...props }: any) => (
-        <strong className="font-bold" {...props}>
-            {children}
-        </strong>
-    ),
+
     inlineMath: ({ value }: { value: string }) => <span className="math math-inline">{value}</span>,
     math: ({ value }: { value: string }) => <div className="math math-display">{value}</div>,
 };

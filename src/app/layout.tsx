@@ -21,10 +21,7 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <body
-                className={cn(
-                    'min-h-screen bg-background font-sans antialiased',
-                    GeistSans.className
-                )}
+                className={cn('bg-background font-sans antialiased container', GeistSans.className)}
                 suppressHydrationWarning
             >
                 <ThemeProvider
@@ -34,7 +31,7 @@ export default function RootLayout({
                     disableTransitionOnChange
                 >
                     <Toaster richColors position="top-center" />
-                    <main className="container">{children}</main>
+                    {children}
                 </ThemeProvider>
             </body>
         </html>

@@ -1,9 +1,8 @@
 import * as React from 'react';
-
-import { JSONValue, Message, ToolInvocation } from 'ai';
+import { Message, ToolInvocation } from 'ai';
 import { Tool } from '@/components/chat/Tool';
 import { UserMessage } from '@/components/chat/UserMessage';
-import { AnswerSection } from './AnswerSection';
+import { BotMessage } from '@/components/chat/Message';
 
 interface RenderMessageProps {
     message: Message;
@@ -63,21 +62,6 @@ export function RenderMessage({
         return <UserMessage message={message.content} />;
     }
 
-    if (message.toolInvocations?.length) {
-        return (
-            <>
-                {message.toolInvocations.map((tool) => (
-                    <Tool
-                        key={tool.toolCallId}
-                        tool={tool}
-                        isOpen={getIsOpen(messageId)}
-                        onOpenChange={(open) => onOpenChange(messageId, open)}
-                    />
-                ))}
-            </>
-        );
-    }
-
     return (
         <>
             {toolData.map((tool) => (
@@ -88,12 +72,7 @@ export function RenderMessage({
                     onOpenChange={(open) => onOpenChange(tool.toolCallId, open)}
                 />
             ))}
-            <AnswerSection
-                content={message.content}
-                isOpen={getIsOpen(messageId)}
-                onOpenChange={(open) => onOpenChange(messageId, open)}
-                chatId={chatId}
-            />
+            {message.content && <BotMessage message={message.content} />}
         </>
     );
 }

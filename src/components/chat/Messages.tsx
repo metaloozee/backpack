@@ -4,6 +4,7 @@ import { JSONValue, Message } from 'ai';
 import { LoaderIcon } from 'lucide-react';
 import { RenderMessage } from '@/components/chat/RenderMessage';
 import { motion, AnimatePresence } from 'motion/react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ChatMessageProps {
     messages: Array<Message>;
@@ -19,35 +20,6 @@ interface ToolData {
     toolName: string;
     args: any;
 }
-
-const useMessageState = (messages: Array<Message>) => {
-    const [openStates, setOpenStates] = React.useState<Record<string, boolean>>({});
-    const manualToolCallId = 'manual-tool-call';
-
-    React.useEffect(() => {
-        const lastMessage = messages[messages.length - 1];
-        if (lastMessage?.role === 'user') {
-            setOpenStates({ [manualToolCallId]: true });
-        }
-    }, [messages]);
-
-    const getIsOpen = (id: string) => {
-        const baseId = id.endsWith('-related') ? id.slice(0, -8) : id;
-        const index = messages.findIndex((msg) => msg.id === baseId);
-        const lastUserIndex =
-            messages.length - 1 - [...messages].reverse().findIndex((msg) => msg.role === 'user');
-        return openStates[id] ?? index >= lastUserIndex;
-    };
-
-    const handleOpenChange = (id: string, open: boolean) => {
-        setOpenStates((prev) => ({
-            ...prev,
-            [id]: open,
-        }));
-    };
-
-    return { getIsOpen, handleOpenChange };
-};
 
 const useLastToolData = (data: Array<JSONValue> | undefined): ToolData | null => {
     return React.useMemo(() => {
@@ -83,7 +55,6 @@ export function ChatMessages({
     chatId,
 }: ChatMessageProps) {
     const messageEndRef = React.useRef<HTMLDivElement>(null);
-    const { getIsOpen, handleOpenChange } = useMessageState(messages);
     const lastToolData = useLastToolData(data);
 
     const scrollToBottom = () => {
@@ -92,46 +63,25 @@ export function ChatMessages({
 
     React.useEffect(() => {
         scrollToBottom();
-    }, []);
+    }, [messages]);
 
     if (!messages.length) return null;
 
     const showLoading = isLoading && messages[messages.length - 1].role === 'user';
 
     return (
-        <motion.div
-            layout
-            transition={{
-                duration: 0.3,
-                ease: [0.32, 0.72, 0, 1],
-                layout: {
-                    duration: 0.3,
-                },
-            }}
-            className="relative mx-auto px-4 w-full mb-48"
-        >
-            <AnimatePresence>
+        <motion.div className="px-4 w-full mb-48">
+            <ScrollArea className="flex-grow">
                 {messages.map((message) => (
-                    <motion.div
+                    <RenderMessage
                         key={message.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{
-                            duration: 0.3,
-                            ease: [0.32, 0.72, 0, 1],
-                        }}
-                        className=" flex flex-col gap-4"
-                    >
-                        <RenderMessage
-                            message={message}
-                            messageId={message.id}
-                            getIsOpen={getIsOpen}
-                            onOpenChange={handleOpenChange}
-                            onQuerySelect={onQuerySelect}
-                            chatId={chatId}
-                        />
-                    </motion.div>
+                        message={message}
+                        messageId={message.id}
+                        getIsOpen={() => true}
+                        onOpenChange={() => {}}
+                        onQuerySelect={onQuerySelect}
+                        chatId={chatId}
+                    />
                 ))}
 
                 <AnimatePresence>
@@ -156,7 +106,7 @@ export function ChatMessages({
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </AnimatePresence>
+            </ScrollArea>
             <div ref={messageEndRef} />
         </motion.div>
     );

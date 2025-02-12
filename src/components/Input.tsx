@@ -120,10 +120,10 @@ export function Input({
                 },
             }}
             className={cn(
-                'mx-auto w-full z-10 bg-background',
+                'mx-auto w-full bg-background',
                 messages.length > 0
                     ? 'fixed bottom-0 left-0 right-0'
-                    : 'flex flex-col items-center justify-center mb-20'
+                    : 'flex flex-col items-center justify-center'
             )}
         >
             {messages.length === 0 && (
@@ -137,13 +137,10 @@ export function Input({
                     <h1 className="text-3xl">Where Knowledge Begins</h1>
                 </motion.div>
             )}
-            <form
-                onSubmit={handleSubmit}
-                className={cn('max-w-3xl w-full mx-auto', messages.length > 0 && 'max-w-2xl')}
-            >
+            <form onSubmit={handleSubmit} className={cn('max-w-2xl w-full mx-auto')}>
                 <div
                     className={cn(
-                        'relative flex flex-col w-full gap-2 border-input bg-zinc-900/50 p-4 focus-within:border-zinc-700/70 hover:border-zinc-700/70 transition-all duration-200',
+                        'relative flex flex-col w-full gap-4 border-input bg-zinc-900/50 p-4 focus-within:border-zinc-700/70 hover:border-zinc-700/70 transition-all duration-200',
                         messages.length > 0
                             ? 'border-t-2 border-x-2 rounded-t-lg'
                             : 'border-2 rounded-lg'
@@ -159,7 +156,7 @@ export function Input({
                         placeholder="Ask me anything..."
                         spellCheck={true}
                         value={input}
-                        className="resize-none w-full min-h-12 bg-transparent ring-0 border-0 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="resize-none w-full max-h-10 bg-transparent ring-0 border-0 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
                         onChange={(e) => {
                             handleInputChange(e);
                             setShowEmptyScreen(e.target.value.length === 0);

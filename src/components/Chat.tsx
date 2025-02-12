@@ -6,6 +6,7 @@ import { Input as InputPanel } from '@/components/Input';
 import { cn } from '@/lib/utils';
 import { ChatMessages } from '@/components/chat/Messages';
 import { toast } from 'sonner';
+import { ScrollArea } from './ui/scroll-area';
 
 export function Chat({
     id,
@@ -60,7 +61,7 @@ export function Chat({
         <div
             className={cn(
                 'flex flex-col w-full max-w-3xl container stretch',
-                messages.length === 0 ? ' h-screen justify-center items-center' : ''
+                messages.length === 0 ? 'h-screen justify-center items-center' : ''
             )}
         >
             <ChatMessages
