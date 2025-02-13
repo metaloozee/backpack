@@ -24,8 +24,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { BrainIcon } from 'lucide-react';
 
-// Separate the markdown components configuration
 const markdownComponents = {
     code: ({ node, inline, className, children, ...props }: any) => {
         const match = /language-(\w+)/.exec(className || '');
@@ -39,27 +40,45 @@ const markdownComponents = {
                     PreTag="div"
                     className="!rounded-lg"
                     customStyle={{
-                        fontSize: '0.875rem',
+                        fontSize: '0.9rem',
                         background: 'hsl(var(--background))',
                         padding: '1.5rem',
+                        border: '1px solid hsl(var(--border))',
                     }}
                 >
                     {String(children).replace(/\n$/, '')}
                 </SyntaxHighlighter>
             </div>
         ) : (
-            <code className={cn('text-sm bg-zinc-900 py-0.5 px-1 rounded', className)} {...props}>
+            <code
+                className={cn('text-sm bg-muted px-1.5 py-0.5 rounded-md font-mono', className)}
+                {...props}
+            >
                 {children}
             </code>
         );
     },
-    table: ({ children }: any) => <Table className="border">{children}</Table>,
-    thead: ({ children }: any) => <TableHeader className="bg-black">{children}</TableHeader>,
+    table: ({ children }: any) => <Table className="border my-4">{children}</Table>,
+    thead: ({ children }: any) => <TableHeader className="bg-muted/50">{children}</TableHeader>,
     tbody: ({ children }: any) => <TableBody>{children}</TableBody>,
-    tr: ({ children }: any) => <TableRow>{children}</TableRow>,
-    th: ({ children }: any) => <TableHead>{children}</TableHead>,
+    tr: ({ children }: any) => <TableRow className="hover:bg-muted/30">{children}</TableRow>,
+    th: ({ children }: any) => <TableHead className="font-semibold">{children}</TableHead>,
     td: ({ children }: any) => <TableCell>{children}</TableCell>,
-
+    p: ({ children }: any) => <p className="mb-4 leading-7 text-zinc-300">{children}</p>,
+    h1: ({ children }: any) => <h1 className="text-3xl font-bold mt-6 mb-4">{children}</h1>,
+    h2: ({ children }: any) => <h2 className="text-2xl font-semibold mt-5 mb-3">{children}</h2>,
+    h3: ({ children }: any) => <h3 className="text-xl font-semibold mt-4 mb-2">{children}</h3>,
+    ul: ({ children }: any) => <ul className="list-disc list-outside pl-6 mb-4">{children}</ul>,
+    ol: ({ children }: any) => <ol className="list-decimal list-outside pl-6 mb-4">{children}</ol>,
+    li: ({ children }: any) => <li className="mb-1 text-zinc-300">{children}</li>,
+    blockquote: ({ children }: any) => (
+        <blockquote className="border-l-4 border-muted pl-4 italic my-4">{children}</blockquote>
+    ),
+    a: ({ children, href }: any) => (
+        <Link href={href} className="text-primary hover:underline" target="_blank">
+            {children}
+        </Link>
+    ),
     inlineMath: ({ value }: { value: string }) => <span className="math math-inline">{value}</span>,
     math: ({ value }: { value: string }) => <div className="math math-display">{value}</div>,
 };
@@ -76,10 +95,16 @@ export function BotMessage({ message, className }: BotMessageProps) {
     const commonProps = {
         className: cn(
             'prose prose-neutral dark:prose-invert max-w-none',
-            'prose-p:leading-relaxed prose-pre:p-0',
-            'prose-code:px-1 prose-code:font-normal',
+            'prose-p:leading-7 prose-pre:p-0',
+            'prose-headings:font-semibold',
+            'prose-a:text-primary prose-a:no-underline hover:prose-a:underline',
+            'prose-strong:font-semibold prose-strong:text-foreground',
+            'prose-code:px-1.5 prose-code:font-mono prose-code:font-normal prose-code:bg-muted prose-code:rounded-md',
             'prose-code:before:content-none prose-code:after:content-none',
-            'break-words leading-7 ',
+            'prose-hr:border-border',
+            'prose-img:rounded-md prose-img:border prose-img:border-border',
+            'prose-blockquote:border-l-4 prose-blockquote:border-border prose-blockquote:pl-4 prose-blockquote:italic',
+            'break-words',
             className
         ),
         components: markdownComponents,
@@ -108,9 +133,15 @@ export function BotMessage({ message, className }: BotMessageProps) {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: 'spring', damping: 10, stiffness: 400 }}
-            className="flex-1 p-2 break-words w-full"
+            className="w-full flex justify-start items-start"
         >
-            {content}
+            <Avatar className="mr-2">
+                <AvatarFallback className="bg-zinc-900">
+                    <BrainIcon className="size-4 text-zinc-300" />
+                </AvatarFallback>
+            </Avatar>
+
+            <div className="pt-1.5">{content}</div>
         </motion.div>
     );
 }

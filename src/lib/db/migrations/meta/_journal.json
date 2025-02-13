@@ -15,6 +15,13 @@
       "when": 1739456745566,
       "tag": "0001_polite_justin_hammer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1739469209117,
+      "tag": "0002_slippery_longshot",
+      "breakpoints": true
     }
   ]
 }

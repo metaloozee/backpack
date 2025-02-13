@@ -61,7 +61,7 @@ export function Chat({
     return (
         <div
             className={cn(
-                'h-screen flex flex-col w-full container stretch space-y-5',
+                'h-screen flex flex-col w-full container stretch',
                 messages.length === 0
                     ? 'justify-center items-center'
                     : 'items-center justify-between'

@@ -4,7 +4,6 @@ import { JSONValue, Message } from 'ai';
 import { LoaderIcon } from 'lucide-react';
 import { RenderMessage } from '@/components/chat/RenderMessage';
 import { motion, AnimatePresence } from 'motion/react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ChatMessageProps {
     messages: Array<Message>;
@@ -93,7 +92,7 @@ export function ChatMessages({
                             duration: 0.2,
                             ease: [0.32, 0.72, 0, 1],
                         }}
-                        className="flex justify-center"
+                        className="flex justify-start px-3 mb-10"
                     >
                         {lastToolData ? (
                             <div></div>

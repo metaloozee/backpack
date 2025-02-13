@@ -65,13 +65,7 @@ export function RenderMessage({
     }
 
     return (
-        <div className="w-full flex justify-start items-start">
-            <Avatar className="mr-2">
-                <AvatarFallback className="bg-zinc-900">
-                    <BrainIcon className="size-4" />
-                </AvatarFallback>
-            </Avatar>
-
+        <>
             {toolData.map((tool) => (
                 <Tool
                     key={tool.toolCallId}
@@ -81,6 +75,6 @@ export function RenderMessage({
                 />
             ))}
             {message.content && <BotMessage message={message.content} />}
-        </div>
+        </>
     );
 }

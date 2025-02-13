@@ -89,7 +89,7 @@ export const chats = pgTable('chats', {
             onUpdate: 'cascade',
         }),
     spaceId: text('space_id')
-        .notNull()
+        // .notNull() Temporary
         .references(() => spaces.id, {
             onDelete: 'cascade',
             onUpdate: 'cascade',
