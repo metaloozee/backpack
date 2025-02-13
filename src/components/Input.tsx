@@ -131,10 +131,12 @@ export function Input({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ delay: 0.1 }}
                     className="mb-6"
                 >
-                    <h1 className="text-3xl">Your Research, Simplified.</h1>
+                    <h1 className="text-3xl text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-500">
+                        Your Research, Simplified.
+                    </h1>
                 </motion.div>
             )}
             <form onSubmit={handleSubmit} className={cn('max-w-2xl w-full mx-auto')}>
