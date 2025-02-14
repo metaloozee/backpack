@@ -16,7 +16,7 @@ import { cookies } from 'next/headers';
 import SuperJSON from 'superjson';
 
 const createContext = cache(async () => {
-    const cookieString = await cookies().toString();
+    const cookieString = await (await cookies()).toString();
     return createTRPCContext({
         headers: new Headers({
             cookie: cookieString,

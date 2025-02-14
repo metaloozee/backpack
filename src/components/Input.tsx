@@ -2,8 +2,6 @@
 
 import * as React from 'react';
 
-import useWindowSize from '@/lib/hooks/use-window-size';
-
 import { motion, AnimatePresence } from 'motion/react';
 
 import { Button } from '@/components/ui/button';
@@ -16,21 +14,12 @@ import {
     Check,
     ChevronDownIcon,
     CornerDownLeftIcon,
-    SendHorizonalIcon,
     Zap,
     Brain,
-    BrainIcon,
+    StopCircleIcon,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-    Command,
-    CommandInput,
-    CommandList,
-    CommandEmpty,
-    CommandGroup,
-    CommandItem,
-} from '@/components/ui/command';
-import { TextShimmer } from './ui/text-shimmer';
+import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
 
 interface InputPanelProps {
     input: string;
@@ -282,42 +271,67 @@ export function Input({
                                 </Command>
                             </PopoverContent>
                         </Popover>
-                        <AnimatePresence>
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ delay: 0.1 }}
-                            >
-                                <Button
-                                    className="px-4"
-                                    size={'sm'}
-                                    type="submit"
-                                    variant={input ? 'default' : 'secondary'}
-                                    disabled={isLoading}
-                                >
-                                    <motion.div
-                                        initial={{ opacity: 0, y: -20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{
-                                            x: 20,
-                                        }}
-                                        transition={{
-                                            delay: 0.2,
-                                            type: 'spring',
-                                            stiffness: 400,
-                                            damping: 10,
-                                        }}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ delay: 0.1 }}
+                        >
+                            <AnimatePresence>
+                                {isLoading ? (
+                                    <Button
+                                        size={'sm'}
+                                        variant={'destructive'}
+                                        onClick={stop}
+                                        disabled={!isLoading}
                                     >
-                                        <CornerDownLeftIcon
-                                            className={cn(
-                                                input ? 'text-background' : 'text-muted-foreground'
-                                            )}
-                                        />
-                                    </motion.div>
-                                </Button>
-                            </motion.div>
-                        </AnimatePresence>
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: 20 }}
+                                            transition={{
+                                                delay: 0.2,
+                                                type: 'spring',
+                                                stiffness: 400,
+                                                damping: 10,
+                                            }}
+                                        >
+                                            <StopCircleIcon />
+                                        </motion.div>
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        className="px-4"
+                                        size={'sm'}
+                                        type="submit"
+                                        disabled={isLoading}
+                                        variant={input ? 'default' : 'secondary'}
+                                    >
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{
+                                                x: 20,
+                                            }}
+                                            transition={{
+                                                delay: 0.2,
+                                                type: 'spring',
+                                                stiffness: 400,
+                                                damping: 10,
+                                            }}
+                                        >
+                                            <CornerDownLeftIcon
+                                                className={cn(
+                                                    input
+                                                        ? 'text-background'
+                                                        : 'text-muted-foreground'
+                                                )}
+                                            />
+                                        </motion.div>
+                                    </Button>
+                                )}
+                            </AnimatePresence>
+                        </motion.div>
                     </div>
                 </div>
             </form>
