@@ -18,7 +18,7 @@ export const UserMessage: React.FC<{ message: string }> = ({ message }) => {
                     <UserCircleIcon className="size-4 text-muted-foreground" />
                 </AvatarFallback>
             </Avatar>
-            <div className="-pt-1">{message}</div>
+            <div className="-pt-1 text-muted-foreground">{message}</div>
         </motion.div>
     );
 };

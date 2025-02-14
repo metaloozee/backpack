@@ -7,7 +7,7 @@ import { and, eq } from 'drizzle-orm';
 import { Chat as PreviewChat } from '@/components/Chat';
 import { notFound } from 'next/navigation';
 
-export default async function ChatPage({ params }: { params: { id: string } }) {
+export default async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
     await checkAuth();
     const { session } = await getUserAuth();
 

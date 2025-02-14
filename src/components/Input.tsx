@@ -19,6 +19,7 @@ import {
     SendHorizonalIcon,
     Zap,
     Brain,
+    BrainIcon,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -29,6 +30,7 @@ import {
     CommandGroup,
     CommandItem,
 } from '@/components/ui/command';
+import { TextShimmer } from './ui/text-shimmer';
 
 interface InputPanelProps {
     input: string;

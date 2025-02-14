@@ -15,10 +15,11 @@ import { cookies } from 'next/headers';
 
 import SuperJSON from 'superjson';
 
-const createContext = cache(() => {
+const createContext = cache(async () => {
+    const cookieString = await cookies().toString();
     return createTRPCContext({
         headers: new Headers({
-            cookie: cookies().toString(),
+            cookie: cookieString,
             'x-trpc-source': 'rsc',
         }),
     });

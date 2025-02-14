@@ -4,6 +4,7 @@ import { JSONValue, Message } from 'ai';
 import { LoaderIcon } from 'lucide-react';
 import { RenderMessage } from '@/components/chat/RenderMessage';
 import { motion, AnimatePresence } from 'motion/react';
+import { TextShimmer } from '../ui/text-shimmer';
 
 interface ChatMessageProps {
     messages: Array<Message>;
@@ -97,9 +98,7 @@ export function ChatMessages({
                         {lastToolData ? (
                             <div></div>
                         ) : (
-                            <div className="animate-spin">
-                                <LoaderIcon className="size-4" />
-                            </div>
+                            <TextShimmer className="text-sm italic">thinking...</TextShimmer>
                         )}
                     </motion.div>
                 )}
