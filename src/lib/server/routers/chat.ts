@@ -1,22 +1,7 @@
 import { db } from '@/lib/db';
 import { chats } from '@/lib/db/schema/app';
 import { protectedProcedure, router } from '@/lib/server/trpc';
-import { CoreMessage, JSONValue } from 'ai';
-import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
-
-export interface Chat extends Record<string, any> {
-    id: string;
-    userId: string;
-    spaceId?: string;
-    chatName: string;
-    messages: Array<ExtendedCoreMessage>;
-}
-
-export type ExtendedCoreMessage = Omit<CoreMessage, 'role' | 'content'> & {
-    role: CoreMessage['role'] | 'data';
-    content: CoreMessage['content'] | JSONValue;
-};
 
 export const saveChat = protectedProcedure
     .input(
