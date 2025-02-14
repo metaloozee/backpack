@@ -1,53 +1,67 @@
-import Link from 'next/link';
+'use client';
 
-import SidebarItems from './SidebarItems';
-import { Avatar, AvatarFallback } from './ui/avatar';
+import * as React from 'react';
+import { BackpackIcon, X } from 'lucide-react';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarTrigger,
+    useSidebar,
+} from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'motion/react';
 
-import { AuthSession, getUserAuth } from '@/lib/auth/utils';
-
-const Sidebar = async () => {
-    const session = await getUserAuth();
-    if (session.session === null) return null;
-
-    return (
-        <aside className="h-screen min-w-52 bg-muted hidden md:block p-4 pt-8 border-r border-border shadow-inner">
-            <div className="flex flex-col justify-between h-full">
-                <div className="space-y-4">
-                    <h3 className="text-lg font-semibold ml-4">Logo</h3>
-                    <SidebarItems />
-                </div>
-                <UserDetails session={session} />
-            </div>
-        </aside>
-    );
-};
-
-export default Sidebar;
-
-const UserDetails = ({ session }: { session: AuthSession }) => {
-    if (session.session === null) return null;
-    const { user } = session.session;
-
-    if (!user?.name || user.name.length == 0) return null;
+export function AppSidebar() {
+    const { state, open, setOpen } = useSidebar();
 
     return (
-        <Link href="/account">
-            <div className="flex items-center justify-between w-full border-t border-border pt-4 px-2">
-                <div className="text-muted-foreground">
-                    <p className="text-xs">{user.name ?? 'John Doe'}</p>
-                    <p className="text-xs font-light pr-4">{user.email ?? 'john@doe.com'}</p>
-                </div>
-                <Avatar className="h-10 w-10">
-                    <AvatarFallback className="border-border border-2 text-muted-foreground">
-                        {user.name
-                            ? user.name
-                                  ?.split(' ')
-                                  .map((word) => word[0].toUpperCase())
-                                  .join('')
-                            : '~'}
-                    </AvatarFallback>
-                </Avatar>
-            </div>
-        </Link>
+        <Sidebar variant="floating" collapsible="icon">
+            <SidebarHeader
+                className={cn(
+                    'flex justify-center py-4 w-full',
+                    state == 'expanded' ? 'px-4 items-start' : 'px-2 items-center'
+                )}
+            >
+                <AnimatePresence>
+                    {state === 'expanded' ? (
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{
+                                duration: 0.1,
+                                type: 'spring',
+                                stiffness: 400,
+                                damping: 10,
+                            }}
+                            className="w-full flex justify-center items-center gap-2"
+                        >
+                            <BackpackIcon className="size-4" />
+                            <h2 className="text-lg font-light">backpack</h2>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{
+                                duration: 0.1,
+                                type: 'spring',
+                                stiffness: 400,
+                                damping: 10,
+                            }}
+                        >
+                            <BackpackIcon className="size-4" />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </SidebarHeader>
+            <SidebarContent>{/* Add your sidebar content here */}</SidebarContent>
+            <SidebarFooter className="p-2.5">
+                <SidebarTrigger />
+            </SidebarFooter>
+        </Sidebar>
     );
-};
+}

@@ -32,8 +32,7 @@ export function Chat({
         initialMessages: savedMessages,
         body: { id },
         onFinish: () => {
-            // commenting this since im too lazy to implement database at this point.
-            // window.history.replaceState({}, '', `/c/${id}`);
+            window.history.replaceState({}, '', `/c/${id}`);
         },
         onError: (error) => {
             toast.error('uh oh!', { description: error.message });

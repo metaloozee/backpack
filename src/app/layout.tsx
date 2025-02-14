@@ -6,7 +6,8 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/sonner';
 
-import { GeistSans } from 'geist/font/sans';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/Sidebar';
 
 const ubuntu = Ubuntu({
     weight: ['300', '400', '500', '700'],
@@ -36,7 +37,10 @@ export default function RootLayout({
                     disableTransitionOnChange
                 >
                     <Toaster richColors position="top-center" />
-                    {children}
+                    <SidebarProvider defaultOpen={false}>
+                        <AppSidebar />
+                        <main className="w-full h-screen">{children}</main>
+                    </SidebarProvider>
                 </ThemeProvider>
             </body>
         </html>
