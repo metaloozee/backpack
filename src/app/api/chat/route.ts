@@ -1,10 +1,10 @@
-import { cookies } from 'next/headers';
-
 import { convertToCoreMessages, smoothStream, streamText } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
-import { z } from 'zod';
 import { env } from '@/lib/env.mjs';
+
+import { getUserAuth } from '@/lib/auth/utils';
+import { api } from '@/lib/trpc/api';
 
 export const maxDuration = 30;
 
@@ -14,9 +14,15 @@ const openrouter = createOpenRouter({
 
 export async function POST(req: Request) {
     try {
-        const { messages, id: chatId } = await req.json();
+        const { session } = await getUserAuth();
+        if (!session) {
+            throw new Error('Access Denied');
+        }
 
-        const cookieStore = await cookies();
+        const { messages, id: chatId } = await req.json();
+        if (!messages || !chatId) {
+            throw new Error('Invalid Body');
+        }
 
         const result = await streamText({
             model: openrouter('google/gemini-2.0-flash-001'),
@@ -24,6 +30,18 @@ export async function POST(req: Request) {
                 (message) => message.content.length > 0
             ),
             experimental_transform: smoothStream(),
+            async onFinish({ response }) {
+                try {
+                    await api.saveChat.mutate({
+                        chat: {
+                            id: chatId,
+                            userId: session.user.id,
+                            chatName: `Chat with ${session.user.name}`,
+                            messages: [...convertToCoreMessages(messages), ...response.messages],
+                        },
+                    });
+                } catch (error) {}
+            },
         });
 
         return result.toDataStreamResponse();
