@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { BackpackIcon } from 'lucide-react';
+import { BackpackIcon, PanelLeftClose, PanelLeftCloseIcon, PanelLeftOpenIcon } from 'lucide-react';
 import {
     Sidebar,
     SidebarContent,
@@ -13,6 +13,10 @@ import {
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
+import UserProfile from './UserProfile';
+import { SessionProvider } from 'next-auth/react';
+import { Separator } from './ui/separator';
+import { Button } from './ui/button';
 
 export function AppSidebar() {
     const { state, open, setOpen } = useSidebar();
@@ -66,8 +70,26 @@ export function AppSidebar() {
                 </AnimatePresence>
             </SidebarHeader>
             <SidebarContent>{/* Add your sidebar content here */}</SidebarContent>
-            <SidebarFooter className="p-2.5">
-                <SidebarTrigger />
+            <SidebarFooter className={cn(state === 'collapsed' ? 'p-2.5' : 'p-4')}>
+                <Button
+                    // size={"sm"}
+                    variant={state === 'expanded' ? 'outline' : 'ghost'}
+                    onClick={() => setOpen(!open)}
+                >
+                    {state === 'expanded' ? (
+                        <div className="w-full flex flex-row justify-center items-center gap-2">
+                            <PanelLeftCloseIcon className="size-7" />
+                            <p className="text-xs text-muted-foreground">Close Panel</p>
+                        </div>
+                    ) : (
+                        <PanelLeftOpenIcon className="size-7" />
+                    )}
+                </Button>
+
+                <Separator className={cn(state === 'expanded' ? 'my-2' : 'my-0')} />
+                <SessionProvider>
+                    <UserProfile state={state} />
+                </SessionProvider>
             </SidebarFooter>
         </Sidebar>
     );
