@@ -8,6 +8,7 @@ export const env = createEnv({
         DATABASE_URL: z.string().min(1),
 
         OPENROUTER_API_KEY: z.string().min(1).startsWith("sk-"),
+        TAVILY_API_KEY: z.string().min(1).startsWith("tvly-"),
 
         NEXTAUTH_SECRET:
             process.env.NODE_ENV === 'production'

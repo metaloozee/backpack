@@ -32,8 +32,8 @@ export function AppSidebar() {
     const pathname = usePathname();
 
     const isHome = pathname === '/';
-    const isSpaces = pathname.startsWith('/s/');
-    const isChats = pathname.startsWith('/c/');
+    const isSpaces = pathname.startsWith('/s');
+    const isChats = pathname.startsWith('/c');
 
     const { state, open, setOpen } = useSidebar();
 
@@ -100,51 +100,58 @@ export function AppSidebar() {
                         damping: 15,
                     }}
                 >
-                    <Button
-                        className={cn(state === 'expanded' ? 'w-full' : '')}
-                        variant={isHome ? 'default' : state === 'expanded' ? 'secondary' : 'ghost'}
-                        size={state === 'expanded' ? 'default' : 'icon'}
-                    >
-                        {state === 'expanded' ? (
-                            <>
+                    <Link href={'/'} className={cn(state === 'expanded' ? 'w-full' : '')}>
+                        <Button
+                            className={cn(state === 'expanded' ? 'w-full' : '')}
+                            variant={isHome ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'}
+                            size={state === 'expanded' ? 'default' : 'icon'}
+                        >
+                            {state === 'expanded' ? (
+                                <>
+                                    <SearchIcon />
+                                    <p className="font-light">Search</p>
+                                </>
+                            ) : (
                                 <SearchIcon />
-                                <p className="font-light">Search</p>
-                            </>
-                        ) : (
-                            <SearchIcon />
-                        )}
-                    </Button>
+                            )}
+                        </Button>
+                    </Link>
 
-                    <Button
-                        className={cn(state === 'expanded' ? 'w-full' : '')}
-                        variant={
-                            isSpaces ? 'default' : state === 'expanded' ? 'secondary' : 'ghost'
-                        }
-                        size={state === 'expanded' ? 'default' : 'icon'}
-                    >
-                        {state === 'expanded' ? (
-                            <>
+                    <Link href={'/s/'} className={cn(state === 'expanded' ? 'w-full' : '')}>
+                        <Button
+                            className={cn(state === 'expanded' ? 'w-full' : '')}
+                            variant={
+                                isSpaces ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'
+                            }
+                            size={state === 'expanded' ? 'default' : 'icon'}
+                        >
+                            {state === 'expanded' ? (
+                                <>
+                                    <LibraryIcon />
+                                    <p className="font-light">Spaces</p>
+                                </>
+                            ) : (
                                 <LibraryIcon />
-                                <p className="font-light">Spaces</p>
-                            </>
-                        ) : (
-                            <LibraryIcon />
-                        )}
-                    </Button>
-                    <Button
-                        className={cn(state === 'expanded' ? 'w-full' : '')}
-                        variant={isChats ? 'default' : state === 'expanded' ? 'secondary' : 'ghost'}
-                        size={state === 'expanded' ? 'default' : 'icon'}
-                    >
-                        {state === 'expanded' ? (
-                            <>
+                            )}
+                        </Button>
+                    </Link>
+
+                    <Link href={'/c/'} className={cn(state === 'expanded' ? 'w-full' : '')}>
+                        <Button
+                            className={cn(state === 'expanded' ? 'w-full' : '')}
+                            variant={isChats ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'}
+                            size={state === 'expanded' ? 'default' : 'icon'}
+                        >
+                            {state === 'expanded' ? (
+                                <>
+                                    <MessagesSquareIcon />
+                                    <p className="font-light">Chats</p>
+                                </>
+                            ) : (
                                 <MessagesSquareIcon />
-                                <p className="font-light">Chats</p>
-                            </>
-                        ) : (
-                            <MessagesSquareIcon />
-                        )}
-                    </Button>
+                            )}
+                        </Button>
+                    </Link>
                 </motion.div>
             </SidebarContent>
             <SidebarFooter className={cn(state === 'collapsed' ? '' : 'p-4')}>
