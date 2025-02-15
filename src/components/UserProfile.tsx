@@ -10,7 +10,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { LogOutIcon, UserRoundIcon } from 'lucide-react';
+import { ChevronRightIcon, UserRoundIcon } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import SignOutBtn from '@/components/auth/SignOutBtn';
 
@@ -40,19 +40,19 @@ export default function UserProfile({ state }: { state: 'collapsed' | 'expanded'
                                 <UserRoundIcon className="size-5" />
                             </AvatarFallback>
                         </Avatar>
-                        <div className="flex flex-col justify-start items-start">
+                        <div className="w-full h-full flex flex-col justify-center items-start">
                             <p>{session.user.name}</p>
                             <p className="text-xs text-muted-foreground break-all truncate overflow-hidden">
-                                {session.user.email}
+                                Professional Tier
                             </p>
                         </div>
+
+                        <ChevronRightIcon className="text-muted-foreground" />
                     </div>
                 )}
             </DropdownMenuTrigger>
-            <DropdownMenuContent side="top" align="end">
-                <DropdownMenuItem className="h-10 w-full flex items-center justify-center text-center cursor-pointer">
-                    <SignOutBtn />
-                </DropdownMenuItem>
+            <DropdownMenuContent side="right" align="end">
+                <SignOutBtn />
             </DropdownMenuContent>
         </DropdownMenu>
     );

@@ -1,24 +1,40 @@
 'use client';
 
 import * as React from 'react';
-import { BackpackIcon, PanelLeftClose, PanelLeftCloseIcon, PanelLeftOpenIcon } from 'lucide-react';
+import {
+    BackpackIcon,
+    GithubIcon,
+    InfoIcon,
+    LibraryIcon,
+    MessagesSquareIcon,
+    PanelLeftCloseIcon,
+    PanelLeftOpenIcon,
+    SearchIcon,
+    TwitterIcon,
+} from 'lucide-react';
 import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
     SidebarHeader,
-    SidebarTrigger,
     useSidebar,
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
-import UserProfile from './UserProfile';
+import UserProfile from '@/components/UserProfile';
 import { SessionProvider } from 'next-auth/react';
-import { Separator } from './ui/separator';
-import { Button } from './ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { usePathname } from 'next/navigation';
 
 export function AppSidebar() {
+    const pathname = usePathname();
+
+    const isHome = pathname === '/';
+    const isSpaces = pathname.startsWith('/s/');
+    const isChats = pathname.startsWith('/c/');
+
     const { state, open, setOpen } = useSidebar();
 
     return (
@@ -69,10 +85,70 @@ export function AppSidebar() {
                     )}
                 </AnimatePresence>
             </SidebarHeader>
-            <SidebarContent>{/* Add your sidebar content here */}</SidebarContent>
-            <SidebarFooter className={cn(state === 'collapsed' ? 'p-2.5' : 'p-4')}>
+            <SidebarContent>
+                <motion.div
+                    className={cn(
+                        'h-full w-full flex flex-col justify-center items-center gap-2',
+                        state === 'expanded' ? 'px-4' : ''
+                    )}
+                    initial={{ opacity: 0, x: -100 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{
+                        duration: 0.1,
+                        type: 'spring',
+                        stiffness: 200,
+                        damping: 15,
+                    }}
+                >
+                    <Button
+                        className={cn(state === 'expanded' ? 'w-full' : '')}
+                        variant={isHome ? 'default' : state === 'expanded' ? 'secondary' : 'ghost'}
+                        size={state === 'expanded' ? 'default' : 'icon'}
+                    >
+                        {state === 'expanded' ? (
+                            <>
+                                <SearchIcon />
+                                <p className="font-light">Search</p>
+                            </>
+                        ) : (
+                            <SearchIcon />
+                        )}
+                    </Button>
+
+                    <Button
+                        className={cn(state === 'expanded' ? 'w-full' : '')}
+                        variant={
+                            isSpaces ? 'default' : state === 'expanded' ? 'secondary' : 'ghost'
+                        }
+                        size={state === 'expanded' ? 'default' : 'icon'}
+                    >
+                        {state === 'expanded' ? (
+                            <>
+                                <LibraryIcon />
+                                <p className="font-light">Spaces</p>
+                            </>
+                        ) : (
+                            <LibraryIcon />
+                        )}
+                    </Button>
+                    <Button
+                        className={cn(state === 'expanded' ? 'w-full' : '')}
+                        variant={isChats ? 'default' : state === 'expanded' ? 'secondary' : 'ghost'}
+                        size={state === 'expanded' ? 'default' : 'icon'}
+                    >
+                        {state === 'expanded' ? (
+                            <>
+                                <MessagesSquareIcon />
+                                <p className="font-light">Chats</p>
+                            </>
+                        ) : (
+                            <MessagesSquareIcon />
+                        )}
+                    </Button>
+                </motion.div>
+            </SidebarContent>
+            <SidebarFooter className={cn(state === 'collapsed' ? '' : 'p-4')}>
                 <Button
-                    // size={"sm"}
                     variant={state === 'expanded' ? 'outline' : 'ghost'}
                     onClick={() => setOpen(!open)}
                 >
@@ -90,6 +166,23 @@ export function AppSidebar() {
                 <SessionProvider>
                     <UserProfile state={state} />
                 </SessionProvider>
+
+                {state === 'expanded' && (
+                    <>
+                        <Separator className={cn(state === 'expanded' ? 'my-2' : 'my-0')} />
+                        <div className="w-full px-4 flex flex-row justify-stretch items-center gap-2">
+                            <Button variant={'link'}>
+                                <InfoIcon className="size-3" />
+                            </Button>
+                            <Button variant={'link'}>
+                                <GithubIcon className="size-3" />
+                            </Button>
+                            <Button variant={'link'}>
+                                <TwitterIcon className="size-3" />
+                            </Button>
+                        </div>
+                    </>
+                )}
             </SidebarFooter>
         </Sidebar>
     );
