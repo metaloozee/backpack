@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Card, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { LibraryIcon, PlusIcon, SquarePlusIcon } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'timeago.js';
@@ -9,7 +9,9 @@ import { format } from 'timeago.js';
 type Space = {
     id: string;
     userId: string;
-    spaceName: string;
+    spaceTitle: string;
+    spaceDescription?: string | null;
+    spaceCustomInstructions?: string | null;
     createdAt: Date;
 };
 
@@ -50,8 +52,11 @@ export function Cards({ spaces }: { spaces: Array<Space> }) {
                         <Card className="bg-zinc-900/50 hover:bg-zinc-900/70 transition-all duration-200">
                             <CardHeader>
                                 <LibraryIcon />
-                                <CardTitle>{space.spaceName}</CardTitle>
+                                <CardTitle>{space.spaceTitle}</CardTitle>
                             </CardHeader>
+                            {space.spaceDescription && (
+                                <CardContent>{space.spaceDescription}</CardContent>
+                            )}
                             <CardFooter className="text-xs text-muted-foreground">
                                 {format(space.createdAt)}
                             </CardFooter>

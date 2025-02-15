@@ -14,37 +14,7 @@ export default async function SpacesPage() {
     const { session } = await getUserAuth();
     const user = session!.user!;
 
-    // const spaces = await db
-    //     .select()
-    //     .from(spacesSchema)
-    //     .where(eq(spacesSchema.userId, user.id))
-
-    const spaces = [
-        {
-            id: '1',
-            userId: 'sdsd',
-            spaceName: 'Python',
-            createdAt: new Date(),
-        },
-        {
-            id: '2',
-            userId: 'sdsd',
-            spaceName: 'JavaScript',
-            createdAt: new Date(),
-        },
-        {
-            id: '3',
-            userId: 'sdsd',
-            spaceName: 'Computer Networks',
-            createdAt: new Date(),
-        },
-        {
-            id: '4',
-            userId: 'sdsd',
-            spaceName: 'Operating Systems',
-            createdAt: new Date(),
-        },
-    ];
+    const spaces = await db.select().from(spacesSchema).where(eq(spacesSchema.userId, user.id));
 
     return (
         <div className="mt-20 flex flex-col justify-center items-start gap-5">

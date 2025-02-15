@@ -100,12 +100,13 @@ export function AppSidebar() {
                         damping: 15,
                     }}
                 >
-                    <Link href={'/'} className={cn(state === 'expanded' ? 'w-full' : '')}>
-                        <Button
-                            className={cn(state === 'expanded' ? 'w-full' : '')}
-                            variant={isHome ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'}
-                            size={state === 'expanded' ? 'default' : 'icon'}
-                        >
+                    <Button
+                        asChild
+                        className={cn(state === 'expanded' ? 'w-full' : '')}
+                        variant={isHome ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'}
+                        size={state === 'expanded' ? 'default' : 'icon'}
+                    >
+                        <Link href={'/'}>
                             {state === 'expanded' ? (
                                 <>
                                     <SearchIcon />
@@ -114,17 +115,16 @@ export function AppSidebar() {
                             ) : (
                                 <SearchIcon />
                             )}
-                        </Button>
-                    </Link>
+                        </Link>
+                    </Button>
 
-                    <Link href={'/s/'} className={cn(state === 'expanded' ? 'w-full' : '')}>
-                        <Button
-                            className={cn(state === 'expanded' ? 'w-full' : '')}
-                            variant={
-                                isSpaces ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'
-                            }
-                            size={state === 'expanded' ? 'default' : 'icon'}
-                        >
+                    <Button
+                        asChild
+                        className={cn(state === 'expanded' ? 'w-full' : '')}
+                        variant={isSpaces ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'}
+                        size={state === 'expanded' ? 'default' : 'icon'}
+                    >
+                        <Link href={'/s/'}>
                             {state === 'expanded' ? (
                                 <>
                                     <LibraryIcon />
@@ -133,15 +133,16 @@ export function AppSidebar() {
                             ) : (
                                 <LibraryIcon />
                             )}
-                        </Button>
-                    </Link>
+                        </Link>
+                    </Button>
 
-                    <Link href={'/c/'} className={cn(state === 'expanded' ? 'w-full' : '')}>
-                        <Button
-                            className={cn(state === 'expanded' ? 'w-full' : '')}
-                            variant={isChats ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'}
-                            size={state === 'expanded' ? 'default' : 'icon'}
-                        >
+                    <Button
+                        asChild
+                        className={cn(state === 'expanded' ? 'w-full' : '')}
+                        variant={isChats ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'}
+                        size={state === 'expanded' ? 'default' : 'icon'}
+                    >
+                        <Link href={'/c/'}>
                             {state === 'expanded' ? (
                                 <>
                                     <MessagesSquareIcon />
@@ -150,8 +151,8 @@ export function AppSidebar() {
                             ) : (
                                 <MessagesSquareIcon />
                             )}
-                        </Button>
-                    </Link>
+                        </Link>
+                    </Button>
                 </motion.div>
             </SidebarContent>
             <SidebarFooter className={cn(state === 'collapsed' ? '' : 'p-4')}>

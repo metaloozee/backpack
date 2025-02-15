@@ -15,7 +15,9 @@ export const spaces = pgTable('spaces', {
             onDelete: 'cascade',
             onUpdate: 'cascade',
         }),
-    spaceName: text('space_name').notNull(),
+    spaceTitle: text('space_name').notNull(),
+    spaceDescription: text('space_title'),
+    spaceCustomInstructions: text('custom_instructions'),
     createdAt: timestamp('created_at', {
         withTimezone: true,
         mode: 'date',

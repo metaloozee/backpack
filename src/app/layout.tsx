@@ -5,9 +5,11 @@ import { Ubuntu } from 'next/font/google';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/sonner';
+import { cookies } from 'next/headers';
 
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/Sidebar';
+import TrpcProvider from '@/lib/trpc/Provider';
 
 const ubuntu = Ubuntu({
     weight: ['300', '400', '500', '700'],
@@ -25,24 +27,26 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" suppressHydrationWarning>
-            <body
-                className={cn('bg-background font-sans antialiased container', ubuntu.className)}
-                suppressHydrationWarning
-            >
-                <ThemeProvider
-                    attribute="class"
-                    defaultTheme="system"
-                    enableSystem
-                    disableTransitionOnChange
+        <TrpcProvider cookies={''}>
+            <html lang="en" suppressHydrationWarning>
+                <body
+                    className={cn('bg-background antialiased font-sans', ubuntu.className)}
+                    suppressHydrationWarning
                 >
-                    <Toaster richColors position="top-center" />
-                    <SidebarProvider defaultOpen={false}>
-                        <AppSidebar />
-                        <main className="w-full h-screen">{children}</main>
-                    </SidebarProvider>
-                </ThemeProvider>
-            </body>
-        </html>
+                    <ThemeProvider
+                        attribute="class"
+                        defaultTheme="system"
+                        enableSystem
+                        disableTransitionOnChange
+                    >
+                        <Toaster richColors position="top-center" />
+                        <SidebarProvider defaultOpen={false}>
+                            <AppSidebar />
+                            <main className="w-full h-screen container">{children}</main>
+                        </SidebarProvider>
+                    </ThemeProvider>
+                </body>
+            </html>
+        </TrpcProvider>
     );
 }
