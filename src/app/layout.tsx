@@ -40,10 +40,7 @@ export default function RootLayout({
                         disableTransitionOnChange
                     >
                         <Toaster richColors position="top-center" />
-                        <SidebarProvider defaultOpen={false}>
-                            <AppSidebar />
-                            <main className="w-full h-screen container">{children}</main>
-                        </SidebarProvider>
+                        {children}
                     </ThemeProvider>
                 </body>
             </html>

@@ -1,9 +1,3 @@
-import { getUserAuth } from '@/lib/auth/utils';
-import { redirect } from 'next/navigation';
-
-export default async function AuthLayout({ children }: { children: React.ReactNode }) {
-    const session = await getUserAuth();
-    if (session?.session) redirect('/dashboard');
-
-    return <div className="bg-muted h-screen pt-8">{children}</div>;
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+    return <main className="h-screen w-full flex justify-center items-center">{children}</main>;
 }
