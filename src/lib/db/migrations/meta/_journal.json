@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1736663512990,
-      "tag": "0000_eager_jack_murdock",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1739456745566,
-      "tag": "0001_polite_justin_hammer",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1739469209117,
-      "tag": "0002_slippery_longshot",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1739630612413,
-      "tag": "0003_lovely_microchip",
+      "when": 1739689344560,
+      "tag": "0000_nappy_blink",
       "breakpoints": true
     }
   ]

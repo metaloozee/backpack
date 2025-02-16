@@ -1,1 +1,0 @@
-ALTER TABLE "chats" ALTER COLUMN "space_id" DROP NOT NULL;

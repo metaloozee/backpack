@@ -55,7 +55,9 @@ export function Cards({ spaces }: { spaces: Array<Space> }) {
                                 <CardTitle>{space.spaceTitle}</CardTitle>
                             </CardHeader>
                             {space.spaceDescription && (
-                                <CardContent>{space.spaceDescription}</CardContent>
+                                <CardContent className="text-xs text-muted-foreground">
+                                    {space.spaceDescription}
+                                </CardContent>
                             )}
                             <CardFooter className="text-xs text-muted-foreground">
                                 {format(space.createdAt)}
