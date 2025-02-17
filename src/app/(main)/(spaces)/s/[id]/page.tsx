@@ -43,7 +43,7 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
 
     return (
         <div className="grid grid-cols-5">
-            <div className="col-span-3 max-h-screen">
+            <div className="col-span-3">
                 <Chat spaceId={spaceData.id} id={chatId} />
             </div>
             <div className="mt-20 max-w-lg col-span-2 flex flex-col gap-10">

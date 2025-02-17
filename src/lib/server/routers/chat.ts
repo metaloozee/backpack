@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { chats } from '@/lib/db/schema/app';
-import { protectedProcedure, router } from '@/lib/server/trpc';
+import { protectedProcedure } from '@/lib/server/trpc';
 import { z } from 'zod';
 
 export const saveChat = protectedProcedure
