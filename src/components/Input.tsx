@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
-import { Message } from 'ai';
+import { convertToCoreMessages, CoreMessage, Message } from 'ai';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
@@ -17,10 +17,19 @@ import {
     Zap,
     Brain,
     StopCircleIcon,
+    Link2Icon,
+    Settings2,
+    EllipsisVerticalIcon,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
 import { usePathname } from 'next/navigation';
+import { ChatData } from '@/app/(main)/(spaces)/s/[id]/page';
+import Link from 'next/link';
+import { Separator } from './ui/separator';
+import { Card, CardHeader, CardTitle } from './ui/card';
+import { Chat } from '@/lib/db/schema/app';
+import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
 
 interface InputPanelProps {
     input: string;
@@ -32,6 +41,8 @@ interface InputPanelProps {
     query?: string;
     stop: () => void;
     append: (message: any) => void;
+
+    chatsData?: Array<ChatData>;
 }
 
 const geminiModels = [
@@ -61,6 +72,7 @@ export function Input({
     query,
     stop,
     append,
+    chatsData,
 }: InputPanelProps) {
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
@@ -344,6 +356,44 @@ export function Input({
                     </div>
                 </div>
             </form>
+
+            {messages.length === 0 && chatsData && chatsData.length > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, type: 'spring', damping: 10, stiffness: 200 }}
+                    className="mt-12 space-y-5 max-w-2xl"
+                >
+                    <div className="space-y-4">
+                        <h1 className="text-xl">Saved Chats</h1>
+                        <Separator />
+                    </div>
+                    <div className="flex flex-col justify-start items-start gap-3">
+                        {chatsData.map((chat) => {
+                            const chatData: Chat = {
+                                ...chat,
+                                messages: convertToUIMessages(chat.messages as Array<CoreMessage>),
+                            };
+
+                            return (
+                                <Link className="w-full" key={chat.id} href={`/c/${chat.id}`}>
+                                    <div className="bg-zinc-900/50 hover:bg-zinc-900/80 border rounded-md w-full flex justify-between items-center px-4 py-3 transition-all duration-300">
+                                        <div className=" flex flex-col gap-1 justify-start items-start">
+                                            <p className="max-w-md truncate">{chatData.chatName}</p>
+                                            <p className="text-xs text-muted-foreground truncate max-w-md">
+                                                {chatData.messages[1].content}
+                                            </p>
+                                        </div>
+                                        <Button variant={'ghost'} size={'icon'}>
+                                            <EllipsisVerticalIcon className="size-3" />
+                                        </Button>
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </motion.div>
+            )}
         </motion.div>
     );
 }

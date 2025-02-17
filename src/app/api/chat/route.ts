@@ -38,7 +38,7 @@ export async function POST(req: Request) {
                             id: chatId,
                             userId: session.user.id,
                             spaceId: spaceId,
-                            chatName: `Chat with ${session.user.name}`,
+                            chatName: convertToCoreMessages(messages)[0].content.toString(),
                             messages: [...convertToCoreMessages(messages), ...response.messages],
                         },
                     });

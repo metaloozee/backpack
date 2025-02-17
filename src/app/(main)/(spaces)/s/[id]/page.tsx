@@ -14,6 +14,15 @@ import { ChevronRight } from 'lucide-react';
 import { Chat } from '@/components/Chat';
 import { generateId } from 'ai';
 
+export type ChatData = {
+    id: string;
+    userId: string;
+    createdAt: Date;
+    spaceId: string | null;
+    chatName: string;
+    messages: unknown;
+};
+
 export default async function SpacePage({ params }: { params: Promise<{ id: string }> }) {
     await checkAuth();
     const { session } = await getUserAuth();
@@ -30,7 +39,8 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
     const chatsData = await db
         .select()
         .from(chats)
-        .where(and(eq(chats.spaceId, spaceId), eq(chats.userId, user.id)));
+        .where(and(eq(chats.spaceId, spaceId), eq(chats.userId, user.id)))
+        .limit(3);
 
     const knowledgeData = await db
         .select()
@@ -42,9 +52,9 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
     }
 
     return (
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-5 gap-5">
             <div className="col-span-3">
-                <Chat spaceId={spaceData.id} id={chatId} />
+                <Chat chatsData={chatsData} spaceId={spaceData.id} id={chatId} />
             </div>
             <div className="mt-20 max-w-lg col-span-2 flex flex-col gap-10">
                 <div className="w-full flex flex-col justify-end items-end gap-2">

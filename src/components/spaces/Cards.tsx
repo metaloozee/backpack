@@ -56,7 +56,7 @@ export function Cards({ spaces }: { spaces: Array<Space> }) {
                             </CardHeader>
                             <CardFooter className="flex flex-row justify-between text-xs text-muted-foreground">
                                 {space.spaceDescription && (
-                                    <p className="truncate w-[20vw]">{space.spaceDescription}</p>
+                                    <p className="truncate w-[18vw]">{space.spaceDescription}</p>
                                 )}
                                 {format(space.createdAt)}
                             </CardFooter>

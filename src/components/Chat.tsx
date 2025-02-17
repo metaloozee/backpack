@@ -8,17 +8,20 @@ import { ChatMessages } from '@/components/chat/Messages';
 import { toast } from 'sonner';
 import { ScrollArea } from './ui/scroll-area';
 import { usePathname } from 'next/navigation';
+import { ChatData } from '@/app/(main)/(spaces)/s/[id]/page';
 
 export function Chat({
     id,
     savedMessages = [],
     query,
     spaceId,
+    chatsData,
 }: {
     id: string;
     savedMessages?: Array<Message>;
     query?: string;
     spaceId?: string;
+    chatsData?: Array<ChatData>;
 }) {
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
@@ -97,6 +100,7 @@ export function Chat({
                 stop={stop}
                 query={query}
                 append={append}
+                chatsData={chatsData}
             />
         </div>
     );
