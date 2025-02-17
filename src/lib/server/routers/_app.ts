@@ -1,10 +1,10 @@
-import { saveChat } from './chat';
+import { chatRouter } from './chat';
 import { router } from '@/lib/server/trpc';
-import { createSpace } from './space';
+import { spaceRouter } from './space';
 
 export const appRouter = router({
-    saveChat: saveChat,
-    space: createSpace,
+    chat: chatRouter,
+    space: spaceRouter,
 });
 
 export type AppRouter = typeof appRouter;

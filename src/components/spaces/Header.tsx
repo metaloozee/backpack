@@ -18,19 +18,16 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
     const router = useRouter();
 
     const [isOpen, setIsOpen] = React.useState(false);
-    const [isLoading, setIsLoading] = React.useState(false);
     const [spaceTitle, setSpaceTitle] = React.useState('');
     const [spaceDescription, setSpaceDescription] = React.useState('');
     const [customIns, setCustomIns] = React.useState('');
 
-    const mutation = trpc.space.useMutation();
+    const mutation = trpc.space.createSpace.useMutation();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
 
         if (!spaceTitle) {
-            setIsLoading(false);
             return toast.error('Space name is required');
         }
 
@@ -41,12 +38,10 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
                 spaceDescription,
                 spaceCustomInstructions: customIns,
             });
-            setIsLoading(false);
             setIsOpen(false);
             router.push(`/s/${res.id}`);
             return toast.success('Successfully Created a New Space.');
         } catch (e) {
-            setIsLoading(false);
             toast.error('Uh oh!', { description: (e as Error).message });
         }
     };
@@ -86,7 +81,7 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
                             >
                                 <Label className="text-muted-foreground text-xs">Title</Label>
                                 <Input
-                                    disabled={isLoading}
+                                    disabled={mutation.isLoading}
                                     id="spaceName"
                                     value={spaceTitle}
                                     onChange={(e: any) => setSpaceTitle(e.target.value)}
@@ -105,7 +100,7 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
                                     Description (optional)
                                 </Label>
                                 <Textarea
-                                    disabled={isLoading}
+                                    disabled={mutation.isLoading}
                                     id="spaceDescription"
                                     value={spaceDescription}
                                     onChange={(e: any) => setSpaceDescription(e.target.value)}
@@ -123,7 +118,7 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
                                     Custom Instructions (optional)
                                 </Label>
                                 <Textarea
-                                    disabled={isLoading}
+                                    disabled={mutation.isLoading}
                                     id="customIns"
                                     value={customIns}
                                     onChange={(e: any) => setCustomIns(e.target.value)}
@@ -136,8 +131,12 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
                                 transition={{ delay: 0.2 }}
                                 className="w-full flex justify-end"
                             >
-                                <Button disabled={isLoading} type="submit" className="text-xs">
-                                    {isLoading ? (
+                                <Button
+                                    disabled={mutation.isLoading}
+                                    type="submit"
+                                    className="text-xs"
+                                >
+                                    {mutation.isLoading ? (
                                         <Loader className="size-4 animate-spin" />
                                     ) : (
                                         'Create Space'

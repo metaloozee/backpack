@@ -29,6 +29,7 @@ import { Separator } from './ui/separator';
 import { Card, CardHeader, CardTitle } from './ui/card';
 import { Chat } from '@/lib/db/schema/app';
 import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
+import ChatDisplayCard from './chat/DisplayCard';
 
 interface InputPanelProps {
     input: string;
@@ -385,32 +386,7 @@ export function Input({
                                 messages: convertToUIMessages(chat.messages as Array<CoreMessage>),
                             };
 
-                            return (
-                                <motion.div
-                                    variants={{
-                                        hidden: { y: 20, opacity: 0 },
-                                        visible: {
-                                            y: 0,
-                                            opacity: 1,
-                                        },
-                                    }}
-                                    transition={{ type: 'spring', damping: 10, stiffness: 200 }}
-                                    key={chat.id}
-                                    className="border-b pb-4 rounded-md w-full flex justify-between items-center"
-                                >
-                                    <Link className="w-full" key={chat.id} href={`/c/${chat.id}`}>
-                                        <div className=" flex flex-col gap-1 justify-start items-start">
-                                            <p className="max-w-md truncate">{chatData.chatName}</p>
-                                            <p className="text-xs text-muted-foreground truncate max-w-md">
-                                                {chatData.messages[1].content}
-                                            </p>
-                                        </div>
-                                    </Link>
-                                    <Button variant={'destructive'} size={'icon'}>
-                                        <Trash2Icon className="size-2" />
-                                    </Button>
-                                </motion.div>
-                            );
+                            return <ChatDisplayCard key={chatData.id} chat={chatData} />;
                         })}
                     </motion.div>
                 </div>

@@ -33,7 +33,7 @@ export async function POST(req: Request) {
             experimental_transform: smoothStream(),
             async onFinish({ response }) {
                 try {
-                    await api.saveChat.mutate({
+                    await api.chat.saveChat.mutate({
                         chat: {
                             id: chatId,
                             userId: session.user.id,
