@@ -25,20 +25,22 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
 
     const mutation = trpc.chat.deleteChat.useMutation();
     const handleDelete = async (e: any) => {
+        e.preventDefault();
+
         try {
-            await mutation.mutate({
+            mutation.mutate({
                 chatId: chat.id,
             });
 
-            if (mutation.isSuccess) {
-                setIsOpen(false);
-            }
+            setIsOpen(false);
 
             if (chat.spaceId && chat.spaceId.length > 0) {
                 router.push(`/s/${chat.spaceId}`);
             } else {
                 router.push(`/`);
             }
+
+            return toast.success('Successfully deleted the chat.');
         } catch (e) {
             toast.error('Uh oh!', { description: (e as Error).message });
         }

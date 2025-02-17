@@ -161,6 +161,7 @@ export function Input({
                     )}
                 >
                     <Textarea
+                        autoFocus
                         ref={inputRef}
                         name="input"
                         rows={2}

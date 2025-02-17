@@ -24,7 +24,6 @@ export async function POST(req: Request) {
             throw new Error('Invalid Body');
         }
 
-        console.log(spaceId);
         const result = await streamText({
             model: openrouter('google/gemini-2.0-flash-001'),
             messages: convertToCoreMessages(messages).filter(
