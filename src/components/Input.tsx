@@ -17,9 +17,8 @@ import {
     Zap,
     Brain,
     StopCircleIcon,
-    Link2Icon,
-    Settings2,
-    EllipsisVerticalIcon,
+    BookOpenTextIcon,
+    Trash2Icon,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
@@ -358,17 +357,28 @@ export function Input({
             </form>
 
             {messages.length === 0 && chatsData && chatsData.length > 0 && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, type: 'spring', damping: 10, stiffness: 200 }}
-                    className="mt-12 space-y-5 max-w-2xl"
-                >
-                    <div className="space-y-4">
-                        <h1 className="text-xl">Saved Chats</h1>
+                <div className="mt-12 space-y-5 max-w-2xl">
+                    <div className="space-y-4 w-full">
+                        <h1 className="text-lg w-full flex gap-2 items-center">
+                            <BookOpenTextIcon /> Recent Chats
+                        </h1>
                         <Separator />
                     </div>
-                    <div className="flex flex-col justify-start items-start gap-3">
+                    <motion.div
+                        variants={{
+                            hidden: { opacity: 1 },
+                            visible: {
+                                opacity: 1,
+                                transition: {
+                                    delayChildren: 0.1,
+                                    staggerChildren: 0.1,
+                                },
+                            },
+                        }}
+                        initial="hidden"
+                        animate="visible"
+                        className="flex flex-col justify-start items-start gap-3"
+                    >
                         {chatsData.map((chat) => {
                             const chatData: Chat = {
                                 ...chat,
@@ -376,23 +386,34 @@ export function Input({
                             };
 
                             return (
-                                <Link className="w-full" key={chat.id} href={`/c/${chat.id}`}>
-                                    <div className="bg-zinc-900/50 hover:bg-zinc-900/80 border rounded-md w-full flex justify-between items-center px-4 py-3 transition-all duration-300">
+                                <motion.div
+                                    variants={{
+                                        hidden: { y: 20, opacity: 0 },
+                                        visible: {
+                                            y: 0,
+                                            opacity: 1,
+                                        },
+                                    }}
+                                    transition={{ type: 'spring', damping: 10, stiffness: 200 }}
+                                    key={chat.id}
+                                    className="border-b pb-4 rounded-md w-full flex justify-between items-center"
+                                >
+                                    <Link className="w-full" key={chat.id} href={`/c/${chat.id}`}>
                                         <div className=" flex flex-col gap-1 justify-start items-start">
                                             <p className="max-w-md truncate">{chatData.chatName}</p>
                                             <p className="text-xs text-muted-foreground truncate max-w-md">
                                                 {chatData.messages[1].content}
                                             </p>
                                         </div>
-                                        <Button variant={'ghost'} size={'icon'}>
-                                            <EllipsisVerticalIcon className="size-3" />
-                                        </Button>
-                                    </div>
-                                </Link>
+                                    </Link>
+                                    <Button variant={'destructive'} size={'icon'}>
+                                        <Trash2Icon className="size-2" />
+                                    </Button>
+                                </motion.div>
                             );
                         })}
-                    </div>
-                </motion.div>
+                    </motion.div>
+                </div>
             )}
         </motion.div>
     );

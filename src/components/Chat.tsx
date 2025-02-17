@@ -71,11 +71,11 @@ export function Chat({
     return (
         <div
             className={cn(
-                'h-screen flex flex-col w-full container stretch',
+                'h-screen flex flex-col w-full stretch',
                 messages.length === 0
                     ? isSpaceChat
-                        ? 'justify-start items-center'
-                        : 'justify-center items-center'
+                        ? 'justify-start items-start'
+                        : 'container justify-center items-center'
                     : 'items-center justify-between'
             )}
         >

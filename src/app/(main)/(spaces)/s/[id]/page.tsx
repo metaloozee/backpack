@@ -1,7 +1,7 @@
 import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 import { db } from '@/lib/db';
 import { chats, knowledge, spaces } from '@/lib/db/schema/app';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 
 import {
@@ -40,6 +40,7 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
         .select()
         .from(chats)
         .where(and(eq(chats.spaceId, spaceId), eq(chats.userId, user.id)))
+        .orderBy(desc(chats.createdAt))
         .limit(3);
 
     const knowledgeData = await db
@@ -52,11 +53,11 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
     }
 
     return (
-        <div className="grid grid-cols-5 gap-5">
-            <div className="col-span-3">
+        <div className="container flex flex-row justify-evenly gap-20">
+            <div className="max-w-2xl w-full">
                 <Chat chatsData={chatsData} spaceId={spaceData.id} id={chatId} />
             </div>
-            <div className="mt-20 max-w-lg col-span-2 flex flex-col gap-10">
+            <div className="mt-20 max-w-lg flex flex-col gap-10">
                 <div className="w-full flex flex-col justify-end items-end gap-2">
                     <h1 className="w-full text-3xl text-right">{spaceData.spaceTitle}</h1>
                     <p className="w-full text-muted-foreground text-right text-xs">
