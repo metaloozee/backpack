@@ -34,6 +34,7 @@ export const saveChat = protectedProcedure
                     userId: chatToSave.userId,
                     chatName: chatToSave.chatName,
                     messages: chatToSave.messages,
+                    spaceId: chatToSave.spaceId ?? null,
                     createdAt: new Date(),
                 })
                 .onConflictDoUpdate({

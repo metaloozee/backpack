@@ -19,11 +19,12 @@ export async function POST(req: Request) {
             throw new Error('Access Denied');
         }
 
-        const { messages, id: chatId } = await req.json();
+        const { messages, id: chatId, spaceId } = await req.json();
         if (!messages || !chatId) {
             throw new Error('Invalid Body');
         }
 
+        console.log(spaceId);
         const result = await streamText({
             model: openrouter('google/gemini-2.0-flash-001'),
             messages: convertToCoreMessages(messages).filter(
@@ -36,6 +37,7 @@ export async function POST(req: Request) {
                         chat: {
                             id: chatId,
                             userId: session.user.id,
+                            spaceId: spaceId,
                             chatName: `Chat with ${session.user.name}`,
                             messages: [...convertToCoreMessages(messages), ...response.messages],
                         },

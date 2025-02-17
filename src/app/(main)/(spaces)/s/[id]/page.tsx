@@ -42,12 +42,16 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
     }
 
     return (
-        <div className="grid grid-cols-3 mt-20">
-            <div className="col-span-2">{/* <Chat id={chatId} /> */}</div>
-            <div className="flex flex-col justify-end items-end gap-10">
-                <div className="space-y-2">
-                    <h1 className="text-3xl">{spaceData.spaceTitle}</h1>
-                    <p className="text-muted-foreground text-xs">{spaceData.spaceDescription}</p>
+        <div className="grid grid-cols-5">
+            <div className="col-span-3 max-h-screen">
+                <Chat spaceId={spaceData.id} id={chatId} />
+            </div>
+            <div className="mt-20 max-w-lg col-span-2 flex flex-col gap-10">
+                <div className="w-full flex flex-col justify-end items-end gap-2">
+                    <h1 className="w-full text-3xl text-right">{spaceData.spaceTitle}</h1>
+                    <p className="w-full text-muted-foreground text-right text-xs">
+                        {spaceData.spaceDescription}
+                    </p>
                 </div>
                 <div className="space-y-4 w-full flex flex-row justify-start items-start">
                     <Accordion

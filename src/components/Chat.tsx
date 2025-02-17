@@ -7,16 +7,22 @@ import { cn } from '@/lib/utils';
 import { ChatMessages } from '@/components/chat/Messages';
 import { toast } from 'sonner';
 import { ScrollArea } from './ui/scroll-area';
+import { usePathname } from 'next/navigation';
 
 export function Chat({
     id,
     savedMessages = [],
     query,
+    spaceId,
 }: {
     id: string;
     savedMessages?: Array<Message>;
     query?: string;
+    spaceId?: string;
 }) {
+    const pathname = usePathname();
+    const isSpaceChat = pathname.startsWith('/s/');
+
     const {
         messages,
         input,
@@ -30,9 +36,11 @@ export function Chat({
         setData,
     } = useChat({
         initialMessages: savedMessages,
-        body: { id },
+        body: { id, spaceId: spaceId },
         onFinish: () => {
-            window.history.replaceState({}, '', `/c/${id}`);
+            if (messages.length === 0) {
+                window.history.pushState({}, '', `/c/${id}`);
+            }
         },
         onError: (error) => {
             toast.error('uh oh!', { description: error.message });
@@ -62,7 +70,9 @@ export function Chat({
             className={cn(
                 'h-screen flex flex-col w-full container stretch',
                 messages.length === 0
-                    ? 'justify-center items-center'
+                    ? isSpaceChat
+                        ? 'justify-start items-center'
+                        : 'justify-center items-center'
                     : 'items-center justify-between'
             )}
         >

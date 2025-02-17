@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
+import { usePathname } from 'next/navigation';
 
 interface InputPanelProps {
     input: string;
@@ -61,6 +62,9 @@ export function Input({
     stop,
     append,
 }: InputPanelProps) {
+    const pathname = usePathname();
+    const isSpaceChat = pathname.startsWith('/s/');
+
     const [showEmptyScreen, setShowEmptyScreen] = React.useState(false);
     const router = useRouter();
     const inputRef = React.useRef<HTMLTextAreaElement>(null);
@@ -114,10 +118,12 @@ export function Input({
                 'mx-auto w-full bg-background',
                 messages.length > 0
                     ? 'bottom-0 left-0 right-0'
-                    : 'flex flex-col items-center justify-center'
+                    : isSpaceChat
+                      ? 'pt-20'
+                      : 'flex flex-col items-center justify-center'
             )}
         >
-            {messages.length === 0 && (
+            {messages.length === 0 && !isSpaceChat && (
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -130,7 +136,10 @@ export function Input({
                     </h1>
                 </motion.div>
             )}
-            <form onSubmit={handleSubmit} className={cn('max-w-2xl w-full mx-auto')}>
+            <form
+                onSubmit={handleSubmit}
+                className={cn(isSpaceChat ? 'max-w-2xl w-full' : 'max-w-2xl w-full mx-auto')}
+            >
                 <div
                     className={cn(
                         'relative flex flex-col w-full p-4 gap-4 border-input bg-zinc-900/50 focus-within:border-zinc-700/70 hover:border-zinc-700/70 transition-all duration-200',
