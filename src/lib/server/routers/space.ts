@@ -1,5 +1,6 @@
+import { extractRawText, sanitizeData } from '@/lib/ai/extractWebPage';
 import { db } from '@/lib/db';
-import { spaces } from '@/lib/db/schema/app';
+import { knowledge, spaces } from '@/lib/db/schema/app';
 import { protectedProcedure, router } from '@/lib/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -46,6 +47,31 @@ export const spaceRouter = router({
         )
         .mutation(async ({ ctx, input }) => {
             try {
+                if (input.url.length <= 0) {
+                    throw new TRPCError({ code: 'BAD_REQUEST' });
+                }
+
+                const { success, result } = await extractRawText({ url: input.url });
+                if (!success) {
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+                }
+
+                const { success: sanitizedSuccess, sanitizedText } = await sanitizeData({
+                    rawText: result![0].rawContent,
+                });
+                if (!sanitizedSuccess) {
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+                }
+
+                await db.insert(knowledge).values({
+                    userId: ctx.session.user.id,
+                    spaceId: input.spaceId,
+                    knowledgeType: 'webpage',
+                    knowledgeName: input.url,
+                    uploadedAt: new Date(),
+                });
+
+                console.log(sanitizedText);
             } catch (e) {
                 console.error(e);
             }

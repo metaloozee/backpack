@@ -9,6 +9,9 @@ export const columns: ColumnDef<Knowledge>[] = [
     {
         accessorKey: 'knowledgeName',
         header: 'Name',
+        cell: ({ row }) => {
+            return <p className="w-[25vw] truncate">{row.getValue('knowledgeName')}</p>;
+        },
     },
     {
         accessorKey: 'knowledgeType',

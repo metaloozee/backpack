@@ -19,6 +19,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Input } from '../ui/input';
 import { Separator } from '../ui/separator';
+import { trpc } from '@/lib/trpc/client';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
     contentType: z.enum(['webpage', 'pdf']),
@@ -26,19 +28,32 @@ const formSchema = z.object({
 });
 
 export function UploadKnowledgeBtn({ spaceId }: { spaceId: string }) {
-    const [selectedOpen, setSelectedOpen] = React.useState<'webpage' | 'pdf' | undefined>(
-        undefined
-    );
+    const [selectedOpen, setSelectedOpen] = React.useState<'webpage' | 'pdf'>('webpage');
+    const [isOpen, setIsOpen] = React.useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            contentType: undefined,
+            contentType: 'webpage',
+            url: '',
         },
     });
 
-    const handleWebPageSubmit = (values: z.infer<typeof formSchema>) => {
-        console.log('YOOOOOO');
+    const webPageMutation = trpc.space.saveWebPage.useMutation();
+    const handleWebPageSubmit = async (values: z.infer<typeof formSchema>) => {
+        try {
+            await webPageMutation.mutate({
+                spaceId,
+                url: values.url!,
+            });
+
+            setIsOpen(false);
+
+            form.reset();
+            return toast.success('Successfully added into the knowledge.');
+        } catch (e) {
+            toast.error('uh Oh!', { description: (e as Error).message });
+        }
     };
 
     const handlePdfSubmit = (values: z.infer<typeof formSchema>) => {
@@ -54,7 +69,7 @@ export function UploadKnowledgeBtn({ spaceId }: { spaceId: string }) {
     };
 
     return (
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button variant={'secondary'} size={'sm'}>
                     <motion.div
@@ -81,6 +96,7 @@ export function UploadKnowledgeBtn({ spaceId }: { spaceId: string }) {
                         <FormField
                             control={form.control}
                             name="contentType"
+                            disabled={webPageMutation.isLoading}
                             render={({ field }) => (
                                 <FormItem className="max-w-xs w-full">
                                     <FormLabel>Select Type</FormLabel>
@@ -89,6 +105,7 @@ export function UploadKnowledgeBtn({ spaceId }: { spaceId: string }) {
                                             field.onChange(value);
                                             setSelectedOpen(value);
                                         }}
+                                        value={field.value}
                                     >
                                         <FormControl>
                                             <SelectTrigger>
@@ -107,6 +124,7 @@ export function UploadKnowledgeBtn({ spaceId }: { spaceId: string }) {
 
                         {selectedOpen === 'webpage' && (
                             <FormField
+                                disabled={webPageMutation.isLoading}
                                 control={form.control}
                                 name="url"
                                 render={({ field }) => (
@@ -124,7 +142,7 @@ export function UploadKnowledgeBtn({ spaceId }: { spaceId: string }) {
 
                         {!!selectedOpen && (
                             <Button
-                                disabled={selectedOpen === 'pdf'}
+                                disabled={selectedOpen === 'pdf' || webPageMutation.isLoading}
                                 type="submit"
                                 className="w-full"
                             >
