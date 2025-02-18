@@ -4,15 +4,19 @@ import { chats, knowledge, spaces } from '@/lib/db/schema/app';
 import { and, desc, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 
-import {
-    Accordion,
-    AccordionItem,
-    AccordionTrigger,
-    AccordionContent,
-} from '@/components/ui/accordion';
-import { ChevronRight } from 'lucide-react';
+import { BookCopyIcon, SettingsIcon } from 'lucide-react';
 import { Chat } from '@/components/Chat';
 import { generateId } from 'ai';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { KnowledgeTable } from '@/components/spaces/KnowledgeTable';
+import { UploadKnowledgeBtn } from '@/components/spaces/UploadKnowledge';
 
 export type ChatData = {
     id: string;
@@ -64,60 +68,34 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
                         {spaceData.spaceDescription}
                     </p>
                 </div>
-                <div className="space-y-4 w-full flex flex-row justify-start items-start">
-                    <Accordion
-                        className="flex w-full flex-col"
-                        transition={{ type: 'spring', stiffness: 120, damping: 20 }}
-                        variants={{
-                            expanded: {
-                                opacity: 1,
-                                scale: 1,
-                            },
-                            collapsed: {
-                                opacity: 0,
-                                scale: 0.7,
-                            },
-                        }}
-                    >
-                        <AccordionItem value="custom-instructions" className="py-2 space-y-4">
-                            <AccordionTrigger className="w-full border-2 bg-zinc-900/50 rounded-md px-6 py-4 text-left">
-                                <div className="flex items-center">
-                                    <ChevronRight className="h-4 w-4 transition-transform duration-200 group-data-expanded:rotate-90 " />
-                                    <div className="ml-2">Custom Instructions</div>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="origin-left">
-                                <p className="pl-6 pr-2 text-zinc-500 dark:text-zinc-400">
-                                    {spaceData.spaceCustomInstructions &&
-                                    spaceData.spaceCustomInstructions.length > 0
-                                        ? spaceData.spaceCustomInstructions
-                                        : 'Not found, click on the button below to get started.'}
-                                </p>
-                            </AccordionContent>
-                        </AccordionItem>
+                <div className="space-y-4 w-full flex flex-col justify-start items-start">
+                    <Dialog>
+                        <DialogTrigger className="w-full px-6 py-4 rounded-md bg-zinc-900/50 border-2 text-left flex justify-start items-center gap-3">
+                            <SettingsIcon className="size-5 text-muted-foreground" />
+                            Settings
+                        </DialogTrigger>
+                    </Dialog>
 
-                        <AccordionItem value="knowledge-base" className="py-2 space-y-4">
-                            <AccordionTrigger className="w-full border-2 bg-zinc-900/50 rounded-md px-6 py-4 text-left">
-                                <div className="flex items-center">
-                                    <ChevronRight className="h-4 w-4 transition-transform duration-200 group-data-expanded:rotate-90" />
-                                    <div className="ml-2">
-                                        Knowledge Base{' '}
-                                        <span className="ml-1 text-xs text-muted-foreground">
-                                            Uploaded Documents
-                                        </span>
-                                    </div>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="origin-left">
-                                <p className="pl-6 pr-2 text-zinc-500 dark:text-zinc-400">
-                                    Advance your skills by using more complex functions of
-                                    Motion-Primitives. Explore how to link animations together,
-                                    create intricate sequences, and interact with motion sensors for
-                                    dynamic effects.
+                    <Dialog>
+                        <DialogTrigger className="w-full px-6 py-4 rounded-md bg-zinc-900/50 border-2 text-left flex justify-start items-center gap-3">
+                            <BookCopyIcon className="size-5 text-muted-foreground" />
+                            <div className="w-full gap-2 flex justify-start items-center ">
+                                <p>Knowledge Base</p>
+                                <p className="text-[10px] text-muted-foreground">
+                                    Uploaded Documents
                                 </p>
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
+                            </div>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle>Knowledge Base</DialogTitle>
+                            </DialogHeader>
+                            <KnowledgeTable knowledgeData={knowledgeData} />
+                            <DialogFooter>
+                                <UploadKnowledgeBtn spaceId={spaceData.id} />
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
         </div>

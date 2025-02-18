@@ -104,4 +104,5 @@ export const chats = pgTable('chats', {
     }).notNull(),
 });
 
+export type Knowledge = InferSelectModel<typeof knowledge>;
 export type Chat = Omit<InferSelectModel<typeof chats>, 'messages'> & { messages: Array<Message> };
