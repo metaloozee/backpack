@@ -37,4 +37,17 @@ export const spaceRouter = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
             }
         }),
+    saveWebPage: protectedProcedure
+        .input(
+            z.object({
+                spaceId: z.string(),
+                url: z.string().url(),
+            })
+        )
+        .mutation(async ({ ctx, input }) => {
+            try {
+            } catch (e) {
+                console.error(e);
+            }
+        }),
 });
