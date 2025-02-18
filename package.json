@@ -17,6 +17,7 @@
         "prepare": "husky install"
     },
     "dependencies": {
+        "@ai-sdk/google": "^1.1.14",
         "@ai-sdk/react": "^1.1.11",
         "@auth/core": "^0.37.4",
         "@auth/drizzle-adapter": "^1.7.4",

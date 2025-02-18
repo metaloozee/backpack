@@ -42,7 +42,7 @@ export function UploadKnowledgeBtn({ spaceId }: { spaceId: string }) {
     const webPageMutation = trpc.space.saveWebPage.useMutation();
     const handleWebPageSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
-            await webPageMutation.mutate({
+            await webPageMutation.mutateAsync({
                 spaceId,
                 url: values.url!,
             });

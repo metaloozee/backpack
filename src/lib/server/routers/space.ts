@@ -1,6 +1,7 @@
+import { generateEmbeddings } from '@/lib/ai/embedding';
 import { extractRawText, sanitizeData } from '@/lib/ai/extractWebPage';
 import { db } from '@/lib/db';
-import { knowledge, spaces } from '@/lib/db/schema/app';
+import { knowledge, knowledgeEmbeddings, spaces } from '@/lib/db/schema/app';
 import { protectedProcedure, router } from '@/lib/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -63,15 +64,33 @@ export const spaceRouter = router({
                     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
                 }
 
-                await db.insert(knowledge).values({
-                    userId: ctx.session.user.id,
-                    spaceId: input.spaceId,
-                    knowledgeType: 'webpage',
-                    knowledgeName: input.url,
-                    uploadedAt: new Date(),
-                });
+                const embeddings = await generateEmbeddings(sanitizedText);
+                if (!embeddings) {
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+                }
 
+                const [knowledgeData] = await db
+                    .insert(knowledge)
+                    .values({
+                        userId: ctx.session.user.id,
+                        spaceId: input.spaceId,
+                        knowledgeType: 'webpage',
+                        knowledgeName: input.url,
+                        uploadedAt: new Date(),
+                    })
+                    .returning({ id: knowledge.id });
+
+                await db.insert(knowledgeEmbeddings).values(
+                    embeddings.map((embedding) => ({
+                        knowledgeId: knowledgeData.id,
+                        createdAt: new Date(),
+                        ...embedding,
+                    }))
+                );
+
+                console.log('\n==========\n');
                 console.log(sanitizedText);
+                console.log('\n==========\n');
             } catch (e) {
                 console.error(e);
             }
