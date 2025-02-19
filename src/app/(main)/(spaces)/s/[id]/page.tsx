@@ -3,20 +3,11 @@ import { db } from '@/lib/db';
 import { chats, knowledge, spaces } from '@/lib/db/schema/app';
 import { and, desc, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
-
-import { BookCopyIcon, SettingsIcon } from 'lucide-react';
+import { SettingsIcon } from 'lucide-react';
 import { Chat } from '@/components/Chat';
 import { generateId } from 'ai';
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import { KnowledgeTable } from '@/components/spaces/KnowledgeTable';
-import { UploadKnowledgeBtn } from '@/components/spaces/UploadKnowledge';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { KnowledgeDialog } from '@/components/spaces/KnowledgeDialog';
 
 export type ChatData = {
     id: string;
@@ -74,28 +65,12 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
                             <SettingsIcon className="size-5 text-muted-foreground" />
                             Settings
                         </DialogTrigger>
-                    </Dialog>
-
-                    <Dialog>
-                        <DialogTrigger className="w-full px-6 py-4 rounded-md bg-zinc-900/50 border-2 text-left flex justify-start items-center gap-3">
-                            <BookCopyIcon className="size-5 text-muted-foreground" />
-                            <div className="w-full gap-2 flex justify-start items-center ">
-                                <p>Knowledge Base</p>
-                                <p className="text-[10px] text-muted-foreground">
-                                    Uploaded Documents
-                                </p>
-                            </div>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                                <DialogTitle>Knowledge Base</DialogTitle>
-                            </DialogHeader>
-                            <KnowledgeTable knowledgeData={knowledgeData} />
-                            <DialogFooter>
-                                <UploadKnowledgeBtn spaceId={spaceData.id} />
-                            </DialogFooter>
+                        <DialogContent>
+                            <p>Settings coming soon...</p>
                         </DialogContent>
                     </Dialog>
+
+                    <KnowledgeDialog spaceId={spaceData.id} knowledgeData={knowledgeData} />
                 </div>
             </div>
         </div>

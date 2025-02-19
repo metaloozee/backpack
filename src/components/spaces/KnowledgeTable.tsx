@@ -1,6 +1,6 @@
 'use client';
 
-import { knowledge, type Knowledge } from '@/lib/db/schema/app';
+import { type Knowledge } from '@/lib/db/schema/app';
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { format } from 'timeago.js';
@@ -8,14 +8,10 @@ import { format } from 'timeago.js';
 export const columns: ColumnDef<Knowledge>[] = [
     {
         accessorKey: 'knowledgeName',
-        header: 'Name',
+        header: 'Title',
         cell: ({ row }) => {
             return <p className="w-[25vw] truncate">{row.getValue('knowledgeName')}</p>;
         },
-    },
-    {
-        accessorKey: 'knowledgeType',
-        header: 'Type',
     },
     {
         accessorKey: 'uploadedAt',

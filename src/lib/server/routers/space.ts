@@ -1,9 +1,11 @@
 import { generateEmbeddings } from '@/lib/ai/embedding';
 import { extractRawText, sanitizeData } from '@/lib/ai/extractWebPage';
 import { db } from '@/lib/db';
+import { and, eq } from 'drizzle-orm';
 import { knowledge, knowledgeEmbeddings, spaces } from '@/lib/db/schema/app';
 import { protectedProcedure, router } from '@/lib/server/trpc';
 import { TRPCError } from '@trpc/server';
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 export const spaceRouter = router({
@@ -87,12 +89,10 @@ export const spaceRouter = router({
                         ...embedding,
                     }))
                 );
-
-                console.log('\n==========\n');
-                console.log(sanitizedText);
-                console.log('\n==========\n');
             } catch (e) {
                 console.error(e);
+            } finally {
+                revalidatePath(`/s/${input.spaceId}`);
             }
         }),
 });
