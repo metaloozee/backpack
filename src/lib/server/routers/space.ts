@@ -89,10 +89,12 @@ export const spaceRouter = router({
                         ...embedding,
                     }))
                 );
+
+                revalidatePath(`/s/${input.spaceId}`);
+                return { success: true };
             } catch (e) {
                 console.error(e);
-            } finally {
-                revalidatePath(`/s/${input.spaceId}`);
+                throw e;
             }
         }),
 });
