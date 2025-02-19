@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import { SettingsIcon } from 'lucide-react';
 import { Chat } from '@/components/Chat';
 import { generateId } from 'ai';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { KnowledgeDialog } from '@/components/spaces/KnowledgeDialog';
 
 export type ChatData = {
@@ -52,7 +52,7 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
             <div className="max-w-2xl w-full">
                 <Chat chatsData={chatsData} spaceId={spaceData.id} id={chatId} />
             </div>
-            <div className="mt-20 max-w-lg flex flex-col gap-10">
+            <div className="mt-20 max-w-lg flex flex-col gap-10 w-full">
                 <div className="w-full flex flex-col justify-end items-end gap-2">
                     <h1 className="w-full text-3xl text-right">{spaceData.spaceTitle}</h1>
                     <p className="w-full text-muted-foreground text-right text-xs">
@@ -66,7 +66,8 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
                             Settings
                         </DialogTrigger>
                         <DialogContent>
-                            <p>Settings coming soon...</p>
+                            <DialogTitle>Settings</DialogTitle>
+                            <p>coming soon...</p>
                         </DialogContent>
                     </Dialog>
 

@@ -4,13 +4,23 @@ import { type Knowledge } from '@/lib/db/schema/app';
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { format } from 'timeago.js';
+import Link from 'next/link';
+import { ExternalLinkIcon } from 'lucide-react';
 
 export const columns: ColumnDef<Knowledge>[] = [
     {
         accessorKey: 'knowledgeName',
         header: 'Title',
         cell: ({ row }) => {
-            return <p className="w-[25vw] truncate">{row.getValue('knowledgeName')}</p>;
+            return (
+                <Link
+                    href={row.getValue('knowledgeName')}
+                    target="_blank"
+                    className="text-zinc-300 underline-offset-4 hover:underline transition-all duration-300"
+                >
+                    <p className="truncate w-[25vw]">{row.getValue('knowledgeName')}</p>
+                </Link>
+            );
         },
     },
     {

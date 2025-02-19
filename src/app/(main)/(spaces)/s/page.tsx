@@ -2,10 +2,6 @@ import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 import { db } from '@/lib/db';
 import { spaces as spacesSchema } from '@/lib/db/schema/app';
 import { eq } from 'drizzle-orm';
-import { LibraryIcon } from 'lucide-react';
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { format } from 'timeago.js';
 import { Cards } from '@/components/spaces/Cards';
 import { Header } from '@/components/spaces/Header';
 

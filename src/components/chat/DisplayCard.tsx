@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Chat } from '@/lib/db/schema/app';
 import { motion } from 'motion/react';
 import { Button } from '../ui/button';
-import { Loader, Trash2Icon } from 'lucide-react';
+import { LibraryIcon, Loader, Trash2Icon } from 'lucide-react';
 import Link from 'next/link';
 import {
     Dialog,
@@ -17,8 +17,12 @@ import {
 import { trpc } from '@/lib/trpc/client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { usePathname } from 'next/navigation';
 
 export default function ChatDisplayCard({ chat }: { chat: Chat }) {
+    const pathName = usePathname();
+    const isChatPage = pathName === `/c`;
+
     const [isOpen, setIsOpen] = React.useState(false);
 
     const router = useRouter();
@@ -34,7 +38,9 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
 
             setIsOpen(false);
 
-            if (chat.spaceId && chat.spaceId.length > 0) {
+            if (isChatPage) {
+                router.refresh();
+            } else if (chat.spaceId && chat.spaceId.length > 0) {
                 router.push(`/s/${chat.spaceId}`);
             } else {
                 router.push(`/`);
@@ -62,9 +68,20 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
             <Link className="w-full" key={chat.id} href={`/c/${chat.id}`}>
                 <div className=" flex flex-col gap-1 justify-start items-start">
                     <p className="max-w-md truncate">{chat.chatName}</p>
-                    <p className="text-xs text-muted-foreground truncate max-w-md">
-                        {chat.messages[1].content}
-                    </p>
+                    {isChatPage ? (
+                        <div className="flex flex-row gap-5 items-center w-full">
+                            <p className="text-xs text-muted-foreground truncate max-w-md">
+                                {chat.messages[1].content}
+                            </p>
+                            {chat.spaceId && chat.spaceId.length > 0 && (
+                                <LibraryIcon className="size-4 text-muted-foreground" />
+                            )}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-muted-foreground truncate max-w-md">
+                            {chat.messages[1].content}
+                        </p>
+                    )}
                 </div>
             </Link>
 
