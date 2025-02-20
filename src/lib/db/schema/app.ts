@@ -2,6 +2,7 @@ import { index, pgTable, text, vector, timestamp, pgEnum, json } from 'drizzle-o
 import { randomUUID } from 'crypto';
 import { InferSelectModel } from 'drizzle-orm';
 import { generateId, Message } from 'ai';
+import { ChatMessage } from '@/lib/types/chat';
 import { users } from '@/lib/db/schema/auth';
 
 export const spaces = pgTable('spaces', {
@@ -90,14 +91,12 @@ export const chats = pgTable('chats', {
             onDelete: 'cascade',
             onUpdate: 'cascade',
         }),
-    spaceId: text('space_id')
-        // .notNull() Temporary
-        .references(() => spaces.id, {
-            onDelete: 'cascade',
-            onUpdate: 'cascade',
-        }),
+    spaceId: text('space_id').references(() => spaces.id, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade',
+    }),
     chatName: text('chat_name').default('Unnamed Chat').notNull(),
-    messages: json('messages').notNull(),
+    messages: json('messages').$type<ChatMessage[]>().notNull(),
     createdAt: timestamp('created_at', {
         withTimezone: true,
         mode: 'date',
@@ -105,4 +104,6 @@ export const chats = pgTable('chats', {
 });
 
 export type Knowledge = InferSelectModel<typeof knowledge>;
-export type Chat = Omit<InferSelectModel<typeof chats>, 'messages'> & { messages: Array<Message> };
+export type Chat = Omit<InferSelectModel<typeof chats>, 'messages'> & {
+    messages: Array<ChatMessage>;
+};

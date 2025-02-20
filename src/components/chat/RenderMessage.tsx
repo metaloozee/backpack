@@ -15,32 +15,30 @@ interface RenderMessageProps {
     chatId?: string;
 }
 
-const parseToolAnnotations = (annotations: any[]): ToolInvocation[] => {
-    const toolAnnotations = annotations?.filter(
-        (annotation) => (annotation as { type: string }).type === 'tool_call'
-    ) as Array<{
-        data: {
-            args: string;
-            toolCallId: string;
-            toolName: string;
-            result?: string;
-            state: 'call' | 'result';
-        };
-    }>;
+interface ToolData {
+    type: 'tool_call';
+    data: {
+        toolCallId: string;
+        toolName: string;
+        state: 'call' | 'result';
+        args: string;
+        result?: string;
+    };
+}
 
-    const toolDataMap = new Map<string, ToolInvocation>();
+const parseToolAnnotations = (annotations: any[]): ToolData[] => {
+    if (!annotations?.length) return [];
+
+    const toolAnnotations = annotations.filter(
+        (annotation) => annotation.type === 'tool_call'
+    ) as ToolData[];
+
+    const toolDataMap = new Map<string, ToolData>();
 
     toolAnnotations.forEach((annotation) => {
         const existing = toolDataMap.get(annotation.data.toolCallId);
         if (!existing || annotation.data.state === 'result') {
-            toolDataMap.set(annotation.data.toolCallId, {
-                ...annotation.data,
-                args: annotation.data.args ? JSON.parse(annotation.data.args) : {},
-                result:
-                    annotation.data.result && annotation.data.result !== 'undefined'
-                        ? JSON.parse(annotation.data.result)
-                        : undefined,
-            } as ToolInvocation);
+            toolDataMap.set(annotation.data.toolCallId, annotation);
         }
     });
 
@@ -68,10 +66,10 @@ export function RenderMessage({
         <>
             {toolData.map((tool) => (
                 <Tool
-                    key={tool.toolCallId}
+                    key={tool.data.toolCallId}
                     tool={tool}
-                    isOpen={getIsOpen(tool.toolCallId)}
-                    onOpenChange={(open) => onOpenChange(tool.toolCallId, open)}
+                    isOpen={getIsOpen(tool.data.toolCallId)}
+                    onOpenChange={(open) => onOpenChange(tool.data.toolCallId, open)}
                 />
             ))}
             {message.content && <BotMessage message={message.content} />}

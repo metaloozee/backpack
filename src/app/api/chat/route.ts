@@ -1,4 +1,4 @@
-import { convertToCoreMessages, smoothStream, streamText } from 'ai';
+import { convertToCoreMessages, smoothStream, Message, streamText } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 import { env } from '@/lib/env.mjs';
@@ -8,7 +8,7 @@ import { api } from '@/lib/trpc/api';
 import { WebPrompt } from '@/lib/ai/prompts';
 import { object, z } from 'zod';
 import { tavily } from '@tavily/core';
-import { createDataStreamResponse } from 'ai';
+import { createDataStreamResponse, tool } from 'ai';
 
 export const maxDuration = 30;
 
@@ -53,85 +53,108 @@ export async function POST(req: Request) {
             throw new Error('Invalid Body');
         }
 
-        const result = streamText({
-            model: openrouter('google/gemini-2.0-flash-001'),
-            messages: convertToCoreMessages(messages).filter(
-                (message) => message.content.length > 0
-            ),
-            system: WebPrompt(),
-            experimental_transform: smoothStream(),
-            toolCallStreaming: true,
-            maxSteps: 10,
-            async onFinish({ response }) {
-                try {
-                    await api.chat.saveChat.mutate({
-                        chat: {
-                            id: chatId,
-                            userId: session.user.id,
-                            spaceId: spaceId,
-                            chatName: convertToCoreMessages(messages)[0].content.toString(),
-                            messages: [...convertToCoreMessages(messages), ...response.messages],
-                        },
-                    });
-                } catch (error) {}
-            },
-            tools: {
-                web_search: {
-                    description: 'Performs a search over the internet for current data.',
-                    parameters: z.object({
-                        queries: z.array(z.string()),
-                    }),
-                    execute: async ({ queries }) => {
-                        console.log('Queries: ', queries);
-
-                        const searchPromises = queries.map(async (query: string, index: number) => {
-                            const res = await tvly.search(query, {
-                                maxResults: 10,
-                                searchDepth: 'advanced',
-                                includeAnswer: true,
+        return createDataStreamResponse({
+            async execute(dataStream) {
+                const result = streamText({
+                    model: openrouter('google/gemini-2.0-flash-001'),
+                    messages: convertToCoreMessages(messages).filter(
+                        (message) => message.content.length > 0
+                    ),
+                    system: WebPrompt(),
+                    maxSteps: 10,
+                    experimental_transform: smoothStream(),
+                    toolCallStreaming: true,
+                    async onFinish({ response }) {
+                        try {
+                            await api.chat.saveChat.mutate({
+                                chat: {
+                                    id: chatId,
+                                    userId: session.user.id,
+                                    spaceId: spaceId,
+                                    chatName: convertToCoreMessages(messages)[0].content.toString(),
+                                    messages: [
+                                        ...convertToCoreMessages(messages),
+                                        ...response.messages,
+                                    ],
+                                },
                             });
-
-                            return {
-                                query,
-                                results: deduplicateByDomainAndUrl(res.results).map((obj: any) => ({
-                                    url: obj.url,
-                                    title: obj.title,
-                                    content: obj.content,
-                                    raw_content: obj.raw_content,
-                                    published_date: obj.published_date,
-                                })),
-                            };
-                        });
-
-                        const searchResults = await Promise.all(searchPromises);
-                        return {
-                            searches: searchResults,
-                        };
+                        } catch (error) {}
                     },
-                },
-                search_knowledge: {
-                    description: 'Performs an internal semantic search on the knowledge base.',
-                    parameters: z.object({
-                        keywords: z.array(z.string()),
-                    }),
-                    execute: async ({ keywords }) => {},
-                },
+                    experimental_activeTools: ['web_search'],
+                    tools: {
+                        web_search: tool({
+                            description: 'Performs a search over the internet for current data.',
+                            parameters: z.object({
+                                queries: z.array(z.string()),
+                            }),
+                            execute: async ({ queries }, { toolCallId }) => {
+                                dataStream.writeMessageAnnotation({
+                                    type: 'tool_call',
+                                    data: {
+                                        toolCallId,
+                                        toolName: 'web_search',
+                                        state: 'call',
+                                        args: JSON.stringify(queries),
+                                    },
+                                });
+
+                                console.log('Queries: ', queries);
+
+                                const searchPromises = queries.map(
+                                    async (query: string, index: number) => {
+                                        const res = await tvly.search(query, {
+                                            maxResults: 10,
+                                            searchDepth: 'advanced',
+                                            includeAnswer: true,
+                                        });
+
+                                        return {
+                                            query,
+                                            results: deduplicateByDomainAndUrl(res.results).map(
+                                                (obj: any) => ({
+                                                    url: obj.url,
+                                                    title: obj.title,
+                                                    content: obj.content,
+                                                    raw_content: obj.raw_content,
+                                                    published_date: obj.published_date,
+                                                })
+                                            ),
+                                        };
+                                    }
+                                );
+
+                                const searchResults = await Promise.all(searchPromises);
+                                const processedResults = searchResults.map((r) => r.results).flat();
+
+                                console.log(JSON.stringify({ queries }));
+                                console.log('\n');
+                                console.log(JSON.stringify({ processedResults }));
+
+                                dataStream.writeMessageAnnotation({
+                                    type: 'tool_call',
+                                    data: {
+                                        toolCallId,
+                                        toolName: 'web_search',
+                                        state: 'result',
+                                        args: JSON.stringify({ queries }),
+                                        result: JSON.stringify({ processedResults }),
+                                    },
+                                });
+                                return {
+                                    searches: searchResults,
+                                };
+                            },
+                        }),
+                    },
+                });
+
+                result.consumeStream();
+
+                return result.mergeIntoDataStream(dataStream);
             },
         });
-
-        return result.toDataStreamResponse();
     } catch (error) {
         console.error(error);
-
-        return new Response(
-            JSON.stringify({
-                error: error instanceof Error ? error.message : 'an unknown error occurred.',
-                status: 500,
-            }),
-            {
-                status: 500,
-                headers: { 'Content-Type': 'application/json' },
-            }
-        );
+        return new Response('Error', { status: 500 });
     }
 }

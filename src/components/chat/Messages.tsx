@@ -1,10 +1,11 @@
 import * as React from 'react';
 
-import { JSONValue, Message } from 'ai';
+import { JSONValue, Message, ToolInvocation } from 'ai';
 import { LoaderIcon } from 'lucide-react';
 import { RenderMessage } from '@/components/chat/RenderMessage';
 import { motion, AnimatePresence } from 'motion/react';
 import { TextShimmer } from '../ui/text-shimmer';
+import { Tool } from './Tool';
 
 interface ChatMessageProps {
     messages: Array<Message>;
@@ -15,36 +16,27 @@ interface ChatMessageProps {
 }
 
 interface ToolData {
-    state: 'call';
-    toolCallId: string;
-    toolName: string;
-    args: any;
+    type: 'tool_call';
+    data: {
+        toolCallId: string;
+        toolName: string;
+        state: 'call' | 'result';
+        args: string;
+        result?: string;
+    };
 }
 
 const useLastToolData = (data: Array<JSONValue> | undefined): ToolData | null => {
-    return React.useMemo(() => {
-        if (!data || !Array.isArray(data) || data.length === 0) return null;
+    if (!data || data.length === 0) return null;
 
-        const lastItem = data[data.length - 1] as {
-            type: 'tool_call';
-            data: {
-                toolCallId: string;
-                state: 'call' | 'result';
-                toolName: string;
-                args: string;
-            };
-        };
-
-        if (lastItem.type !== 'tool_call') return null;
-
-        const toolData = lastItem.data;
-        return {
-            state: 'call' as const,
-            toolCallId: toolData.toolCallId,
-            toolName: toolData.toolName,
-            args: toolData.args ? JSON.parse(toolData.args) : undefined,
-        };
-    }, [data]);
+    const lastItem = data[data.length - 1];
+    if (typeof lastItem === 'object' && lastItem !== null) {
+        const toolData = lastItem as any;
+        if (toolData.type === 'tool_call' && toolData.data) {
+            return toolData as ToolData;
+        }
+    }
+    return null;
 };
 
 export function ChatMessages({
@@ -96,7 +88,7 @@ export function ChatMessages({
                         className="flex justify-start px-3 mb-10"
                     >
                         {lastToolData ? (
-                            <div></div>
+                            <Tool tool={lastToolData} isOpen={true} onOpenChange={() => {}} />
                         ) : (
                             <TextShimmer className="text-sm italic">thinking...</TextShimmer>
                         )}
