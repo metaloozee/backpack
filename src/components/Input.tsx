@@ -150,7 +150,7 @@ export function Input({
             )}
             <form
                 onSubmit={handleSubmit}
-                className={cn(isSpaceChat ? 'max-w-2xl w-full' : 'max-w-2xl w-full mx-auto')}
+                className={cn(isSpaceChat ? 'max-w-2xl w-full' : 'max-w-3xl w-full mx-auto')}
             >
                 <div
                     className={cn(

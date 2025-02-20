@@ -1,11 +1,12 @@
 'use client';
 
 import { motion, AnimatePresence } from 'motion/react';
-import { ToolInvocation } from 'ai';
-import { cn } from '@/lib/utils';
-import { CircleCheckBigIcon, Loader2Icon } from 'lucide-react';
+import { CircleCheckBigIcon, Globe2Icon, Loader2Icon } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { TextShimmer } from '../ui/text-shimmer';
+import Link from 'next/link';
+import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 
 interface ToolProps {
     tool: {
@@ -38,30 +39,57 @@ const ToolComponents: Record<string, React.FC<ToolProps>> = {
             {tool.data.state === 'result' ? (
                 <HoverCard openDelay={0}>
                     <HoverCardTrigger asChild>
-                        <div className="flex gap-1 items-center text-xs text-muted-foreground cursor-pointer">
-                            <CircleCheckBigIcon className="size-3" />
-                            Web Search Results
+                        <div className="my-4 px-4 py-2 rounded-full bg-zinc-800/50 text-xs flex justify-start items-center gap-2">
+                            <Globe2Icon className="size-3" />
+                            {tool.data.result &&
+                                JSON.parse(tool.data.result!).processedResults.length}{' '}
+                            Web Pages
                         </div>
                     </HoverCardTrigger>
-                    <HoverCardContent side="right" sideOffset={10} className="max-w-2xl w-full">
-                        <ScrollArea className="h-[30vh] w-full text-xs">
-                            {tool.data.result && (
-                                <div className="space-y-2">
-                                    <p>{tool.data.result}</p>
-                                </div>
-                            )}
+                    <HoverCardContent side="top" sideOffset={10} className="max-w-2xl w-full">
+                        <ScrollArea className="h-[30vh] text-xs break-words w-full">
+                            <div className="mb-4 flex flex-row flex-wrap gap-2 w-full">
+                                {JSON.parse(tool.data.args).queries.map(
+                                    (query: string, index: number) => (
+                                        <div
+                                            key={index}
+                                            className="rounded-full px-4 py-2 bg-zinc-800/50 text-xs shrink-0 flex justify-start items-center gap-2"
+                                        >
+                                            <MagnifyingGlassIcon className="size-3 flex-1" />
+                                            {query}
+                                        </div>
+                                    )
+                                )}
+                            </div>
+                            {tool.data.result &&
+                                JSON.parse(tool.data.result!).processedResults.map(
+                                    (item: any, index: number) => (
+                                        <div
+                                            key={index}
+                                            className="bg-zinc-900 rounded-md p-2 mb-2"
+                                        >
+                                            <Link
+                                                href={item.url}
+                                                target="_blank"
+                                                className="text-sm text-muted-foreground underline truncate max-w-fit"
+                                            >
+                                                {item.title}
+                                            </Link>
+                                            <p className="text-xs break-words text-justify">
+                                                {item.content.slice(0, 100)}...
+                                            </p>
+                                        </div>
+                                    )
+                                )}
                         </ScrollArea>
                     </HoverCardContent>
                 </HoverCard>
             ) : (
-                <div className="flex gap-1 items-center skeleton animate-pulse text-xs text-zinc-400">
-                    <Loader2Icon className="size-3 animate-spin" />
-                    Searching the web...
-                </div>
+                <TextShimmer className="text-sm mb-4">searching the web...</TextShimmer>
             )}
         </motion.div>
     ),
-    retrieve: ({ tool }) => (
+    search_knowledge: ({ tool }) => (
         <motion.div {...toolAnimation} className="flex gap-1 items-center">
             {tool.data.state === 'result' ? (
                 <HoverCard openDelay={0}>
@@ -82,10 +110,7 @@ const ToolComponents: Record<string, React.FC<ToolProps>> = {
                     </HoverCardContent>
                 </HoverCard>
             ) : (
-                <div className="flex gap-1 items-center skeleton animate-pulse text-xs text-zinc-400">
-                    <Loader2Icon className="size-3 animate-spin" />
-                    Retrieving information...
-                </div>
+                <TextShimmer className="text-sm">searching the knowledge base...</TextShimmer>
             )}
         </motion.div>
     ),

@@ -62,7 +62,7 @@ export function ChatMessages({
     const showLoading = isLoading && messages[messages.length - 1].role === 'user';
 
     return (
-        <div className="px-4 w-full max-w-2xl mt-10">
+        <div className="px-4 w-full mt-10">
             {messages.map((message) => (
                 <RenderMessage
                     key={message.id}
@@ -85,12 +85,12 @@ export function ChatMessages({
                             duration: 0.2,
                             ease: [0.32, 0.72, 0, 1],
                         }}
-                        className="flex justify-start px-3 mb-10"
+                        className="flex justify-start mb-10"
                     >
                         {lastToolData ? (
                             <Tool tool={lastToolData} isOpen={true} onOpenChange={() => {}} />
                         ) : (
-                            <TextShimmer className="text-sm italic">thinking...</TextShimmer>
+                            <TextShimmer className="text-sm mb-4">thinking...</TextShimmer>
                         )}
                     </motion.div>
                 )}

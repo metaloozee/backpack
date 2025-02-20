@@ -10,7 +10,7 @@ import { object, z } from 'zod';
 import { tavily } from '@tavily/core';
 import { createDataStreamResponse, tool } from 'ai';
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const tvly = tavily({ apiKey: env.TAVILY_API_KEY });
 
@@ -126,10 +126,6 @@ export async function POST(req: Request) {
                                 const searchResults = await Promise.all(searchPromises);
                                 const processedResults = searchResults.map((r) => r.results).flat();
 
-                                console.log(JSON.stringify({ queries }));
-                                console.log('\n');
-                                console.log(JSON.stringify({ processedResults }));
-
                                 dataStream.writeMessageAnnotation({
                                     type: 'tool_call',
                                     data: {
@@ -143,6 +139,17 @@ export async function POST(req: Request) {
                                 return {
                                     searches: searchResults,
                                 };
+                            },
+                        }),
+                        search_knowledge: tool({
+                            description: '',
+                            parameters: z.object({
+                                keywords: z.array(z.string()),
+                            }),
+                            execute: async ({ keywords }, { toolCallId }) => {
+                                console.log('Keywords: ', keywords);
+
+                                return null;
                             },
                         }),
                     },
