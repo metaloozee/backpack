@@ -15,36 +15,6 @@ interface RenderMessageProps {
     chatId?: string;
 }
 
-interface ToolData {
-    type: 'tool-call';
-    data: {
-        toolCallId: string;
-        toolName: string;
-        state: 'call' | 'result';
-        args: string;
-        result?: string;
-    };
-}
-
-const parseToolAnnotations = (annotations: any[]): ToolData[] => {
-    if (!annotations?.length) return [];
-
-    const toolAnnotations = annotations.filter(
-        (annotation) => annotation.type === 'tool-call'
-    ) as ToolData[];
-
-    const toolDataMap = new Map<string, ToolData>();
-
-    toolAnnotations.forEach((annotation) => {
-        const existing = toolDataMap.get(annotation.data.toolCallId);
-        if (!existing || annotation.data.state === 'result') {
-            toolDataMap.set(annotation.data.toolCallId, annotation);
-        }
-    });
-
-    return Array.from(toolDataMap.values());
-};
-
 export function RenderMessage({
     message,
     messageId,
@@ -53,10 +23,37 @@ export function RenderMessage({
     onQuerySelect,
     chatId,
 }: RenderMessageProps) {
-    const toolData = React.useMemo(
-        () => parseToolAnnotations(message.annotations || []),
-        [message.annotations]
-    );
+    const toolData = React.useMemo(() => {
+        const toolAnnotations =
+            (message.annotations?.filter(
+                (annotation) => (annotation as unknown as { type: string }).type === 'tool-call'
+            ) as unknown as Array<{
+                data: {
+                    args: string;
+                    toolCallId: string;
+                    toolName: string;
+                    result?: string;
+                    state: 'call' | 'result';
+                };
+            }>) || [];
+
+        const toolDataMap = toolAnnotations.reduce((acc, annotation) => {
+            const existing = acc.get(annotation.data.toolCallId);
+            if (!existing || annotation.data.state === 'result') {
+                acc.set(annotation.data.toolCallId, {
+                    ...annotation.data,
+                    args: annotation.data.args ? JSON.parse(annotation.data.args) : {},
+                    result:
+                        annotation.data.result && annotation.data.result !== 'undefined'
+                            ? JSON.parse(annotation.data.result)
+                            : undefined,
+                });
+            }
+            return acc;
+        }, new Map<string, ToolInvocation>());
+
+        return Array.from(toolDataMap.values());
+    }, [message.annotations]);
 
     if (message.role === 'user') {
         return <UserMessage message={message.content} />;
@@ -66,10 +63,10 @@ export function RenderMessage({
         <>
             {toolData.map((tool) => (
                 <Tool
-                    key={tool.data.toolCallId}
+                    key={tool.toolCallId}
                     tool={tool}
-                    isOpen={getIsOpen(tool.data.toolCallId)}
-                    onOpenChange={(open) => onOpenChange(tool.data.toolCallId, open)}
+                    isOpen={getIsOpen(tool.toolCallId)}
+                    onOpenChange={(open) => onOpenChange(tool.toolCallId, open)}
                 />
             ))}
             {message.content && <BotMessage message={message.content} />}

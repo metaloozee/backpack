@@ -11,7 +11,7 @@ import { env } from '@/lib/env.mjs';
 
 import { getUserAuth } from '@/lib/auth/utils';
 import { api } from '@/lib/trpc/api';
-import { WebPrompt } from '@/lib/ai/prompts';
+import { EnhancedWebPrompt, WebPrompt } from '@/lib/ai/prompts';
 import { object, z } from 'zod';
 import { tavily } from '@tavily/core';
 import { createDataStreamResponse, tool } from 'ai';
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
                 const result = streamText({
                     model: openrouter('google/gemini-2.0-flash-001'),
                     messages: convertToCoreMessages(messages),
-                    system: WebPrompt(),
+                    system: EnhancedWebPrompt(),
                     maxSteps: 10,
                     experimental_transform: smoothStream(),
                     toolCallStreaming: true,

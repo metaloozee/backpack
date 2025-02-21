@@ -15,6 +15,7 @@ import Link from 'next/link';
 
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
+import { removeContemplateContent } from '@/lib/utils/message';
 
 import {
     Table,
@@ -89,8 +90,9 @@ interface BotMessageProps {
 }
 
 export function BotMessage({ message, className }: BotMessageProps) {
-    const containsLaTeX = /\\\[([\s\S]*?)\\\]|\\\(([\s\S]*?)\\\)/.test(message || '');
-    const processedData = preprocessLaTeX(message || '');
+    const cleanedMessage = removeContemplateContent(message || '');
+    const containsLaTeX = /\\\[([\s\S]*?)\\\]|\\\(([\s\S]*?)\\\)/.test(cleanedMessage);
+    const processedData = preprocessLaTeX(cleanedMessage);
 
     const commonProps = {
         className: cn(
@@ -99,40 +101,32 @@ export function BotMessage({ message, className }: BotMessageProps) {
             'prose-headings:font-semibold',
             'prose-a:text-primary prose-a:no-underline hover:prose-a:underline',
             'prose-strong:font-semibold prose-strong:text-foreground',
-            'prose-code:px-1.5 prose-code:font-mono prose-code:font-normal prose-code:bg-muted prose-code:rounded-md',
-            'prose-code:before:content-none prose-code:after:content-none',
-            'prose-hr:border-border',
-            'prose-img:rounded-md prose-img:border prose-img:border-border',
-            'prose-blockquote:border-l-4 prose-blockquote:border-border prose-blockquote:pl-4 prose-blockquote:italic',
-            'break-words',
             className
         ),
-        components: markdownComponents,
     };
 
-    const content = containsLaTeX ? (
-        <MemoizedReactMarkdown
-            {...commonProps}
-            rehypePlugins={[[rehypeExternalLinks, { target: '_blank' }], rehypeKatex, rehypeRaw]}
-            remarkPlugins={[remarkGfm, remarkMath]}
-        >
-            {processedData}
-        </MemoizedReactMarkdown>
-    ) : (
-        <MemoizedReactMarkdown
-            {...commonProps}
-            rehypePlugins={[[rehypeExternalLinks, { target: '_blank' }], rehypeRaw]}
-            remarkPlugins={[remarkGfm]}
-        >
-            {message}
-        </MemoizedReactMarkdown>
-    );
+    if (containsLaTeX) {
+        return (
+            <MemoizedReactMarkdown
+                {...commonProps}
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[
+                    [rehypeExternalLinks, { target: '_blank' }],
+                    rehypeRaw,
+                    rehypeKatex,
+                ]}
+                components={markdownComponents}
+            >
+                {processedData}
+            </MemoizedReactMarkdown>
+        );
+    }
 
     return (
         <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ type: 'spring', damping: 10, stiffness: 400 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 10 }}
             className="w-full flex justify-start items-start"
         >
             <Avatar className="mr-2">
@@ -140,8 +134,14 @@ export function BotMessage({ message, className }: BotMessageProps) {
                     <BrainIcon className="size-4 text-zinc-300" />
                 </AvatarFallback>
             </Avatar>
-
-            <div className="pt-1.5">{content}</div>
+            <MemoizedReactMarkdown
+                {...commonProps}
+                components={markdownComponents}
+                rehypePlugins={[[rehypeExternalLinks, { target: '_blank' }], rehypeRaw]}
+                remarkPlugins={[remarkGfm]}
+            >
+                {processedData}
+            </MemoizedReactMarkdown>
         </motion.div>
     );
 }

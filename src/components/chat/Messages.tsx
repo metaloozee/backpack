@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { JSONValue, Message, ToolInvocation } from 'ai';
+import { JSONValue, Message, tool, ToolInvocation } from 'ai';
 import { LoaderIcon } from 'lucide-react';
 import { RenderMessage } from '@/components/chat/RenderMessage';
 import { motion, AnimatePresence } from 'motion/react';
@@ -32,7 +32,7 @@ const useLastToolData = (data: Array<JSONValue> | undefined): ToolData | null =>
     const lastItem = data[data.length - 1];
     if (typeof lastItem === 'object' && lastItem !== null) {
         const toolData = lastItem as any;
-        if (toolData.type === 'tool_call' && toolData.data) {
+        if (toolData.type === 'tool-call' && toolData.data) {
             return toolData as ToolData;
         }
     }
@@ -47,7 +47,29 @@ export function ChatMessages({
     chatId,
 }: ChatMessageProps) {
     const messageEndRef = React.useRef<HTMLDivElement>(null);
-    const lastToolData = useLastToolData(data);
+    const lastToolData = React.useMemo(() => {
+        if (!data || !Array.isArray(data) || data.length == 0) return null;
+
+        const lastItem = data[data.length - 1] as {
+            type: 'tool-call';
+            data: {
+                toolCallId: string;
+                state: 'call' | 'result';
+                toolName: string;
+                args: string;
+            };
+        };
+
+        if (lastItem.type !== 'tool-call') return null;
+
+        const toolData = lastItem.data;
+        return {
+            state: 'call' as const,
+            toolCallId: toolData.toolCallId,
+            toolName: toolData.toolName,
+            args: toolData.args ? JSON.parse(toolData.args) : undefined,
+        };
+    }, [data]);
 
     const scrollToBottom = () => {
         messageEndRef.current?.scrollIntoView({ behavior: 'instant' });
