@@ -30,7 +30,7 @@ const parseToolAnnotations = (annotations: any[]): ToolData[] => {
     if (!annotations?.length) return [];
 
     const toolAnnotations = annotations.filter(
-        (annotation) => annotation.type === 'tool_call'
+        (annotation) => annotation.type === 'tool-call'
     ) as ToolData[];
 
     const toolDataMap = new Map<string, ToolData>();

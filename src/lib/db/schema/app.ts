@@ -1,7 +1,7 @@
 import { index, pgTable, text, vector, timestamp, pgEnum, json } from 'drizzle-orm/pg-core';
 import { randomUUID } from 'crypto';
 import { InferSelectModel } from 'drizzle-orm';
-import { generateId, Message } from 'ai';
+import { CoreMessage, generateId, Message } from 'ai';
 import { users } from '@/lib/db/schema/auth';
 
 export const spaces = pgTable('spaces', {

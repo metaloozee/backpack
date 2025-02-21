@@ -1,4 +1,10 @@
-import { convertToCoreMessages, smoothStream, Message, streamText } from 'ai';
+import {
+    convertToCoreMessages,
+    smoothStream,
+    Message,
+    streamText,
+    appendResponseMessages,
+} from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 import { env } from '@/lib/env.mjs';
@@ -57,9 +63,7 @@ export async function POST(req: Request) {
             async execute(dataStream) {
                 const result = streamText({
                     model: openrouter('google/gemini-2.0-flash-001'),
-                    messages: convertToCoreMessages(messages).filter(
-                        (message) => message.content.length > 0
-                    ),
+                    messages: convertToCoreMessages(messages),
                     system: WebPrompt(),
                     maxSteps: 10,
                     experimental_transform: smoothStream(),
