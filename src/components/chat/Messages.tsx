@@ -16,7 +16,7 @@ interface ChatMessageProps {
 }
 
 interface ToolData {
-    type: 'tool_call';
+    type: 'tool-call';
     data: {
         toolCallId: string;
         toolName: string;

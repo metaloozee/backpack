@@ -93,7 +93,7 @@ export async function POST(req: Request) {
                             }),
                             execute: async ({ queries }, { toolCallId }) => {
                                 dataStream.writeMessageAnnotation({
-                                    type: 'tool_call',
+                                    type: 'tool-call',
                                     data: {
                                         toolCallId,
                                         toolName: 'web_search',
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
                                 const searchPromises = queries.map(
                                     async (query: string, index: number) => {
                                         const res = await tvly.search(query, {
-                                            maxResults: 10,
+                                            maxResults: 3,
                                             searchDepth: 'advanced',
                                             includeAnswer: true,
                                         });
@@ -131,7 +131,7 @@ export async function POST(req: Request) {
                                 const processedResults = searchResults.map((r) => r.results).flat();
 
                                 dataStream.writeMessageAnnotation({
-                                    type: 'tool_call',
+                                    type: 'tool-call',
                                     data: {
                                         toolCallId,
                                         toolName: 'web_search',

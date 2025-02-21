@@ -10,7 +10,7 @@ import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 
 interface ToolProps {
     tool: {
-        type: 'tool_call';
+        type: 'tool-call';
         data: {
             toolCallId: string;
             toolName: string;
