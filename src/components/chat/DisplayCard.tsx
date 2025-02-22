@@ -66,7 +66,7 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
             className="border-b pb-4 rounded-md w-full flex justify-between items-center"
         >
             <Link className="w-full" key={chat.id} href={`/c/${chat.id}`}>
-                <div className=" flex flex-col gap-1 justify-start items-start">
+                <div className="flex flex-col gap-1 justify-start items-start w-full">
                     <p className="max-w-md truncate">{chat.chatName}</p>
                     {isChatPage ? (
                         <div className="flex flex-row gap-5 items-center w-full">

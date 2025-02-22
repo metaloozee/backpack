@@ -90,9 +90,9 @@ interface BotMessageProps {
 }
 
 export function BotMessage({ message, className }: BotMessageProps) {
-    const cleanedMessage = removeContemplateContent(message || '');
-    const containsLaTeX = /\\\[([\s\S]*?)\\\]|\\\(([\s\S]*?)\\\)/.test(cleanedMessage);
-    const processedData = preprocessLaTeX(cleanedMessage);
+    // const cleanedMessage = removeContemplateContent(message || '');
+    const containsLaTeX = /\\\[([\s\S]*?)\\\]|\\\(([\s\S]*?)\\\)/.test(message);
+    const processedData = preprocessLaTeX(message);
 
     const commonProps = {
         className: cn(
