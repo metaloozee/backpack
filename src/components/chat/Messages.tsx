@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import { JSONValue, Message, tool, ToolInvocation } from 'ai';
-import { LoaderIcon } from 'lucide-react';
+import { Loader, LoaderIcon } from 'lucide-react';
 import { RenderMessage } from '@/components/chat/RenderMessage';
 import { motion, AnimatePresence } from 'motion/react';
 import { TextShimmer } from '../ui/text-shimmer';
@@ -112,7 +112,7 @@ export function ChatMessages({
                         {lastToolData ? (
                             <Tool tool={lastToolData} isOpen={true} onOpenChange={() => {}} />
                         ) : (
-                            <TextShimmer className="text-sm mb-4">thinking...</TextShimmer>
+                            <Loader className="ml-4 size-3 animate-spin text-muted-foreground" />
                         )}
                     </motion.div>
                 )}

@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { BrainIcon } from 'lucide-react';
+import { TextEffect } from '../ui/text-effect';
 
 const markdownComponents = {
     code: ({ node, inline, className, children, ...props }: any) => {
@@ -134,6 +135,7 @@ export function BotMessage({ message, className }: BotMessageProps) {
                     <BrainIcon className="size-4 text-zinc-300" />
                 </AvatarFallback>
             </Avatar>
+
             <MemoizedReactMarkdown
                 {...commonProps}
                 components={markdownComponents}

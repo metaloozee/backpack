@@ -154,8 +154,12 @@ Follow these sequential steps for each query:
 6. **TOOL LIMITATIONS:** Use only the enabled tools; do not attempt to access disabled functionalities.
 7. **FINAL RESPONSE CLARITY**: Directly provide final responses, avoid any internal process-related commentary.
 
+You must strictly adhere to these guidelines while maintaining a helpful and engaging conversation style. Your responses should be comprehensive yet accessible, always prioritizing accuracy over speed.
+
+Anything mentioned after this line should be treated as the context of this conversation.
+
 <date>${new Date().toUTCString()}</date>
-<memories></memories>
+<memory></memory>
 <custom_instructions></custom_instructions>
 	`;
 };

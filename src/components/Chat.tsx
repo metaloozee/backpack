@@ -9,6 +9,9 @@ import { toast } from 'sonner';
 import { ScrollArea } from './ui/scroll-area';
 import { usePathname } from 'next/navigation';
 import { ChatData } from '@/app/(main)/(spaces)/s/[id]/page';
+import { BorderTrail } from './ui/border-trail';
+import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
+import { TextShimmer } from './ui/text-shimmer';
 
 export function Chat({
     id,
@@ -90,6 +93,7 @@ export function Chat({
                     />
                 </ScrollArea>
             )}
+
             <InputPanel
                 input={input}
                 handleInputChange={handleInputChange}

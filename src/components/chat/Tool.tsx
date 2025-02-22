@@ -8,6 +8,14 @@ import { TextShimmer } from '../ui/text-shimmer';
 import Link from 'next/link';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import { ToolInvocation } from 'ai';
+import { BorderTrail } from '../ui/border-trail';
+import {
+    MorphingDialog,
+    MorphingDialogContainer,
+    MorphingDialogContent,
+    MorphingDialogTitle,
+    MorphingDialogTrigger,
+} from '../ui/morphing-dialog';
 
 interface ToolProps {
     tool: ToolInvocation;
@@ -15,73 +23,79 @@ interface ToolProps {
     onOpenChange?: (open: boolean) => void;
 }
 
-const toolAnimation = {
-    initial: { y: 5, opacity: 0 },
-    animate: { y: 0, opacity: 1 },
-    exit: { opacity: 0 },
-    transition: {
-        duration: 0.3,
-        ease: [0.32, 0.72, 0, 1],
-    },
-};
-
 export function Tool({ tool, isOpen, onOpenChange }: ToolProps) {
     switch (tool.toolName) {
         case 'web_search':
             return (
-                <motion.div {...toolAnimation} className="flex gap-1 items-center">
-                    {tool.state === 'result' ? (
-                        <HoverCard openDelay={0}>
-                            <HoverCardTrigger asChild>
-                                <div className="my-4 px-4 py-2 rounded-full bg-zinc-800/50 text-xs flex justify-start items-center gap-2">
+                <div className="my-4">
+                    {tool.state == 'result' ? (
+                        <MorphingDialog
+                            transition={{
+                                type: 'spring',
+                                stiffness: 200,
+                                damping: 24,
+                            }}
+                        >
+                            <MorphingDialogTrigger className="flex items-center gap-2 rounded-full px-4 py-2 bg-zinc-900/50 border max-w-fit">
+                                <MorphingDialogTitle className="text-xs flex justify-start items-center gap-2">
                                     <Globe2Icon className="size-3" />
                                     {tool.result && tool.result.processedResults.length} Web Pages
-                                </div>
-                            </HoverCardTrigger>
-                            <HoverCardContent
-                                side="top"
-                                sideOffset={10}
-                                className="max-w-2xl w-full"
-                            >
-                                <ScrollArea className="h-[30vh] text-xs break-words w-full">
-                                    <div className="mb-4 flex flex-row flex-wrap gap-2 w-full">
-                                        {tool.args.queries.map((query: string, index: number) => (
-                                            <div
-                                                key={index}
-                                                className="rounded-full px-4 py-2 bg-zinc-800/50 text-xs shrink-0 flex justify-start items-center gap-2"
-                                            >
-                                                <MagnifyingGlassIcon className="size-3 flex-1" />
-                                                {query}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {tool.result &&
-                                        tool.result.processedResults.map(
-                                            (item: any, index: number) => (
-                                                <div
-                                                    key={index}
-                                                    className="bg-zinc-900 rounded-md p-2 mb-2"
-                                                >
-                                                    <Link
-                                                        href={item.url}
-                                                        target="_blank"
-                                                        className="text-sm text-muted-foreground underline truncate max-w-fit"
+                                </MorphingDialogTitle>
+                            </MorphingDialogTrigger>
+                            <MorphingDialogContainer>
+                                <MorphingDialogContent className="relative h-auto rounded-md max-w-3xl w-full bg-zinc-900 border-2 p-4">
+                                    <ScrollArea className="h-[50vh] text-xs break-words w-full">
+                                        <div className="mb-4 flex flex-row flex-wrap gap-2 w-full">
+                                            {tool.args.queries.map(
+                                                (query: string, index: number) => (
+                                                    <div
+                                                        key={index}
+                                                        className="rounded-full px-4 py-2 bg-zinc-800/50 text-xs shrink-0 flex justify-start items-center gap-2"
                                                     >
-                                                        {item.title}
-                                                    </Link>
-                                                    <p className="text-xs break-words text-justify">
-                                                        {item.content.slice(0, 100)}...
-                                                    </p>
-                                                </div>
-                                            )
-                                        )}
-                                </ScrollArea>
-                            </HoverCardContent>
-                        </HoverCard>
+                                                        <MagnifyingGlassIcon className="size-3 flex-1" />
+                                                        {query}
+                                                    </div>
+                                                )
+                                            )}
+                                        </div>
+                                        {tool.result &&
+                                            tool.result.processedResults.map(
+                                                (item: any, index: number) => (
+                                                    <div
+                                                        key={index}
+                                                        className="bg-black rounded-md p-2 mb-2"
+                                                    >
+                                                        <Link
+                                                            href={item.url}
+                                                            target="_blank"
+                                                            className="text-sm text-muted-foreground underline truncate max-w-fit"
+                                                        >
+                                                            {item.title}
+                                                        </Link>
+                                                        <p className="text-xs break-words text-justify">
+                                                            {item.content.slice(0, 100)}...
+                                                        </p>
+                                                    </div>
+                                                )
+                                            )}
+                                    </ScrollArea>
+                                </MorphingDialogContent>
+                            </MorphingDialogContainer>
+                        </MorphingDialog>
                     ) : (
-                        <TextShimmer className="text-sm mb-4">searching the web...</TextShimmer>
+                        <div className="relative flex items-center gap-2 rounded-full px-4 py-2 bg-zinc-900/50 border max-w-fit w-full">
+                            <BorderTrail
+                                style={{
+                                    boxShadow:
+                                        '0px 0px 60px 30px rgb(255 255 255 / 50%), 0 0 100px 60px rgb(0 0 0 / 50%), 0 0 140px 90px rgb(0 0 0 / 50%)',
+                                }}
+                                size={70}
+                            />
+                            <MagnifyingGlassIcon className="size-3" />
+                            <TextShimmer className="text-xs">Searching the web...</TextShimmer>
+                        </div>
                     )}
-                </motion.div>
+                </div>
             );
         default:
             return null;
