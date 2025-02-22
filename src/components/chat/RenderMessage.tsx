@@ -61,14 +61,16 @@ export function RenderMessage({
 
     return (
         <>
-            {toolData.map((tool) => (
-                <Tool
-                    key={tool.toolCallId}
-                    tool={tool}
-                    isOpen={getIsOpen(tool.toolCallId)}
-                    onOpenChange={(open) => onOpenChange(tool.toolCallId, open)}
-                />
-            ))}
+            <div className="flex flex-row gap-2">
+                {toolData.map((tool) => (
+                    <Tool
+                        key={tool.toolCallId}
+                        tool={tool}
+                        isOpen={getIsOpen(tool.toolCallId)}
+                        onOpenChange={(open) => onOpenChange(tool.toolCallId, open)}
+                    />
+                ))}
+            </div>
             {message.content && <BotMessage message={message.content} />}
         </>
     );

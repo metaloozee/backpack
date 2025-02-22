@@ -4,6 +4,8 @@ import {
     Message,
     streamText,
     appendResponseMessages,
+    embed,
+    embedMany,
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
@@ -15,6 +17,10 @@ import { EnhancedWebPrompt, WebPrompt } from '@/lib/ai/prompts';
 import { object, z } from 'zod';
 import { tavily } from '@tavily/core';
 import { createDataStreamResponse, tool } from 'ai';
+import { google } from '@ai-sdk/google';
+import { cosineDistance, sql, eq, and, gt, desc } from 'drizzle-orm';
+import { knowledge, knowledgeEmbeddings } from '@/lib/db/schema/app';
+import { db } from '@/lib/db';
 
 export const maxDuration = 60;
 
@@ -84,7 +90,7 @@ export async function POST(req: Request) {
                             });
                         } catch (error) {}
                     },
-                    experimental_activeTools: ['web_search'],
+                    experimental_activeTools: ['search_knowledge', 'web_search'],
                     tools: {
                         web_search: tool({
                             description: 'Performs a search over the internet for current data.',
@@ -146,14 +152,87 @@ export async function POST(req: Request) {
                             },
                         }),
                         search_knowledge: tool({
-                            description: '',
+                            description:
+                                'Performs an Internal Semantic Search on User Uploaded Documents.',
                             parameters: z.object({
                                 keywords: z.array(z.string()),
                             }),
                             execute: async ({ keywords }, { toolCallId }) => {
+                                if (!spaceId) {
+                                    console.error('No Space ID');
+                                    return null;
+                                }
+
+                                dataStream.writeMessageAnnotation({
+                                    type: 'tool-call',
+                                    data: {
+                                        toolCallId,
+                                        toolName: 'search_knowledge',
+                                        state: 'call',
+                                        args: JSON.stringify(keywords),
+                                    },
+                                });
+
                                 console.log('Keywords: ', keywords);
 
-                                return null;
+                                const { embeddings } = await embedMany({
+                                    model: google.textEmbeddingModel('text-embedding-004'),
+                                    values: keywords,
+                                });
+
+                                const Promises = embeddings.map(
+                                    async (embedding: (typeof embeddings)[0], index: number) => {
+                                        const similarity = sql<number>`1 - (${cosineDistance(knowledgeEmbeddings.embedding, embedding)})`;
+
+                                        const contexts = await db
+                                            .select({
+                                                content: knowledgeEmbeddings.content,
+                                                embedding: knowledgeEmbeddings.embedding,
+                                                knowledgeName: knowledge.knowledgeName,
+                                                similarity,
+                                            })
+                                            .from(knowledge)
+                                            .fullJoin(
+                                                knowledgeEmbeddings,
+                                                eq(knowledge.id, knowledgeEmbeddings.knowledgeId)
+                                            )
+                                            .where(
+                                                and(
+                                                    and(
+                                                        eq(knowledge.userId, session.user.id),
+                                                        eq(knowledge.spaceId, spaceId)
+                                                    ),
+                                                    gt(similarity, 0.5)
+                                                )
+                                            )
+                                            .orderBy((t) => desc(t.similarity))
+                                            .limit(10);
+
+                                        return {
+                                            keyword: keywords[index],
+                                            contexts: contexts.map(
+                                                ({ embedding, ...rest }) => rest
+                                            ),
+                                        };
+                                    }
+                                );
+
+                                const results = await Promise.all(Promises);
+
+                                dataStream.writeMessageAnnotation({
+                                    type: 'tool-call',
+                                    data: {
+                                        toolCallId,
+                                        toolName: 'search_knowledge',
+                                        state: 'result',
+                                        args: JSON.stringify({ keywords }),
+                                        result: JSON.stringify({ results }),
+                                    },
+                                });
+
+                                return {
+                                    results,
+                                };
                             },
                         }),
                     },
