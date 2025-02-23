@@ -24,19 +24,20 @@ import {
 } from '../ui/morphing-dialog';
 
 interface ToolProps {
-    tool: ToolInvocation;
+    tool: any;
     isOpen?: boolean;
     onOpenChange?: (open: boolean) => void;
 }
 
 export function Tool({ tool, isOpen, onOpenChange }: ToolProps) {
-    console.log(tool.toolName);
+    console.log('Tool name:', tool.toolInvocation.toolName);
+    console.log('Full tool data:', tool);
 
-    switch (tool.toolName) {
+    switch (tool.toolInvocation.toolName) {
         case 'web_search':
             return (
                 <div className="my-4">
-                    {tool.state == 'result' ? (
+                    {tool.toolInvocation.state === 'result' ? (
                         <MorphingDialog
                             transition={{
                                 type: 'spring',
@@ -47,14 +48,20 @@ export function Tool({ tool, isOpen, onOpenChange }: ToolProps) {
                             <MorphingDialogTrigger className="flex items-center gap-2 rounded-full px-4 py-2 bg-zinc-900/50 border max-w-fit">
                                 <MorphingDialogTitle className="text-xs flex justify-start items-center gap-2">
                                     <Globe2Icon className="size-3" />
-                                    {tool.result && tool.result.processedResults.length} Web Pages
+                                    {tool.toolInvocation.result &&
+                                        tool.toolInvocation.result.searches.reduce(
+                                            (total: number, searches: any) =>
+                                                total + searches.results.length,
+                                            0
+                                        )}{' '}
+                                    Web Pages
                                 </MorphingDialogTitle>
                             </MorphingDialogTrigger>
                             <MorphingDialogContainer>
                                 <MorphingDialogContent className="relative h-auto rounded-md max-w-3xl w-full bg-zinc-900 border-2 p-4">
                                     <ScrollArea className="h-[50vh] text-xs break-words w-full">
                                         <div className="mb-4 flex flex-row flex-wrap gap-2 w-full">
-                                            {tool.args.queries.map(
+                                            {tool.toolInvocation.args.queries.map(
                                                 (query: string, index: number) => (
                                                     <div
                                                         key={index}
@@ -66,25 +73,29 @@ export function Tool({ tool, isOpen, onOpenChange }: ToolProps) {
                                                 )
                                             )}
                                         </div>
-                                        {tool.result &&
-                                            tool.result.processedResults.map(
-                                                (item: any, index: number) => (
-                                                    <div
-                                                        key={index}
-                                                        className="bg-black rounded-md p-2 mb-2"
-                                                    >
-                                                        <Link
-                                                            href={item.url}
-                                                            target="_blank"
-                                                            className="text-sm text-muted-foreground underline truncate max-w-fit"
-                                                        >
-                                                            {item.title}
-                                                        </Link>
-                                                        <p className="text-xs break-words text-justify">
-                                                            {item.content.slice(0, 100)}...
-                                                        </p>
-                                                    </div>
-                                                )
+                                        {tool.toolInvocation.result &&
+                                            tool.toolInvocation.result.searches.flatMap(
+                                                (item: any) =>
+                                                    item.results.map(
+                                                        (result: any, index: number) => (
+                                                            <div
+                                                                key={`${item.query}-${index}`}
+                                                                className="bg-black rounded-md p-2 mb-2"
+                                                            >
+                                                                <Link
+                                                                    href={result.url}
+                                                                    target="_blank"
+                                                                    className="text-sm text-muted-foreground underline truncate max-w-fit block"
+                                                                >
+                                                                    {result.title}
+                                                                </Link>
+                                                                <p className="text-xs break-words text-justify mt-1">
+                                                                    {result.content.slice(0, 100)}
+                                                                    ...
+                                                                </p>
+                                                            </div>
+                                                        )
+                                                    )
                                             )}
                                     </ScrollArea>
                                 </MorphingDialogContent>
@@ -108,7 +119,7 @@ export function Tool({ tool, isOpen, onOpenChange }: ToolProps) {
         case 'search_knowledge':
             return (
                 <div className="my-4">
-                    {tool.state == 'result' ? (
+                    {tool.toolInvocation.state == 'result' ? (
                         <MorphingDialog
                             transition={{
                                 type: 'spring',
@@ -119,8 +130,8 @@ export function Tool({ tool, isOpen, onOpenChange }: ToolProps) {
                             <MorphingDialogTrigger className="flex items-center gap-2 rounded-full px-4 py-2 bg-zinc-900/50 border max-w-fit">
                                 <MorphingDialogTitle className="text-xs flex justify-start items-center gap-2">
                                     <BookCopyIcon className="size-3" />
-                                    {tool.result &&
-                                        tool.result.results.reduce(
+                                    {tool.toolInvocation.result &&
+                                        tool.toolInvocation.result.results.reduce(
                                             (total: number, result: any) =>
                                                 total + result.contexts.length,
                                             0
@@ -132,7 +143,7 @@ export function Tool({ tool, isOpen, onOpenChange }: ToolProps) {
                                 <MorphingDialogContent className="relative h-auto rounded-md max-w-3xl w-full bg-zinc-900 border-2 p-4">
                                     <ScrollArea className="h-[50vh] text-xs break-words w-full">
                                         <div className="mb-4 flex flex-row flex-wrap gap-2 w-full">
-                                            {tool.args.keywords.map(
+                                            {tool.toolInvocation.args.keywords.map(
                                                 (keyword: string, index: number) => (
                                                     <div
                                                         key={index}
@@ -144,8 +155,8 @@ export function Tool({ tool, isOpen, onOpenChange }: ToolProps) {
                                                 )
                                             )}
                                         </div>
-                                        {tool.result &&
-                                            tool.result.results.map(
+                                        {tool.toolInvocation.result &&
+                                            tool.toolInvocation.result.results.map(
                                                 (result: {
                                                     keyword: string;
                                                     contexts: Array<{
