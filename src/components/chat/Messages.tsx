@@ -50,7 +50,6 @@ export function ChatMessages({
     const lastToolData = React.useMemo(() => {
         if (!data || !Array.isArray(data) || data.length == 0) return null;
 
-        // console.log(data)
         const lastItem = data[data.length - 1] as {
             type: 'tool-call';
             data: {

@@ -30,9 +30,6 @@ interface ToolProps {
 }
 
 export function Tool({ tool, isOpen, onOpenChange }: ToolProps) {
-    console.log('Tool name:', tool.toolInvocation.toolName);
-    console.log('Full tool data:', tool);
-
     switch (tool.toolInvocation.toolName) {
         case 'web_search':
             return (

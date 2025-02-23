@@ -28,5 +28,11 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
         messages: convertToUIMessages(chatData.messages as Array<CoreMessage>),
     };
 
-    return <PreviewChat id={chatId} savedMessages={chat.messages} />;
+    return (
+        <PreviewChat
+            id={chatId}
+            spaceId={chat.spaceId && chat.spaceId.length > 0 ? (chat.spaceId as string) : undefined}
+            savedMessages={chat.messages}
+        />
+    );
 }

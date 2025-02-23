@@ -71,7 +71,7 @@ export async function POST(req: Request) {
                     model: openrouter('google/gemini-2.0-flash-001'),
                     messages: convertToCoreMessages(messages),
                     system: EnhancedWebPrompt(),
-                    maxSteps: 10,
+                    maxSteps: 20,
                     experimental_transform: smoothStream(),
                     toolCallStreaming: true,
                     async onFinish({ response }) {
@@ -90,7 +90,10 @@ export async function POST(req: Request) {
                             });
                         } catch (error) {}
                     },
-                    experimental_activeTools: ['search_knowledge', 'web_search'],
+                    experimental_activeTools: [
+                        spaceId && spaceId.length > 0 && 'search_knowledge',
+                        'web_search',
+                    ],
                     tools: {
                         web_search: tool({
                             description: 'Performs a search over the internet for current data.',
@@ -159,7 +162,6 @@ export async function POST(req: Request) {
                             }),
                             execute: async ({ keywords }, { toolCallId }) => {
                                 if (!spaceId) {
-                                    console.error('No Space ID');
                                     return null;
                                 }
 
