@@ -31,6 +31,16 @@ import { TextEffect } from '../ui/text-effect';
 import { Button } from '../ui/button';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 
+// Helper function to extract domain from URL
+const extractDomain = (url: string): string => {
+    try {
+        const urlObj = new URL(url);
+        return urlObj.hostname;
+    } catch {
+        return url;
+    }
+};
+
 const markdownComponents = {
     code: ({ node, inline, className, children, ...props }: any) => {
         const match = /language-(\w+)/.exec(className || '');
@@ -80,13 +90,8 @@ const markdownComponents = {
     ),
     a: ({ children, href }: any) => (
         <Link href={href} target="_blank" className="text-xs text-muted-foreground hover:underline">
-            {children.length > 30 ? `${children.slice(0, 30)}...` : children}
+            {href ? extractDomain(href) : children}
         </Link>
-        // <Button variant={"secondary"} size={null} className='p-1' asChild>
-        //     <Link href={href} target="_blank">
-        //         <OpenInNewWindowIcon className='size-2' />
-        //     </Link>
-        // </Button>
     ),
     inlineMath: ({ value }: { value: string }) => <span className="math math-inline">{value}</span>,
     math: ({ value }: { value: string }) => <div className="math math-display">{value}</div>,

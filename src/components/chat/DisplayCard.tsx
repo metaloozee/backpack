@@ -68,22 +68,16 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
             <Link className="w-full" key={chat.id} href={`/c/${chat.id}`}>
                 <div className="flex flex-col gap-1 justify-start items-start w-full">
                     <p className="max-w-md truncate">{chat.chatName}</p>
-                    {isChatPage ? (
-                        <div className="flex flex-row gap-5 items-center w-full">
-                            <p className="text-xs text-muted-foreground truncate max-w-md">
-                                {chat.messages[1].content}
-                            </p>
-                            {chat.spaceId && chat.spaceId.length > 0 && (
-                                <LibraryIcon className="size-4 text-muted-foreground" />
-                            )}
-                        </div>
-                    ) : (
-                        <p className="text-xs text-muted-foreground truncate max-w-md">
-                            {chat.messages[1].content}
-                        </p>
-                    )}
+
+                    <p className="text-xs text-muted-foreground truncate max-w-md">
+                        {chat.messages[1].content}
+                    </p>
                 </div>
             </Link>
+
+            {isChatPage && chat.spaceId && chat.spaceId.length > 0 && (
+                <LibraryIcon className="mx-6 size-4 text-muted-foreground" />
+            )}
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
