@@ -28,6 +28,8 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { BrainIcon } from 'lucide-react';
 import { TextEffect } from '../ui/text-effect';
+import { Button } from '../ui/button';
+import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 
 const markdownComponents = {
     code: ({ node, inline, className, children, ...props }: any) => {
@@ -77,9 +79,14 @@ const markdownComponents = {
         <blockquote className="border-l-4 border-muted pl-4 italic my-4">{children}</blockquote>
     ),
     a: ({ children, href }: any) => (
-        <Link href={href} className="text-primary hover:underline" target="_blank">
-            {children}
+        <Link href={href} target="_blank" className="text-xs text-muted-foreground hover:underline">
+            {children.length > 30 ? `${children.slice(0, 30)}...` : children}
         </Link>
+        // <Button variant={"secondary"} size={null} className='p-1' asChild>
+        //     <Link href={href} target="_blank">
+        //         <OpenInNewWindowIcon className='size-2' />
+        //     </Link>
+        // </Button>
     ),
     inlineMath: ({ value }: { value: string }) => <span className="math math-inline">{value}</span>,
     math: ({ value }: { value: string }) => <div className="math math-display">{value}</div>,
@@ -94,6 +101,10 @@ export function BotMessage({ message, className }: BotMessageProps) {
     // const cleanedMessage = removeContemplateContent(message || '');
     const containsLaTeX = /\\\[([\s\S]*?)\\\]|\\\(([\s\S]*?)\\\)/.test(message);
     const processedData = preprocessLaTeX(message);
+
+    if (processedData.length <= 1) {
+        return null;
+    }
 
     const commonProps = {
         className: cn(
