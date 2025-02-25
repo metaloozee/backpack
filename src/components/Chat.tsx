@@ -26,6 +26,9 @@ export function Chat({
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
 
+    const [webSearch, setWebSearch] = React.useState(true);
+    const [knowledgeBase, setKnowledgeBase] = React.useState(false);
+
     const {
         messages,
         input,
@@ -39,7 +42,7 @@ export function Chat({
         setData,
     } = useChat({
         initialMessages: savedMessages,
-        body: { id, spaceId: spaceId },
+        body: { id, spaceId: spaceId, webSearch, knowledgeSearch: knowledgeBase },
         onFinish: () => {
             if (messages.length === 0) {
                 window.history.pushState({}, '', `/c/${id}`);
@@ -102,6 +105,10 @@ export function Chat({
                 query={query}
                 append={append}
                 chatsData={chatsData}
+                webSearch={webSearch}
+                setWebSearch={setWebSearch}
+                knowledgeBase={knowledgeBase}
+                setKnowledgeBase={setKnowledgeBase}
             />
         </div>
     );

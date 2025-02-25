@@ -60,9 +60,19 @@ export async function POST(req: Request) {
             throw new Error('Access Denied');
         }
 
-        const { messages, id: chatId, spaceId } = await req.json();
+        const {
+            messages,
+            id: chatId,
+            spaceId,
+            webSearch,
+            knowledgeSearch: searchKnowledge,
+        } = await req.json();
         if (!messages || !chatId) {
             throw new Error('Invalid Body');
+        }
+
+        if (!webSearch && !searchKnowledge) {
+            throw new Error('You must be using at-least one tool');
         }
 
         return createDataStreamResponse({
@@ -70,7 +80,7 @@ export async function POST(req: Request) {
                 const result = streamText({
                     model: openrouter('google/gemini-2.0-flash-001'),
                     messages: convertToCoreMessages(messages),
-                    system: WebPrompt(),
+                    system: WebPrompt({ webSearch, searchKnowledge }),
                     maxSteps: 20,
                     experimental_transform: smoothStream(),
                     toolCallStreaming: true,
@@ -91,8 +101,8 @@ export async function POST(req: Request) {
                         } catch (error) {}
                     },
                     experimental_activeTools: [
-                        spaceId && spaceId.length > 0 && 'search_knowledge',
-                        'web_search',
+                        webSearch && webSearch === true && 'web_search',
+                        searchKnowledge && searchKnowledge === true && 'search_knowledge',
                     ],
                     tools: {
                         web_search: tool({
@@ -247,6 +257,6 @@ export async function POST(req: Request) {
         });
     } catch (error) {
         console.error(error);
-        return new Response('Error', { status: 500 });
+        return new Response((error as Error).message, { status: 500 });
     }
 }

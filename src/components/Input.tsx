@@ -19,6 +19,7 @@ import {
     StopCircleIcon,
     BookOpenTextIcon,
     Trash2Icon,
+    GlobeIcon,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
@@ -41,6 +42,11 @@ interface InputPanelProps {
     query?: string;
     stop: () => void;
     append: (message: any) => void;
+
+    webSearch: boolean;
+    setWebSearch: (webSearch: boolean) => void;
+    knowledgeBase: boolean;
+    setKnowledgeBase: (knowledgeBase: boolean) => void;
 
     chatsData?: Array<ChatData>;
 }
@@ -73,6 +79,11 @@ export function Input({
     stop,
     append,
     chatsData,
+
+    webSearch,
+    setWebSearch,
+    knowledgeBase,
+    setKnowledgeBase,
 }: InputPanelProps) {
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
@@ -198,7 +209,31 @@ export function Input({
                     />
 
                     <div className="w-full flex justify-between items-center">
-                        <Popover open={open} onOpenChange={setOpen}>
+                        <div className="flex flex-row justify-start items-center gap-2">
+                            <div
+                                onClick={() => setWebSearch(!webSearch)}
+                                className={cn(
+                                    'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                    webSearch
+                                        ? 'bg-zinc-800 border-zinc-800 text-primary'
+                                        : 'bg-zinc-900 border-zinc-800'
+                                )}
+                            >
+                                <GlobeIcon className="size-3" /> Web Search
+                            </div>
+                            <div
+                                onClick={() => setKnowledgeBase(!knowledgeBase)}
+                                className={cn(
+                                    'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                    knowledgeBase
+                                        ? 'bg-zinc-800 border-zinc-800 text-primary'
+                                        : 'bg-zinc-900 border-zinc-800'
+                                )}
+                            >
+                                <GlobeIcon className="size-3" /> Knowledge Base
+                            </div>
+                        </div>
+                        {/* <Popover open={open} onOpenChange={setOpen}>
                             <PopoverTrigger disabled={messages.length !== 0} asChild>
                                 <Button
                                     size={'sm'}
@@ -292,7 +327,7 @@ export function Input({
                                     </CommandList>
                                 </Command>
                             </PopoverContent>
-                        </Popover>
+                        </Popover> */}
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
