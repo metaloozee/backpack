@@ -20,6 +20,7 @@ import {
     BookOpenTextIcon,
     Trash2Icon,
     GlobeIcon,
+    BookCopyIcon,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
@@ -230,7 +231,7 @@ export function Input({
                                         : 'bg-zinc-900 border-zinc-800'
                                 )}
                             >
-                                <GlobeIcon className="size-3" /> Knowledge Base
+                                <BookCopyIcon className="size-3" /> Knowledge Base
                             </div>
                         </div>
                         {/* <Popover open={open} onOpenChange={setOpen}>
