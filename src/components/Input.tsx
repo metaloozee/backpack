@@ -20,6 +20,8 @@ import {
     BookOpenTextIcon,
     GlobeIcon,
     BookCopyIcon,
+    GraduationCap,
+    Users,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
@@ -49,22 +51,37 @@ interface InputPanelProps {
     chatsData?: Array<ChatData>;
 }
 
-const geminiModels = [
+const agentTypes = [
     {
-        value: 'gemini-2.0-flash-lite-preview-02-05',
-        label: 'Speed',
-        description: 'gemini-2.0-flash-lite-preview-02-05',
-        icon: Zap,
+        value: 'default',
+        label: 'Default',
+        description: 'General purpose search assistant',
+        icon: GlobeIcon,
+        showWebSearch: true,
+        showKnowledgeBase: false,
+        iconColor: 'text-sky-500',
     },
     {
-        value: 'gemini-2.0-flash',
-        label: 'Quality',
-        description: 'gemini-2.0-flash',
-        icon: Brain,
+        value: 'academic',
+        label: 'Academic',
+        description: 'Specialized for academic research',
+        icon: GraduationCap,
+        showWebSearch: true,
+        showKnowledgeBase: true,
+        iconColor: 'text-green-500',
+    },
+    {
+        value: 'social',
+        label: 'Social',
+        description: 'Optimized for social interactions',
+        icon: Users,
+        showWebSearch: false,
+        showKnowledgeBase: false,
+        iconColor: 'text-indigo-500',
     },
 ] as const;
 
-type GeminiModel = (typeof geminiModels)[number]['value'];
+type AgentType = (typeof agentTypes)[number]['value'];
 
 export function Input({
     input,
@@ -95,9 +112,7 @@ export function Input({
     const [enterDisabled, setEnterDisabled] = React.useState(false);
 
     const [open, setOpen] = React.useState(false);
-    const [selectedModel, setSelectedModel] = React.useState<GeminiModel>(
-        'gemini-2.0-flash-lite-preview-02-05'
-    );
+    const [selectedAgent, setSelectedAgent] = React.useState<AgentType>('default');
 
     const handlerCompositionStart = () => setIsComposing(true);
 
@@ -210,124 +225,211 @@ export function Input({
                         <div className="flex flex-row justify-start items-center gap-2">
                             <Popover open={open} onOpenChange={setOpen}>
                                 <PopoverTrigger disabled={messages.length !== 0} asChild>
-                                    <Button
-                                        size={null}
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={open}
-                                        className={cn(
-                                            'justify-between truncate bg-zinc-800 transition-all duration-200 px-4 py-2 border-2'
-                                        )}
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{
+                                            duration: 0.3,
+                                            ease: 'easeInOut',
+                                        }}
                                     >
-                                        <div className="flex items-center gap-2 text-xs">
-                                            {selectedModel && (
-                                                <div className="flex items-center">
-                                                    {React.createElement(
-                                                        geminiModels.find(
-                                                            (model) => model.value === selectedModel
-                                                        )?.icon || Brain,
-                                                        {
-                                                            className: cn(
-                                                                'w-4 h-4',
-                                                                selectedModel === 'gemini-2.0-flash'
-                                                                    ? 'text-blue-500'
-                                                                    : 'text-green-500'
-                                                            ),
-                                                        }
-                                                    )}
-                                                </div>
+                                        <Button
+                                            size={null}
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={open}
+                                            className={cn(
+                                                'justify-between truncate bg-zinc-800 transition-all duration-200 px-4 py-2 border-2'
                                             )}
-                                            <span>
-                                                {selectedModel
-                                                    ? geminiModels.find(
-                                                          (model) => model.value === selectedModel
-                                                      )?.label
-                                                    : 'Select model...'}
-                                            </span>
-                                        </div>
-                                        <ChevronDownIcon className="opacity-50 h-4 w-4" />
-                                    </Button>
+                                        >
+                                            <div className="flex items-center gap-2 text-xs">
+                                                {selectedAgent && (
+                                                    <div className="flex items-center">
+                                                        {React.createElement(
+                                                            agentTypes.find(
+                                                                (agent) =>
+                                                                    agent.value === selectedAgent
+                                                            )?.icon || Brain,
+                                                            {
+                                                                className: `w-4 h-4 ${
+                                                                    agentTypes.find(
+                                                                        (agent) =>
+                                                                            agent.value ===
+                                                                            selectedAgent
+                                                                    )?.iconColor || 'text-primary'
+                                                                }`,
+                                                            }
+                                                        )}
+                                                    </div>
+                                                )}
+                                                <span>
+                                                    {selectedAgent
+                                                        ? agentTypes.find(
+                                                              (agent) =>
+                                                                  agent.value === selectedAgent
+                                                          )?.label
+                                                        : 'Select agent...'}
+                                                </span>
+                                            </div>
+                                            <ChevronDownIcon className="opacity-50 h-4 w-4" />
+                                        </Button>
+                                    </motion.div>
                                 </PopoverTrigger>
                                 <PopoverContent
                                     className="w-[300px] p-2 !font-sans bg-zinc-900/50 backdrop-blur-md rounded-lg shadow-lg border border-zinc-800"
                                     align="start"
                                     sideOffset={8}
+                                    forceMount
                                 >
-                                    <Command>
-                                        <CommandList>
-                                            <CommandGroup className="bg-zinc-900/50">
-                                                {geminiModels.map((model) => (
-                                                    <CommandItem
-                                                        key={model.value}
-                                                        value={model.value}
-                                                        onSelect={(currentValue) => {
-                                                            setSelectedModel(
-                                                                currentValue as GeminiModel
-                                                            );
-                                                            setOpen(false);
-                                                        }}
-                                                        className={cn(
-                                                            'flex items-center gap-2 px-2 py-2.5 rounded-md text-sm cursor-pointer transition-colors duration-200'
-                                                        )}
-                                                    >
-                                                        <div className="p-1.5 rounded-md">
-                                                            {React.createElement(model.icon, {
-                                                                className: cn(
-                                                                    'w-4 h-4',
-                                                                    model.value ===
-                                                                        'gemini-2.0-flash'
-                                                                        ? 'text-blue-500'
-                                                                        : 'text-green-500'
-                                                                ),
-                                                            })}
-                                                        </div>
-                                                        <div className="flex flex-col gap-px min-w-0">
-                                                            <div className="font-medium">
-                                                                {model.label}
-                                                            </div>
-                                                            <div className="text-xs">
-                                                                {model.description}
-                                                            </div>
-                                                        </div>
-                                                        <Check
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{
+                                            duration: 0.2,
+                                            ease: 'easeInOut',
+                                        }}
+                                    >
+                                        <Command>
+                                            <CommandList>
+                                                <CommandGroup className="bg-zinc-900/50">
+                                                    {agentTypes.map((agent) => (
+                                                        <CommandItem
+                                                            key={agent.value}
+                                                            value={agent.value}
+                                                            onSelect={(currentValue) => {
+                                                                setSelectedAgent(
+                                                                    currentValue as AgentType
+                                                                );
+                                                                // Apply agent-specific settings
+                                                                const selectedAgentConfig =
+                                                                    agentTypes.find(
+                                                                        (a) =>
+                                                                            a.value === currentValue
+                                                                    );
+                                                                if (selectedAgentConfig) {
+                                                                    setWebSearch(
+                                                                        selectedAgentConfig.showWebSearch
+                                                                    );
+                                                                    setKnowledgeBase(
+                                                                        selectedAgentConfig.showKnowledgeBase
+                                                                    );
+                                                                }
+                                                                setOpen(false);
+                                                            }}
                                                             className={cn(
-                                                                'ml-auto h-4 w-4',
-                                                                selectedModel === model.value
-                                                                    ? 'opacity-100'
-                                                                    : 'opacity-0'
+                                                                'flex items-center gap-2 px-2 py-2.5 rounded-md text-sm cursor-pointer transition-colors duration-200'
                                                             )}
-                                                        />
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
+                                                        >
+                                                            <div className="p-1.5 rounded-md">
+                                                                {React.createElement(agent.icon, {
+                                                                    className: `w-4 h-4 ${agent.iconColor}`,
+                                                                })}
+                                                            </div>
+                                                            <div className="flex flex-col gap-px min-w-0">
+                                                                <div className="font-medium">
+                                                                    {agent.label}
+                                                                </div>
+                                                                <div className="text-xs">
+                                                                    {agent.description}
+                                                                </div>
+                                                            </div>
+                                                            <Check
+                                                                className={cn(
+                                                                    'ml-auto h-4 w-4',
+                                                                    selectedAgent === agent.value
+                                                                        ? 'opacity-100'
+                                                                        : 'opacity-0'
+                                                                )}
+                                                            />
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </motion.div>
                                 </PopoverContent>
                             </Popover>
-                            <div
-                                onClick={() => setWebSearch(!webSearch)}
-                                className={cn(
-                                    'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
-                                    webSearch
-                                        ? 'bg-zinc-800 border-zinc-800 text-primary'
-                                        : 'bg-zinc-900 border-zinc-800'
-                                )}
-                            >
-                                <GlobeIcon className="size-3" /> Web Search
-                            </div>
-                            {isSpaceChat && (
-                                <div
-                                    onClick={() => setKnowledgeBase(!knowledgeBase)}
-                                    className={cn(
-                                        'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
-                                        knowledgeBase
-                                            ? 'bg-zinc-800 border-zinc-800 text-primary'
-                                            : 'bg-zinc-900 border-zinc-800'
-                                    )}
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    className="flex flex-row gap-2"
+                                    variants={{
+                                        hidden: {},
+                                        show: {
+                                            transition: {
+                                                staggerChildren: 0.1,
+                                            },
+                                        },
+                                        exit: {
+                                            transition: {
+                                                staggerChildren: 0.05,
+                                                staggerDirection: -1,
+                                            },
+                                        },
+                                    }}
+                                    initial="hidden"
+                                    animate="show"
+                                    exit="exit"
+                                    key={`cards-container-${selectedAgent}`}
                                 >
-                                    <BookCopyIcon className="size-3" /> Knowledge Base
-                                </div>
-                            )}
+                                    {agentTypes.find((a) => a.value === selectedAgent)
+                                        ?.showWebSearch && (
+                                        <motion.div
+                                            variants={{
+                                                hidden: { opacity: 0, y: 5 },
+                                                show: { opacity: 1, y: 0 },
+                                                exit: { opacity: 0, y: -5 },
+                                            }}
+                                            transition={{
+                                                duration: 0.3,
+                                                ease: 'easeInOut',
+                                            }}
+                                            key="web-search-card"
+                                            layout
+                                        >
+                                            <div
+                                                onClick={() => setWebSearch(!webSearch)}
+                                                className={cn(
+                                                    'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                                    webSearch
+                                                        ? 'bg-zinc-800 border-zinc-800 text-primary'
+                                                        : 'bg-zinc-900 border-zinc-800'
+                                                )}
+                                            >
+                                                <GlobeIcon className="size-3" /> Web Search
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                    {agentTypes.find((a) => a.value === selectedAgent)
+                                        ?.showKnowledgeBase && (
+                                        <motion.div
+                                            variants={{
+                                                hidden: { opacity: 0, y: 5 },
+                                                show: { opacity: 1, y: 0 },
+                                                exit: { opacity: 0, y: -5 },
+                                            }}
+                                            transition={{
+                                                duration: 0.3,
+                                                ease: 'easeInOut',
+                                            }}
+                                            key="knowledge-base-card"
+                                            layout
+                                        >
+                                            <div
+                                                onClick={() => setKnowledgeBase(!knowledgeBase)}
+                                                className={cn(
+                                                    'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                                    knowledgeBase
+                                                        ? 'bg-zinc-800 border-zinc-800 text-primary'
+                                                        : 'bg-zinc-900 border-zinc-800'
+                                                )}
+                                            >
+                                                <BookCopyIcon className="size-3" /> Knowledge Base
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </motion.div>
+                            </AnimatePresence>
                         </div>
 
                         <motion.div
@@ -418,14 +520,30 @@ export function Input({
                         animate="visible"
                         className="flex flex-col justify-start items-start gap-3"
                     >
-                        {chatsData.map((chat) => {
-                            const chatData: Chat = {
-                                ...chat,
-                                messages: convertToUIMessages(chat.messages as Array<CoreMessage>),
-                            };
+                        <AnimatePresence>
+                            {chatsData.map((chat) => {
+                                const chatData: Chat = {
+                                    ...chat,
+                                    messages: convertToUIMessages(
+                                        chat.messages as Array<CoreMessage>
+                                    ),
+                                };
 
-                            return <ChatDisplayCard key={chatData.id} chat={chatData} />;
-                        })}
+                                return (
+                                    <motion.div
+                                        key={chatData.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -20 }}
+                                        transition={{
+                                            delay: 0.1,
+                                        }}
+                                    >
+                                        <ChatDisplayCard chat={chatData} />
+                                    </motion.div>
+                                );
+                            })}
+                        </AnimatePresence>
                     </motion.div>
                 </div>
             )}
