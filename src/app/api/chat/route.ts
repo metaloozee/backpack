@@ -13,7 +13,7 @@ import { env } from '@/lib/env.mjs';
 
 import { getUserAuth } from '@/lib/auth/utils';
 import { api } from '@/lib/trpc/api';
-import { EnhancedWebPrompt, WebPrompt } from '@/lib/ai/prompts';
+import { WebPrompt } from '@/lib/ai/prompts';
 import { object, z } from 'zod';
 import { tavily } from '@tavily/core';
 import { createDataStreamResponse, tool } from 'ai';
@@ -82,7 +82,10 @@ export async function POST(req: Request) {
                     messages: convertToCoreMessages(messages),
                     system: WebPrompt({ webSearch, searchKnowledge }),
                     maxSteps: 20,
-                    experimental_transform: smoothStream(),
+                    experimental_transform: smoothStream({
+                        chunking: 'word',
+                        delayInMs: 10,
+                    }),
                     toolCallStreaming: true,
                     async onFinish({ response }) {
                         try {
@@ -126,7 +129,7 @@ export async function POST(req: Request) {
                                 const searchPromises = queries.map(
                                     async (query: string, index: number) => {
                                         const res = await tvly.search(query, {
-                                            maxResults: 3,
+                                            maxResults: 5,
                                             searchDepth: 'advanced',
                                             includeAnswer: true,
                                         });
