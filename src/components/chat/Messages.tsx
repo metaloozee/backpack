@@ -110,7 +110,7 @@ export function ChatMessages({
                         className="flex justify-start mb-10"
                     >
                         {lastToolData ? (
-                            <Tool tool={lastToolData} isOpen={true} onOpenChange={() => {}} />
+                            <Tool tool={lastToolData} />
                         ) : (
                             <Loader className="ml-4 size-3 animate-spin text-muted-foreground" />
                         )}

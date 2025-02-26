@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
-import { convertToCoreMessages, CoreMessage, Message } from 'ai';
+import { CoreMessage, Message } from 'ai';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
@@ -18,7 +18,6 @@ import {
     Brain,
     StopCircleIcon,
     BookOpenTextIcon,
-    Trash2Icon,
     GlobeIcon,
     BookCopyIcon,
 } from 'lucide-react';
@@ -26,9 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
 import { usePathname } from 'next/navigation';
 import { ChatData } from '@/app/(main)/(spaces)/s/[id]/page';
-import Link from 'next/link';
 import { Separator } from './ui/separator';
-import { Card, CardHeader, CardTitle } from './ui/card';
 import { Chat } from '@/lib/db/schema/app';
 import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
 import ChatDisplayCard from './chat/DisplayCard';
@@ -211,6 +208,102 @@ export function Input({
 
                     <div className="w-full flex justify-between items-center">
                         <div className="flex flex-row justify-start items-center gap-2">
+                            <Popover open={open} onOpenChange={setOpen}>
+                                <PopoverTrigger disabled={messages.length !== 0} asChild>
+                                    <Button
+                                        size={null}
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={open}
+                                        className={cn(
+                                            'justify-between truncate bg-zinc-800 transition-all duration-200 px-4 py-2 border-2'
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-2 text-xs">
+                                            {selectedModel && (
+                                                <div className="flex items-center">
+                                                    {React.createElement(
+                                                        geminiModels.find(
+                                                            (model) => model.value === selectedModel
+                                                        )?.icon || Brain,
+                                                        {
+                                                            className: cn(
+                                                                'w-4 h-4',
+                                                                selectedModel === 'gemini-2.0-flash'
+                                                                    ? 'text-blue-500'
+                                                                    : 'text-green-500'
+                                                            ),
+                                                        }
+                                                    )}
+                                                </div>
+                                            )}
+                                            <span>
+                                                {selectedModel
+                                                    ? geminiModels.find(
+                                                          (model) => model.value === selectedModel
+                                                      )?.label
+                                                    : 'Select model...'}
+                                            </span>
+                                        </div>
+                                        <ChevronDownIcon className="opacity-50 h-4 w-4" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                    className="w-[300px] p-2 !font-sans bg-zinc-900/50 backdrop-blur-md rounded-lg shadow-lg border border-zinc-800"
+                                    align="start"
+                                    sideOffset={8}
+                                >
+                                    <Command>
+                                        <CommandList>
+                                            <CommandGroup className="bg-zinc-900/50">
+                                                {geminiModels.map((model) => (
+                                                    <CommandItem
+                                                        key={model.value}
+                                                        value={model.value}
+                                                        onSelect={(currentValue) => {
+                                                            setSelectedModel(
+                                                                currentValue as GeminiModel
+                                                            );
+                                                            setOpen(false);
+                                                        }}
+                                                        className={cn(
+                                                            'flex items-center gap-2 px-2 py-2.5 rounded-md text-sm cursor-pointer transition-colors duration-200'
+                                                        )}
+                                                    >
+                                                        <div className="p-1.5 rounded-md">
+                                                            {React.createElement(model.icon, {
+                                                                className: cn(
+                                                                    'w-4 h-4',
+                                                                    model.value ===
+                                                                        'gemini-2.0-flash'
+                                                                        ? 'text-blue-500'
+                                                                        : 'text-green-500'
+                                                                ),
+                                                            })}
+                                                        </div>
+                                                        <div className="flex flex-col gap-px min-w-0">
+                                                            <div className="font-medium">
+                                                                {model.label}
+                                                            </div>
+                                                            <div className="text-xs">
+                                                                {model.description}
+                                                            </div>
+                                                        </div>
+                                                        <Check
+                                                            className={cn(
+                                                                'ml-auto h-4 w-4',
+                                                                selectedModel === model.value
+                                                                    ? 'opacity-100'
+                                                                    : 'opacity-0'
+                                                            )}
+                                                        />
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                             <div
                                 onClick={() => setWebSearch(!webSearch)}
                                 className={cn(
@@ -222,113 +315,21 @@ export function Input({
                             >
                                 <GlobeIcon className="size-3" /> Web Search
                             </div>
-                            <div
-                                onClick={() => setKnowledgeBase(!knowledgeBase)}
-                                className={cn(
-                                    'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
-                                    knowledgeBase
-                                        ? 'bg-zinc-800 border-zinc-800 text-primary'
-                                        : 'bg-zinc-900 border-zinc-800'
-                                )}
-                            >
-                                <BookCopyIcon className="size-3" /> Knowledge Base
-                            </div>
-                        </div>
-                        {/* <Popover open={open} onOpenChange={setOpen}>
-                            <PopoverTrigger disabled={messages.length !== 0} asChild>
-                                <Button
-                                    size={'sm'}
-                                    variant="outline"
-                                    role="combobox"
-                                    aria-expanded={open}
+                            {isSpaceChat && (
+                                <div
+                                    onClick={() => setKnowledgeBase(!knowledgeBase)}
                                     className={cn(
-                                        'justify-between truncate bg-zinc-800/50 transition-all duration-200'
+                                        'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                        knowledgeBase
+                                            ? 'bg-zinc-800 border-zinc-800 text-primary'
+                                            : 'bg-zinc-900 border-zinc-800'
                                     )}
                                 >
-                                    <div className="flex items-center gap-2 text-xs">
-                                        {selectedModel && (
-                                            <div className="flex items-center">
-                                                {React.createElement(
-                                                    geminiModels.find(
-                                                        (model) => model.value === selectedModel
-                                                    )?.icon || Brain,
-                                                    {
-                                                        className: cn(
-                                                            'w-4 h-4',
-                                                            selectedModel === 'gemini-2.0-flash'
-                                                                ? 'text-blue-500'
-                                                                : 'text-green-500'
-                                                        ),
-                                                    }
-                                                )}
-                                            </div>
-                                        )}
-                                        <span>
-                                            {selectedModel
-                                                ? geminiModels.find(
-                                                      (model) => model.value === selectedModel
-                                                  )?.label
-                                                : 'Select model...'}
-                                        </span>
-                                    </div>
-                                    <ChevronDownIcon className="opacity-50 h-4 w-4" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                                className="w-[300px] p-2 !font-sans bg-zinc-900/50 backdrop-blur-md rounded-lg shadow-lg border border-zinc-800"
-                                align="start"
-                                sideOffset={8}
-                            >
-                                <Command>
-                                    <CommandList>
-                                        <CommandGroup className="bg-zinc-900/50">
-                                            {geminiModels.map((model) => (
-                                                <CommandItem
-                                                    key={model.value}
-                                                    value={model.value}
-                                                    onSelect={(currentValue) => {
-                                                        setSelectedModel(
-                                                            currentValue as GeminiModel
-                                                        );
-                                                        setOpen(false);
-                                                    }}
-                                                    className={cn(
-                                                        'flex items-center gap-2 px-2 py-2.5 rounded-md text-sm cursor-pointer transition-colors duration-200'
-                                                    )}
-                                                >
-                                                    <div className="p-1.5 rounded-md">
-                                                        {React.createElement(model.icon, {
-                                                            className: cn(
-                                                                'w-4 h-4',
-                                                                model.value === 'gemini-2.0-flash'
-                                                                    ? 'text-blue-500'
-                                                                    : 'text-green-500'
-                                                            ),
-                                                        })}
-                                                    </div>
-                                                    <div className="flex flex-col gap-px min-w-0">
-                                                        <div className="font-medium">
-                                                            {model.label}
-                                                        </div>
-                                                        <div className="text-xs">
-                                                            {model.description}
-                                                        </div>
-                                                    </div>
-                                                    <Check
-                                                        className={cn(
-                                                            'ml-auto h-4 w-4',
-                                                            selectedModel === model.value
-                                                                ? 'opacity-100'
-                                                                : 'opacity-0'
-                                                        )}
-                                                    />
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover> */}
+                                    <BookCopyIcon className="size-3" /> Knowledge Base
+                                </div>
+                            )}
+                        </div>
+
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}

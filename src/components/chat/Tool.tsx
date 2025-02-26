@@ -1,19 +1,10 @@
 'use client';
 
-import { motion, AnimatePresence } from 'motion/react';
-import {
-    BookCopyIcon,
-    BrainCircuitIcon,
-    CircleCheckBigIcon,
-    Globe2Icon,
-    Loader2Icon,
-} from 'lucide-react';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { BookCopyIcon, BrainCircuitIcon, Globe2Icon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TextShimmer } from '../ui/text-shimmer';
 import Link from 'next/link';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
-import { ToolInvocation } from 'ai';
 import { BorderTrail } from '../ui/border-trail';
 import {
     MorphingDialog,
@@ -25,11 +16,9 @@ import {
 
 interface ToolProps {
     tool: any;
-    isOpen?: boolean;
-    onOpenChange?: (open: boolean) => void;
 }
 
-export function Tool({ tool, isOpen, onOpenChange }: ToolProps) {
+export function Tool({ tool }: ToolProps) {
     switch (tool.toolInvocation.toolName) {
         case 'web_search':
             return (
@@ -99,7 +88,7 @@ export function Tool({ tool, isOpen, onOpenChange }: ToolProps) {
                             </MorphingDialogContainer>
                         </MorphingDialog>
                     ) : (
-                        <div className="relative flex items-center gap-2 rounded-full px-4 py-2 bg-zinc-900/50 border max-w-fit w-full">
+                        <div className="relative flex items-center border-2 gap-2 rounded-full px-4 py-2 bg-zinc-900/50 max-w-fit w-full">
                             <BorderTrail
                                 style={{
                                     boxShadow:
@@ -193,7 +182,7 @@ export function Tool({ tool, isOpen, onOpenChange }: ToolProps) {
                             </MorphingDialogContainer>
                         </MorphingDialog>
                     ) : (
-                        <div className="relative flex items-center gap-2 rounded-full px-4 py-2 bg-zinc-900/50 border max-w-fit w-full">
+                        <div className="relative flex items-center gap-2 rounded-full px-4 py-2 bg-zinc-900/50 border-2 max-w-fit w-full">
                             <BorderTrail
                                 style={{
                                     boxShadow:
