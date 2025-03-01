@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { signIn } from 'next-auth/react';
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
 import { BackpackIcon } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Google from 'public/google.svg';
 import { Separator } from '@/components/ui/separator';
 

@@ -13,6 +13,7 @@ import {
 import { ChevronRightIcon, UserRoundIcon } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import SignOutBtn from '@/components/auth/SignOutBtn';
+import Image from 'next/image';
 
 export default function UserProfile({ state }: { state: 'collapsed' | 'expanded' }) {
     const { data: session } = useSession();

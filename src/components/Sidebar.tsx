@@ -155,10 +155,13 @@ export function AppSidebar() {
                     </Button>
                 </motion.div>
             </SidebarContent>
-            <SidebarFooter className={cn(state === 'collapsed' ? '' : 'p-4')}>
+            <SidebarFooter
+                className={cn(state === 'collapsed' ? 'flex justify-center items-center' : 'p-4')}
+            >
                 <Button
                     variant={state === 'expanded' ? 'outline' : 'ghost'}
                     onClick={() => setOpen(!open)}
+                    size={state === 'collapsed' ? 'icon' : 'default'}
                 >
                     {state === 'expanded' ? (
                         <div className="w-full flex flex-row justify-center items-center gap-2">

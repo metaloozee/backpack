@@ -518,7 +518,7 @@ export function Input({
                         }}
                         initial="hidden"
                         animate="visible"
-                        className="flex flex-col justify-start items-start gap-3"
+                        className="flex flex-col w-full justify-start items-start gap-3"
                     >
                         <AnimatePresence>
                             {chatsData.map((chat) => {
@@ -538,6 +538,7 @@ export function Input({
                                         transition={{
                                             delay: 0.1,
                                         }}
+                                        className="w-full"
                                     >
                                         <ChatDisplayCard chat={chatData} />
                                     </motion.div>
