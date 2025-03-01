@@ -1,6 +1,6 @@
 'use client';
 
-import { BookCopyIcon, BrainCircuitIcon, Globe2Icon } from 'lucide-react';
+import { BookCopyIcon, BrainCircuitIcon, BrainIcon, Globe2Icon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TextShimmer } from '../ui/text-shimmer';
 import Link from 'next/link';
@@ -20,6 +20,31 @@ interface ToolProps {
 
 export function Tool({ tool }: ToolProps) {
     switch (tool.toolInvocation.toolName) {
+        case 'reason':
+            return (
+                <div className="my-4">
+                    {tool.toolInvocation.state === 'result' ? (
+                        <div className="flex items-center gap-2 rounded-full px-4 py-2 bg-zinc-900/50 border max-w-fit">
+                            <div className="text-xs flex justify-start items-center gap-2">
+                                <BrainIcon className="size-3" />
+                                Reasoned
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="relative flex items-center border-2 gap-2 rounded-full px-4 py-2 bg-zinc-900/50 max-w-fit w-full">
+                            <BorderTrail
+                                style={{
+                                    boxShadow:
+                                        '0px 0px 60px 30px rgb(255 255 255 / 50%), 0 0 100px 60px rgb(0 0 0 / 50%), 0 0 140px 90px rgb(0 0 0 / 50%)',
+                                }}
+                                size={70}
+                            />
+                            <BrainIcon className="size-3" />
+                            <TextShimmer className="text-xs">Reasoning...</TextShimmer>
+                        </div>
+                    )}
+                </div>
+            );
         case 'web_search':
             return (
                 <div className="my-4">

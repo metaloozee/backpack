@@ -6,6 +6,7 @@ import {
     appendResponseMessages,
     embed,
     embedMany,
+    generateObject,
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
@@ -13,7 +14,7 @@ import { env } from '@/lib/env.mjs';
 
 import { getUserAuth } from '@/lib/auth/utils';
 import { api } from '@/lib/trpc/api';
-import { WebPrompt } from '@/lib/ai/prompts';
+import { Prompt, WebPrompt } from '@/lib/ai/prompts';
 import { object, z } from 'zod';
 import { tavily } from '@tavily/core';
 import { createDataStreamResponse, tool } from 'ai';
@@ -80,7 +81,12 @@ export async function POST(req: Request) {
                 const result = streamText({
                     model: openrouter('google/gemini-2.0-flash-001'),
                     messages: convertToCoreMessages(messages),
-                    system: WebPrompt({ webSearch, searchKnowledge }),
+                    system: Prompt({
+                        webSearch,
+                        searchKnowledge: true,
+                        xSearch: false,
+                        academicSearch: false,
+                    }),
                     maxSteps: 20,
                     experimental_transform: smoothStream({
                         chunking: 'word',
@@ -104,10 +110,79 @@ export async function POST(req: Request) {
                         } catch (error) {}
                     },
                     experimental_activeTools: [
+                        'reason',
                         webSearch && webSearch === true && 'web_search',
                         searchKnowledge && searchKnowledge === true && 'search_knowledge',
                     ],
                     tools: {
+                        reason: tool({
+                            description:
+                                'Generates a research plan with multiple steps and analysis',
+                            parameters: z.object({
+                                topic: z
+                                    .string()
+                                    .describe(
+                                        'The main topic or question to generate a research plan.'
+                                    ),
+                            }),
+                            execute: async ({ topic }, { toolCallId }) => {
+                                console.log('Reasoning...');
+
+                                dataStream.writeMessageAnnotation({
+                                    type: 'tool-call',
+                                    data: {
+                                        toolCallId,
+                                        toolName: 'reason',
+                                        state: 'call',
+                                        args: JSON.stringify(topic),
+                                    },
+                                });
+
+                                try {
+                                    const { object: researchPlan } = await generateObject({
+                                        model: openrouter(
+                                            'google/gemini-2.0-flash-thinking-exp:free'
+                                        ),
+                                        schema: z.object({
+                                            web_search_queries: z.array(z.string()).max(5),
+                                            knowledge_search_keywords: z.array(z.string()).max(5),
+                                            x_search_query: z.string(),
+                                            academic_search_queries: z.array(z.string()).max(5),
+                                            research_analysis: z
+                                                .string()
+                                                .describe(
+                                                    'The final analysis to perform on the results retrieved from tools.'
+                                                ),
+                                        }),
+                                        prompt: `
+    You are a tool acting as a specialized researcher trained on special researching techniques and queries.
+    Your job is to create a focused research plan for the topic: "${topic}".
+    
+    Today's date and day of the week: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+    
+    Consider different angles and potential controversies, but maintain focus on the core aspects.
+                                        `,
+                                    });
+
+                                    dataStream.writeMessageAnnotation({
+                                        type: 'tool-call',
+                                        data: {
+                                            toolCallId,
+                                            toolName: 'reason',
+                                            state: 'result',
+                                            args: JSON.stringify({ topic }),
+                                            result: JSON.stringify({ researchPlan }),
+                                        },
+                                    });
+
+                                    console.log(researchPlan);
+
+                                    return researchPlan;
+                                } catch (e) {
+                                    console.error(e);
+                                }
+                            },
+                        }),
                         web_search: tool({
                             description: 'Performs a search over the internet for current data.',
                             parameters: z.object({
@@ -167,7 +242,7 @@ export async function POST(req: Request) {
                                 };
                             },
                         }),
-                        search_knowledge: tool({
+                        knowledge_search: tool({
                             description:
                                 'Performs an Internal Semantic Search on User Uploaded Documents.',
                             parameters: z.object({
