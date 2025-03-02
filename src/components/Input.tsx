@@ -22,6 +22,7 @@ import {
     BookCopyIcon,
     GraduationCap,
     Users,
+    GraduationCapIcon,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
@@ -31,6 +32,7 @@ import { Separator } from './ui/separator';
 import { Chat } from '@/lib/db/schema/app';
 import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
 import ChatDisplayCard from './chat/DisplayCard';
+import { TwitterLogoIcon } from '@radix-ui/react-icons';
 
 interface InputPanelProps {
     input: string;
@@ -45,8 +47,15 @@ interface InputPanelProps {
 
     webSearch: boolean;
     setWebSearch: (webSearch: boolean) => void;
+
     knowledgeBase: boolean;
     setKnowledgeBase: (knowledgeBase: boolean) => void;
+
+    academicSearch: boolean;
+    setAcademicSearch: (academicSearch: boolean) => void;
+
+    xSearch: boolean;
+    setXSearch: (xSearch: boolean) => void;
 
     chatsData?: Array<ChatData>;
 }
@@ -59,6 +68,8 @@ const agentTypes = [
         icon: GlobeIcon,
         showWebSearch: true,
         showKnowledgeBase: false,
+        showAcademicSearch: false,
+        showXSearch: false,
         iconColor: 'text-sky-500',
     },
     {
@@ -68,6 +79,8 @@ const agentTypes = [
         icon: GraduationCap,
         showWebSearch: true,
         showKnowledgeBase: true,
+        showAcademicSearch: true,
+        showXSearch: false,
         iconColor: 'text-green-500',
     },
     {
@@ -77,6 +90,8 @@ const agentTypes = [
         icon: Users,
         showWebSearch: false,
         showKnowledgeBase: false,
+        showAcademicSearch: false,
+        showXSearch: true,
         iconColor: 'text-indigo-500',
     },
 ] as const;
@@ -95,13 +110,71 @@ export function Input({
     append,
     chatsData,
 
-    webSearch,
+    webSearch: externalWebSearch,
     setWebSearch,
-    knowledgeBase,
+    knowledgeBase: externalKnowledgeBase,
     setKnowledgeBase,
+    academicSearch: externalAcademicSearch,
+    setAcademicSearch,
+    xSearch: externalXSearch,
+    setXSearch,
 }: InputPanelProps) {
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
+
+    // Internal state management for when external state setters aren't provided
+    const [internalWebSearch, setInternalWebSearch] = React.useState(!!externalWebSearch);
+    const [internalKnowledgeBase, setInternalKnowledgeBase] =
+        React.useState(!!externalKnowledgeBase);
+    const [internalAcademicSearch, setInternalAcademicSearch] =
+        React.useState(!!externalAcademicSearch);
+    const [internalXSearch, setInternalXSearch] = React.useState(!!externalXSearch);
+
+    // Use external state if provided, otherwise use internal state
+    const webSearch =
+        typeof externalWebSearch !== 'undefined' ? externalWebSearch : internalWebSearch;
+    const knowledgeBase =
+        typeof externalKnowledgeBase !== 'undefined'
+            ? externalKnowledgeBase
+            : internalKnowledgeBase;
+    const academicSearch =
+        typeof externalAcademicSearch !== 'undefined'
+            ? externalAcademicSearch
+            : internalAcademicSearch;
+    const xSearch = typeof externalXSearch !== 'undefined' ? externalXSearch : internalXSearch;
+
+    // Functions to update state - use external if provided, otherwise use internal
+    const updateWebSearch = (value: boolean) => {
+        if (typeof setWebSearch === 'function') {
+            setWebSearch(value);
+        } else {
+            setInternalWebSearch(value);
+        }
+    };
+
+    const updateKnowledgeBase = (value: boolean) => {
+        if (typeof setKnowledgeBase === 'function') {
+            setKnowledgeBase(value);
+        } else {
+            setInternalKnowledgeBase(value);
+        }
+    };
+
+    const updateAcademicSearch = (value: boolean) => {
+        if (typeof setAcademicSearch === 'function') {
+            setAcademicSearch(value);
+        } else {
+            setInternalAcademicSearch(value);
+        }
+    };
+
+    const updateXSearch = (value: boolean) => {
+        if (typeof setXSearch === 'function') {
+            setXSearch(value);
+        } else {
+            setInternalXSearch(value);
+        }
+    };
 
     const [showEmptyScreen, setShowEmptyScreen] = React.useState(false);
     const router = useRouter();
@@ -308,11 +381,17 @@ export function Input({
                                                                             a.value === currentValue
                                                                     );
                                                                 if (selectedAgentConfig) {
-                                                                    setWebSearch(
+                                                                    updateWebSearch(
                                                                         selectedAgentConfig.showWebSearch
                                                                     );
-                                                                    setKnowledgeBase(
+                                                                    updateKnowledgeBase(
                                                                         selectedAgentConfig.showKnowledgeBase
+                                                                    );
+                                                                    updateAcademicSearch(
+                                                                        selectedAgentConfig.showAcademicSearch
+                                                                    );
+                                                                    updateXSearch(
+                                                                        selectedAgentConfig.showXSearch
                                                                     );
                                                                 }
                                                                 setOpen(false);
@@ -388,7 +467,7 @@ export function Input({
                                             layout
                                         >
                                             <div
-                                                onClick={() => setWebSearch(!webSearch)}
+                                                onClick={() => updateWebSearch(!webSearch)}
                                                 className={cn(
                                                     'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
                                                     webSearch
@@ -416,7 +495,7 @@ export function Input({
                                             layout
                                         >
                                             <div
-                                                onClick={() => setKnowledgeBase(!knowledgeBase)}
+                                                onClick={() => updateKnowledgeBase(!knowledgeBase)}
                                                 className={cn(
                                                     'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
                                                     knowledgeBase
@@ -425,6 +504,66 @@ export function Input({
                                                 )}
                                             >
                                                 <BookCopyIcon className="size-3" /> Knowledge Base
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                    {agentTypes.find((a) => a.value === selectedAgent)
+                                        ?.showAcademicSearch && (
+                                        <motion.div
+                                            variants={{
+                                                hidden: { opacity: 0, y: 5 },
+                                                show: { opacity: 1, y: 0 },
+                                                exit: { opacity: 0, y: -5 },
+                                            }}
+                                            transition={{
+                                                duration: 0.3,
+                                                ease: 'easeInOut',
+                                            }}
+                                            key="academic-search-card"
+                                            layout
+                                        >
+                                            <div
+                                                onClick={() =>
+                                                    updateAcademicSearch(!academicSearch)
+                                                }
+                                                className={cn(
+                                                    'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                                    academicSearch
+                                                        ? 'bg-zinc-800 border-zinc-800 text-primary'
+                                                        : 'bg-zinc-900 border-zinc-800'
+                                                )}
+                                            >
+                                                <GraduationCapIcon className="size-3" /> Academic
+                                                Search
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                    {agentTypes.find((a) => a.value === selectedAgent)
+                                        ?.showXSearch && (
+                                        <motion.div
+                                            variants={{
+                                                hidden: { opacity: 0, y: 5 },
+                                                show: { opacity: 1, y: 0 },
+                                                exit: { opacity: 0, y: -5 },
+                                            }}
+                                            transition={{
+                                                duration: 0.3,
+                                                ease: 'easeInOut',
+                                            }}
+                                            key="x-search-card"
+                                            layout
+                                        >
+                                            <div
+                                                onClick={() => updateXSearch(!xSearch)}
+                                                className={cn(
+                                                    'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                                    xSearch
+                                                        ? 'bg-zinc-800 border-zinc-800 text-primary'
+                                                        : 'bg-zinc-900 border-zinc-800'
+                                                )}
+                                            >
+                                                <TwitterLogoIcon className="size-3" /> X (Twitter)
+                                                Search
                                             </div>
                                         </motion.div>
                                     )}

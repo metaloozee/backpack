@@ -27,7 +27,7 @@ export function Tool({ tool }: ToolProps) {
                         <div className="flex items-center gap-2 rounded-full px-4 py-2 bg-zinc-900/50 border max-w-fit">
                             <div className="text-xs flex justify-start items-center gap-2">
                                 <BrainIcon className="size-3" />
-                                Reasoned
+                                Research Plan Generated
                             </div>
                         </div>
                     ) : (
@@ -40,7 +40,9 @@ export function Tool({ tool }: ToolProps) {
                                 size={70}
                             />
                             <BrainIcon className="size-3" />
-                            <TextShimmer className="text-xs">Reasoning...</TextShimmer>
+                            <TextShimmer className="text-xs">
+                                Generating Research Plan...
+                            </TextShimmer>
                         </div>
                     )}
                 </div>
@@ -72,7 +74,7 @@ export function Tool({ tool }: ToolProps) {
                                 <MorphingDialogContent className="relative h-auto rounded-md max-w-3xl w-full bg-zinc-900 border-2 p-4">
                                     <ScrollArea className="h-[50vh] text-xs break-words w-full">
                                         <div className="mb-4 flex flex-row flex-wrap gap-2 w-full">
-                                            {tool.toolInvocation.args.queries.map(
+                                            {tool.toolInvocation.args.web_search_queries.map(
                                                 (query: string, index: number) => (
                                                     <div
                                                         key={index}

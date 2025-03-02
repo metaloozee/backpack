@@ -67,6 +67,8 @@ export async function POST(req: Request) {
             spaceId,
             webSearch,
             knowledgeSearch: searchKnowledge,
+            academicSearch,
+            xSearch,
         } = await req.json();
         if (!messages || !chatId) {
             throw new Error('Invalid Body');
@@ -79,7 +81,7 @@ export async function POST(req: Request) {
         return createDataStreamResponse({
             async execute(dataStream) {
                 const result = streamText({
-                    model: openrouter('google/gemini-2.0-flash-001'),
+                    model: openrouter('google/gemini-2.0-pro-exp-02-05:free'),
                     messages: convertToCoreMessages(messages),
                     system: Prompt({
                         webSearch,
@@ -113,6 +115,8 @@ export async function POST(req: Request) {
                         'reason',
                         webSearch && webSearch === true && 'web_search',
                         searchKnowledge && searchKnowledge === true && 'search_knowledge',
+                        academicSearch && academicSearch === true && 'academic_search',
+                        xSearch && xSearch === true && 'x_search',
                     ],
                     tools: {
                         reason: tool({
@@ -140,28 +144,44 @@ export async function POST(req: Request) {
 
                                 try {
                                     const { object: researchPlan } = await generateObject({
-                                        model: openrouter(
-                                            'google/gemini-2.0-flash-thinking-exp:free'
-                                        ),
+                                        model: openrouter('google/gemini-2.0-pro-exp-02-05:free'),
                                         schema: z.object({
                                             web_search_queries: z.array(z.string()).max(5),
                                             knowledge_search_keywords: z.array(z.string()).max(5),
                                             x_search_query: z.string(),
                                             academic_search_queries: z.array(z.string()).max(5),
                                             research_analysis: z
-                                                .string()
+                                                .array(z.string())
                                                 .describe(
                                                     'The final analysis to perform on the results retrieved from tools.'
                                                 ),
                                         }),
                                         prompt: `
-    You are a tool acting as a specialized researcher trained on special researching techniques and queries.
-    Your job is to create a focused research plan for the topic: "${topic}".
-    
-    Today's date and day of the week: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-    
-    Consider different angles and potential controversies, but maintain focus on the core aspects.
+                                You are a specialized research assistant with expertise in creating comprehensive research plans.
+                                    
+                                TASK: Create a focused research plan for the topic: "${topic}"
+                                    
+                                CONTEXT:
+                                - Today's date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                - This plan will guide a thorough investigation of the topic
+                                    
+                                REQUIRED COMPONENTS:
+                                1. Web Search Queries (3-5): Specific questions to find general information online
+                                2. Knowledge Search Keywords (3-5): Technical terms to search in knowledge bases
+                                3. X Search Query (1): A single query optimized for finding recent discussions on X/Twitter
+                                4. Academic Search Queries (3-5): Queries for finding scholarly articles and research papers
+                                5. Research Analysis (2-6): Specific analyses to perform on the gathered information
+                                    
+                                GUIDELINES:
+                                - Be precise and specific in your queries
+                                - Cover foundational concepts, applications, limitations, and recent developments
+                                - Consider interdisciplinary connections where relevant
+                                - Include both theoretical and practical aspects
+                                - Balance technical depth with accessibility
+                                    
+                                FORMAT YOUR RESPONSE ACCORDING TO THE SCHEMA PROVIDED.
                                         `,
+                                        temperature: 0,
                                     });
 
                                     dataStream.writeMessageAnnotation({
@@ -175,9 +195,7 @@ export async function POST(req: Request) {
                                         },
                                     });
 
-                                    console.log(researchPlan);
-
-                                    return researchPlan;
+                                    return { researchPlan };
                                 } catch (e) {
                                     console.error(e);
                                 }
@@ -186,9 +204,9 @@ export async function POST(req: Request) {
                         web_search: tool({
                             description: 'Performs a search over the internet for current data.',
                             parameters: z.object({
-                                queries: z.array(z.string()),
+                                web_search_queries: z.array(z.string()).max(5),
                             }),
-                            execute: async ({ queries }, { toolCallId }) => {
+                            execute: async ({ web_search_queries: queries }, { toolCallId }) => {
                                 dataStream.writeMessageAnnotation({
                                     type: 'tool-call',
                                     data: {
@@ -199,7 +217,7 @@ export async function POST(req: Request) {
                                     },
                                 });
 
-                                console.log('Queries: ', queries);
+                                console.log('Web Search Queries: ', queries);
 
                                 const searchPromises = queries.map(
                                     async (query: string, index: number) => {
@@ -246,9 +264,12 @@ export async function POST(req: Request) {
                             description:
                                 'Performs an Internal Semantic Search on User Uploaded Documents.',
                             parameters: z.object({
-                                keywords: z.array(z.string()),
+                                knowledge_search_keywords: z.array(z.string()).max(5),
                             }),
-                            execute: async ({ keywords }, { toolCallId }) => {
+                            execute: async (
+                                { knowledge_search_keywords: keywords },
+                                { toolCallId }
+                            ) => {
                                 if (!spaceId) {
                                     return null;
                                 }
@@ -263,7 +284,7 @@ export async function POST(req: Request) {
                                     },
                                 });
 
-                                console.log('Keywords: ', keywords);
+                                console.log('Knowledge Search Keywords: ', keywords);
 
                                 const { embeddings } = await embedMany({
                                     model: google.textEmbeddingModel('text-embedding-004'),
@@ -325,6 +346,61 @@ export async function POST(req: Request) {
                                 };
                             },
                         }),
+                        x_search: tool({
+                            description:
+                                'Performs a search on X (Formerly Twitter) for relevant posts.',
+                            parameters: z.object({
+                                x_search_query: z.string(),
+                            }),
+                            execute: async ({ x_search_query: query }, { toolCallId }) => {
+                                dataStream.writeMessageAnnotation({
+                                    type: 'tool-call',
+                                    data: {
+                                        toolCallId,
+                                        toolName: 'x_search',
+                                        state: 'call',
+                                        args: JSON.stringify(query),
+                                    },
+                                });
+
+                                console.log('X Search Query: ', query);
+
+                                // TODO
+                                return null;
+                            },
+                        }),
+                        academic_search: tool({
+                            description:
+                                'Performs a search for various academic papers and researches',
+                            parameters: z.object({
+                                academic_search_queries: z.array(z.string()).max(5),
+                            }),
+                            execute: async (
+                                { academic_search_queries: queries },
+                                { toolCallId }
+                            ) => {
+                                dataStream.writeMessageAnnotation({
+                                    type: 'tool-call',
+                                    data: {
+                                        toolCallId,
+                                        toolName: 'academic_search',
+                                        state: 'call',
+                                        args: JSON.stringify(queries),
+                                    },
+                                });
+
+                                console.log('Academic Search Queries: ', queries);
+
+                                // TODO
+                                return null;
+                            },
+                        }),
+                        // research_analysis: tool({
+                        //     description: "Performs a quick analysis based on the tool retrieved information.",
+                        //     parameters: z.object({
+
+                        //     })
+                        // })
                     },
                 });
 

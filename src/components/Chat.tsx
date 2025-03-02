@@ -28,6 +28,8 @@ export function Chat({
 
     const [webSearch, setWebSearch] = React.useState(true);
     const [knowledgeBase, setKnowledgeBase] = React.useState(false);
+    const [academicSearch, setAcademicSearch] = React.useState(false);
+    const [xSearch, setXSearch] = React.useState(false);
 
     const {
         messages,
@@ -42,7 +44,14 @@ export function Chat({
         setData,
     } = useChat({
         initialMessages: savedMessages,
-        body: { id, spaceId: spaceId, webSearch, knowledgeSearch: knowledgeBase },
+        body: {
+            id,
+            spaceId: spaceId,
+            webSearch,
+            knowledgeSearch: knowledgeBase,
+            academicSearch,
+            xSearch,
+        },
         onFinish: () => {
             if (messages.length === 0) {
                 window.history.pushState({}, '', `/c/${id}`);
@@ -109,6 +118,10 @@ export function Chat({
                 setWebSearch={setWebSearch}
                 knowledgeBase={knowledgeBase}
                 setKnowledgeBase={setKnowledgeBase}
+                academicSearch={academicSearch}
+                setAcademicSearch={setAcademicSearch}
+                xSearch={xSearch}
+                setXSearch={setXSearch}
             />
         </div>
     );
