@@ -14,7 +14,7 @@ import { env } from '@/lib/env.mjs';
 
 import { getUserAuth } from '@/lib/auth/utils';
 import { api } from '@/lib/trpc/api';
-import { Prompt, WebPrompt } from '@/lib/ai/prompts';
+import { Prompt, ResearchPrompt, WebPrompt } from '@/lib/ai/prompts';
 import { object, z } from 'zod';
 import { tavily } from '@tavily/core';
 import { createDataStreamResponse, tool } from 'ai';
@@ -81,9 +81,10 @@ export async function POST(req: Request) {
                     messages: convertToCoreMessages(messages),
                     system: Prompt({
                         webSearch,
-                        searchKnowledge: true,
+                        searchKnowledge,
                         xSearch: false,
                         academicSearch: false,
+                        index: 2,
                     }),
                     maxSteps: 20,
                     experimental_transform: smoothStream({
@@ -108,16 +109,15 @@ export async function POST(req: Request) {
                         } catch (error) {}
                     },
                     experimental_activeTools: [
-                        'reason',
+                        'research',
                         webSearch && webSearch === true && 'web_search',
                         searchKnowledge && searchKnowledge === true && 'search_knowledge',
                         academicSearch && academicSearch === true && 'academic_search',
                         xSearch && xSearch === true && 'x_search',
                     ],
                     tools: {
-                        reason: tool({
-                            description:
-                                'Generates a research plan with multiple steps and analysis',
+                        research: tool({
+                            description: 'Generates parameters to be used for additional tools.',
                             parameters: z.object({
                                 topic: z
                                     .string()
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
                                     type: 'tool-call',
                                     data: {
                                         toolCallId,
-                                        toolName: 'reason',
+                                        toolName: 'research',
                                         state: 'call',
                                         args: JSON.stringify(topic),
                                     },
@@ -138,7 +138,7 @@ export async function POST(req: Request) {
 
                                 try {
                                     const { object: researchPlan } = await generateObject({
-                                        model: openrouter('google/gemini-2.0-pro-exp-02-05:free'),
+                                        model: openrouter('google/gemini-2.0-flash-lite-001'),
                                         schema: z.object({
                                             web_search_queries: z.array(z.string()).max(5),
                                             knowledge_search_keywords: z.array(z.string()).max(5),
@@ -150,31 +150,7 @@ export async function POST(req: Request) {
                                                     'The final analysis to perform on the results retrieved from tools.'
                                                 ),
                                         }),
-                                        prompt: `
-                                You are a specialized research assistant with expertise in creating comprehensive research plans.
-                                    
-                                TASK: Create a focused research plan for the topic: "${topic}"
-                                    
-                                CONTEXT:
-                                - Today's date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                                - This plan will guide a thorough investigation of the topic
-                                    
-                                REQUIRED COMPONENTS:
-                                1. Web Search Queries (3-5): Specific questions to find general information online
-                                2. Knowledge Search Keywords (3-5): Technical terms to search in knowledge bases
-                                3. X Search Query (1): A single query optimized for finding recent discussions on X/Twitter
-                                4. Academic Search Queries (3-5): Queries for finding scholarly articles and research papers
-                                5. Research Analysis (2-6): Specific analyses to perform on the gathered information
-                                    
-                                GUIDELINES:
-                                - Be precise and specific in your queries
-                                - Cover foundational concepts, applications, limitations, and recent developments
-                                - Consider interdisciplinary connections where relevant
-                                - Include both theoretical and practical aspects
-                                - Balance technical depth with accessibility
-                                    
-                                FORMAT YOUR RESPONSE ACCORDING TO THE SCHEMA PROVIDED.
-                                        `,
+                                        prompt: ResearchPrompt({ topic }),
                                         temperature: 0,
                                     });
 
@@ -182,7 +158,7 @@ export async function POST(req: Request) {
                                         type: 'tool-call',
                                         data: {
                                             toolCallId,
-                                            toolName: 'reason',
+                                            toolName: 'research',
                                             state: 'result',
                                             args: JSON.stringify({ topic }),
                                             result: JSON.stringify({ researchPlan }),

@@ -20,7 +20,7 @@ interface ToolProps {
 
 export function Tool({ tool }: ToolProps) {
     switch (tool.toolInvocation.toolName) {
-        case 'reason':
+        case 'research':
             return (
                 <div className="my-4">
                     {tool.toolInvocation.state === 'result' ? (
