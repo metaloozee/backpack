@@ -81,33 +81,19 @@ Your responses should be thorough, analytical, and presented in an engaging styl
     
   - **web_search** [${webSearch ? 'ENABLED' : 'DISABLED'}]
     - Purpose: Retrieve current internet information
-    - Structure each search with:
-       * Primary terms (2+ core concepts)
-       * Secondary terms (3+ related concepts)
-       * Temporal qualifiers (when time-relevant)
    
    - **knowledge_search** [${searchKnowledge ? 'ENABLED' : 'DISABLED'}]
      - Purpose: Access internal knowledge database
-     - Structure each query with:
-       * Primary keywords (2+ essential terms)
-       * Secondary keywords (3+ alternative terms)
-       * Temporal keywords (when applicable)
-    
+ 
     - **x_search** [DISABLED]
       - Purpose: Searches X (Twitter) for relevant posts
-      - Structure each search with:
-        * Primary query (1 core concept)
-        * Secondary qeury (1 related concept)
-
+     
     - **reddit_search** [DISABLED]
       - Purpose: Searches through multiple threads on Reddit
   
     - **academic_search** [DISABLED]
       - Purpose: Searches through various academic papers and researches
-      - Structure each query with:
-        * Primary terms (2+ core concepts)
-        * Secondary terms (3+ related concepts)
-        * Temporal qualifiers (when time-relevant)
+  
 
 4. **Notify User**: While tools are processing, inform the user that research is underway
 

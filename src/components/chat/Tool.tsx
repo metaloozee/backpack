@@ -129,7 +129,7 @@ export function Tool({ tool }: ToolProps) {
                     )}
                 </div>
             );
-        case 'search_knowledge':
+        case 'knowledge_search':
             return (
                 <div className="my-4">
                     {tool.toolInvocation.state == 'result' ? (

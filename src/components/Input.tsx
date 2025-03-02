@@ -33,6 +33,7 @@ import { Chat } from '@/lib/db/schema/app';
 import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
 import ChatDisplayCard from './chat/DisplayCard';
 import { TwitterLogoIcon } from '@radix-ui/react-icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface InputPanelProps {
     input: string;
@@ -110,69 +111,39 @@ export function Input({
     append,
     chatsData,
 
-    webSearch: externalWebSearch,
+    webSearch,
     setWebSearch,
-    knowledgeBase: externalKnowledgeBase,
+    knowledgeBase,
     setKnowledgeBase,
-    academicSearch: externalAcademicSearch,
+    academicSearch,
     setAcademicSearch,
-    xSearch: externalXSearch,
+    xSearch,
     setXSearch,
 }: InputPanelProps) {
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
 
-    // Internal state management for when external state setters aren't provided
-    const [internalWebSearch, setInternalWebSearch] = React.useState(!!externalWebSearch);
-    const [internalKnowledgeBase, setInternalKnowledgeBase] =
-        React.useState(!!externalKnowledgeBase);
-    const [internalAcademicSearch, setInternalAcademicSearch] =
-        React.useState(!!externalAcademicSearch);
-    const [internalXSearch, setInternalXSearch] = React.useState(!!externalXSearch);
-
-    // Use external state if provided, otherwise use internal state
-    const webSearch =
-        typeof externalWebSearch !== 'undefined' ? externalWebSearch : internalWebSearch;
-    const knowledgeBase =
-        typeof externalKnowledgeBase !== 'undefined'
-            ? externalKnowledgeBase
-            : internalKnowledgeBase;
-    const academicSearch =
-        typeof externalAcademicSearch !== 'undefined'
-            ? externalAcademicSearch
-            : internalAcademicSearch;
-    const xSearch = typeof externalXSearch !== 'undefined' ? externalXSearch : internalXSearch;
-
-    // Functions to update state - use external if provided, otherwise use internal
     const updateWebSearch = (value: boolean) => {
         if (typeof setWebSearch === 'function') {
             setWebSearch(value);
-        } else {
-            setInternalWebSearch(value);
         }
     };
 
     const updateKnowledgeBase = (value: boolean) => {
         if (typeof setKnowledgeBase === 'function') {
             setKnowledgeBase(value);
-        } else {
-            setInternalKnowledgeBase(value);
         }
     };
 
     const updateAcademicSearch = (value: boolean) => {
         if (typeof setAcademicSearch === 'function') {
             setAcademicSearch(value);
-        } else {
-            setInternalAcademicSearch(value);
         }
     };
 
     const updateXSearch = (value: boolean) => {
         if (typeof setXSearch === 'function') {
             setXSearch(value);
-        } else {
-            setInternalXSearch(value);
         }
     };
 
@@ -312,7 +283,7 @@ export function Input({
                                             role="combobox"
                                             aria-expanded={open}
                                             className={cn(
-                                                'justify-between truncate bg-zinc-800 transition-all duration-200 px-4 py-2 border-2'
+                                                'justify-between truncate bg-zinc-800 transition-all duration-200 px-4 py-2'
                                             )}
                                         >
                                             <div className="flex items-center gap-2 text-xs">
@@ -324,7 +295,7 @@ export function Input({
                                                                     agent.value === selectedAgent
                                                             )?.icon || Brain,
                                                             {
-                                                                className: `w-4 h-4 ${
+                                                                className: `size-3 ${
                                                                     agentTypes.find(
                                                                         (agent) =>
                                                                             agent.value ===
@@ -335,7 +306,7 @@ export function Input({
                                                         )}
                                                     </div>
                                                 )}
-                                                <span>
+                                                <span className="text-xs font-normal">
                                                     {selectedAgent
                                                         ? agentTypes.find(
                                                               (agent) =>
@@ -344,7 +315,7 @@ export function Input({
                                                         : 'Select agent...'}
                                                 </span>
                                             </div>
-                                            <ChevronDownIcon className="opacity-50 h-4 w-4" />
+                                            <ChevronDownIcon className="opacity-50 size-3" />
                                         </Button>
                                     </motion.div>
                                 </PopoverTrigger>
@@ -466,17 +437,28 @@ export function Input({
                                             key="web-search-card"
                                             layout
                                         >
-                                            <div
-                                                onClick={() => updateWebSearch(!webSearch)}
-                                                className={cn(
-                                                    'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
-                                                    webSearch
-                                                        ? 'bg-zinc-800 border-zinc-800 text-primary'
-                                                        : 'bg-zinc-900 border-zinc-800'
-                                                )}
-                                            >
-                                                <GlobeIcon className="size-3" /> Web Search
-                                            </div>
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <div
+                                                            onClick={() =>
+                                                                updateWebSearch(!webSearch)
+                                                            }
+                                                            className={cn(
+                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                                                webSearch
+                                                                    ? 'bg-zinc-800 border-zinc-800 text-primary'
+                                                                    : 'bg-zinc-900 border-zinc-800'
+                                                            )}
+                                                        >
+                                                            <GlobeIcon className="size-3.5" />
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>Web Search</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
                                         </motion.div>
                                     )}
                                     {agentTypes.find((a) => a.value === selectedAgent)
@@ -494,17 +476,28 @@ export function Input({
                                             key="knowledge-base-card"
                                             layout
                                         >
-                                            <div
-                                                onClick={() => updateKnowledgeBase(!knowledgeBase)}
-                                                className={cn(
-                                                    'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
-                                                    knowledgeBase
-                                                        ? 'bg-zinc-800 border-zinc-800 text-primary'
-                                                        : 'bg-zinc-900 border-zinc-800'
-                                                )}
-                                            >
-                                                <BookCopyIcon className="size-3" /> Knowledge Base
-                                            </div>
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <div
+                                                            onClick={() =>
+                                                                updateKnowledgeBase(!knowledgeBase)
+                                                            }
+                                                            className={cn(
+                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                                                knowledgeBase
+                                                                    ? 'bg-zinc-800 border-zinc-800 text-primary'
+                                                                    : 'bg-zinc-900 border-zinc-800'
+                                                            )}
+                                                        >
+                                                            <BookCopyIcon className="size-3.5" />
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>Knowledge Base</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
                                         </motion.div>
                                     )}
                                     {agentTypes.find((a) => a.value === selectedAgent)
@@ -522,20 +515,30 @@ export function Input({
                                             key="academic-search-card"
                                             layout
                                         >
-                                            <div
-                                                onClick={() =>
-                                                    updateAcademicSearch(!academicSearch)
-                                                }
-                                                className={cn(
-                                                    'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
-                                                    academicSearch
-                                                        ? 'bg-zinc-800 border-zinc-800 text-primary'
-                                                        : 'bg-zinc-900 border-zinc-800'
-                                                )}
-                                            >
-                                                <GraduationCapIcon className="size-3" /> Academic
-                                                Search
-                                            </div>
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <div
+                                                            onClick={() =>
+                                                                updateAcademicSearch(
+                                                                    !academicSearch
+                                                                )
+                                                            }
+                                                            className={cn(
+                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                                                academicSearch
+                                                                    ? 'bg-zinc-800 border-zinc-800 text-primary'
+                                                                    : 'bg-zinc-900 border-zinc-800'
+                                                            )}
+                                                        >
+                                                            <GraduationCapIcon className="size-3.5" />
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>Academic Search</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
                                         </motion.div>
                                     )}
                                     {agentTypes.find((a) => a.value === selectedAgent)
@@ -553,18 +556,26 @@ export function Input({
                                             key="x-search-card"
                                             layout
                                         >
-                                            <div
-                                                onClick={() => updateXSearch(!xSearch)}
-                                                className={cn(
-                                                    'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
-                                                    xSearch
-                                                        ? 'bg-zinc-800 border-zinc-800 text-primary'
-                                                        : 'bg-zinc-900 border-zinc-800'
-                                                )}
-                                            >
-                                                <TwitterLogoIcon className="size-3" /> X (Twitter)
-                                                Search
-                                            </div>
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <div
+                                                            onClick={() => updateXSearch(!xSearch)}
+                                                            className={cn(
+                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                                                xSearch
+                                                                    ? 'bg-zinc-800 border-zinc-800 text-primary'
+                                                                    : 'bg-zinc-900 border-zinc-800'
+                                                            )}
+                                                        >
+                                                            <TwitterLogoIcon className="size-3.5" />
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>X (Twitter) Search</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
                                         </motion.div>
                                     )}
                                 </motion.div>

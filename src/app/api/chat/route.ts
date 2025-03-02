@@ -74,14 +74,10 @@ export async function POST(req: Request) {
             throw new Error('Invalid Body');
         }
 
-        if (!webSearch && !searchKnowledge) {
-            throw new Error('You must be using at-least one tool');
-        }
-
         return createDataStreamResponse({
             async execute(dataStream) {
                 const result = streamText({
-                    model: openrouter('google/gemini-2.0-pro-exp-02-05:free'),
+                    model: openrouter('google/gemini-2.0-flash-001'),
                     messages: convertToCoreMessages(messages),
                     system: Prompt({
                         webSearch,
@@ -130,8 +126,6 @@ export async function POST(req: Request) {
                                     ),
                             }),
                             execute: async ({ topic }, { toolCallId }) => {
-                                console.log('Reasoning...');
-
                                 dataStream.writeMessageAnnotation({
                                     type: 'tool-call',
                                     data: {
@@ -278,7 +272,7 @@ export async function POST(req: Request) {
                                     type: 'tool-call',
                                     data: {
                                         toolCallId,
-                                        toolName: 'search_knowledge',
+                                        toolName: 'knowledge_search',
                                         state: 'call',
                                         args: JSON.stringify(keywords),
                                     },
@@ -334,7 +328,7 @@ export async function POST(req: Request) {
                                     type: 'tool-call',
                                     data: {
                                         toolCallId,
-                                        toolName: 'search_knowledge',
+                                        toolName: 'knowledge_search',
                                         state: 'result',
                                         args: JSON.stringify({ keywords }),
                                         result: JSON.stringify({ results }),
@@ -395,12 +389,6 @@ export async function POST(req: Request) {
                                 return null;
                             },
                         }),
-                        // research_analysis: tool({
-                        //     description: "Performs a quick analysis based on the tool retrieved information.",
-                        //     parameters: z.object({
-
-                        //     })
-                        // })
                     },
                 });
 
