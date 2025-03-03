@@ -23,6 +23,8 @@ import {
     GraduationCap,
     Users,
     GraduationCapIcon,
+    BookIcon,
+    FlaskConical,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
@@ -61,43 +63,35 @@ interface InputPanelProps {
     chatsData?: Array<ChatData>;
 }
 
-const agentTypes = [
+// Replace with mode types
+const modeTypes = [
     {
         value: 'default',
         label: 'Default',
-        description: 'General purpose search assistant',
+        description: 'Standard mode with all features',
         icon: GlobeIcon,
-        showWebSearch: true,
-        showKnowledgeBase: false,
-        showAcademicSearch: false,
-        showXSearch: false,
-        iconColor: 'text-sky-500',
-    },
-    {
-        value: 'academic',
-        label: 'Academic',
-        description: 'Specialized for academic research',
-        icon: GraduationCap,
         showWebSearch: true,
         showKnowledgeBase: true,
         showAcademicSearch: true,
-        showXSearch: false,
-        iconColor: 'text-green-500',
+        showXSearch: true,
+        iconColor: 'text-sky-500',
+        disabled: false,
     },
     {
-        value: 'social',
-        label: 'Social',
-        description: 'Optimized for social interactions',
-        icon: Users,
+        value: 'research',
+        label: 'Research',
+        description: 'Specialized for academic research (Coming Soon)',
+        icon: FlaskConical,
         showWebSearch: false,
         showKnowledgeBase: false,
         showAcademicSearch: false,
-        showXSearch: true,
-        iconColor: 'text-indigo-500',
+        showXSearch: false,
+        iconColor: 'text-amber-500',
+        disabled: true,
     },
 ] as const;
 
-type AgentType = (typeof agentTypes)[number]['value'];
+type ModeType = (typeof modeTypes)[number]['value'];
 
 export function Input({
     input,
@@ -156,7 +150,7 @@ export function Input({
     const [enterDisabled, setEnterDisabled] = React.useState(false);
 
     const [open, setOpen] = React.useState(false);
-    const [selectedAgent, setSelectedAgent] = React.useState<AgentType>('default');
+    const [selectedMode, setSelectedMode] = React.useState<ModeType>('default');
 
     const handlerCompositionStart = () => setIsComposing(true);
 
@@ -287,19 +281,19 @@ export function Input({
                                             )}
                                         >
                                             <div className="flex items-center gap-2 text-xs">
-                                                {selectedAgent && (
+                                                {selectedMode && (
                                                     <div className="flex items-center">
                                                         {React.createElement(
-                                                            agentTypes.find(
-                                                                (agent) =>
-                                                                    agent.value === selectedAgent
+                                                            modeTypes.find(
+                                                                (mode) =>
+                                                                    mode.value === selectedMode
                                                             )?.icon || Brain,
                                                             {
                                                                 className: `size-3 ${
-                                                                    agentTypes.find(
-                                                                        (agent) =>
-                                                                            agent.value ===
-                                                                            selectedAgent
+                                                                    modeTypes.find(
+                                                                        (mode) =>
+                                                                            mode.value ===
+                                                                            selectedMode
                                                                     )?.iconColor || 'text-primary'
                                                                 }`,
                                                             }
@@ -307,12 +301,11 @@ export function Input({
                                                     </div>
                                                 )}
                                                 <span className="text-xs font-normal">
-                                                    {selectedAgent
-                                                        ? agentTypes.find(
-                                                              (agent) =>
-                                                                  agent.value === selectedAgent
+                                                    {selectedMode
+                                                        ? modeTypes.find(
+                                                              (mode) => mode.value === selectedMode
                                                           )?.label
-                                                        : 'Select agent...'}
+                                                        : 'Select mode...'}
                                                 </span>
                                             </div>
                                             <ChevronDownIcon className="opacity-50 size-3" />
@@ -337,57 +330,68 @@ export function Input({
                                         <Command>
                                             <CommandList>
                                                 <CommandGroup className="bg-zinc-900/50">
-                                                    {agentTypes.map((agent) => (
+                                                    {modeTypes.map((mode) => (
                                                         <CommandItem
-                                                            key={agent.value}
-                                                            value={agent.value}
+                                                            key={mode.value}
+                                                            value={mode.value}
                                                             onSelect={(currentValue) => {
-                                                                setSelectedAgent(
-                                                                    currentValue as AgentType
+                                                                if (
+                                                                    modeTypes.find(
+                                                                        (m) =>
+                                                                            m.value === currentValue
+                                                                    )?.disabled
+                                                                ) {
+                                                                    return; // Don't select disabled modes
+                                                                }
+
+                                                                setSelectedMode(
+                                                                    currentValue as ModeType
                                                                 );
-                                                                // Apply agent-specific settings
-                                                                const selectedAgentConfig =
-                                                                    agentTypes.find(
-                                                                        (a) =>
-                                                                            a.value === currentValue
+                                                                // Apply mode-specific settings
+                                                                const selectedModeConfig =
+                                                                    modeTypes.find(
+                                                                        (m) =>
+                                                                            m.value === currentValue
                                                                     );
-                                                                if (selectedAgentConfig) {
+                                                                if (selectedModeConfig) {
                                                                     updateWebSearch(
-                                                                        selectedAgentConfig.showWebSearch
+                                                                        selectedModeConfig.showWebSearch
                                                                     );
                                                                     updateKnowledgeBase(
-                                                                        selectedAgentConfig.showKnowledgeBase
+                                                                        selectedModeConfig.showKnowledgeBase
                                                                     );
                                                                     updateAcademicSearch(
-                                                                        selectedAgentConfig.showAcademicSearch
+                                                                        selectedModeConfig.showAcademicSearch
                                                                     );
                                                                     updateXSearch(
-                                                                        selectedAgentConfig.showXSearch
+                                                                        selectedModeConfig.showXSearch
                                                                     );
                                                                 }
                                                                 setOpen(false);
                                                             }}
                                                             className={cn(
-                                                                'flex items-center gap-2 px-2 py-2.5 rounded-md text-sm cursor-pointer transition-colors duration-200'
+                                                                'flex items-center gap-2 px-2 py-2.5 rounded-md text-sm cursor-pointer transition-colors duration-200',
+                                                                mode.disabled &&
+                                                                    'opacity-50 cursor-not-allowed'
                                                             )}
                                                         >
                                                             <div className="p-1.5 rounded-md">
-                                                                {React.createElement(agent.icon, {
-                                                                    className: `w-4 h-4 ${agent.iconColor}`,
+                                                                {React.createElement(mode.icon, {
+                                                                    className: `w-4 h-4 ${mode.iconColor}`,
                                                                 })}
                                                             </div>
                                                             <div className="flex flex-col gap-px min-w-0">
                                                                 <div className="font-medium">
-                                                                    {agent.label}
+                                                                    {mode.label}
                                                                 </div>
                                                                 <div className="text-xs">
-                                                                    {agent.description}
+                                                                    {mode.description}
                                                                 </div>
                                                             </div>
                                                             <Check
                                                                 className={cn(
                                                                     'ml-auto h-4 w-4',
-                                                                    selectedAgent === agent.value
+                                                                    selectedMode === mode.value
                                                                         ? 'opacity-100'
                                                                         : 'opacity-0'
                                                                 )}
@@ -420,9 +424,9 @@ export function Input({
                                     initial="hidden"
                                     animate="show"
                                     exit="exit"
-                                    key={`cards-container-${selectedAgent}`}
+                                    key={`cards-container-${selectedMode}`}
                                 >
-                                    {agentTypes.find((a) => a.value === selectedAgent)
+                                    {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
                                         ?.showWebSearch && (
                                         <motion.div
                                             variants={{
@@ -461,7 +465,7 @@ export function Input({
                                             </TooltipProvider>
                                         </motion.div>
                                     )}
-                                    {agentTypes.find((a) => a.value === selectedAgent)
+                                    {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
                                         ?.showKnowledgeBase && (
                                         <motion.div
                                             variants={{
@@ -500,7 +504,7 @@ export function Input({
                                             </TooltipProvider>
                                         </motion.div>
                                     )}
-                                    {agentTypes.find((a) => a.value === selectedAgent)
+                                    {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
                                         ?.showAcademicSearch && (
                                         <motion.div
                                             variants={{
@@ -541,7 +545,7 @@ export function Input({
                                             </TooltipProvider>
                                         </motion.div>
                                     )}
-                                    {agentTypes.find((a) => a.value === selectedAgent)
+                                    {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
                                         ?.showXSearch && (
                                         <motion.div
                                             variants={{
