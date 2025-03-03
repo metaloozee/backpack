@@ -14,7 +14,7 @@ import { env } from '@/lib/env.mjs';
 
 import { getUserAuth } from '@/lib/auth/utils';
 import { api } from '@/lib/trpc/api';
-import { Prompt, ResearchPrompt, WebPrompt } from '@/lib/ai/prompts';
+import { Prompt, ResearchPrompt } from '@/lib/ai/prompts';
 import { object, z } from 'zod';
 import { tavily } from '@tavily/core';
 import { createDataStreamResponse, tool } from 'ai';
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
             id: chatId,
             spaceId,
             webSearch,
-            knowledgeSearch: searchKnowledge,
+            knowledgeSearch,
             academicSearch,
             xSearch,
         } = await req.json();
@@ -81,10 +81,10 @@ export async function POST(req: Request) {
                     messages: convertToCoreMessages(messages),
                     system: Prompt({
                         webSearch,
-                        searchKnowledge,
+                        knowledgeSearch,
                         xSearch: false,
                         academicSearch: false,
-                        index: 2,
+                        reasoning: false,
                     }),
                     maxSteps: 20,
                     experimental_transform: smoothStream({
@@ -109,9 +109,9 @@ export async function POST(req: Request) {
                         } catch (error) {}
                     },
                     experimental_activeTools: [
-                        'research',
+                        // 'research',
                         webSearch && webSearch === true && 'web_search',
-                        searchKnowledge && searchKnowledge === true && 'search_knowledge',
+                        knowledgeSearch && knowledgeSearch === true && 'knowledge_search',
                         academicSearch && academicSearch === true && 'academic_search',
                         xSearch && xSearch === true && 'x_search',
                     ],

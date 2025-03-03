@@ -156,7 +156,7 @@ export function Tool({ tool }: ToolProps) {
                                 <MorphingDialogContent className="relative h-auto rounded-md max-w-3xl w-full bg-zinc-900 border-2 p-4">
                                     <ScrollArea className="h-[50vh] text-xs break-words w-full">
                                         <div className="mb-4 flex flex-row flex-wrap gap-2 w-full">
-                                            {tool.toolInvocation.args.keywords.map(
+                                            {tool.toolInvocation.args.knowledge_search_keywords.map(
                                                 (keyword: string, index: number) => (
                                                     <div
                                                         key={index}
