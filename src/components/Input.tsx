@@ -14,17 +14,14 @@ import {
     Check,
     ChevronDownIcon,
     CornerDownLeftIcon,
-    Zap,
     Brain,
     StopCircleIcon,
     BookOpenTextIcon,
     GlobeIcon,
     BookCopyIcon,
-    GraduationCap,
-    Users,
     GraduationCapIcon,
-    BookIcon,
     FlaskConical,
+    SparklesIcon,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
@@ -63,13 +60,12 @@ interface InputPanelProps {
     chatsData?: Array<ChatData>;
 }
 
-// Replace with mode types
 const modeTypes = [
     {
         value: 'default',
         label: 'Default',
         description: 'Standard mode with all features',
-        icon: GlobeIcon,
+        icon: SparklesIcon,
         showWebSearch: true,
         showKnowledgeBase: true,
         showAcademicSearch: true,
