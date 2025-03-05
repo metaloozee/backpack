@@ -84,7 +84,6 @@ export async function POST(req: Request) {
                         knowledgeSearch,
                         xSearch: false,
                         academicSearch: false,
-                        reasoning: false,
                     }),
                     maxSteps: 20,
                     experimental_transform: smoothStream({
