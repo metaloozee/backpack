@@ -29,7 +29,7 @@ export function Chat({
     const [webSearch, setWebSearch] = React.useState(true);
     const [knowledgeBase, setKnowledgeBase] = React.useState(false);
     const [academicSearch, setAcademicSearch] = React.useState(false);
-    const [xSearch, setXSearch] = React.useState(false);
+    const [socialSearch, setSocialSearch] = React.useState(false);
 
     const {
         messages,
@@ -50,7 +50,7 @@ export function Chat({
             webSearch,
             knowledgeSearch: knowledgeBase,
             academicSearch,
-            xSearch,
+            socialSearch,
         },
         onFinish: () => {
             if (messages.length === 0) {
@@ -120,8 +120,8 @@ export function Chat({
                 setKnowledgeBase={setKnowledgeBase}
                 academicSearch={academicSearch}
                 setAcademicSearch={setAcademicSearch}
-                xSearch={xSearch}
-                setXSearch={setXSearch}
+                socialSearch={socialSearch}
+                setSocialSearch={setSocialSearch}
             />
         </div>
     );

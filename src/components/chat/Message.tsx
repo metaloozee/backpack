@@ -161,7 +161,11 @@ const markdownComponents = {
     h1: ({ children }: any) => <h1 className="text-3xl font-bold mt-6 mb-4">{children}</h1>,
     h2: ({ children }: any) => <h2 className="text-2xl font-semibold mt-5 mb-3">{children}</h2>,
     h3: ({ children }: any) => <h3 className="text-xl font-semibold mt-4 mb-2">{children}</h3>,
-    ul: ({ children }: any) => <ul className="list-disc list-outside pl-6 mb-4">{children}</ul>,
+    ul: ({ children }: any) => (
+        <ul className="list-disc marker:text-muted-foreground list-outside pl-6 mb-4">
+            {children}
+        </ul>
+    ),
     ol: ({ children }: any) => <ol className="list-decimal list-outside pl-6 mb-4">{children}</ol>,
     li: ({ children }: any) => <li className="mb-1 text-zinc-300">{children}</li>,
     blockquote: ({ children }: any) => (
@@ -172,6 +176,7 @@ const markdownComponents = {
             {href ? extractDomain(href) : children}
         </Link>
     ),
+    strong: ({ children }: any) => <strong className="font-bold text-zinc-100">{children}</strong>,
     inlineMath: ({ value }: { value: string }) => <span className="math math-inline">{value}</span>,
     math: ({ value }: { value: string }) => <div className="math math-display">{value}</div>,
 };

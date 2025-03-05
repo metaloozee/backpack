@@ -54,7 +54,7 @@ export function Cards({ spaces }: { spaces: Array<Space> }) {
                                 <LibraryIcon />
                                 <CardTitle>{space.spaceTitle}</CardTitle>
                             </CardHeader>
-                            <CardFooter className="flex flex-row justify-between text-xs text-muted-foreground">
+                            <CardFooter className="flex flex-row flex-wrap gap-2 justify-between text-xs text-muted-foreground">
                                 {space.spaceDescription && (
                                     <p className="truncate w-[18vw]">{space.spaceDescription}</p>
                                 )}

@@ -2,15 +2,17 @@ import './globals.css';
 
 import type { Metadata } from 'next';
 import { Ubuntu } from 'next/font/google';
+import { Geist } from 'next/font/google';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/sonner';
 import { cookies } from 'next/headers';
 
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/Sidebar';
 import TrpcProvider from '@/lib/trpc/Provider';
 
+const geistSans = Geist({
+    subsets: ['latin'],
+});
 const ubuntu = Ubuntu({
     weight: ['300', '400', '500', '700'],
     subsets: ['latin'],
@@ -30,7 +32,7 @@ export default function RootLayout({
         <TrpcProvider cookies={''}>
             <html lang="en" suppressHydrationWarning>
                 <body
-                    className={cn('bg-background antialiased font-sans', ubuntu.className)}
+                    className={cn('bg-background antialiased font-sans', geistSans.className)}
                     suppressHydrationWarning
                 >
                     <ThemeProvider

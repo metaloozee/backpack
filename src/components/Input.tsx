@@ -22,6 +22,7 @@ import {
     GraduationCapIcon,
     FlaskConical,
     SparklesIcon,
+    UsersIcon,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
@@ -54,8 +55,8 @@ interface InputPanelProps {
     academicSearch: boolean;
     setAcademicSearch: (academicSearch: boolean) => void;
 
-    xSearch: boolean;
-    setXSearch: (xSearch: boolean) => void;
+    socialSearch: boolean;
+    setSocialSearch: (socialSearch: boolean) => void;
 
     chatsData?: Array<ChatData>;
 }
@@ -69,7 +70,7 @@ const modeTypes = [
         showWebSearch: true,
         showKnowledgeBase: true,
         showAcademicSearch: true,
-        showXSearch: true,
+        showSocialSearch: true,
         iconColor: 'text-sky-500',
         disabled: false,
     },
@@ -81,7 +82,7 @@ const modeTypes = [
         showWebSearch: false,
         showKnowledgeBase: false,
         showAcademicSearch: false,
-        showXSearch: false,
+        showSocialSearch: false,
         iconColor: 'text-amber-500',
         disabled: true,
     },
@@ -107,8 +108,8 @@ export function Input({
     setKnowledgeBase,
     academicSearch,
     setAcademicSearch,
-    xSearch,
-    setXSearch,
+    socialSearch,
+    setSocialSearch,
 }: InputPanelProps) {
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
@@ -131,9 +132,9 @@ export function Input({
         }
     };
 
-    const updateXSearch = (value: boolean) => {
-        if (typeof setXSearch === 'function') {
-            setXSearch(value);
+    const updateSocialSearch = (value: boolean) => {
+        if (typeof setSocialSearch === 'function') {
+            setSocialSearch(value);
         }
     };
 
@@ -359,8 +360,8 @@ export function Input({
                                                                     updateAcademicSearch(
                                                                         selectedModeConfig.showAcademicSearch
                                                                     );
-                                                                    updateXSearch(
-                                                                        selectedModeConfig.showXSearch
+                                                                    updateSocialSearch(
+                                                                        selectedModeConfig.showSocialSearch
                                                                     );
                                                                 }
                                                                 setOpen(false);
@@ -542,7 +543,7 @@ export function Input({
                                         </motion.div>
                                     )}
                                     {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
-                                        ?.showXSearch && (
+                                        ?.showSocialSearch && (
                                         <motion.div
                                             variants={{
                                                 hidden: { opacity: 0, y: 5 },
@@ -560,19 +561,21 @@ export function Input({
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <div
-                                                            onClick={() => updateXSearch(!xSearch)}
+                                                            onClick={() =>
+                                                                updateSocialSearch(!socialSearch)
+                                                            }
                                                             className={cn(
                                                                 'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
-                                                                xSearch
+                                                                socialSearch
                                                                     ? 'bg-zinc-800 border-zinc-800 text-primary'
                                                                     : 'bg-zinc-900 border-zinc-800'
                                                             )}
                                                         >
-                                                            <TwitterLogoIcon className="size-3.5" />
+                                                            <UsersIcon className="size-3.5" />
                                                         </div>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>X (Twitter) Search</p>
+                                                        <p>Social Search</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
