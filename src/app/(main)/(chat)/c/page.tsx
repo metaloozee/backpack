@@ -30,7 +30,7 @@ export default async function Spaces() {
         .orderBy(desc(chatsSchema.createdAt));
 
     return (
-        <div className="mt-20 flex flex-col justify-center items-start gap-5">
+        <div className="m-20 flex flex-col justify-center items-start gap-5">
             <Header />
             <div className="mt-5 max-w-5xl w-full flex flex-row flex-wrap justify-start items-start gap-3">
                 {chats.map((chat) => {

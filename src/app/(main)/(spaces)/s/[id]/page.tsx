@@ -48,7 +48,7 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
     }
 
     return (
-        <div className="container flex flex-row justify-evenly gap-20">
+        <div className="mx-20 flex flex-row justify-evenly gap-20">
             <div className="max-w-2xl w-full">
                 <Chat chatsData={chatsData} spaceId={spaceData.id} id={chatId} />
             </div>

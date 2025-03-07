@@ -16,7 +16,7 @@ export default function MainLayout({
     return (
         <SidebarProvider defaultOpen={false}>
             <AppSidebar />
-            <main className="w-full h-screen container antialiased">{children}</main>
+            <main className="w-full h-screen antialiased">{children}</main>
         </SidebarProvider>
     );
 }

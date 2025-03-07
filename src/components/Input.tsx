@@ -618,7 +618,7 @@ export function Input({
                                         className="px-4"
                                         size={'sm'}
                                         type="submit"
-                                        disabled={isLoading}
+                                        disabled={!input || isLoading}
                                         variant={input ? 'default' : 'secondary'}
                                     >
                                         <motion.div

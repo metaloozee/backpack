@@ -13,7 +13,7 @@ export default async function SpacesPage() {
     const spaces = await db.select().from(spacesSchema).where(eq(spacesSchema.userId, user.id));
 
     return (
-        <div className="mt-20 flex flex-col justify-center items-start gap-5">
+        <div className="m-20 flex flex-col justify-center items-start gap-5">
             <Header userId={user.id} />
             <Cards spaces={spaces} />
         </div>

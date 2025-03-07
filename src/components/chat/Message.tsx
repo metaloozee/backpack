@@ -62,7 +62,7 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
     };
 
     return !inline && match ? (
-        <div className="relative w-full">
+        <div className="relative w-full max-w-2xl">
             <div className="flex items-center justify-between bg-zinc-900/50 px-4 py-2.5 rounded-t-lg border-x border-t border-border">
                 <div className="flex items-center gap-1.5">
                     <CodeIcon className="size-3 text-muted-foreground" />

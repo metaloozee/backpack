@@ -84,7 +84,7 @@ export function ChatMessages({
     const showLoading = isLoading && messages[messages.length - 1].role === 'user';
 
     return (
-        <div className="px-4 w-full mt-10">
+        <div className="px-4 w-full mt-10 mx-auto max-w-3xl">
             {messages.map((message) => (
                 <RenderMessage
                     key={message.id}
