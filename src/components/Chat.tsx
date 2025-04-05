@@ -31,18 +31,7 @@ export function Chat({
     const [academicSearch, setAcademicSearch] = React.useState(false);
     const [socialSearch, setSocialSearch] = React.useState(false);
 
-    const {
-        messages,
-        input,
-        handleInputChange,
-        handleSubmit,
-        isLoading,
-        setMessages,
-        stop,
-        append,
-        data,
-        setData,
-    } = useChat({
+    const { isLoading, messages, setMessages, stop, append, data, setData } = useChat({
         initialMessages: savedMessages,
         body: {
             id,
@@ -74,12 +63,6 @@ export function Chat({
         });
     };
 
-    const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setData(undefined);
-        handleSubmit(e);
-    };
-
     return (
         <div
             className={cn(
@@ -104,9 +87,6 @@ export function Chat({
             )}
 
             <InputPanel
-                input={input}
-                handleInputChange={handleInputChange}
-                handleSubmit={onSubmit}
                 isLoading={isLoading}
                 messages={messages}
                 setMessages={setMessages}

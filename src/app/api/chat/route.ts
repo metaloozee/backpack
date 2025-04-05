@@ -31,6 +31,9 @@ const openrouter = createOpenRouter({
     apiKey: env.OPENROUTER_API_KEY,
 });
 
+const smallModel = openrouter('google/gemini-2.0-flash-001');
+const largeModel = openrouter('anthropic/claude-3.5-sonnet');
+
 const extractDomain = (url: string): string => {
     const urlPattern = /^https?:\/\/([^/?#]+)(?:[/?#]|$)/i;
     return url.match(urlPattern)?.[1] || url;
@@ -77,7 +80,7 @@ export async function POST(req: Request) {
         return createDataStreamResponse({
             async execute(dataStream) {
                 const result = streamText({
-                    model: openrouter('google/gemini-2.0-flash-001'),
+                    model: largeModel,
                     messages: convertToCoreMessages(messages),
                     system: Prompt({
                         webSearch,

@@ -32,13 +32,11 @@ import { Separator } from './ui/separator';
 import { Chat } from '@/lib/db/schema/app';
 import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
 import ChatDisplayCard from './chat/DisplayCard';
-import { TwitterLogoIcon } from '@radix-ui/react-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+import { useForm, SubmitHandler } from 'react-hook-form';
+
 interface InputPanelProps {
-    input: string;
-    handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-    handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
     isLoading: boolean;
     messages: Array<Message>;
     setMessages: (messages: Array<Message>) => void;
@@ -90,10 +88,11 @@ const modeTypes = [
 
 type ModeType = (typeof modeTypes)[number]['value'];
 
+interface FormValues {
+    prompt: string;
+}
+
 export function Input({
-    input,
-    handleInputChange,
-    handleSubmit,
     isLoading,
     messages,
     setMessages,
@@ -111,6 +110,9 @@ export function Input({
     socialSearch,
     setSocialSearch,
 }: InputPanelProps) {
+    const { register, handleSubmit: handleHookFormSubmit, reset, watch } = useForm<FormValues>();
+    const promptValue = watch('prompt');
+
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
 
@@ -175,6 +177,17 @@ export function Input({
         }
     }, [query]);
 
+    const onSubmit: SubmitHandler<FormValues> = (data) => {
+        const trimmedPrompt = data.prompt.trim();
+        if (trimmedPrompt.length === 0) return;
+
+        append({
+            role: 'user',
+            content: trimmedPrompt,
+        });
+        reset();
+    };
+
     return (
         <motion.div
             layout
@@ -208,7 +221,7 @@ export function Input({
                 </motion.div>
             )}
             <form
-                onSubmit={handleSubmit}
+                onSubmit={handleHookFormSubmit(onSubmit)}
                 className={cn(isSpaceChat ? 'max-w-2xl w-full' : 'max-w-3xl w-full mx-auto')}
             >
                 <div
@@ -221,20 +234,14 @@ export function Input({
                 >
                     <Textarea
                         autoFocus
-                        ref={inputRef}
-                        name="input"
                         rows={2}
                         tabIndex={0}
                         onCompositionStart={handlerCompositionStart}
                         onCompositionEnd={handleCompositionEnd}
                         placeholder="Ask me anything..."
                         spellCheck={true}
-                        value={input}
                         className="resize-none w-full bg-transparent ring-0 border-0 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
-                        onChange={(e) => {
-                            handleInputChange(e);
-                            setShowEmptyScreen(e.target.value.length === 0);
-                        }}
+                        {...register('prompt')}
                         onKeyDown={(e) => {
                             if (
                                 e.key === 'Enter' &&
@@ -242,14 +249,14 @@ export function Input({
                                 !isComposing &&
                                 !enterDisabled
                             ) {
-                                if (input.trim().length === 0) {
+                                const currentValue = (e.target as HTMLTextAreaElement).value;
+                                if (currentValue.trim().length === 0) {
                                     e.preventDefault();
                                     return;
                                 }
 
                                 e.preventDefault();
-                                const textarea = e.target as HTMLTextAreaElement;
-                                textarea.form?.requestSubmit();
+                                handleHookFormSubmit(onSubmit)();
                             }
                         }}
                         onFocus={() => setShowEmptyScreen(true)}
@@ -618,8 +625,16 @@ export function Input({
                                         className="px-4"
                                         size={'sm'}
                                         type="submit"
-                                        disabled={!input || isLoading}
-                                        variant={input ? 'default' : 'secondary'}
+                                        disabled={
+                                            !promptValue ||
+                                            promptValue.trim().length === 0 ||
+                                            isLoading
+                                        }
+                                        variant={
+                                            promptValue && promptValue.trim().length > 0
+                                                ? 'default'
+                                                : 'secondary'
+                                        }
                                     >
                                         <motion.div
                                             initial={{ opacity: 0, y: -20 }}
@@ -636,7 +651,7 @@ export function Input({
                                         >
                                             <CornerDownLeftIcon
                                                 className={cn(
-                                                    input
+                                                    promptValue && promptValue.trim().length > 0
                                                         ? 'text-background'
                                                         : 'text-muted-foreground'
                                                 )}
