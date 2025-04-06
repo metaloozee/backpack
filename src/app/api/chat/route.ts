@@ -32,7 +32,7 @@ const openrouter = createOpenRouter({
 });
 
 const smallModel = openrouter('google/gemini-2.0-flash-001');
-const largeModel = openrouter('anthropic/claude-3.5-sonnet');
+const largeModel = openrouter('google/gemini-2.5-pro-exp-03-25:free');
 
 const extractDomain = (url: string): string => {
     const urlPattern = /^https?:\/\/([^/?#]+)(?:[/?#]|$)/i;
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
                         xSearch: false,
                         academicSearch: false,
                     }),
-                    maxSteps: 20,
+                    maxSteps: 7,
                     experimental_transform: smoothStream({
                         chunking: 'word',
                         delayInMs: 10,
