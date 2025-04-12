@@ -73,10 +73,15 @@ export function AppSidebar() {
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -100 }}
                                 transition={{
-                                    duration: 0.1,
+                                    duration: 0.3,
+                                    ease: [0.4, 0, 0.2, 1],
                                     type: 'spring',
                                     stiffness: 200,
-                                    damping: 15,
+                                    damping: 20,
+                                }}
+                                style={{
+                                    willChange: 'transform',
+                                    backfaceVisibility: 'hidden',
                                 }}
                             >
                                 <BackpackIcon className="size-4" />

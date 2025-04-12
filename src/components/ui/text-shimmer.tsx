@@ -38,12 +38,13 @@ export function TextShimmer({
             transition={{
                 repeat: Infinity,
                 duration,
-                ease: 'linear',
+                ease: [0.4, 0, 0.2, 1],
             }}
             style={
                 {
                     '--spread': `${dynamicSpread}px`,
                     backgroundImage: `var(--bg), linear-gradient(var(--base-color), var(--base-color))`,
+                    willChange: 'background-position',
                 } as React.CSSProperties
             }
         >

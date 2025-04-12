@@ -183,7 +183,16 @@ function MorphingDialogContent({ children, className, style }: MorphingDialogCon
             ref={containerRef}
             layoutId={`dialog-${uniqueId}`}
             className={cn('overflow-hidden', className)}
-            style={style}
+            style={{
+                willChange: 'transform',
+                backfaceVisibility: 'hidden',
+                ...style,
+            }}
+            transition={{
+                duration: 0.3,
+                ease: [0.4, 0, 0.2, 1],
+                layout: { duration: 0.3 },
+            }}
             role="dialog"
             aria-modal="true"
             aria-labelledby={`motion-ui-morphing-dialog-title-${uniqueId}`}
@@ -245,7 +254,16 @@ function MorphingDialogTitle({ children, className, style }: MorphingDialogTitle
         <motion.div
             layoutId={`dialog-title-container-${uniqueId}`}
             className={className}
-            style={style}
+            style={{
+                willChange: 'transform',
+                backfaceVisibility: 'hidden',
+                ...style,
+            }}
+            transition={{
+                duration: 0.3,
+                ease: [0.4, 0, 0.2, 1],
+                layout: { duration: 0.3 },
+            }}
             layout
         >
             {children}
@@ -266,7 +284,16 @@ function MorphingDialogSubtitle({ children, className, style }: MorphingDialogSu
         <motion.div
             layoutId={`dialog-subtitle-container-${uniqueId}`}
             className={className}
-            style={style}
+            style={{
+                willChange: 'transform',
+                backfaceVisibility: 'hidden',
+                ...style,
+            }}
+            transition={{
+                duration: 0.3,
+                ease: [0.4, 0, 0.2, 1],
+                layout: { duration: 0.3 },
+            }}
         >
             {children}
         </motion.div>
@@ -292,15 +319,30 @@ function MorphingDialogDescription({
 }: MorphingDialogDescriptionProps) {
     const { uniqueId } = useMorphingDialog();
 
+    const defaultVariants = {
+        initial: { opacity: 0, y: 20, scale: 0.95 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: -20, scale: 0.95 },
+    };
+
     return (
         <motion.div
             key={`dialog-description-${uniqueId}`}
             layoutId={disableLayoutAnimation ? undefined : `dialog-description-content-${uniqueId}`}
-            variants={variants}
+            variants={variants || defaultVariants}
             className={className}
             initial="initial"
             animate="animate"
             exit="exit"
+            transition={{
+                duration: 0.3,
+                ease: [0.4, 0, 0.2, 1],
+                layout: { duration: 0.3 },
+            }}
+            style={{
+                willChange: 'transform',
+                backfaceVisibility: 'hidden',
+            }}
             id={`dialog-description-${uniqueId}`}
         >
             {children}

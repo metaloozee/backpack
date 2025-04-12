@@ -55,8 +55,16 @@ export function TextLoop({
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    transition={transition}
-                    variants={variants || motionVariants}
+                    variants={motionVariants}
+                    transition={{
+                        duration: 0.3,
+                        ease: [0.4, 0, 0.2, 1],
+                        ...transition,
+                    }}
+                    style={{
+                        willChange: 'transform',
+                        backfaceVisibility: 'hidden',
+                    }}
                 >
                     {items[currentIndex]}
                 </motion.div>

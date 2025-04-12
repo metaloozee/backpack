@@ -20,7 +20,7 @@ export function BorderTrail({
     const defaultTransition: Transition = {
         repeat: Infinity,
         duration: 5,
-        ease: 'linear',
+        ease: [0.4, 0, 0.2, 1],
     };
 
     return (
@@ -30,6 +30,7 @@ export function BorderTrail({
                 style={{
                     width: size,
                     offsetPath: `rect(0 auto auto 0 round ${size}px)`,
+                    willChange: 'offset-distance',
                     ...style,
                 }}
                 animate={{

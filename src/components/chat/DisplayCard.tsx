@@ -18,6 +18,7 @@ import { trpc } from '@/lib/trpc/client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export default function ChatDisplayCard({ chat }: { chat: Chat }) {
     const pathName = usePathname();
@@ -54,16 +55,22 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
 
     return (
         <motion.div
-            variants={{
-                hidden: { y: 20, opacity: 0 },
-                visible: {
-                    y: 0,
-                    opacity: 1,
-                },
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{
+                duration: 0.3,
+                ease: [0.4, 0, 0.2, 1],
+                layout: { duration: 0.3 },
             }}
-            transition={{ type: 'spring', damping: 10, stiffness: 200 }}
-            key={chat.id}
-            className="border-b pb-4 rounded-md w-full flex justify-between items-center"
+            style={{
+                willChange: 'transform',
+                backfaceVisibility: 'hidden',
+            }}
+            className={cn(
+                'relative w-full rounded-lg border border-border/50 bg-zinc-900/50 p-4 transition-colors duration-200 hover:bg-zinc-900/70',
+                'flex justify-between items-center'
+            )}
         >
             <Link className="w-full" key={chat.id} href={`/c/${chat.id}`}>
                 <div className="flex flex-col gap-1 justify-start items-start w-full">

@@ -54,6 +54,10 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
         initial: { opacity: 0, scale: 0.8, rotate: -10 },
         animate: { opacity: 1, scale: 1, rotate: 0 },
         exit: { opacity: 0, scale: 0.8, rotate: 10 },
+        transition: {
+            duration: 0.2,
+            ease: [0.4, 0, 0.2, 1],
+        },
     };
 
     const rippleVariants = {
@@ -227,7 +231,17 @@ export function BotMessage({ message, className }: BotMessageProps) {
         <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+            transition={{
+                type: 'spring',
+                stiffness: 400,
+                damping: 20,
+                mass: 0.8,
+                velocity: 2,
+            }}
+            style={{
+                willChange: 'transform',
+                backfaceVisibility: 'hidden',
+            }}
             className="w-full flex justify-start items-start"
         >
             <Avatar className="mr-2">

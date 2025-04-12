@@ -72,8 +72,12 @@ export function TextShimmerWave({
                             repeat: Infinity,
                             repeatDelay: (children.length * 0.05) / spread,
                             delay,
-                            ease: 'easeInOut',
+                            ease: [0.4, 0, 0.2, 1],
                             ...transition,
+                        }}
+                        style={{
+                            willChange: 'transform, color',
+                            backfaceVisibility: 'hidden',
                         }}
                     >
                         {char}

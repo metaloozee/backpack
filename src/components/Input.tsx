@@ -434,16 +434,22 @@ export function Input({
                                         ?.showWebSearch && (
                                         <motion.div
                                             variants={{
-                                                hidden: { opacity: 0, y: 5 },
-                                                show: { opacity: 1, y: 0 },
-                                                exit: { opacity: 0, y: -5 },
+                                                hidden: { opacity: 0, y: 5, scale: 0.95 },
+                                                show: { opacity: 1, y: 0, scale: 1 },
+                                                exit: { opacity: 0, y: -5, scale: 0.95 },
                                             }}
                                             transition={{
-                                                duration: 0.3,
-                                                ease: 'easeInOut',
+                                                duration: 0.2,
+                                                ease: [0.4, 0, 0.2, 1],
+                                                layout: { duration: 0.3 },
                                             }}
                                             key="web-search-card"
                                             layout
+                                            layoutId="web-search-section"
+                                            style={{
+                                                willChange: 'transform',
+                                                backfaceVisibility: 'hidden',
+                                            }}
                                         >
                                             <TooltipProvider>
                                                 <Tooltip>
@@ -473,16 +479,22 @@ export function Input({
                                         ?.showKnowledgeBase && (
                                         <motion.div
                                             variants={{
-                                                hidden: { opacity: 0, y: 5 },
-                                                show: { opacity: 1, y: 0 },
-                                                exit: { opacity: 0, y: -5 },
+                                                hidden: { opacity: 0, y: 5, scale: 0.95 },
+                                                show: { opacity: 1, y: 0, scale: 1 },
+                                                exit: { opacity: 0, y: -5, scale: 0.95 },
                                             }}
                                             transition={{
-                                                duration: 0.3,
-                                                ease: 'easeInOut',
+                                                duration: 0.2,
+                                                ease: [0.4, 0, 0.2, 1],
+                                                layout: { duration: 0.3 },
                                             }}
                                             key="knowledge-base-card"
                                             layout
+                                            layoutId="knowledge-base-section"
+                                            style={{
+                                                willChange: 'transform',
+                                                backfaceVisibility: 'hidden',
+                                            }}
                                         >
                                             <TooltipProvider>
                                                 <Tooltip>
@@ -512,16 +524,22 @@ export function Input({
                                         ?.showAcademicSearch && (
                                         <motion.div
                                             variants={{
-                                                hidden: { opacity: 0, y: 5 },
-                                                show: { opacity: 1, y: 0 },
-                                                exit: { opacity: 0, y: -5 },
+                                                hidden: { opacity: 0, y: 5, scale: 0.95 },
+                                                show: { opacity: 1, y: 0, scale: 1 },
+                                                exit: { opacity: 0, y: -5, scale: 0.95 },
                                             }}
                                             transition={{
-                                                duration: 0.3,
-                                                ease: 'easeInOut',
+                                                duration: 0.2,
+                                                ease: [0.4, 0, 0.2, 1],
+                                                layout: { duration: 0.3 },
                                             }}
                                             key="academic-search-card"
                                             layout
+                                            layoutId="academic-search-section"
+                                            style={{
+                                                willChange: 'transform',
+                                                backfaceVisibility: 'hidden',
+                                            }}
                                         >
                                             <TooltipProvider>
                                                 <Tooltip>
@@ -553,16 +571,22 @@ export function Input({
                                         ?.showSocialSearch && (
                                         <motion.div
                                             variants={{
-                                                hidden: { opacity: 0, y: 5 },
-                                                show: { opacity: 1, y: 0 },
-                                                exit: { opacity: 0, y: -5 },
+                                                hidden: { opacity: 0, y: 5, scale: 0.95 },
+                                                show: { opacity: 1, y: 0, scale: 1 },
+                                                exit: { opacity: 0, y: -5, scale: 0.95 },
                                             }}
                                             transition={{
-                                                duration: 0.3,
-                                                ease: 'easeInOut',
+                                                duration: 0.2,
+                                                ease: [0.4, 0, 0.2, 1],
+                                                layout: { duration: 0.3 },
                                             }}
                                             key="x-search-card"
                                             layout
+                                            layoutId="x-search-section"
+                                            style={{
+                                                willChange: 'transform',
+                                                backfaceVisibility: 'hidden',
+                                            }}
                                         >
                                             <TooltipProvider>
                                                 <Tooltip>
@@ -611,10 +635,15 @@ export function Input({
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: 20 }}
                                             transition={{
-                                                delay: 0.2,
+                                                duration: 0.2,
+                                                ease: [0.4, 0, 0.2, 1],
                                                 type: 'spring',
                                                 stiffness: 400,
-                                                damping: 10,
+                                                damping: 20,
+                                            }}
+                                            style={{
+                                                willChange: 'transform',
+                                                backfaceVisibility: 'hidden',
                                             }}
                                         >
                                             <StopCircleIcon />
@@ -643,10 +672,15 @@ export function Input({
                                                 x: 20,
                                             }}
                                             transition={{
-                                                delay: 0.2,
+                                                duration: 0.2,
+                                                ease: [0.4, 0, 0.2, 1],
                                                 type: 'spring',
                                                 stiffness: 400,
-                                                damping: 10,
+                                                damping: 20,
+                                            }}
+                                            style={{
+                                                willChange: 'transform',
+                                                backfaceVisibility: 'hidden',
                                             }}
                                         >
                                             <CornerDownLeftIcon
@@ -700,11 +734,18 @@ export function Input({
                                 return (
                                     <motion.div
                                         key={chatData.id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
+                                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
                                         transition={{
-                                            delay: 0.1,
+                                            duration: 0.3,
+                                            ease: [0.4, 0, 0.2, 1],
+                                            layout: { duration: 0.3 },
+                                        }}
+                                        layout
+                                        style={{
+                                            willChange: 'transform',
+                                            backfaceVisibility: 'hidden',
                                         }}
                                         className="w-full"
                                     >
