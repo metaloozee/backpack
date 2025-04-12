@@ -76,16 +76,17 @@
         "tailwind-merge": "^2.6.0",
         "tailwindcss-animate": "^1.0.7",
         "timeago.js": "^4.0.2",
+        "tw-animate-css": "^1.2.5",
         "zod": "^3.24.1"
     },
     "devDependencies": {
         "@eslint/eslintrc": "^3",
+        "@tailwindcss/postcss": "^4.1.3",
         "@types/node": "^20",
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "@types/react-syntax-highlighter": "^15.5.13",
         "@typescript-eslint/eslint-plugin": "^8.29.0",
-        "autoprefixer": "^10.4.20",
         "dotenv": "^16.4.7",
         "drizzle-kit": "^0.30.1",
         "eslint": "^9",
@@ -94,7 +95,7 @@
         "pg": "^8.13.1",
         "postcss": "^8.4.49",
         "prettier": "^3.5.0",
-        "tailwindcss": "^3.4.17",
+        "tailwindcss": "^4.1.3",
         "tsx": "^4.19.2",
         "typescript": "^5"
     },

@@ -78,7 +78,7 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
                     <Button
                         variant="ghost"
                         size={'icon'}
-                        className="h-6 w-6 bg-background/60 hover:bg-muted border border-border/50 shadow-sm transition-all duration-200 hover:scale-105 relative overflow-hidden"
+                        className="h-6 w-6 bg-background/60 hover:bg-muted border border-border/50 shadow-xs transition-all duration-200 hover:scale-105 relative overflow-hidden"
                         onClick={handleCopy}
                         title={isCopied ? 'Copied!' : 'Copy code'}
                     >
@@ -117,7 +117,7 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -5 }}
                                 transition={{ duration: 0.2 }}
-                                className="absolute right-0 top-full mt-1 text-xs bg-background/90 border border-border/50 shadow-sm rounded px-2 py-1 pointer-events-none z-20"
+                                className="absolute right-0 top-full mt-1 text-xs bg-background/90 border border-border/50 shadow-xs rounded px-2 py-1 pointer-events-none z-20"
                             >
                                 Copied!
                             </motion.div>
@@ -132,7 +132,7 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
                 showLineNumbers
                 language={match[1]}
                 PreTag="div"
-                className="!rounded-t-none !rounded-b-lg !m-0"
+                className="rounded-t-none! rounded-b-lg! m-0!"
                 customStyle={{
                     background: 'hsl(var(--background))',
                     padding: '1.25rem 1rem',

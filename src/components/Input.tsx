@@ -215,7 +215,7 @@ export function Input({
                     transition={{ delay: 0.1 }}
                     className="mb-6"
                 >
-                    <h1 className="text-3xl text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-500">
+                    <h1 className="text-3xl text-transparent bg-clip-text bg-linear-to-br from-white to-zinc-500">
                         Your Research, Simplified.
                     </h1>
                 </motion.div>
@@ -240,7 +240,7 @@ export function Input({
                         onCompositionEnd={handleCompositionEnd}
                         placeholder="Ask me anything..."
                         spellCheck={true}
-                        className="resize-none w-full bg-transparent ring-0 border-0 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="resize-none w-full bg-transparent ring-0 border-0 text-sm placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
                         {...register('prompt')}
                         onKeyDown={(e) => {
                             if (
@@ -317,7 +317,7 @@ export function Input({
                                     </motion.div>
                                 </PopoverTrigger>
                                 <PopoverContent
-                                    className="w-[300px] p-2 !font-sans bg-zinc-900/50 backdrop-blur-md rounded-lg shadow-lg border border-zinc-800"
+                                    className="w-[300px] p-2 font-sans! bg-zinc-900/50 backdrop-blur-md rounded-lg shadow-lg border border-zinc-800"
                                     align="start"
                                     sideOffset={8}
                                     forceMount

@@ -28,7 +28,7 @@ const MessageIcon = ({ role, showIcon }: { role: 'user' | 'assistant'; showIcon:
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.2 }}
-            className="size-[24px] rounded-lg flex-shrink-0"
+            className="size-[24px] rounded-lg shrink-0"
         >
             {role === 'user' ? (
                 <Avatar>

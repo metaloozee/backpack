@@ -75,7 +75,7 @@ export function Chat({
             )}
         >
             {messages.length > 0 && (
-                <ScrollArea className="w-full flex-grow">
+                <ScrollArea className="w-full grow">
                     <ChatMessages
                         messages={messages}
                         data={data}
