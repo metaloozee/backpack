@@ -11,13 +11,8 @@ export const UserMessage: React.FC<{ message: string }> = ({ message }) => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-            className="w-full flex justify-start items-center py-4"
+            className="max-w-lg flex justify-end items-center py-2 px-4 bg-neutral-900 border rounded-lg"
         >
-            <Avatar className="mr-2">
-                <AvatarFallback className="bg-zinc-900">
-                    <UserCircleIcon className="size-4 text-muted-foreground" />
-                </AvatarFallback>
-            </Avatar>
             <div className="-pt-1 text-muted-foreground">{message}</div>
         </motion.div>
     );

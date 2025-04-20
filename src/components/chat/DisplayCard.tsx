@@ -89,7 +89,7 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
                     <Button variant={'destructive'} size={'icon'}>
-                        <Trash2Icon className="size-2" />
+                        <Trash2Icon className="size-3" />
                     </Button>
                 </DialogTrigger>
                 <DialogContent>

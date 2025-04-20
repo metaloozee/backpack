@@ -29,6 +29,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { BrainIcon } from 'lucide-react';
 import { CopyIcon, CheckIcon, CodeIcon } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Separator } from '../ui/separator';
 
 const extractDomain = (url: string): string => {
     try {
@@ -242,14 +243,8 @@ export function BotMessage({ message, className }: BotMessageProps) {
                 willChange: 'transform',
                 backfaceVisibility: 'hidden',
             }}
-            className="w-full flex justify-start items-start"
+            className="w-full"
         >
-            <Avatar className="mr-2">
-                <AvatarFallback className="bg-zinc-900">
-                    <BrainIcon className="size-4 text-zinc-300" />
-                </AvatarFallback>
-            </Avatar>
-
             <MemoizedReactMarkdown
                 {...commonProps}
                 components={markdownComponents}

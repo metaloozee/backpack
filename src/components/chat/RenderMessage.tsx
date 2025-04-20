@@ -46,7 +46,11 @@ export function RenderMessage({
     }, [message.parts]);
 
     if (message.role === 'user') {
-        return <UserMessage message={message.content} />;
+        return (
+            <div className="w-full flex justify-end">
+                <UserMessage message={message.content} />
+            </div>
+        );
     }
 
     return (

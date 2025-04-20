@@ -50,9 +50,9 @@ export function AppSidebar() {
                         <Link href={'/'} className="w-full">
                             <motion.div
                                 key="expanded"
-                                initial={{ opacity: 0, x: -100 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -100 }}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
                                 transition={{
                                     duration: 0.1,
                                     type: 'spring',
@@ -69,19 +69,15 @@ export function AppSidebar() {
                         <Link href={'/'}>
                             <motion.div
                                 key="collapsed"
-                                initial={{ opacity: 0, x: -100 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -100 }}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
                                 transition={{
                                     duration: 0.3,
                                     ease: [0.4, 0, 0.2, 1],
                                     type: 'spring',
                                     stiffness: 200,
                                     damping: 20,
-                                }}
-                                style={{
-                                    willChange: 'transform',
-                                    backfaceVisibility: 'hidden',
                                 }}
                             >
                                 <BackpackIcon className="size-4" />
@@ -161,20 +157,23 @@ export function AppSidebar() {
                 </motion.div>
             </SidebarContent>
             <SidebarFooter
-                className={cn(state === 'collapsed' ? 'flex justify-center items-center' : 'p-4')}
+                className={cn(
+                    'w-full',
+                    state === 'collapsed' ? 'flex justify-center items-center' : 'p-4'
+                )}
             >
                 <Button
-                    variant={state === 'expanded' ? 'outline' : 'ghost'}
+                    variant={'outline'}
                     onClick={() => setOpen(!open)}
                     size={state === 'collapsed' ? 'icon' : 'default'}
                 >
                     {state === 'expanded' ? (
                         <div className="w-full flex flex-row justify-center items-center gap-2">
-                            <PanelLeftCloseIcon className="size-7" />
+                            <PanelLeftCloseIcon className="size-4 text-muted-foreground" />
                             <p className="text-xs text-muted-foreground">Close Panel</p>
                         </div>
                     ) : (
-                        <PanelLeftOpenIcon className="size-7" />
+                        <PanelLeftOpenIcon className="size-4" />
                     )}
                 </Button>
 
@@ -183,22 +182,22 @@ export function AppSidebar() {
                     <UserProfile state={state} />
                 </SessionProvider>
 
-                {state === 'expanded' && (
-                    <>
+                {/* {state === 'expanded' && (
+                    <div className="w-full">
                         <Separator className={cn(state === 'expanded' ? 'my-2' : 'my-0')} />
-                        <div className="w-full px-4 flex flex-row justify-stretch items-center gap-2">
+                        <div className="w-full px-2 flex flex-row justify-around items-center gap-2">
                             <Button variant={'link'}>
-                                <InfoIcon className="size-3" />
+                                <InfoIcon className="size-3.5" />
                             </Button>
                             <Button variant={'link'}>
-                                <GithubIcon className="size-3" />
+                                <GithubIcon className="size-3.5" />
                             </Button>
                             <Button variant={'link'}>
-                                <TwitterIcon className="size-3" />
+                                <TwitterIcon className="size-3.5" />
                             </Button>
                         </div>
-                    </>
-                )}
+                    </div>
+                )} */}
             </SidebarFooter>
         </Sidebar>
     );

@@ -66,7 +66,7 @@ export function Chat({
     return (
         <div
             className={cn(
-                'h-screen flex flex-col w-full stretch',
+                'h-screen mx-auto flex flex-col w-full',
                 messages.length === 0
                     ? isSpaceChat
                         ? 'justify-start items-start'

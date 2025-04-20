@@ -25,7 +25,7 @@ export default function UserProfile({ state }: { state: 'collapsed' | 'expanded'
 
     return (
         <DropdownMenu open={open} onOpenChange={setOpen}>
-            <DropdownMenuTrigger>
+            <DropdownMenuTrigger className="hover:bg-background cursor-pointer ">
                 {state === 'collapsed' ? (
                     <Avatar className="cursor-pointer rounded-lg border size-7">
                         <AvatarImage src={session.user.image!} alt={session.user.name!} />
@@ -34,7 +34,7 @@ export default function UserProfile({ state }: { state: 'collapsed' | 'expanded'
                         </AvatarFallback>
                     </Avatar>
                 ) : (
-                    <div className="w-full flex justify-start items-center gap-2">
+                    <div className="py-2 px-2.5 border rounded-lg w-full flex justify-start items-center gap-3">
                         <Avatar className="cursor-pointer rounded-lg border size-9">
                             <AvatarImage src={session.user.image!} alt={session.user.name!} />
                             <AvatarFallback className="text-xs">
@@ -43,12 +43,12 @@ export default function UserProfile({ state }: { state: 'collapsed' | 'expanded'
                         </Avatar>
                         <div className="w-full h-full flex flex-col justify-center items-start">
                             <p>{session.user.name}</p>
-                            <p className="text-xs text-muted-foreground break-all truncate overflow-hidden">
+                            <p className="text-[10px] text-muted-foreground break-all truncate overflow-hidden">
                                 Professional Tier
                             </p>
                         </div>
 
-                        <ChevronRightIcon className="text-muted-foreground" />
+                        {/* <ChevronRightIcon className="text-muted-foreground" /> */}
                     </div>
                 )}
             </DropdownMenuTrigger>

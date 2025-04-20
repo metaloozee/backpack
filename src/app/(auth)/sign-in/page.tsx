@@ -36,7 +36,7 @@ export default function SignInPage() {
                     variant={'secondary'}
                     onClick={() => signIn('github', { callbackUrl: '/' })}
                 >
-                    <GitHubLogoIcon className="size-10" />
+                    <GitHubLogoIcon className="size-5" />
                     Continue with GitHub
                 </Button>
             </div>
