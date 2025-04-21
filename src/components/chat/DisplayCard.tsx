@@ -68,7 +68,7 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
                 backfaceVisibility: 'hidden',
             }}
             className={cn(
-                'relative w-full rounded-lg border border-border/50 bg-zinc-900/50 p-4 transition-colors duration-200 hover:bg-zinc-900/70',
+                'relative w-full rounded-lg border border-border/50 bg-neutral-900/50 p-4 transition-colors duration-200 hover:bg-neutral-900/70',
                 'flex justify-between items-center'
             )}
         >

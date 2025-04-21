@@ -49,7 +49,7 @@ export function Cards({ spaces }: { spaces: Array<Space> }) {
                     transition={{ type: 'spring', damping: 10, stiffness: 200 }}
                 >
                     <Link href={`/s/${space.id}`}>
-                        <Card className="w-full h-full bg-zinc-900/50 hover:bg-zinc-900/70 transition-all duration-200">
+                        <Card className="w-full h-full bg-neutral-900/50 hover:bg-neutral-900/70 transition-all duration-200">
                             <CardHeader>
                                 <LibraryIcon />
                                 <CardTitle>{space.spaceTitle}</CardTitle>

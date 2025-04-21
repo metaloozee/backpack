@@ -66,7 +66,7 @@ const CollapsibleWrapper = ({
                 initial={{ y: 5, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                className="flex-1 px-4 hover:bg-zinc-900/10 transition-colors duration-200"
+                className="flex-1 px-4 hover:bg-neutral-900/10 transition-colors duration-200"
             >
                 {children}
             </motion.div>
@@ -87,7 +87,7 @@ const CollapsibleWrapper = ({
                             <motion.div
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                className="text-sm w-full text-zinc-800 dark:text-zinc-300"
+                                className="text-sm w-full text-neutral-800 dark:text-neutral-300"
                             >
                                 {header}
                             </motion.div>

@@ -215,7 +215,7 @@ export function Input({
                     transition={{ delay: 0.1 }}
                     className="mb-6"
                 >
-                    <h1 className="text-3xl text-transparent bg-clip-text bg-linear-to-br from-white to-zinc-500">
+                    <h1 className="text-3xl text-transparent bg-clip-text bg-linear-to-br from-white to-neutral-500">
                         Your Research, Simplified.
                     </h1>
                 </motion.div>
@@ -226,7 +226,7 @@ export function Input({
             >
                 <div
                     className={cn(
-                        'relative flex flex-col w-full p-4 gap-4 border-input bg-zinc-900/50 focus-within:border-zinc-700/70 hover:border-zinc-700/70 transition-all duration-200',
+                        'relative flex flex-col w-full p-4 gap-4 border-input bg-neutral-900/50 focus-within:border-neutral-700/70 hover:border-neutral-700/70 transition-all duration-200',
                         messages.length > 0
                             ? 'border-t-2 border-x-2 rounded-t-lg'
                             : 'border-2 rounded-lg'
@@ -281,7 +281,7 @@ export function Input({
                                             role="combobox"
                                             aria-expanded={open}
                                             className={cn(
-                                                'justify-between truncate bg-zinc-800 transition-all duration-200 px-4 py-2'
+                                                'justify-between truncate bg-neutral-800 transition-all duration-200 px-4 py-2'
                                             )}
                                         >
                                             <div className="flex items-center gap-2 text-xs">
@@ -317,7 +317,7 @@ export function Input({
                                     </motion.div>
                                 </PopoverTrigger>
                                 <PopoverContent
-                                    className="w-[300px] p-2 font-sans! bg-zinc-900/50 backdrop-blur-md rounded-lg shadow-lg border border-zinc-800"
+                                    className="w-[300px] p-2 font-sans! bg-neutral-900/50 backdrop-blur-md rounded-lg shadow-lg border border-neutral-800"
                                     align="start"
                                     sideOffset={8}
                                     forceMount
@@ -333,7 +333,7 @@ export function Input({
                                     >
                                         <Command>
                                             <CommandList>
-                                                <CommandGroup className="bg-zinc-900/50">
+                                                <CommandGroup className="bg-neutral-900/50">
                                                     {modeTypes.map((mode) => (
                                                         <CommandItem
                                                             key={mode.value}
@@ -461,8 +461,8 @@ export function Input({
                                                             className={cn(
                                                                 'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
                                                                 webSearch
-                                                                    ? 'bg-zinc-800 border-zinc-800 text-primary'
-                                                                    : 'bg-zinc-900 border-zinc-800'
+                                                                    ? 'bg-neutral-800 border-neutral-800 text-primary'
+                                                                    : 'bg-neutral-900 border-neutral-800'
                                                             )}
                                                         >
                                                             <GlobeIcon className="size-3.5" />
@@ -506,8 +506,8 @@ export function Input({
                                                             className={cn(
                                                                 'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
                                                                 knowledgeBase
-                                                                    ? 'bg-zinc-800 border-zinc-800 text-primary'
-                                                                    : 'bg-zinc-900 border-zinc-800'
+                                                                    ? 'bg-neutral-800 border-neutral-800 text-primary'
+                                                                    : 'bg-neutral-900 border-neutral-800'
                                                             )}
                                                         >
                                                             <BookCopyIcon className="size-3.5" />
@@ -553,8 +553,8 @@ export function Input({
                                                             className={cn(
                                                                 'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
                                                                 academicSearch
-                                                                    ? 'bg-zinc-800 border-zinc-800 text-primary'
-                                                                    : 'bg-zinc-900 border-zinc-800'
+                                                                    ? 'bg-neutral-800 border-neutral-800 text-primary'
+                                                                    : 'bg-neutral-900 border-neutral-800'
                                                             )}
                                                         >
                                                             <GraduationCapIcon className="size-3.5" />
@@ -598,8 +598,8 @@ export function Input({
                                                             className={cn(
                                                                 'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
                                                                 socialSearch
-                                                                    ? 'bg-zinc-800 border-zinc-800 text-primary'
-                                                                    : 'bg-zinc-900 border-zinc-800'
+                                                                    ? 'bg-neutral-800 border-neutral-800 text-primary'
+                                                                    : 'bg-neutral-900 border-neutral-800'
                                                             )}
                                                         >
                                                             <UsersIcon className="size-3.5" />

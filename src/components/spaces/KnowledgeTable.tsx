@@ -16,7 +16,7 @@ export const columns: ColumnDef<Knowledge>[] = [
                 <Link
                     href={row.getValue('knowledgeName')}
                     target="_blank"
-                    className="text-zinc-300 underline-offset-4 hover:underline transition-all duration-300"
+                    className="text-neutral-300 underline-offset-4 hover:underline transition-all duration-300"
                 >
                     <p className="truncate w-[25vw]">{row.getValue('knowledgeName')}</p>
                 </Link>

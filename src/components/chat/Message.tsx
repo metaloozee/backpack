@@ -68,7 +68,7 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
 
     return !inline && match ? (
         <div className="relative w-full max-w-2xl">
-            <div className="flex items-center justify-between bg-zinc-900/50 px-4 py-2.5 rounded-t-lg border-x border-t border-border">
+            <div className="flex items-center justify-between bg-neutral-900/50 px-4 py-2.5 rounded-t-lg border-x border-t border-border">
                 <div className="flex items-center gap-1.5">
                     <CodeIcon className="size-3 text-muted-foreground" />
                     <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
@@ -162,7 +162,7 @@ const markdownComponents = {
     tr: ({ children }: any) => <TableRow className="hover:bg-muted/30">{children}</TableRow>,
     th: ({ children }: any) => <TableHead className="font-semibold">{children}</TableHead>,
     td: ({ children }: any) => <TableCell>{children}</TableCell>,
-    p: ({ children }: any) => <p className="mb-4 leading-7 text-zinc-300">{children}</p>,
+    p: ({ children }: any) => <p className="mb-4 leading-7 text-neutral-300">{children}</p>,
     h1: ({ children }: any) => <h1 className="text-3xl font-bold mt-6 mb-4">{children}</h1>,
     h2: ({ children }: any) => <h2 className="text-2xl font-semibold mt-5 mb-3">{children}</h2>,
     h3: ({ children }: any) => <h3 className="text-xl font-semibold mt-4 mb-2">{children}</h3>,
@@ -172,7 +172,7 @@ const markdownComponents = {
         </ul>
     ),
     ol: ({ children }: any) => <ol className="list-decimal list-outside pl-6 mb-4">{children}</ol>,
-    li: ({ children }: any) => <li className="mb-1 text-zinc-300">{children}</li>,
+    li: ({ children }: any) => <li className="mb-1 text-neutral-300">{children}</li>,
     blockquote: ({ children }: any) => (
         <blockquote className="border-l-4 border-muted pl-4 italic my-4">{children}</blockquote>
     ),
@@ -181,7 +181,9 @@ const markdownComponents = {
             {href ? extractDomain(href) : children}
         </Link>
     ),
-    strong: ({ children }: any) => <strong className="font-bold text-zinc-100">{children}</strong>,
+    strong: ({ children }: any) => (
+        <strong className="font-bold text-neutral-100">{children}</strong>
+    ),
     inlineMath: ({ value }: { value: string }) => <span className="math math-inline">{value}</span>,
     math: ({ value }: { value: string }) => <div className="math math-display">{value}</div>,
 };
