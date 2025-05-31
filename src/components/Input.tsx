@@ -35,6 +35,14 @@ import ChatDisplayCard from './chat/DisplayCard';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 import { useForm, SubmitHandler } from 'react-hook-form';
+import {
+    layoutTransition,
+    staggerVariants,
+    fadeVariants,
+    buttonVariants,
+    slideVariants,
+    transitions,
+} from '@/lib/animations';
 
 interface InputPanelProps {
     isLoading: boolean;
@@ -191,13 +199,7 @@ export function Input({
     return (
         <motion.div
             layout
-            transition={{
-                duration: 0.3,
-                ease: [0.32, 0.72, 0, 1],
-                layout: {
-                    duration: 0.3,
-                },
-            }}
+            transition={layoutTransition}
             className={cn(
                 'mx-auto w-full bg-background',
                 messages.length > 0
@@ -209,10 +211,10 @@ export function Input({
         >
             {messages.length === 0 && !isSpaceChat && (
                 <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ delay: 0.1 }}
+                    variants={slideVariants.down}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
                     className="mb-6"
                 >
                     <h1 className="text-3xl text-transparent bg-clip-text bg-linear-to-br from-white to-neutral-500">
@@ -268,12 +270,10 @@ export function Input({
                             <Popover open={open} onOpenChange={setOpen}>
                                 <PopoverTrigger disabled={messages.length !== 0} asChild>
                                     <motion.div
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{
-                                            duration: 0.3,
-                                            ease: 'easeInOut',
-                                        }}
+                                        variants={slideVariants.up}
+                                        initial="hidden"
+                                        animate="visible"
+                                        transition={transitions.smooth}
                                     >
                                         <Button
                                             size={null}
@@ -323,13 +323,11 @@ export function Input({
                                     forceMount
                                 >
                                     <motion.div
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
-                                        transition={{
-                                            duration: 0.2,
-                                            ease: 'easeInOut',
-                                        }}
+                                        variants={slideVariants.up}
+                                        initial="hidden"
+                                        animate="visible"
+                                        exit="exit"
+                                        transition={transitions.smooth}
                                     >
                                         <Command>
                                             <CommandList>
@@ -345,13 +343,12 @@ export function Input({
                                                                             m.value === currentValue
                                                                     )?.disabled
                                                                 ) {
-                                                                    return; // Don't select disabled modes
+                                                                    return;
                                                                 }
 
                                                                 setSelectedMode(
                                                                     currentValue as ModeType
                                                                 );
-                                                                // Apply mode-specific settings
                                                                 const selectedModeConfig =
                                                                     modeTypes.find(
                                                                         (m) =>
@@ -411,45 +408,19 @@ export function Input({
                             <AnimatePresence mode="wait">
                                 <motion.div
                                     className="flex flex-row gap-2"
-                                    variants={{
-                                        hidden: {},
-                                        show: {
-                                            transition: {
-                                                staggerChildren: 0.1,
-                                            },
-                                        },
-                                        exit: {
-                                            transition: {
-                                                staggerChildren: 0.05,
-                                                staggerDirection: -1,
-                                            },
-                                        },
-                                    }}
+                                    variants={staggerVariants.container}
                                     initial="hidden"
-                                    animate="show"
+                                    animate="visible"
                                     exit="exit"
                                     key={`cards-container-${selectedMode}`}
                                 >
                                     {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
                                         ?.showWebSearch && (
                                         <motion.div
-                                            variants={{
-                                                hidden: { opacity: 0, y: 5, scale: 0.95 },
-                                                show: { opacity: 1, y: 0, scale: 1 },
-                                                exit: { opacity: 0, y: -5, scale: 0.95 },
-                                            }}
-                                            transition={{
-                                                duration: 0.2,
-                                                ease: [0.4, 0, 0.2, 1],
-                                                layout: { duration: 0.3 },
-                                            }}
+                                            variants={staggerVariants.item}
                                             key="web-search-card"
                                             layout
                                             layoutId="web-search-section"
-                                            style={{
-                                                willChange: 'transform',
-                                                backfaceVisibility: 'hidden',
-                                            }}
                                         >
                                             <TooltipProvider>
                                                 <Tooltip>
@@ -459,7 +430,7 @@ export function Input({
                                                                 updateWebSearch(!webSearch)
                                                             }
                                                             className={cn(
-                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justify-center items-center gap-2 text-xs transition-all duration-200',
                                                                 webSearch
                                                                     ? 'bg-neutral-800 border-neutral-800 text-primary'
                                                                     : 'bg-neutral-900 border-neutral-800'
@@ -478,23 +449,10 @@ export function Input({
                                     {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
                                         ?.showKnowledgeBase && (
                                         <motion.div
-                                            variants={{
-                                                hidden: { opacity: 0, y: 5, scale: 0.95 },
-                                                show: { opacity: 1, y: 0, scale: 1 },
-                                                exit: { opacity: 0, y: -5, scale: 0.95 },
-                                            }}
-                                            transition={{
-                                                duration: 0.2,
-                                                ease: [0.4, 0, 0.2, 1],
-                                                layout: { duration: 0.3 },
-                                            }}
+                                            variants={staggerVariants.item}
                                             key="knowledge-base-card"
                                             layout
                                             layoutId="knowledge-base-section"
-                                            style={{
-                                                willChange: 'transform',
-                                                backfaceVisibility: 'hidden',
-                                            }}
                                         >
                                             <TooltipProvider>
                                                 <Tooltip>
@@ -504,7 +462,7 @@ export function Input({
                                                                 updateKnowledgeBase(!knowledgeBase)
                                                             }
                                                             className={cn(
-                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justify-center items-center gap-2 text-xs transition-all duration-200',
                                                                 knowledgeBase
                                                                     ? 'bg-neutral-800 border-neutral-800 text-primary'
                                                                     : 'bg-neutral-900 border-neutral-800'
@@ -523,23 +481,10 @@ export function Input({
                                     {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
                                         ?.showAcademicSearch && (
                                         <motion.div
-                                            variants={{
-                                                hidden: { opacity: 0, y: 5, scale: 0.95 },
-                                                show: { opacity: 1, y: 0, scale: 1 },
-                                                exit: { opacity: 0, y: -5, scale: 0.95 },
-                                            }}
-                                            transition={{
-                                                duration: 0.2,
-                                                ease: [0.4, 0, 0.2, 1],
-                                                layout: { duration: 0.3 },
-                                            }}
+                                            variants={staggerVariants.item}
                                             key="academic-search-card"
                                             layout
                                             layoutId="academic-search-section"
-                                            style={{
-                                                willChange: 'transform',
-                                                backfaceVisibility: 'hidden',
-                                            }}
                                         >
                                             <TooltipProvider>
                                                 <Tooltip>
@@ -551,7 +496,7 @@ export function Input({
                                                                 )
                                                             }
                                                             className={cn(
-                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justify-center items-center gap-2 text-xs transition-all duration-200',
                                                                 academicSearch
                                                                     ? 'bg-neutral-800 border-neutral-800 text-primary'
                                                                     : 'bg-neutral-900 border-neutral-800'
@@ -570,23 +515,10 @@ export function Input({
                                     {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
                                         ?.showSocialSearch && (
                                         <motion.div
-                                            variants={{
-                                                hidden: { opacity: 0, y: 5, scale: 0.95 },
-                                                show: { opacity: 1, y: 0, scale: 1 },
-                                                exit: { opacity: 0, y: -5, scale: 0.95 },
-                                            }}
-                                            transition={{
-                                                duration: 0.2,
-                                                ease: [0.4, 0, 0.2, 1],
-                                                layout: { duration: 0.3 },
-                                            }}
+                                            variants={staggerVariants.item}
                                             key="x-search-card"
                                             layout
                                             layoutId="x-search-section"
-                                            style={{
-                                                willChange: 'transform',
-                                                backfaceVisibility: 'hidden',
-                                            }}
                                         >
                                             <TooltipProvider>
                                                 <Tooltip>
@@ -596,7 +528,7 @@ export function Input({
                                                                 updateSocialSearch(!socialSearch)
                                                             }
                                                             className={cn(
-                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justity-center items-center gap-2 text-xs transition-all duration-200',
+                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justify-center items-center gap-2 text-xs transition-all duration-200',
                                                                 socialSearch
                                                                     ? 'bg-neutral-800 border-neutral-800 text-primary'
                                                                     : 'bg-neutral-900 border-neutral-800'
@@ -617,10 +549,10 @@ export function Input({
                         </div>
 
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ delay: 0.1 }}
+                            variants={fadeVariants}
+                            initial="hidden"
+                            animate="visible"
+                            transition={transitions.smooth}
                         >
                             <AnimatePresence>
                                 {isLoading ? (
@@ -631,20 +563,11 @@ export function Input({
                                         disabled={!isLoading}
                                     >
                                         <motion.div
-                                            initial={{ opacity: 0, y: -20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: 20 }}
-                                            transition={{
-                                                duration: 0.2,
-                                                ease: [0.4, 0, 0.2, 1],
-                                                type: 'spring',
-                                                stiffness: 400,
-                                                damping: 20,
-                                            }}
-                                            style={{
-                                                willChange: 'transform',
-                                                backfaceVisibility: 'hidden',
-                                            }}
+                                            variants={slideVariants.up}
+                                            initial="hidden"
+                                            animate="visible"
+                                            exit="exit"
+                                            transition={transitions.smooth}
                                         >
                                             <StopCircleIcon />
                                         </motion.div>
@@ -666,22 +589,11 @@ export function Input({
                                         }
                                     >
                                         <motion.div
-                                            initial={{ opacity: 0, y: -20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{
-                                                x: 20,
-                                            }}
-                                            transition={{
-                                                duration: 0.2,
-                                                ease: [0.4, 0, 0.2, 1],
-                                                type: 'spring',
-                                                stiffness: 400,
-                                                damping: 20,
-                                            }}
-                                            style={{
-                                                willChange: 'transform',
-                                                backfaceVisibility: 'hidden',
-                                            }}
+                                            variants={slideVariants.up}
+                                            initial="hidden"
+                                            animate="visible"
+                                            exit="exit"
+                                            transition={transitions.smooth}
                                         >
                                             <CornerDownLeftIcon
                                                 className={cn(
@@ -708,16 +620,7 @@ export function Input({
                         <Separator />
                     </div>
                     <motion.div
-                        variants={{
-                            hidden: { opacity: 1 },
-                            visible: {
-                                opacity: 1,
-                                transition: {
-                                    delayChildren: 0.1,
-                                    staggerChildren: 0.1,
-                                },
-                            },
-                        }}
+                        variants={staggerVariants.container}
                         initial="hidden"
                         animate="visible"
                         className="flex flex-col w-full justify-start items-start gap-3"
@@ -734,19 +637,8 @@ export function Input({
                                 return (
                                     <motion.div
                                         key={chatData.id}
-                                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                                        transition={{
-                                            duration: 0.3,
-                                            ease: [0.4, 0, 0.2, 1],
-                                            layout: { duration: 0.3 },
-                                        }}
+                                        variants={staggerVariants.item}
                                         layout
-                                        style={{
-                                            willChange: 'transform',
-                                            backfaceVisibility: 'hidden',
-                                        }}
                                         className="w-full"
                                     >
                                         <ChatDisplayCard chat={chatData} />

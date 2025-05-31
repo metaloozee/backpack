@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { XIcon } from 'lucide-react';
 import useClickOutside from '@/hooks/useClickOutside';
+import { modalVariants, backdropVariants, transitions, layoutTransition } from '@/lib/animations';
 
 export type MorphingDialogContextType = {
     isOpen: boolean;
@@ -188,11 +189,7 @@ function MorphingDialogContent({ children, className, style }: MorphingDialogCon
                 backfaceVisibility: 'hidden',
                 ...style,
             }}
-            transition={{
-                duration: 0.3,
-                ease: [0.4, 0, 0.2, 1],
-                layout: { duration: 0.3 },
-            }}
+            transition={layoutTransition}
             role="dialog"
             aria-modal="true"
             aria-labelledby={`motion-ui-morphing-dialog-title-${uniqueId}`}
@@ -210,34 +207,35 @@ export type MorphingDialogContainerProps = {
 };
 
 function MorphingDialogContainer({ children }: MorphingDialogContainerProps) {
-    const { isOpen, uniqueId } = useMorphingDialog();
-    const [mounted, setMounted] = useState(false);
+    const { isOpen } = useMorphingDialog();
 
-    useEffect(() => {
-        setMounted(true);
-        return () => setMounted(false);
-    }, []);
-
-    if (!mounted) return null;
-
-    return createPortal(
-        <AnimatePresence initial={false} mode="sync">
-            {isOpen && (
-                <>
-                    <motion.div
-                        key={`backdrop-${uniqueId}`}
-                        className="fixed inset-0 h-full w-full bg-white/40 backdrop-blur-xs dark:bg-black/40"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    />
-                    <div className="fixed inset-0 z-50 flex items-center justify-center">
-                        {children}
-                    </div>
-                </>
-            )}
-        </AnimatePresence>,
-        document.body
+    return (
+        <>
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <motion.div
+                            className="fixed inset-0 bg-black/80 z-50"
+                            variants={backdropVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                        />
+                        <div className="fixed left-0 top-0 z-50 grid h-full w-full place-items-center overflow-y-auto p-6">
+                            <motion.div
+                                variants={modalVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                className="w-full max-w-lg"
+                            >
+                                {children}
+                            </motion.div>
+                        </div>
+                    </>
+                )}
+            </AnimatePresence>
+        </>
     );
 }
 

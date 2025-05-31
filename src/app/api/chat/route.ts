@@ -21,6 +21,7 @@ import { createDataStreamResponse, tool } from 'ai';
 import { google } from '@ai-sdk/google';
 import { cosineDistance, sql, eq, and, gt, desc } from 'drizzle-orm';
 import { knowledge, knowledgeEmbeddings } from '@/lib/db/schema/app';
+import { anthropic } from '@ai-sdk/anthropic';
 import { db } from '@/lib/db';
 
 export const maxDuration = 60;
@@ -31,8 +32,8 @@ const openrouter = createOpenRouter({
     apiKey: env.OPENROUTER_API_KEY,
 });
 
-const smallModel = openrouter('google/gemini-2.0-flash-001');
-const largeModel = openrouter('google/gemini-2.5-pro-exp-03-25:free');
+// const smallModel = openrouter('google/gemini-2.0-flash-001');
+const largeModel = openrouter('anthropic/claude-sonnet-4');
 
 const extractDomain = (url: string): string => {
     const urlPattern = /^https?:\/\/([^/?#]+)(?:[/?#]|$)/i;

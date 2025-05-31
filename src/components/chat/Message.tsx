@@ -30,6 +30,15 @@ import { BrainIcon } from 'lucide-react';
 import { CopyIcon, CheckIcon, CodeIcon } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
+import {
+    copyVariants,
+    rippleVariants,
+    fadeVariants,
+    buttonVariants,
+    iconVariants,
+    messageVariants,
+    transitions,
+} from '@/lib/animations';
 
 const extractDomain = (url: string): string => {
     try {
@@ -51,21 +60,6 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
         setTimeout(() => setIsCopied(false), 2000);
     };
 
-    const iconVariants = {
-        initial: { opacity: 0, scale: 0.8, rotate: -10 },
-        animate: { opacity: 1, scale: 1, rotate: 0 },
-        exit: { opacity: 0, scale: 0.8, rotate: 10 },
-        transition: {
-            duration: 0.2,
-            ease: [0.4, 0, 0.2, 1],
-        },
-    };
-
-    const rippleVariants = {
-        initial: { scale: 0, opacity: 0.5 },
-        animate: { scale: 1.5, opacity: 0 },
-    };
-
     return !inline && match ? (
         <div className="relative w-full max-w-2xl">
             <div className="flex items-center justify-between bg-neutral-900/50 px-4 py-2.5 rounded-t-lg border-x border-t border-border">
@@ -76,48 +70,55 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
                     </div>
                 </div>
                 <div className="relative">
-                    <Button
-                        variant="ghost"
-                        size={'icon'}
-                        className="h-6 w-6 bg-background/60 hover:bg-muted border border-border/50 shadow-xs transition-all duration-200 hover:scale-105 relative overflow-hidden"
-                        onClick={handleCopy}
-                        title={isCopied ? 'Copied!' : 'Copy code'}
+                    <motion.div
+                        variants={buttonVariants}
+                        initial="rest"
+                        whileHover="hover"
+                        whileTap="tap"
                     >
-                        <AnimatePresence mode="wait" initial={false}>
-                            {isCopied && (
-                                <motion.span
-                                    className="absolute inset-0 bg-foreground/10 rounded-sm"
-                                    variants={rippleVariants}
+                        <Button
+                            variant="ghost"
+                            size={'icon'}
+                            className="h-6 w-6 bg-background/60 hover:bg-muted border border-border/50 shadow-xs transition-all duration-200 hover:scale-105 relative overflow-hidden"
+                            onClick={handleCopy}
+                            title={isCopied ? 'Copied!' : 'Copy code'}
+                        >
+                            <AnimatePresence mode="wait" initial={false}>
+                                {isCopied && (
+                                    <motion.span
+                                        className="absolute inset-0 bg-foreground/10 rounded-sm"
+                                        variants={rippleVariants}
+                                        initial="initial"
+                                        animate="animate"
+                                        transition={{ duration: 0.5 }}
+                                    />
+                                )}
+                            </AnimatePresence>
+                            <AnimatePresence mode="wait" initial={false}>
+                                <motion.div
+                                    key={isCopied ? 'check' : 'copy'}
+                                    variants={copyVariants}
                                     initial="initial"
                                     animate="animate"
-                                    transition={{ duration: 0.5 }}
-                                />
-                            )}
-                        </AnimatePresence>
-                        <AnimatePresence mode="wait" initial={false}>
-                            <motion.div
-                                key={isCopied ? 'check' : 'copy'}
-                                variants={iconVariants}
-                                initial="initial"
-                                animate="animate"
-                                exit="exit"
-                                transition={{ duration: 0.2 }}
-                            >
-                                {isCopied ? (
-                                    <CheckIcon className="text-muted-foreground size-2" />
-                                ) : (
-                                    <CopyIcon className="text-muted-foreground size-2" />
-                                )}
-                            </motion.div>
-                        </AnimatePresence>
-                    </Button>
+                                    exit="exit"
+                                >
+                                    {isCopied ? (
+                                        <CheckIcon className="text-muted-foreground size-2" />
+                                    ) : (
+                                        <CopyIcon className="text-muted-foreground size-2" />
+                                    )}
+                                </motion.div>
+                            </AnimatePresence>
+                        </Button>
+                    </motion.div>
                     <AnimatePresence>
                         {isCopied && (
                             <motion.div
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -5 }}
-                                transition={{ duration: 0.2 }}
+                                variants={fadeVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                transition={transitions.fast}
                                 className="absolute right-0 top-full mt-1 text-xs bg-background/90 border border-border/50 shadow-xs rounded px-2 py-1 pointer-events-none z-20"
                             >
                                 Copied!
@@ -198,63 +199,42 @@ export function BotMessage({ message, className }: BotMessageProps) {
     const containsLaTeX = /\\\[([\s\S]*?)\\\]|\\\(([\s\S]*?)\\\)/.test(message);
     const processedData = preprocessLaTeX(message);
 
-    if (processedData.length <= 1) {
-        return null;
-    }
-
-    const commonProps = {
-        className: cn(
-            'prose prose-neutral dark:prose-invert max-w-none',
-            'prose-p:leading-7 prose-pre:p-0',
-            'prose-headings:font-semibold',
-            'prose-a:text-primary prose-a:no-underline hover:prose-a:underline',
-            'prose-strong:font-semibold prose-strong:text-foreground',
-            className
-        ),
-    };
-
-    if (containsLaTeX) {
-        return (
-            <MemoizedReactMarkdown
-                {...commonProps}
-                remarkPlugins={[remarkGfm, remarkMath]}
-                rehypePlugins={[
-                    [rehypeExternalLinks, { target: '_blank' }],
-                    rehypeRaw,
-                    rehypeKatex,
-                ]}
-                components={markdownComponents}
-            >
-                {processedData}
-            </MemoizedReactMarkdown>
-        );
-    }
-
     return (
         <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 20,
-                mass: 0.8,
-                velocity: 2,
-            }}
-            style={{
-                willChange: 'transform',
-                backfaceVisibility: 'hidden',
-            }}
-            className="w-full"
+            variants={messageVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            layout
+            className={cn('group/message relative flex w-full items-start gap-3 pt-4', className)}
         >
-            <MemoizedReactMarkdown
-                {...commonProps}
-                components={markdownComponents}
-                rehypePlugins={[[rehypeExternalLinks, { target: '_blank' }], rehypeRaw]}
-                remarkPlugins={[remarkGfm]}
+            <motion.div
+                variants={fadeVariants}
+                initial="hidden"
+                animate="visible"
+                className="flex-1 space-y-2 "
             >
-                {processedData}
-            </MemoizedReactMarkdown>
+                <div className="prose prose-neutral dark:prose-invert max-w-none break-words">
+                    <MemoizedReactMarkdown
+                        className="prose break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 max-w-none"
+                        remarkPlugins={[remarkGfm, remarkMath]}
+                        rehypePlugins={[
+                            rehypeKatex,
+                            rehypeRaw,
+                            [
+                                rehypeExternalLinks,
+                                {
+                                    target: '_blank',
+                                    rel: ['nofollow', 'noopener', 'noreferrer'],
+                                },
+                            ],
+                        ]}
+                        components={markdownComponents}
+                    >
+                        {processedData}
+                    </MemoizedReactMarkdown>
+                </div>
+            </motion.div>
         </motion.div>
     );
 }

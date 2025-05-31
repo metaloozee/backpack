@@ -1,60 +1,158 @@
 'use client';
 
-import * as React from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useSession, signOut } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
+import { UserIcon, LogOutIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'motion/react';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-    DropdownMenuSeparator,
-    DropdownMenuLabel,
-} from '@/components/ui/dropdown-menu';
-import { ChevronRightIcon, UserRoundIcon } from 'lucide-react';
-import { useSession } from 'next-auth/react';
-import SignOutBtn from '@/components/auth/SignOutBtn';
-import Image from 'next/image';
+    fadeVariants,
+    buttonVariants,
+    iconVariants,
+    slideVariants,
+    transitions,
+} from '@/lib/animations';
 
-export default function UserProfile({ state }: { state: 'collapsed' | 'expanded' }) {
-    const { data: session } = useSession();
-    const [open, setOpen] = React.useState(false);
+interface UserProfileProps {
+    state: 'expanded' | 'collapsed';
+}
+
+export default function UserProfile({ state }: UserProfileProps) {
+    const { data: session, status } = useSession();
+
+    if (status === 'loading') {
+        return (
+            <motion.div
+                variants={fadeVariants}
+                initial="hidden"
+                animate="visible"
+                className={cn(
+                    'flex items-center gap-2',
+                    state === 'collapsed' ? 'justify-center' : 'justify-start w-full'
+                )}
+            >
+                <motion.div
+                    variants={iconVariants}
+                    initial="rest"
+                    animate="pulse"
+                    className="w-8 h-8 bg-muted rounded-full"
+                />
+                {state === 'expanded' && (
+                    <motion.div
+                        variants={slideVariants.right}
+                        initial="hidden"
+                        animate="visible"
+                        className="h-4 bg-muted rounded w-20"
+                    />
+                )}
+            </motion.div>
+        );
+    }
 
     if (!session) {
-        return;
+        return (
+            <motion.div
+                variants={buttonVariants}
+                initial="rest"
+                whileHover="hover"
+                whileTap="tap"
+                className={cn(state === 'collapsed' ? 'w-9' : 'w-full')}
+            >
+                <Button
+                    variant="outline"
+                    size={state === 'collapsed' ? 'icon' : 'default'}
+                    className={cn(state === 'expanded' ? 'w-full' : '')}
+                    disableAnimation
+                >
+                    <motion.div variants={iconVariants} initial="rest" whileHover="hover">
+                        <UserIcon className="size-4" />
+                    </motion.div>
+                    <AnimatePresence>
+                        {state === 'expanded' && (
+                            <motion.span
+                                variants={fadeVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                transition={transitions.fast}
+                                className="text-sm"
+                            >
+                                Sign In
+                            </motion.span>
+                        )}
+                    </AnimatePresence>
+                </Button>
+            </motion.div>
+        );
     }
 
     return (
-        <DropdownMenu open={open} onOpenChange={setOpen}>
-            <DropdownMenuTrigger className="hover:bg-background cursor-pointer ">
-                {state === 'collapsed' ? (
-                    <Avatar className="cursor-pointer rounded-lg border size-7">
-                        <AvatarImage src={session.user.image!} alt={session.user.name!} />
-                        <AvatarFallback className="text-xs">
-                            <UserRoundIcon className="size-5" />
-                        </AvatarFallback>
-                    </Avatar>
-                ) : (
-                    <div className="py-2 px-2.5 border rounded-lg w-full flex justify-start items-center gap-3">
-                        <Avatar className="cursor-pointer rounded-lg border size-9">
-                            <AvatarImage src={session.user.image!} alt={session.user.name!} />
-                            <AvatarFallback className="text-xs">
-                                <UserRoundIcon className="size-5" />
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="w-full h-full flex flex-col justify-center items-start">
-                            <p>{session.user.name}</p>
-                            <p className="text-[10px] text-muted-foreground break-all truncate overflow-hidden">
-                                Professional Tier
-                            </p>
-                        </div>
+        <motion.div
+            variants={fadeVariants}
+            initial="hidden"
+            animate="visible"
+            className={cn(
+                'flex items-center gap-2',
+                state === 'collapsed' ? 'justify-center' : 'justify-between w-full'
+            )}
+        >
+            <motion.div
+                variants={slideVariants.right}
+                initial="hidden"
+                animate="visible"
+                className="flex items-center gap-2"
+            >
+                <motion.div
+                    variants={iconVariants}
+                    initial="rest"
+                    whileHover="hover"
+                    className="w-8 h-8 rounded-full bg-primary/10 border border-border/50 flex items-center justify-center"
+                >
+                    <UserIcon className="size-4 text-primary" />
+                </motion.div>
+                <AnimatePresence>
+                    {state === 'expanded' && (
+                        <motion.div
+                            variants={fadeVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            transition={transitions.fast}
+                            className="flex flex-col"
+                        >
+                            <span className="text-sm font-medium truncate max-w-[120px]">
+                                {session.user?.name || 'User'}
+                            </span>
+                            <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+                                {session.user?.email}
+                            </span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.div>
 
-                        {/* <ChevronRightIcon className="text-muted-foreground" /> */}
-                    </div>
+            <AnimatePresence>
+                {state === 'expanded' && (
+                    <motion.div
+                        variants={buttonVariants}
+                        initial="rest"
+                        whileHover="hover"
+                        whileTap="tap"
+                    >
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => signOut()}
+                            title="Sign Out"
+                            disableAnimation
+                        >
+                            <motion.div variants={iconVariants} initial="rest" whileHover="hover">
+                                <LogOutIcon className="size-4" />
+                            </motion.div>
+                        </Button>
+                    </motion.div>
                 )}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="right" align="end">
-                <SignOutBtn />
-            </DropdownMenuContent>
-        </DropdownMenu>
+            </AnimatePresence>
+        </motion.div>
     );
 }

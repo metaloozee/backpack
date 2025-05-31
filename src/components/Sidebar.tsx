@@ -27,6 +27,13 @@ import { SessionProvider } from 'next-auth/react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { usePathname } from 'next/navigation';
+import {
+    fadeVariants,
+    slideVariants,
+    buttonVariants,
+    iconVariants,
+    transitions,
+} from '@/lib/animations';
 
 export function AppSidebar() {
     const pathname = usePathname();
@@ -45,23 +52,26 @@ export function AppSidebar() {
                     state == 'expanded' ? 'px-4 items-start' : 'px-2 items-center'
                 )}
             >
-                <AnimatePresence>
+                <AnimatePresence mode="wait">
                     {state === 'expanded' ? (
                         <Link href={'/'} className="w-full">
                             <motion.div
                                 key="expanded"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{
-                                    duration: 0.1,
-                                    type: 'spring',
-                                    stiffness: 200,
-                                    damping: 15,
-                                }}
+                                variants={fadeVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                transition={transitions.smooth}
                                 className="w-full flex justify-center items-center gap-2"
                             >
-                                <BackpackIcon className="size-4" />
+                                <motion.div
+                                    variants={iconVariants}
+                                    initial="rest"
+                                    whileHover="hover"
+                                    whileTap="tap"
+                                >
+                                    <BackpackIcon className="size-4" />
+                                </motion.div>
                                 <h2 className="text-lg font-light">backpack</h2>
                             </motion.div>
                         </Link>
@@ -69,18 +79,20 @@ export function AppSidebar() {
                         <Link href={'/'}>
                             <motion.div
                                 key="collapsed"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{
-                                    duration: 0.3,
-                                    ease: [0.4, 0, 0.2, 1],
-                                    type: 'spring',
-                                    stiffness: 200,
-                                    damping: 20,
-                                }}
+                                variants={fadeVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                transition={transitions.smooth}
                             >
-                                <BackpackIcon className="size-4" />
+                                <motion.div
+                                    variants={iconVariants}
+                                    initial="rest"
+                                    whileHover="hover"
+                                    whileTap="tap"
+                                >
+                                    <BackpackIcon className="size-4" />
+                                </motion.div>
                             </motion.div>
                         </Link>
                     )}
@@ -92,68 +104,123 @@ export function AppSidebar() {
                         'h-full w-full flex flex-col justify-center items-center gap-2',
                         state === 'expanded' ? 'px-4' : ''
                     )}
-                    initial={{ opacity: 0, x: -100 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{
-                        duration: 0.1,
-                        type: 'spring',
-                        stiffness: 200,
-                        damping: 15,
-                    }}
+                    variants={slideVariants.left}
+                    initial="hidden"
+                    animate="visible"
+                    transition={transitions.smooth}
                 >
-                    <Button
-                        asChild
-                        className={cn(state === 'expanded' ? 'w-full' : '')}
-                        variant={isHome ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'}
-                        size={state === 'expanded' ? 'default' : 'icon'}
+                    <motion.div
+                        variants={buttonVariants}
+                        initial="rest"
+                        whileHover="hover"
+                        whileTap="tap"
                     >
-                        <Link href={'/'}>
-                            {state === 'expanded' ? (
-                                <>
-                                    <SearchIcon />
-                                    <p className="font-light">Search</p>
-                                </>
-                            ) : (
-                                <SearchIcon />
-                            )}
-                        </Link>
-                    </Button>
+                        <Button
+                            asChild
+                            className={cn(state === 'expanded' ? 'w-full' : '')}
+                            variant={isHome ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'}
+                            size={state === 'expanded' ? 'default' : 'icon'}
+                        >
+                            <Link href={'/'}>
+                                {state === 'expanded' ? (
+                                    <>
+                                        <motion.div
+                                            variants={iconVariants}
+                                            initial="rest"
+                                            whileHover="hover"
+                                        >
+                                            <SearchIcon />
+                                        </motion.div>
+                                        <p className="font-light">Search</p>
+                                    </>
+                                ) : (
+                                    <motion.div
+                                        variants={iconVariants}
+                                        initial="rest"
+                                        whileHover="hover"
+                                    >
+                                        <SearchIcon />
+                                    </motion.div>
+                                )}
+                            </Link>
+                        </Button>
+                    </motion.div>
 
-                    <Button
-                        asChild
-                        className={cn(state === 'expanded' ? 'w-full' : '')}
-                        variant={isSpaces ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'}
-                        size={state === 'expanded' ? 'default' : 'icon'}
+                    <motion.div
+                        variants={buttonVariants}
+                        initial="rest"
+                        whileHover="hover"
+                        whileTap="tap"
                     >
-                        <Link href={'/s/'}>
-                            {state === 'expanded' ? (
-                                <>
-                                    <LibraryIcon />
-                                    <p className="font-light">Spaces</p>
-                                </>
-                            ) : (
-                                <LibraryIcon />
-                            )}
-                        </Link>
-                    </Button>
+                        <Button
+                            asChild
+                            className={cn(state === 'expanded' ? 'w-full' : '')}
+                            variant={
+                                isSpaces ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'
+                            }
+                            size={state === 'expanded' ? 'default' : 'icon'}
+                        >
+                            <Link href={'/s/'}>
+                                {state === 'expanded' ? (
+                                    <>
+                                        <motion.div
+                                            variants={iconVariants}
+                                            initial="rest"
+                                            whileHover="hover"
+                                        >
+                                            <LibraryIcon />
+                                        </motion.div>
+                                        <p className="font-light">Spaces</p>
+                                    </>
+                                ) : (
+                                    <motion.div
+                                        variants={iconVariants}
+                                        initial="rest"
+                                        whileHover="hover"
+                                    >
+                                        <LibraryIcon />
+                                    </motion.div>
+                                )}
+                            </Link>
+                        </Button>
+                    </motion.div>
 
-                    <Button
-                        asChild
-                        className={cn(state === 'expanded' ? 'w-full' : '')}
-                        variant={isChats ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'}
-                        size={state === 'expanded' ? 'default' : 'icon'}
+                    <motion.div
+                        variants={buttonVariants}
+                        initial="rest"
+                        whileHover="hover"
+                        whileTap="tap"
                     >
-                        <Link href={'/c/'}>
-                            {state === 'expanded' ? (
-                                <>
-                                    <MessagesSquareIcon />
-                                    <p className="font-light">Chats</p>
-                                </>
-                            ) : (
-                                <MessagesSquareIcon />
-                            )}
-                        </Link>
-                    </Button>
+                        <Button
+                            asChild
+                            className={cn(state === 'expanded' ? 'w-full' : '')}
+                            variant={isChats ? 'default' : state === 'expanded' ? 'ghost' : 'ghost'}
+                            size={state === 'expanded' ? 'default' : 'icon'}
+                        >
+                            <Link href={'/c/'}>
+                                {state === 'expanded' ? (
+                                    <>
+                                        <motion.div
+                                            variants={iconVariants}
+                                            initial="rest"
+                                            whileHover="hover"
+                                        >
+                                            <MessagesSquareIcon />
+                                        </motion.div>
+                                        <p className="font-light">Chats</p>
+                                    </>
+                                ) : (
+                                    <motion.div
+                                        variants={iconVariants}
+                                        initial="rest"
+                                        whileHover="hover"
+                                    >
+                                        <MessagesSquareIcon />
+                                    </motion.div>
+                                )}
+                            </Link>
+                        </Button>
+                    </motion.div>
                 </motion.div>
             </SidebarContent>
             <SidebarFooter
@@ -162,42 +229,61 @@ export function AppSidebar() {
                     state === 'collapsed' ? 'flex justify-center items-center' : 'p-4'
                 )}
             >
-                <Button
-                    variant={'outline'}
-                    onClick={() => setOpen(!open)}
-                    size={state === 'collapsed' ? 'icon' : 'default'}
+                <motion.div
+                    variants={buttonVariants}
+                    initial="rest"
+                    whileHover="hover"
+                    whileTap="tap"
                 >
-                    {state === 'expanded' ? (
-                        <div className="w-full flex flex-row justify-center items-center gap-2">
-                            <PanelLeftCloseIcon className="size-4 text-muted-foreground" />
-                            <p className="text-xs text-muted-foreground">Close Panel</p>
-                        </div>
-                    ) : (
-                        <PanelLeftOpenIcon className="size-4" />
-                    )}
-                </Button>
+                    <Button
+                        variant={'outline'}
+                        onClick={() => setOpen(!open)}
+                        size={state === 'collapsed' ? 'icon' : 'default'}
+                    >
+                        <AnimatePresence mode="wait">
+                            {state === 'expanded' ? (
+                                <motion.div
+                                    key="expanded-button"
+                                    variants={fadeVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                    exit="exit"
+                                    className="w-full flex flex-row justify-center items-center gap-2"
+                                >
+                                    <motion.div
+                                        variants={iconVariants}
+                                        initial="rest"
+                                        whileHover="hover"
+                                    >
+                                        <PanelLeftCloseIcon className="size-4 text-muted-foreground" />
+                                    </motion.div>
+                                    <p className="text-xs text-muted-foreground">Close Panel</p>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="collapsed-button"
+                                    variants={fadeVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                    exit="exit"
+                                >
+                                    <motion.div
+                                        variants={iconVariants}
+                                        initial="rest"
+                                        whileHover="hover"
+                                    >
+                                        <PanelLeftOpenIcon className="size-4" />
+                                    </motion.div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </Button>
+                </motion.div>
 
                 <Separator className={cn(state === 'expanded' ? 'my-2' : 'my-0')} />
                 <SessionProvider>
                     <UserProfile state={state} />
                 </SessionProvider>
-
-                {/* {state === 'expanded' && (
-                    <div className="w-full">
-                        <Separator className={cn(state === 'expanded' ? 'my-2' : 'my-0')} />
-                        <div className="w-full px-2 flex flex-row justify-around items-center gap-2">
-                            <Button variant={'link'}>
-                                <InfoIcon className="size-3.5" />
-                            </Button>
-                            <Button variant={'link'}>
-                                <GithubIcon className="size-3.5" />
-                            </Button>
-                            <Button variant={'link'}>
-                                <TwitterIcon className="size-3.5" />
-                            </Button>
-                        </div>
-                    </div>
-                )} */}
             </SidebarFooter>
         </Sidebar>
     );

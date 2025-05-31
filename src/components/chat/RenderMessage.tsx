@@ -25,25 +25,31 @@ export function RenderMessage({
     chatId,
 }: RenderMessageProps) {
     const toolData = React.useMemo(() => {
+        // First, try to get tools from the custom message.parts structure
         const toolAnnotations =
             message.parts?.filter((part) => part.type === 'tool-invocation') || [];
 
-        if (toolAnnotations.length == 0) {
-            return null;
+        if (toolAnnotations.length > 0) {
+            const toolDataMap = toolAnnotations.reduce((acc, annotation: any) => {
+                const existing = acc.get(annotation.toolInvocation.toolCallId);
+                if (!existing || annotation.toolInvocation.state === 'result') {
+                    acc.set(annotation.toolInvocation.toolCallId, annotation);
+                }
+                return acc;
+            }, new Map<string, any>());
+
+            return Array.from(toolDataMap.values());
         }
 
-        const toolDataMap = toolAnnotations.reduce((acc, annotation: any) => {
-            const existing = acc.get(annotation.toolInvocation.toolCallId);
-            if (!existing || annotation.toolInvocation.state === 'result') {
-                acc.set(annotation.toolInvocation.toolCallId, annotation);
-            }
-            return acc;
-        }, new Map<string, ToolInvocation>());
+        // Fallback to standard Vercel AI SDK toolInvocations structure
+        if (message.toolInvocations && message.toolInvocations.length > 0) {
+            return message.toolInvocations.map((toolInvocation) => ({
+                toolInvocation,
+            }));
+        }
 
-        const toolArray = Array.from(toolDataMap.values());
-
-        return toolArray;
-    }, [message.parts]);
+        return null;
+    }, [message.parts, message.toolInvocations]);
 
     if (message.role === 'user') {
         return (
@@ -55,10 +61,14 @@ export function RenderMessage({
 
     return (
         <>
-            <div className="flex flex-row gap-2">
-                {toolData?.map((tool, index) => <Tool key={index} tool={tool} />)}
-            </div>
             {message.content && <BotMessage message={message.content} />}
+            {toolData && toolData.length > 0 && (
+                <div className="flex flex-row flex-wrap gap-2 mt-2">
+                    {toolData.map((tool, index) => (
+                        <Tool key={`${messageId}-tool-${index}`} tool={tool} />
+                    ))}
+                </div>
+            )}
         </>
     );
 }
