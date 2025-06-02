@@ -87,7 +87,7 @@ const modeTypes = [
         showKnowledgeBase: true,
         showAcademicSearch: true,
         showSocialSearch: true,
-        disabled: true,
+        disabled: false,
     },
 ] as const;
 

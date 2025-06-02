@@ -13,7 +13,6 @@ import { atomDark, oneDark } from 'react-syntax-highlighter/dist/cjs/styles/pris
 import { MemoizedReactMarkdown } from '@/components/ui/markdown';
 import Link from 'next/link';
 
-import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { removeContemplateContent } from '@/lib/utils/message';
 
@@ -30,15 +29,6 @@ import { BrainIcon } from 'lucide-react';
 import { CopyIcon, CheckIcon, CodeIcon } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
-import {
-    copyVariants,
-    rippleVariants,
-    fadeVariants,
-    buttonVariants,
-    iconVariants,
-    messageVariants,
-    transitions,
-} from '@/lib/animations';
 
 const extractDomain = (url: string): string => {
     try {
@@ -70,61 +60,24 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
                     </div>
                 </div>
                 <div className="relative">
-                    <motion.div
-                        variants={buttonVariants}
-                        initial="rest"
-                        whileHover="hover"
-                        whileTap="tap"
+                    <Button
+                        variant="ghost"
+                        size={'icon'}
+                        className="h-6 w-6 bg-background/60 hover:bg-muted border border-border/50 shadow-xs transition-all duration-200 hover:scale-105 relative overflow-hidden"
+                        onClick={handleCopy}
+                        title={isCopied ? 'Copied!' : 'Copy code'}
                     >
-                        <Button
-                            variant="ghost"
-                            size={'icon'}
-                            className="h-6 w-6 bg-background/60 hover:bg-muted border border-border/50 shadow-xs transition-all duration-200 hover:scale-105 relative overflow-hidden"
-                            onClick={handleCopy}
-                            title={isCopied ? 'Copied!' : 'Copy code'}
-                        >
-                            <AnimatePresence mode="wait" initial={false}>
-                                {isCopied && (
-                                    <motion.span
-                                        className="absolute inset-0 bg-foreground/10 rounded-sm"
-                                        variants={rippleVariants}
-                                        initial="initial"
-                                        animate="animate"
-                                        transition={{ duration: 0.5 }}
-                                    />
-                                )}
-                            </AnimatePresence>
-                            <AnimatePresence mode="wait" initial={false}>
-                                <motion.div
-                                    key={isCopied ? 'check' : 'copy'}
-                                    variants={copyVariants}
-                                    initial="initial"
-                                    animate="animate"
-                                    exit="exit"
-                                >
-                                    {isCopied ? (
-                                        <CheckIcon className="text-muted-foreground size-2" />
-                                    ) : (
-                                        <CopyIcon className="text-muted-foreground size-2" />
-                                    )}
-                                </motion.div>
-                            </AnimatePresence>
-                        </Button>
-                    </motion.div>
-                    <AnimatePresence>
-                        {isCopied && (
-                            <motion.div
-                                variants={fadeVariants}
-                                initial="hidden"
-                                animate="visible"
-                                exit="exit"
-                                transition={transitions.fast}
-                                className="absolute right-0 top-full mt-1 text-xs bg-background/90 border border-border/50 shadow-xs rounded px-2 py-1 pointer-events-none z-20"
-                            >
-                                Copied!
-                            </motion.div>
+                        {isCopied ? (
+                            <CheckIcon className="text-muted-foreground size-2" />
+                        ) : (
+                            <CopyIcon className="text-muted-foreground size-2" />
                         )}
-                    </AnimatePresence>
+                    </Button>
+                    {isCopied && (
+                        <div className="absolute right-0 top-full mt-1 text-xs bg-background/90 border border-border/50 shadow-xs rounded px-2 py-1 pointer-events-none z-20">
+                            Copied!
+                        </div>
+                    )}
                 </div>
             </div>
             <SyntaxHighlighter
@@ -200,20 +153,8 @@ export function BotMessage({ message, className }: BotMessageProps) {
     const processedData = preprocessLaTeX(message);
 
     return (
-        <motion.div
-            variants={messageVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            layout
-            className={cn('group/message relative flex w-full items-start gap-3 pt-4', className)}
-        >
-            <motion.div
-                variants={fadeVariants}
-                initial="hidden"
-                animate="visible"
-                className="flex-1 space-y-2 "
-            >
+        <div className={cn('group/message relative flex w-full items-start gap-3 pt-4', className)}>
+            <div className="flex-1 space-y-2 ">
                 <div className="prose prose-neutral dark:prose-invert max-w-none break-words">
                     <MemoizedReactMarkdown
                         className="prose break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 max-w-none"
@@ -234,8 +175,8 @@ export function BotMessage({ message, className }: BotMessageProps) {
                         {processedData}
                     </MemoizedReactMarkdown>
                 </div>
-            </motion.div>
-        </motion.div>
+            </div>
+        </div>
     );
 }
 

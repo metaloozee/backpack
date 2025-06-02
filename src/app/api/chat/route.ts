@@ -102,7 +102,7 @@ export async function POST(req: Request) {
                                     id: chatId,
                                     userId: session.user.id,
                                     spaceId: spaceId,
-                                    chatName: convertToCoreMessages(messages)[0].content.toString(),
+                                    chatName: messages[0].content as string,
                                     messages: [
                                         ...convertToCoreMessages(messages),
                                         ...response.messages,
