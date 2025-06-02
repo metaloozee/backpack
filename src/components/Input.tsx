@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { CoreMessage, Message } from 'ai';
 import { useRouter } from 'next/navigation';
@@ -69,27 +70,23 @@ interface InputPanelProps {
 
 const modeTypes = [
     {
-        value: 'default',
-        label: 'Default',
+        value: 'ask',
+        label: 'Ask',
         description: 'Standard mode with all features',
-        icon: SparklesIcon,
         showWebSearch: true,
         showKnowledgeBase: true,
         showAcademicSearch: true,
         showSocialSearch: true,
-        iconColor: 'text-sky-500',
         disabled: false,
     },
     {
         value: 'research',
         label: 'Research',
-        description: 'Specialized for academic research (Coming Soon)',
-        icon: FlaskConical,
-        showWebSearch: false,
-        showKnowledgeBase: false,
-        showAcademicSearch: false,
-        showSocialSearch: false,
-        iconColor: 'text-amber-500',
+        description: 'Specialized for academic research',
+        showWebSearch: true,
+        showKnowledgeBase: true,
+        showAcademicSearch: true,
+        showSocialSearch: true,
         disabled: true,
     },
 ] as const;
@@ -156,8 +153,7 @@ export function Input({
     const [isComposing, setIsComposing] = React.useState(false);
     const [enterDisabled, setEnterDisabled] = React.useState(false);
 
-    const [open, setOpen] = React.useState(false);
-    const [selectedMode, setSelectedMode] = React.useState<ModeType>('default');
+    const [selectedMode, setSelectedMode] = React.useState<ModeType>('ask');
 
     const handlerCompositionStart = () => setIsComposing(true);
 
@@ -173,6 +169,20 @@ export function Input({
     const handleNewChat = () => {
         setMessages([]);
         router.push('/');
+    };
+
+    const handleModeChange = (value: string) => {
+        const newMode = value as ModeType;
+        setSelectedMode(newMode);
+        console.log('Mode switched to:', newMode);
+
+        const selectedModeConfig = modeTypes.find((m) => m.value === newMode);
+        if (selectedModeConfig) {
+            updateWebSearch(selectedModeConfig.showWebSearch);
+            updateKnowledgeBase(selectedModeConfig.showKnowledgeBase);
+            updateAcademicSearch(selectedModeConfig.showAcademicSearch);
+            updateSocialSearch(selectedModeConfig.showSocialSearch);
+        }
     };
 
     React.useEffect(() => {
@@ -267,144 +277,31 @@ export function Input({
 
                     <div className="w-full flex justify-between items-center">
                         <div className="flex flex-row justify-start items-center gap-2">
-                            <Popover open={open} onOpenChange={setOpen}>
-                                <PopoverTrigger disabled={messages.length !== 0} asChild>
-                                    <motion.div
-                                        variants={slideVariants.up}
-                                        initial="hidden"
-                                        animate="visible"
-                                        transition={transitions.smooth}
-                                    >
-                                        <Button
-                                            size={null}
-                                            variant="outline"
-                                            role="combobox"
-                                            aria-expanded={open}
-                                            className={cn(
-                                                'justify-between truncate bg-neutral-800 transition-all duration-200 px-4 py-2'
-                                            )}
-                                        >
-                                            <div className="flex items-center gap-2 text-xs">
-                                                {selectedMode && (
-                                                    <div className="flex items-center">
-                                                        {React.createElement(
-                                                            modeTypes.find(
-                                                                (mode) =>
-                                                                    mode.value === selectedMode
-                                                            )?.icon || Brain,
-                                                            {
-                                                                className: `size-3 ${
-                                                                    modeTypes.find(
-                                                                        (mode) =>
-                                                                            mode.value ===
-                                                                            selectedMode
-                                                                    )?.iconColor || 'text-primary'
-                                                                }`,
-                                                            }
-                                                        )}
-                                                    </div>
-                                                )}
-                                                <span className="text-xs font-normal">
-                                                    {selectedMode
-                                                        ? modeTypes.find(
-                                                              (mode) => mode.value === selectedMode
-                                                          )?.label
-                                                        : 'Select mode...'}
-                                                </span>
-                                            </div>
-                                            <ChevronDownIcon className="opacity-50 size-3" />
-                                        </Button>
-                                    </motion.div>
-                                </PopoverTrigger>
-                                <PopoverContent
-                                    className="w-[300px] p-2 font-sans! bg-neutral-900/50 backdrop-blur-md rounded-lg shadow-lg border border-neutral-800"
-                                    align="start"
-                                    sideOffset={8}
-                                    forceMount
+                            <motion.div
+                                variants={slideVariants.up}
+                                initial="hidden"
+                                animate="visible"
+                                transition={transitions.smooth}
+                            >
+                                <Tabs
+                                    value={selectedMode}
+                                    onValueChange={handleModeChange}
+                                    className="w-auto"
                                 >
-                                    <motion.div
-                                        variants={slideVariants.up}
-                                        initial="hidden"
-                                        animate="visible"
-                                        exit="exit"
-                                        transition={transitions.smooth}
-                                    >
-                                        <Command>
-                                            <CommandList>
-                                                <CommandGroup className="bg-neutral-900/50">
-                                                    {modeTypes.map((mode) => (
-                                                        <CommandItem
-                                                            key={mode.value}
-                                                            value={mode.value}
-                                                            onSelect={(currentValue) => {
-                                                                if (
-                                                                    modeTypes.find(
-                                                                        (m) =>
-                                                                            m.value === currentValue
-                                                                    )?.disabled
-                                                                ) {
-                                                                    return;
-                                                                }
-
-                                                                setSelectedMode(
-                                                                    currentValue as ModeType
-                                                                );
-                                                                const selectedModeConfig =
-                                                                    modeTypes.find(
-                                                                        (m) =>
-                                                                            m.value === currentValue
-                                                                    );
-                                                                if (selectedModeConfig) {
-                                                                    updateWebSearch(
-                                                                        selectedModeConfig.showWebSearch
-                                                                    );
-                                                                    updateKnowledgeBase(
-                                                                        selectedModeConfig.showKnowledgeBase
-                                                                    );
-                                                                    updateAcademicSearch(
-                                                                        selectedModeConfig.showAcademicSearch
-                                                                    );
-                                                                    updateSocialSearch(
-                                                                        selectedModeConfig.showSocialSearch
-                                                                    );
-                                                                }
-                                                                setOpen(false);
-                                                            }}
-                                                            className={cn(
-                                                                'flex items-center gap-2 px-2 py-2.5 rounded-md text-sm cursor-pointer transition-colors duration-200',
-                                                                mode.disabled &&
-                                                                    'opacity-50 cursor-not-allowed'
-                                                            )}
-                                                        >
-                                                            <div className="p-1.5 rounded-md">
-                                                                {React.createElement(mode.icon, {
-                                                                    className: `w-4 h-4 ${mode.iconColor}`,
-                                                                })}
-                                                            </div>
-                                                            <div className="flex flex-col gap-px min-w-0">
-                                                                <div className="font-medium">
-                                                                    {mode.label}
-                                                                </div>
-                                                                <div className="text-xs">
-                                                                    {mode.description}
-                                                                </div>
-                                                            </div>
-                                                            <Check
-                                                                className={cn(
-                                                                    'ml-auto h-4 w-4',
-                                                                    selectedMode === mode.value
-                                                                        ? 'opacity-100'
-                                                                        : 'opacity-0'
-                                                                )}
-                                                            />
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </motion.div>
-                                </PopoverContent>
-                            </Popover>
+                                    <TabsList className="grid w-full grid-cols-2 bg-neutral-800">
+                                        {modeTypes.map((mode) => (
+                                            <TabsTrigger
+                                                key={mode.value}
+                                                value={mode.value}
+                                                disabled={mode.disabled || messages.length !== 0}
+                                                className="text-xs"
+                                            >
+                                                {mode.label}
+                                            </TabsTrigger>
+                                        ))}
+                                    </TabsList>
+                                </Tabs>
+                            </motion.div>
                             <AnimatePresence mode="wait">
                                 <motion.div
                                     className="flex flex-row gap-2"
