@@ -1,14 +1,17 @@
 import {
     convertToCoreMessages,
+    appendResponseMessages,
+    appendClientMessage,
     smoothStream,
     Message,
     streamText,
-    appendResponseMessages,
     embed,
     embedMany,
     generateObject,
+    ResponseMessage,
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { getTrailingMessageId } from '@/lib/ai/utils';
 
 import { env } from '@/lib/env.mjs';
 
@@ -33,7 +36,8 @@ const openrouter = createOpenRouter({
 });
 
 // const smallModel = openrouter('google/gemini-2.0-flash-001');
-const largeModel = openrouter('anthropic/claude-sonnet-4');
+// const largeModel = openrouter('anthropic/claude-sonnet-4');
+const largeModel = openrouter('deepseek/deepseek-r1-0528:free');
 
 const extractDomain = (url: string): string => {
     const urlPattern = /^https?:\/\/([^/?#]+)(?:[/?#]|$)/i;
@@ -96,20 +100,40 @@ export async function POST(req: Request) {
                     }),
                     toolCallStreaming: true,
                     async onFinish({ response }) {
-                        try {
-                            await api.chat.saveChat.mutate({
-                                chat: {
-                                    id: chatId,
-                                    userId: session.user.id,
-                                    spaceId: spaceId,
-                                    chatName: messages[0].content as string,
+                        if (session.user?.id) {
+                            try {
+                                const assistantId = getTrailingMessageId({
+                                    messages: response.messages.filter(
+                                        (message: ResponseMessage) => message.role === 'assistant'
+                                    ),
+                                });
+
+                                if (!assistantId) {
+                                    throw new Error('No assistant message found.');
+                                }
+
+                                const [_, assistantMessage] = appendResponseMessages({
+                                    messages: [messages],
+                                    responseMessages: response.messages,
+                                });
+
+                                await api.chat.saveMessages.mutate({
                                     messages: [
-                                        ...convertToCoreMessages(messages),
-                                        ...response.messages,
+                                        {
+                                            id: assistantId,
+                                            chatId: chatId,
+                                            role: assistantMessage.role,
+                                            parts: assistantMessage.parts,
+                                            attachments:
+                                                assistantMessage.experimental_attachments ?? [],
+                                            createdAt: new Date(),
+                                        },
                                     ],
-                                },
-                            });
-                        } catch (error) {}
+                                });
+                            } catch (_) {
+                                console.error('Failed to save the chat.');
+                            }
+                        }
                     },
                     experimental_activeTools: [
                         // 'research',
@@ -139,39 +163,8 @@ export async function POST(req: Request) {
                                     },
                                 });
 
-                                try {
-                                    const { object: researchPlan } = await generateObject({
-                                        model: openrouter('google/gemini-2.0-flash-lite-001'),
-                                        schema: z.object({
-                                            web_search_queries: z.array(z.string()).max(5),
-                                            knowledge_search_keywords: z.array(z.string()).max(5),
-                                            x_search_query: z.string(),
-                                            academic_search_queries: z.array(z.string()).max(5),
-                                            research_analysis: z
-                                                .array(z.string())
-                                                .describe(
-                                                    'The final analysis to perform on the results retrieved from tools.'
-                                                ),
-                                        }),
-                                        prompt: ResearchPrompt({ topic }),
-                                        temperature: 0,
-                                    });
-
-                                    dataStream.writeMessageAnnotation({
-                                        type: 'tool-call',
-                                        data: {
-                                            toolCallId,
-                                            toolName: 'research',
-                                            state: 'result',
-                                            args: JSON.stringify({ topic }),
-                                            result: JSON.stringify({ researchPlan }),
-                                        },
-                                    });
-
-                                    return { researchPlan };
-                                } catch (e) {
-                                    console.error(e);
-                                }
+                                // TODO
+                                return null;
                             },
                         }),
                         web_search: tool({

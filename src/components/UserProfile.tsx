@@ -12,6 +12,8 @@ import {
     slideVariants,
     transitions,
 } from '@/lib/animations';
+import { Avatar } from '@radix-ui/react-avatar';
+import { AvatarFallback, AvatarImage } from './ui/avatar';
 
 interface UserProfileProps {
     state: 'expanded' | 'collapsed';
@@ -62,7 +64,6 @@ export default function UserProfile({ state }: UserProfileProps) {
                     variant="outline"
                     size={state === 'collapsed' ? 'icon' : 'default'}
                     className={cn(state === 'expanded' ? 'w-full' : '')}
-                    disableAnimation
                 >
                     <motion.div variants={iconVariants} initial="rest" whileHover="hover">
                         <UserIcon className="size-4" />
@@ -108,7 +109,12 @@ export default function UserProfile({ state }: UserProfileProps) {
                     whileHover="hover"
                     className="w-8 h-8 rounded-full bg-primary/10 border border-border/50 flex items-center justify-center"
                 >
-                    <UserIcon className="size-4 text-primary" />
+                    <Avatar>
+                        <AvatarImage className="rounded-sm" src={session.user?.image || ''} />
+                        <AvatarFallback>
+                            <UserIcon className="size-4 text-primary" />
+                        </AvatarFallback>
+                    </Avatar>
                 </motion.div>
                 <AnimatePresence>
                     {state === 'expanded' && (
@@ -144,7 +150,6 @@ export default function UserProfile({ state }: UserProfileProps) {
                             size="icon"
                             onClick={() => signOut()}
                             title="Sign Out"
-                            disableAnimation
                         >
                             <motion.div variants={iconVariants} initial="rest" whileHover="hover">
                                 <LogOutIcon className="size-4" />

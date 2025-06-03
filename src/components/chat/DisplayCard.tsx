@@ -107,7 +107,7 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
                         whileHover="hover"
                         whileTap="tap"
                     >
-                        <Button variant={'destructive'} size={'icon'} disableAnimation>
+                        <Button variant={'destructive'} size={'icon'}>
                             <Trash2Icon className="size-3" />
                         </Button>
                     </motion.div>
@@ -155,7 +155,6 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
                                             disabled={mutation.isLoading}
                                             className="text-xs"
                                             onClick={handleDelete}
-                                            disableAnimation
                                         >
                                             <motion.div
                                                 variants={fadeVariants}
@@ -189,7 +188,6 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
                                             onClick={() => setIsOpen(!isOpen)}
                                             variant={'secondary'}
                                             className="text-xs"
-                                            disableAnimation
                                         >
                                             <motion.div
                                                 variants={fadeVariants}

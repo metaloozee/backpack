@@ -110,10 +110,10 @@ export function AppSidebar() {
                     transition={transitions.smooth}
                 >
                     <motion.div
-                        variants={buttonVariants}
                         initial="rest"
                         whileHover="hover"
                         whileTap="tap"
+                        className={cn(state === 'expanded' ? 'w-full' : '')}
                     >
                         <Button
                             asChild
@@ -147,10 +147,10 @@ export function AppSidebar() {
                     </motion.div>
 
                     <motion.div
-                        variants={buttonVariants}
                         initial="rest"
                         whileHover="hover"
                         whileTap="tap"
+                        className={cn(state === 'expanded' ? 'w-full' : '')}
                     >
                         <Button
                             asChild
@@ -186,10 +186,10 @@ export function AppSidebar() {
                     </motion.div>
 
                     <motion.div
-                        variants={buttonVariants}
                         initial="rest"
                         whileHover="hover"
                         whileTap="tap"
+                        className={cn(state === 'expanded' ? 'w-full' : '')}
                     >
                         <Button
                             asChild
@@ -229,54 +229,21 @@ export function AppSidebar() {
                     state === 'collapsed' ? 'flex justify-center items-center' : 'p-4'
                 )}
             >
-                <motion.div
-                    variants={buttonVariants}
-                    initial="rest"
-                    whileHover="hover"
-                    whileTap="tap"
-                >
+                <motion.div initial="rest" whileHover="hover" whileTap="tap" className="w-full">
                     <Button
+                        className="w-full"
                         variant={'outline'}
                         onClick={() => setOpen(!open)}
                         size={state === 'collapsed' ? 'icon' : 'default'}
                     >
-                        <AnimatePresence mode="wait">
-                            {state === 'expanded' ? (
-                                <motion.div
-                                    key="expanded-button"
-                                    variants={fadeVariants}
-                                    initial="hidden"
-                                    animate="visible"
-                                    exit="exit"
-                                    className="w-full flex flex-row justify-center items-center gap-2"
-                                >
-                                    <motion.div
-                                        variants={iconVariants}
-                                        initial="rest"
-                                        whileHover="hover"
-                                    >
-                                        <PanelLeftCloseIcon className="size-4 text-muted-foreground" />
-                                    </motion.div>
-                                    <p className="text-xs text-muted-foreground">Close Panel</p>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="collapsed-button"
-                                    variants={fadeVariants}
-                                    initial="hidden"
-                                    animate="visible"
-                                    exit="exit"
-                                >
-                                    <motion.div
-                                        variants={iconVariants}
-                                        initial="rest"
-                                        whileHover="hover"
-                                    >
-                                        <PanelLeftOpenIcon className="size-4" />
-                                    </motion.div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                        {state === 'expanded' ? (
+                            <>
+                                <PanelLeftCloseIcon className="size-4 text-muted-foreground" />
+                                <p className="text-xs text-muted-foreground">Close Panel</p>
+                            </>
+                        ) : (
+                            <PanelLeftOpenIcon className="size-3" />
+                        )}
                     </Button>
                 </motion.div>
 

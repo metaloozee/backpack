@@ -66,11 +66,7 @@ export function AnimationDemo() {
                     whileHover="hover"
                     whileTap="tap"
                 >
-                    <Button
-                        onClick={() => setShowElements(!showElements)}
-                        className="gap-2"
-                        disableAnimation
-                    >
+                    <Button onClick={() => setShowElements(!showElements)} className="gap-2">
                         {showElements ? (
                             <PauseIcon className="size-4" />
                         ) : (
@@ -86,7 +82,7 @@ export function AnimationDemo() {
                     whileHover="hover"
                     whileTap="tap"
                 >
-                    <Button onClick={() => setShowModal(true)} variant="outline" disableAnimation>
+                    <Button onClick={() => setShowModal(true)} variant="outline">
                         Show Modal
                     </Button>
                 </motion.div>
@@ -286,10 +282,7 @@ export function AnimationDemo() {
                                             whileHover="hover"
                                             whileTap="tap"
                                         >
-                                            <Button
-                                                onClick={() => setShowModal(false)}
-                                                disableAnimation
-                                            >
+                                            <Button onClick={() => setShowModal(false)}>
                                                 Close
                                             </Button>
                                         </motion.div>

@@ -87,7 +87,7 @@ const modeTypes = [
         showKnowledgeBase: true,
         showAcademicSearch: true,
         showSocialSearch: true,
-        disabled: false,
+        disabled: true,
     },
 ] as const;
 
@@ -148,12 +148,23 @@ export function Input({
     const [showEmptyScreen, setShowEmptyScreen] = React.useState(false);
     const router = useRouter();
     const inputRef = React.useRef<HTMLTextAreaElement>(null);
-    const isFirstMessage = React.useRef(true);
+
+    // Track if we've processed the initial query using a ref
+    const processedInitialQuery = React.useRef(false);
 
     const [isComposing, setIsComposing] = React.useState(false);
     const [enterDisabled, setEnterDisabled] = React.useState(false);
 
     const [selectedMode, setSelectedMode] = React.useState<ModeType>('ask');
+
+    // Handle initial query submission during rendering instead of in useEffect
+    if (query && query.trim().length > 0 && !processedInitialQuery.current) {
+        append({
+            role: 'user',
+            content: query,
+        });
+        processedInitialQuery.current = true;
+    }
 
     const handlerCompositionStart = () => setIsComposing(true);
 
@@ -184,16 +195,6 @@ export function Input({
             updateSocialSearch(selectedModeConfig.showSocialSearch);
         }
     };
-
-    React.useEffect(() => {
-        if (isFirstMessage.current && query && query.trim().length > 0) {
-            append({
-                role: 'user',
-                content: query,
-            });
-            isFirstMessage.current = false;
-        }
-    }, [query]);
 
     const onSubmit: SubmitHandler<FormValues> = (data) => {
         const trimmedPrompt = data.prompt.trim();
@@ -288,7 +289,7 @@ export function Input({
                                     onValueChange={handleModeChange}
                                     className="w-auto"
                                 >
-                                    <TabsList className="grid w-full grid-cols-2 bg-neutral-800">
+                                    <TabsList className="grid w-full grid-cols-2 bg-neutral-950">
                                         {modeTypes.map((mode) => (
                                             <TabsTrigger
                                                 key={mode.value}

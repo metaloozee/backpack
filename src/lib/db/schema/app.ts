@@ -1,15 +1,20 @@
-import { index, pgTable, text, vector, timestamp, pgEnum, json } from 'drizzle-orm/pg-core';
-import { randomUUID } from 'crypto';
+import {
+    index,
+    pgTable,
+    text,
+    vector,
+    timestamp,
+    pgEnum,
+    json,
+    uuid,
+    varchar,
+} from 'drizzle-orm/pg-core';
 import { InferSelectModel } from 'drizzle-orm';
-import { CoreMessage, generateId, Message } from 'ai';
 import { users } from '@/lib/db/schema/auth';
 
 export const spaces = pgTable('spaces', {
-    id: text('id')
-        .primaryKey()
-        .notNull()
-        .$defaultFn(() => randomUUID()),
-    userId: text('user_id')
+    id: uuid('id').primaryKey().notNull().defaultRandom(),
+    userId: uuid('user_id')
         .notNull()
         .references(() => users.id, {
             onDelete: 'cascade',
@@ -24,19 +29,16 @@ export const spaces = pgTable('spaces', {
     }).notNull(),
 });
 
-export const KnowledgeTypeEnum = pgEnum('knowledge_type', ['webpage', 'pdf']);
+export const KnowledgeTypeEnum = pgEnum('knowledge_type_enum', ['webpage', 'pdf']);
 export const knowledge = pgTable('knowledge', {
-    id: text('id')
-        .primaryKey()
-        .notNull()
-        .$defaultFn(() => randomUUID()),
-    userId: text('user_id')
+    id: uuid('id').primaryKey().notNull().defaultRandom(),
+    userId: uuid('user_id')
         .notNull()
         .references(() => users.id, {
             onDelete: 'cascade',
             onUpdate: 'cascade',
         }),
-    spaceId: text('space_id')
+    spaceId: uuid('space_id')
         .notNull()
         .references(() => spaces.id, {
             onDelete: 'cascade',
@@ -50,15 +52,13 @@ export const knowledge = pgTable('knowledge', {
         mode: 'date',
     }).notNull(),
 });
+export type Knowledge = InferSelectModel<typeof knowledge>;
 
 export const knowledgeEmbeddings = pgTable(
     'knowledge_embeddings',
     {
-        id: text('id')
-            .primaryKey()
-            .notNull()
-            .$defaultFn(() => randomUUID()),
-        knowledgeId: text('knowledge_id')
+        id: uuid('id').primaryKey().notNull().defaultRandom(),
+        knowledgeId: uuid('knowledge_id')
             .notNull()
             .references(() => knowledge.id, {
                 onDelete: 'cascade',
@@ -79,30 +79,52 @@ export const knowledgeEmbeddings = pgTable(
     })
 );
 
-export const chats = pgTable('chats', {
-    id: text('id')
-        .primaryKey()
-        .notNull()
-        .$defaultFn(() => generateId()),
-    userId: text('user_id')
+export const chat = pgTable('chat', {
+    id: uuid('id').primaryKey().notNull().defaultRandom(),
+    title: text('title').notNull(),
+    createdAt: timestamp('created_at').notNull(),
+    userId: uuid('user_id')
         .notNull()
         .references(() => users.id, {
             onDelete: 'cascade',
             onUpdate: 'cascade',
         }),
-    spaceId: text('space_id')
-        // .notNull() Temporary
-        .references(() => spaces.id, {
+    spaceId: uuid('space_id').references(() => spaces.id, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade',
+    }),
+});
+export type Chat = InferSelectModel<typeof chat>;
+
+export const message = pgTable('message', {
+    id: uuid('id').primaryKey().notNull().defaultRandom(),
+    chatId: uuid('chat_id')
+        .notNull()
+        .references(() => chat.id, {
             onDelete: 'cascade',
             onUpdate: 'cascade',
         }),
-    chatName: text('chat_name').default('Unnamed Chat').notNull(),
-    messages: json('messages').notNull(),
+    role: varchar('role').notNull(),
+    parts: json('parts').notNull(),
+    attachments: json('attachments').notNull(),
     createdAt: timestamp('created_at', {
         withTimezone: true,
         mode: 'date',
     }).notNull(),
 });
+export type Message = InferSelectModel<typeof message>;
 
-export type Knowledge = InferSelectModel<typeof knowledge>;
-export type Chat = Omit<InferSelectModel<typeof chats>, 'messages'> & { messages: Array<Message> };
+export const stream = pgTable('stream', {
+    id: uuid('id').primaryKey().notNull().defaultRandom(),
+    chatId: uuid('chat_id')
+        .notNull()
+        .references(() => chat.id, {
+            onDelete: 'cascade',
+            onUpdate: 'cascade',
+        }),
+    createdAt: timestamp('created_at', {
+        withTimezone: true,
+        mode: 'date',
+    }).notNull(),
+});
+export type Stream = InferSelectModel<typeof stream>;

@@ -100,7 +100,7 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
                     <p className="text-[10px] text-muted-foreground">Uploaded Documents</p>
                 </div>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="min-w-2xl bg-neutral-950">
                 <DialogHeader>
                     <DialogTitle>Knowledge Base</DialogTitle>
                 </DialogHeader>
@@ -109,7 +109,7 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
                     className="w-full"
                     onValueChange={(value) => setActiveTab(value as 'webpage' | 'pdf')}
                 >
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-2 bg-black">
                         <TabsTrigger value="webpage">Web Pages</TabsTrigger>
                         <TabsTrigger value="pdf">PDF Documents</TabsTrigger>
                     </TabsList>
