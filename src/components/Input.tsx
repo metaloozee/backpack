@@ -25,8 +25,6 @@ import {
     SparklesIcon,
     UsersIcon,
 } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
 import { usePathname } from 'next/navigation';
 import { ChatData } from '@/app/(main)/(spaces)/s/[id]/page';
 import { Separator } from './ui/separator';
@@ -34,7 +32,6 @@ import { Chat } from '@/lib/db/schema/app';
 import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
 import ChatDisplayCard from './chat/DisplayCard';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
 import { useForm, SubmitHandler } from 'react-hook-form';
 import {
     layoutTransition,
@@ -115,6 +112,16 @@ export function Input({
     socialSearch,
     setSocialSearch,
 }: InputPanelProps) {
+    const hour = new Date().getHours();
+    let greeting = '';
+    if (hour >= 5 && hour < 12) {
+        greeting = "Let's rock the AM hustle";
+    } else if (hour >= 12 && hour < 17) {
+        greeting = 'Ready to punch the midday clock?';
+    } else if ((hour >= 17 && hour <= 23) || hour < 5) {
+        greeting = "Let's burn that midnight oil?";
+    }
+
     const { register, handleSubmit: handleHookFormSubmit, reset, watch } = useForm<FormValues>();
     const promptValue = watch('prompt');
 
@@ -229,7 +236,7 @@ export function Input({
                     className="mb-6"
                 >
                     <h1 className="text-3xl text-transparent bg-clip-text bg-linear-to-br from-white to-neutral-500">
-                        Your Research, Simplified.
+                        {greeting}
                     </h1>
                 </motion.div>
             )}

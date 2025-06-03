@@ -8,7 +8,6 @@ import {
     embed,
     embedMany,
     generateObject,
-    ResponseMessage,
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { getTrailingMessageId } from '@/lib/ai/utils';
@@ -104,7 +103,7 @@ export async function POST(req: Request) {
                             try {
                                 const assistantId = getTrailingMessageId({
                                     messages: response.messages.filter(
-                                        (message: ResponseMessage) => message.role === 'assistant'
+                                        (message: any) => message.role === 'assistant'
                                     ),
                                 });
 
