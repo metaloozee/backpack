@@ -8,6 +8,13 @@
       "when": 1748970759197,
       "tag": "0000_aspiring_wither",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1749201944548,
+      "tag": "0001_thin_sway",
+      "breakpoints": true
     }
   ]
 }

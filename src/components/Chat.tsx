@@ -7,21 +7,23 @@ import { cn } from '@/lib/utils';
 import { ChatMessages } from '@/components/chat/Messages';
 import { toast } from 'sonner';
 import { ScrollArea } from './ui/scroll-area';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { ChatData } from '@/app/(main)/(spaces)/s/[id]/page';
+import { UIMessage } from 'ai';
+import { Session } from 'next-auth';
 
 export function Chat({
     id,
-    savedMessages = [],
-    query,
     spaceId,
-    chatsData,
+    initialMessages,
+    session,
+    autoResume,
 }: {
     id: string;
-    savedMessages?: Array<Message>;
-    query?: string;
     spaceId?: string;
-    chatsData?: Array<ChatData>;
+    initialMessages: Array<UIMessage>;
+    session: Session;
+    autoResume: boolean;
 }) {
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
@@ -31,11 +33,11 @@ export function Chat({
     const [academicSearch, setAcademicSearch] = React.useState(false);
     const [socialSearch, setSocialSearch] = React.useState(false);
 
-    const { isLoading, messages, setMessages, stop, append, data, setData } = useChat({
-        initialMessages: savedMessages,
+    const { messages, setMessages, stop, append, reload, status } = useChat({
+        initialMessages,
         body: {
             id,
-            spaceId: spaceId,
+            spaceId: spaceId ?? null,
             webSearch,
             knowledgeSearch: knowledgeBase,
             academicSearch,
@@ -52,16 +54,21 @@ export function Chat({
         sendExtraMessageFields: false,
     });
 
-    React.useEffect(() => {
-        setMessages(savedMessages);
-    }, [id]);
+    const searchParams = useSearchParams();
+    const query = searchParams.get('query');
+    const [hasAppendedQuery, setHasAppendedQuery] = React.useState(false);
 
-    const onQuerySelect = (query: string) => {
-        append({
-            role: 'user',
-            content: query,
-        });
-    };
+    React.useEffect(() => {
+        if (query && !hasAppendedQuery) {
+            append({
+                role: 'user',
+                content: query,
+            });
+
+            setHasAppendedQuery(true);
+            window.history.replaceState({}, '', `/c/${id}`);
+        }
+    }, [query, append, hasAppendedQuery, id]);
 
     return (
         <div
@@ -78,15 +85,15 @@ export function Chat({
                 <ScrollArea className="w-full grow">
                     <ChatMessages
                         messages={messages}
-                        data={data}
-                        onQuerySelect={onQuerySelect}
-                        isLoading={isLoading}
+                        setMessages={setMessages}
+                        reload={reload}
                         chatId={id}
+                        status={status}
                     />
                 </ScrollArea>
             )}
 
-            <InputPanel
+            {/* <InputPanel
                 isLoading={isLoading}
                 messages={messages}
                 setMessages={setMessages}
@@ -102,7 +109,7 @@ export function Chat({
                 setAcademicSearch={setAcademicSearch}
                 socialSearch={socialSearch}
                 setSocialSearch={setSocialSearch}
-            />
+            /> */}
         </div>
     );
 }

@@ -107,10 +107,7 @@ export const message = pgTable('message', {
     role: varchar('role').notNull(),
     parts: json('parts').notNull(),
     attachments: json('attachments').notNull(),
-    createdAt: timestamp('created_at', {
-        withTimezone: true,
-        mode: 'date',
-    }).notNull(),
+    createdAt: timestamp('created_at').notNull(),
 });
 export type Message = InferSelectModel<typeof message>;
 
