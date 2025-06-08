@@ -23,7 +23,6 @@ import {
     GraduationCapIcon,
     FlaskConical,
     SparklesIcon,
-    UsersIcon,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { ChatData } from '@/app/(main)/(spaces)/s/[id]/page';
@@ -32,7 +31,8 @@ import { Chat } from '@/lib/db/schema/app';
 import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
 import ChatDisplayCard from './chat/DisplayCard';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useForm, SubmitHandler } from 'react-hook-form';
+
+import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 import {
     layoutTransition,
     staggerVariants,
@@ -59,9 +59,6 @@ interface InputPanelProps {
     academicSearch: boolean;
     setAcademicSearch: (academicSearch: boolean) => void;
 
-    socialSearch: boolean;
-    setSocialSearch: (socialSearch: boolean) => void;
-
     chatsData?: Array<ChatData>;
 }
 
@@ -73,7 +70,6 @@ const modeTypes = [
         showWebSearch: true,
         showKnowledgeBase: true,
         showAcademicSearch: true,
-        showSocialSearch: true,
         disabled: false,
     },
     {
@@ -83,18 +79,13 @@ const modeTypes = [
         showWebSearch: true,
         showKnowledgeBase: true,
         showAcademicSearch: true,
-        showSocialSearch: true,
         disabled: true,
     },
 ] as const;
 
 type ModeType = (typeof modeTypes)[number]['value'];
 
-interface FormValues {
-    prompt: string;
-}
-
-export function Input({
+function PureInput({
     isLoading,
     messages,
     setMessages,
@@ -102,15 +93,12 @@ export function Input({
     stop,
     append,
     chatsData,
-
     webSearch,
     setWebSearch,
     knowledgeBase,
     setKnowledgeBase,
     academicSearch,
     setAcademicSearch,
-    socialSearch,
-    setSocialSearch,
 }: InputPanelProps) {
     const hour = new Date().getHours();
     let greeting = '';
@@ -122,97 +110,156 @@ export function Input({
         greeting = "Let's burn that midnight oil?";
     }
 
-    const { register, handleSubmit: handleHookFormSubmit, reset, watch } = useForm<FormValues>();
-    const promptValue = watch('prompt');
+    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+    const { width } = useWindowSize();
+
+    const [input, setInput] = React.useState('');
+    const [localStorageInput, setLocalStorageInput] = useLocalStorage('input', '');
+    const [isComposing, setIsComposing] = React.useState(false);
+    const [enterDisabled, setEnterDisabled] = React.useState(false);
+    const [selectedMode, setSelectedMode] = React.useState<ModeType>('ask');
+    const [showEmptyScreen, setShowEmptyScreen] = React.useState(false);
 
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
-
-    const updateWebSearch = (value: boolean) => {
-        if (typeof setWebSearch === 'function') {
-            setWebSearch(value);
-        }
-    };
-
-    const updateKnowledgeBase = (value: boolean) => {
-        if (typeof setKnowledgeBase === 'function') {
-            setKnowledgeBase(value);
-        }
-    };
-
-    const updateAcademicSearch = (value: boolean) => {
-        if (typeof setAcademicSearch === 'function') {
-            setAcademicSearch(value);
-        }
-    };
-
-    const updateSocialSearch = (value: boolean) => {
-        if (typeof setSocialSearch === 'function') {
-            setSocialSearch(value);
-        }
-    };
-
-    const [showEmptyScreen, setShowEmptyScreen] = React.useState(false);
     const router = useRouter();
-    const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
-    // Track if we've processed the initial query using a ref
     const processedInitialQuery = React.useRef(false);
 
-    const [isComposing, setIsComposing] = React.useState(false);
-    const [enterDisabled, setEnterDisabled] = React.useState(false);
+    const adjustHeight = React.useCallback(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
+        }
+    }, []);
 
-    const [selectedMode, setSelectedMode] = React.useState<ModeType>('ask');
+    const resetHeight = React.useCallback(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = '98px';
+        }
+    }, []);
 
-    // Handle initial query submission during rendering instead of in useEffect
-    if (query && query.trim().length > 0 && !processedInitialQuery.current) {
-        append({
-            role: 'user',
-            content: query,
-        });
-        processedInitialQuery.current = true;
-    }
+    React.useEffect(() => {
+        if (textareaRef.current) {
+            const domValue = textareaRef.current.value;
+            const finalValue = domValue || localStorageInput || '';
+            setInput(finalValue);
+            adjustHeight();
+        }
+    }, []);
 
-    const handlerCompositionStart = () => setIsComposing(true);
+    React.useEffect(() => {
+        setLocalStorageInput(input);
+    }, [input, setLocalStorageInput]);
 
-    const handleCompositionEnd = () => {
+    const handleInput = React.useCallback(
+        (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+            setInput(event.target.value);
+            adjustHeight();
+        },
+        [adjustHeight]
+    );
+
+    const updateWebSearch = React.useCallback(
+        (value: boolean) => {
+            if (typeof setWebSearch === 'function') {
+                setWebSearch(value);
+            }
+        },
+        [setWebSearch]
+    );
+
+    const updateKnowledgeBase = React.useCallback(
+        (value: boolean) => {
+            if (typeof setKnowledgeBase === 'function') {
+                setKnowledgeBase(value);
+            }
+        },
+        [setKnowledgeBase]
+    );
+
+    const updateAcademicSearch = React.useCallback(
+        (value: boolean) => {
+            if (typeof setAcademicSearch === 'function') {
+                setAcademicSearch(value);
+            }
+        },
+        [setAcademicSearch]
+    );
+
+    React.useEffect(() => {
+        if (query && query.trim().length > 0 && !processedInitialQuery.current) {
+            append({
+                role: 'user',
+                content: query,
+            });
+            processedInitialQuery.current = true;
+        }
+    }, [query, append]);
+
+    const handlerCompositionStart = React.useCallback(() => setIsComposing(true), []);
+
+    const handleCompositionEnd = React.useCallback(() => {
         setIsComposing(false);
         setEnterDisabled(true);
 
         setTimeout(() => {
             setEnterDisabled(false);
         }, 300);
-    };
+    }, []);
 
-    const handleNewChat = () => {
-        setMessages([]);
-        router.push('/');
-    };
+    const handleModeChange = React.useCallback(
+        (value: string) => {
+            const newMode = value as ModeType;
+            setSelectedMode(newMode);
+            console.log('Mode switched to:', newMode);
 
-    const handleModeChange = (value: string) => {
-        const newMode = value as ModeType;
-        setSelectedMode(newMode);
-        console.log('Mode switched to:', newMode);
+            const selectedModeConfig = modeTypes.find((m) => m.value === newMode);
+            if (selectedModeConfig) {
+                updateWebSearch(selectedModeConfig.showWebSearch);
+                updateKnowledgeBase(selectedModeConfig.showKnowledgeBase);
+                updateAcademicSearch(selectedModeConfig.showAcademicSearch);
+            }
+        },
+        [updateWebSearch, updateKnowledgeBase, updateAcademicSearch]
+    );
 
-        const selectedModeConfig = modeTypes.find((m) => m.value === newMode);
-        if (selectedModeConfig) {
-            updateWebSearch(selectedModeConfig.showWebSearch);
-            updateKnowledgeBase(selectedModeConfig.showKnowledgeBase);
-            updateAcademicSearch(selectedModeConfig.showAcademicSearch);
-            updateSocialSearch(selectedModeConfig.showSocialSearch);
-        }
-    };
-
-    const onSubmit: SubmitHandler<FormValues> = (data) => {
-        const trimmedPrompt = data.prompt.trim();
-        if (trimmedPrompt.length === 0) return;
+    const submitForm = React.useCallback(() => {
+        if (!input.trim()) return;
 
         append({
             role: 'user',
-            content: trimmedPrompt,
+            content: input.trim(),
         });
-        reset();
-    };
+
+        setInput('');
+        setLocalStorageInput('');
+        resetHeight();
+
+        if (width && width > 768) {
+            textareaRef.current?.focus();
+        }
+    }, [input, append, setLocalStorageInput, resetHeight, width]);
+
+    const handleKeyDown = React.useCallback(
+        (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+            if (
+                e.key === 'Enter' &&
+                !e.shiftKey &&
+                !isComposing &&
+                !enterDisabled &&
+                !e.nativeEvent.isComposing
+            ) {
+                e.preventDefault();
+
+                if (!input.trim()) return;
+
+                submitForm();
+            }
+        },
+        [isComposing, enterDisabled, input, submitForm]
+    );
 
     return (
         <motion.div
@@ -240,10 +287,7 @@ export function Input({
                     </h1>
                 </motion.div>
             )}
-            <form
-                onSubmit={handleHookFormSubmit(onSubmit)}
-                className={cn(isSpaceChat ? 'max-w-2xl w-full' : 'max-w-3xl w-full mx-auto')}
-            >
+            <div className={cn(isSpaceChat ? 'max-w-2xl w-full' : 'max-w-3xl w-full mx-auto')}>
                 <div
                     className={cn(
                         'relative flex flex-col w-full p-4 gap-4 border-input bg-neutral-900/50 focus-within:border-neutral-700/70 hover:border-neutral-700/70 transition-all duration-200',
@@ -253,34 +297,19 @@ export function Input({
                     )}
                 >
                     <Textarea
-                        autoFocus
-                        rows={2}
-                        tabIndex={0}
+                        ref={textareaRef}
+                        value={input}
+                        onChange={handleInput}
+                        onKeyDown={handleKeyDown}
                         onCompositionStart={handlerCompositionStart}
                         onCompositionEnd={handleCompositionEnd}
-                        placeholder="Ask me anything..."
-                        spellCheck={true}
-                        className="resize-none w-full bg-transparent ring-0 border-0 text-sm placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
-                        {...register('prompt')}
-                        onKeyDown={(e) => {
-                            if (
-                                e.key === 'Enter' &&
-                                !e.shiftKey &&
-                                !isComposing &&
-                                !enterDisabled
-                            ) {
-                                const currentValue = (e.target as HTMLTextAreaElement).value;
-                                if (currentValue.trim().length === 0) {
-                                    e.preventDefault();
-                                    return;
-                                }
-
-                                e.preventDefault();
-                                handleHookFormSubmit(onSubmit)();
-                            }
-                        }}
                         onFocus={() => setShowEmptyScreen(true)}
                         onBlur={() => setShowEmptyScreen(false)}
+                        placeholder="Ask me anything..."
+                        autoFocus
+                        tabIndex={0}
+                        spellCheck={true}
+                        className="resize-none w-full bg-transparent ring-0 border-0 text-sm placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
                     />
 
                     <div className="w-full flex justify-between items-center">
@@ -417,38 +446,6 @@ export function Input({
                                             </TooltipProvider>
                                         </motion.div>
                                     )}
-                                    {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
-                                        ?.showSocialSearch && (
-                                        <motion.div
-                                            variants={staggerVariants.item}
-                                            key="x-search-card"
-                                            layout
-                                            layoutId="x-search-section"
-                                        >
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <div
-                                                            onClick={() =>
-                                                                updateSocialSearch(!socialSearch)
-                                                            }
-                                                            className={cn(
-                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justify-center items-center gap-2 text-xs transition-all duration-200',
-                                                                socialSearch
-                                                                    ? 'bg-neutral-800 border-neutral-800 text-primary'
-                                                                    : 'bg-neutral-900 border-neutral-800'
-                                                            )}
-                                                        >
-                                                            <UsersIcon className="size-3.5" />
-                                                        </div>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>Social Search</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        </motion.div>
-                                    )}
                                 </motion.div>
                             </AnimatePresence>
                         </div>
@@ -461,60 +458,15 @@ export function Input({
                         >
                             <AnimatePresence>
                                 {isLoading ? (
-                                    <Button
-                                        size={'sm'}
-                                        variant={'destructive'}
-                                        onClick={stop}
-                                        disabled={!isLoading}
-                                    >
-                                        <motion.div
-                                            variants={slideVariants.up}
-                                            initial="hidden"
-                                            animate="visible"
-                                            exit="exit"
-                                            transition={transitions.smooth}
-                                        >
-                                            <StopCircleIcon />
-                                        </motion.div>
-                                    </Button>
+                                    <StopButton stop={stop} setMessages={setMessages} />
                                 ) : (
-                                    <Button
-                                        className="px-4"
-                                        size={'sm'}
-                                        type="submit"
-                                        disabled={
-                                            !promptValue ||
-                                            promptValue.trim().length === 0 ||
-                                            isLoading
-                                        }
-                                        variant={
-                                            promptValue && promptValue.trim().length > 0
-                                                ? 'default'
-                                                : 'secondary'
-                                        }
-                                    >
-                                        <motion.div
-                                            variants={slideVariants.up}
-                                            initial="hidden"
-                                            animate="visible"
-                                            exit="exit"
-                                            transition={transitions.smooth}
-                                        >
-                                            <CornerDownLeftIcon
-                                                className={cn(
-                                                    promptValue && promptValue.trim().length > 0
-                                                        ? 'text-background'
-                                                        : 'text-muted-foreground'
-                                                )}
-                                            />
-                                        </motion.div>
-                                    </Button>
+                                    <SendButton input={input} submitForm={submitForm} />
                                 )}
                             </AnimatePresence>
                         </motion.div>
                     </div>
                 </div>
-            </form>
+            </div>
 
             {messages.length === 0 && chatsData && chatsData.length > 0 && (
                 <div className="mt-12 space-y-5 max-w-2xl">
@@ -532,11 +484,13 @@ export function Input({
                     >
                         <AnimatePresence>
                             {chatsData.map((chat) => {
+                                // Fix the type issue by only using valid Chat properties
                                 const chatData: Chat = {
-                                    ...chat,
-                                    messages: convertToUIMessages(
-                                        chat.messages as Array<CoreMessage>
-                                    ),
+                                    id: chat.id,
+                                    title: chat.chatName,
+                                    spaceId: chat.spaceId,
+                                    createdAt: chat.createdAt,
+                                    userId: chat.userId,
                                 };
 
                                 return (
@@ -557,3 +511,73 @@ export function Input({
         </motion.div>
     );
 }
+
+const StopButton = React.memo(
+    ({ stop, setMessages }: { stop: () => void; setMessages: (messages: any) => void }) => (
+        <Button
+            size={'sm'}
+            variant={'destructive'}
+            onClick={(event) => {
+                event.preventDefault();
+                stop();
+                setMessages((messages: any) => messages);
+            }}
+        >
+            <motion.div
+                variants={slideVariants.up}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={transitions.smooth}
+            >
+                <StopCircleIcon />
+            </motion.div>
+        </Button>
+    )
+);
+
+const SendButton = React.memo(
+    ({ input, submitForm }: { input: string; submitForm: () => void }) => (
+        <Button
+            className="px-4"
+            size={'sm'}
+            onClick={(event) => {
+                event.preventDefault();
+                submitForm();
+            }}
+            disabled={input.length === 0}
+            variant={input.trim().length > 0 ? 'default' : 'secondary'}
+        >
+            <motion.div
+                variants={slideVariants.up}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={transitions.smooth}
+            >
+                <CornerDownLeftIcon
+                    className={cn(
+                        input.trim().length > 0 ? 'text-background' : 'text-muted-foreground'
+                    )}
+                />
+            </motion.div>
+        </Button>
+    )
+);
+
+StopButton.displayName = 'StopButton';
+SendButton.displayName = 'SendButton';
+
+export const Input = React.memo(PureInput, (prevProps, nextProps) => {
+    if (prevProps.isLoading !== nextProps.isLoading) return false;
+    if (prevProps.messages.length !== nextProps.messages.length) return false;
+    if (prevProps.query !== nextProps.query) return false;
+    if (prevProps.webSearch !== nextProps.webSearch) return false;
+    if (prevProps.knowledgeBase !== nextProps.knowledgeBase) return false;
+    if (prevProps.academicSearch !== nextProps.academicSearch) return false;
+    if (prevProps.chatsData?.length !== nextProps.chatsData?.length) return false;
+
+    return true;
+});
+
+Input.displayName = 'Input';

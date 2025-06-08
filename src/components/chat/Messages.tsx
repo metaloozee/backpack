@@ -2,12 +2,12 @@ import * as React from 'react';
 
 import { UIMessage } from 'ai';
 import { Loader, LoaderIcon } from 'lucide-react';
-import { RenderMessage } from '@/components/chat/RenderMessage';
 import { motion, AnimatePresence } from 'motion/react';
 import { TextShimmer } from '../ui/text-shimmer';
 import { Tool } from './Tool';
 import { UseChatHelpers } from '@ai-sdk/react';
 import { useMessages } from '@/hooks/use-messages';
+import { Message as PreviewMessage } from '@/components/chat/message';
 
 interface ChatMessageProps {
     chatId: string;
@@ -39,15 +39,15 @@ export function ChatMessages({ chatId, status, messages, setMessages, reload }: 
                 </div>
             )}
 
-            {messages.map((message) => (
-                <RenderMessage
+            {messages.map((message, index) => (
+                <PreviewMessage
                     key={message.id}
-                    message={message}
-                    messageId={message.id}
-                    getIsOpen={() => true}
-                    onOpenChange={() => {}}
-                    onQuerySelect={onQuerySelect}
                     chatId={chatId}
+                    message={message}
+                    isLoading={status === 'streaming' && messages.length - 1 === index}
+                    setMessages={setMessages}
+                    reload={reload}
+                    requiresScrollPadding={hasSentMessage && index === messages.length - 1}
                 />
             ))}
 

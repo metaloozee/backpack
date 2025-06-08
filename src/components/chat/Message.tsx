@@ -1,193 +1,297 @@
 'use client';
 
-import React from 'react';
-import rehypeExternalLinks from 'rehype-external-links';
-import rehypeKatex from 'rehype-katex';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomDark, oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-
-import { MemoizedReactMarkdown } from '@/components/ui/markdown';
-import Link from 'next/link';
+import React, { useState, memo } from 'react';
 
 import { cn } from '@/lib/utils';
-import { removeContemplateContent } from '@/lib/utils/message';
 
+import { BrainIcon, ChevronDownIcon, LoaderIcon } from 'lucide-react';
+import { UseChatHelpers } from '@ai-sdk/react';
+import { UIMessage } from 'ai';
+import { AnimatePresence, motion, MotionConfig } from 'motion/react';
+import { PreviewAttachment } from '@/components/chat/preview-attachment';
+import { Markdown } from '@/components/chat/markdown';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { BrainIcon } from 'lucide-react';
-import { CopyIcon, CheckIcon, CodeIcon } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Separator } from '../ui/separator';
+    ResearchTool,
+    WebSearchTool,
+    KnowledgeSearchTool,
+    AcademicSearchTool,
+} from '@/components/chat/tools';
+import cx from 'classnames';
 
-const extractDomain = (url: string): string => {
-    try {
-        const urlObj = new URL(url);
-        return urlObj.hostname;
-    } catch {
-        return url;
-    }
-};
+interface MessageReasoningProps {
+    isLoading: boolean;
+    reasoning: string;
+}
 
-const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
-    const match = /language-(\w+)/.exec(className || '');
-    const [isCopied, setIsCopied] = React.useState(false);
+export function MessageReasoning({ isLoading, reasoning }: MessageReasoningProps) {
+    const [isExpanded, setIsExpanded] = useState(true);
 
-    const handleCopy = () => {
-        const code = String(children).replace(/\n$/, '');
-        navigator.clipboard.writeText(code);
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
+    const variants = {
+        collapsed: {
+            height: 0,
+            opacity: 0,
+            marginTop: 0,
+            marginBottom: 0,
+        },
+        expanded: {
+            height: 'auto',
+            opacity: 1,
+            marginTop: '1rem',
+            marginBottom: '0.5rem',
+        },
     };
 
-    return !inline && match ? (
-        <div className="relative w-full max-w-2xl">
-            <div className="flex items-center justify-between bg-neutral-900/50 px-4 py-2.5 rounded-t-lg border-x border-t border-border">
-                <div className="flex items-center gap-1.5">
-                    <CodeIcon className="size-3 text-muted-foreground" />
-                    <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
-                        {match[1]}
+    return (
+        <div className="flex flex-col">
+            {isLoading ? (
+                <div className="flex flex-row gap-2 items-center">
+                    <div className="font-medium">Reasoning</div>
+                    <div className="animate-spin">
+                        <LoaderIcon />
                     </div>
                 </div>
-                <div className="relative">
-                    <Button
-                        variant="ghost"
-                        size={'icon'}
-                        className="h-6 w-6 bg-background/60 hover:bg-muted border border-border/50 shadow-xs transition-all duration-200 hover:scale-105 relative overflow-hidden"
-                        onClick={handleCopy}
-                        title={isCopied ? 'Copied!' : 'Copy code'}
+            ) : (
+                <div className="flex flex-row gap-2 items-center">
+                    <div className="font-medium">Reasoned for a few seconds</div>
+                    <button
+                        data-testid="message-reasoning-toggle"
+                        type="button"
+                        className="cursor-pointer"
+                        onClick={() => {
+                            setIsExpanded(!isExpanded);
+                        }}
                     >
-                        {isCopied ? (
-                            <CheckIcon className="text-muted-foreground size-2" />
-                        ) : (
-                            <CopyIcon className="text-muted-foreground size-2" />
-                        )}
-                    </Button>
-                    {isCopied && (
-                        <div className="absolute right-0 top-full mt-1 text-xs bg-background/90 border border-border/50 shadow-xs rounded px-2 py-1 pointer-events-none z-20">
-                            Copied!
+                        <ChevronDownIcon />
+                    </button>
+                </div>
+            )}
+
+            <AnimatePresence initial={false}>
+                {isExpanded && (
+                    <motion.div
+                        data-testid="message-reasoning"
+                        key="content"
+                        initial="collapsed"
+                        animate="expanded"
+                        exit="collapsed"
+                        variants={variants}
+                        transition={{ duration: 0.2, ease: 'easeInOut' }}
+                        style={{ overflow: 'hidden' }}
+                        className="pl-4 text-zinc-600 dark:text-zinc-400 border-l flex flex-col gap-4"
+                    >
+                        <Markdown>{reasoning}</Markdown>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+export function Message({
+    chatId,
+    message,
+    isLoading,
+    setMessages,
+    reload,
+    requiresScrollPadding,
+}: {
+    chatId: string;
+    message: UIMessage;
+    isLoading: boolean;
+    setMessages: UseChatHelpers['setMessages'];
+    reload: UseChatHelpers['reload'];
+    requiresScrollPadding: boolean;
+}) {
+    return (
+        <AnimatePresence>
+            <motion.div
+                data-testid={`message-${message.id}`}
+                className="w-full mx-auto max-w-3xl px-4 group/message"
+                initial={{ y: 5, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                data-role={message.role}
+            >
+                <div
+                    className={cn(
+                        'flex gap-4 w-full group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl'
+                    )}
+                >
+                    {message.role === 'assistant' && (
+                        <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background">
+                            <div className="translate-y-px">
+                                <BrainIcon size={14} />
+                            </div>
                         </div>
                     )}
+
+                    <div
+                        className={cn('flex flex-col gap-4 w-full', {
+                            'min-h-96': message.role === 'assistant' && requiresScrollPadding,
+                        })}
+                    >
+                        {message.experimental_attachments &&
+                            message.experimental_attachments.length > 0 && (
+                                <div
+                                    data-testid={`message-attachments`}
+                                    className="flex flex-row justify-end gap-2"
+                                >
+                                    {message.experimental_attachments.map((attachment) => (
+                                        <PreviewAttachment
+                                            key={attachment.url}
+                                            attachment={attachment}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                        {message.parts?.map((part, index) => {
+                            const { type } = part;
+                            const key = `message-${message.id}-part-${index}`;
+
+                            if (type === 'reasoning') {
+                                return (
+                                    <MessageReasoning
+                                        key={key}
+                                        isLoading={isLoading}
+                                        reasoning={part.reasoning}
+                                    />
+                                );
+                            }
+
+                            if (type === 'text') {
+                                return (
+                                    <div key={key} className="flex flex-row gap-2 items-start">
+                                        <div
+                                            data-testid="message-content"
+                                            className={cn('flex flex-col gap-4', {
+                                                'bg-primary text-primary-foreground px-3 py-2 rounded-xl':
+                                                    message.role === 'user',
+                                            })}
+                                        >
+                                            <Markdown>{part.text}</Markdown>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            if (type === 'tool-invocation') {
+                                const { toolInvocation } = part;
+                                const { toolName, toolCallId, state } = toolInvocation;
+
+                                if (state === 'call') {
+                                    const { args } = toolInvocation;
+
+                                    return (
+                                        <div key={toolCallId}>
+                                            {toolName === 'research' ? (
+                                                <ResearchTool
+                                                    toolCallId={toolCallId}
+                                                    state={state}
+                                                    args={args}
+                                                />
+                                            ) : toolName === 'web_search' ? (
+                                                <WebSearchTool
+                                                    toolCallId={toolCallId}
+                                                    state={state}
+                                                    args={args}
+                                                />
+                                            ) : toolName === 'knowledge_search' ? (
+                                                <KnowledgeSearchTool
+                                                    toolCallId={toolCallId}
+                                                    state={state}
+                                                    args={args}
+                                                />
+                                            ) : toolName === 'academic_search' ? (
+                                                <AcademicSearchTool
+                                                    toolCallId={toolCallId}
+                                                    state={state}
+                                                    args={args}
+                                                />
+                                            ) : null}
+                                        </div>
+                                    );
+                                }
+
+                                if (state === 'result') {
+                                    const { result } = toolInvocation;
+
+                                    return (
+                                        <div key={toolCallId}>
+                                            {toolName === 'research' ? (
+                                                <ResearchTool
+                                                    toolCallId={toolCallId}
+                                                    state={state}
+                                                    result={result}
+                                                />
+                                            ) : toolName === 'web_search' ? (
+                                                <WebSearchTool
+                                                    toolCallId={toolCallId}
+                                                    state={state}
+                                                    result={result}
+                                                />
+                                            ) : toolName === 'knowledge_search' ? (
+                                                <KnowledgeSearchTool
+                                                    toolCallId={toolCallId}
+                                                    state={state}
+                                                    result={result}
+                                                />
+                                            ) : toolName === 'academic_search' ? (
+                                                <AcademicSearchTool
+                                                    toolCallId={toolCallId}
+                                                    state={state}
+                                                    result={result}
+                                                />
+                                            ) : (
+                                                <pre>{JSON.stringify(result, null, 2)}</pre>
+                                            )}
+                                        </div>
+                                    );
+                                }
+                            }
+                        })}
+                    </div>
                 </div>
-            </div>
-            <SyntaxHighlighter
-                {...props}
-                style={oneDark}
-                wrapLongLines
-                showLineNumbers
-                language={match[1]}
-                PreTag="div"
-                className="rounded-t-none! rounded-b-lg! m-0!"
-                customStyle={{
-                    background: 'hsl(var(--background))',
-                    padding: '1.25rem 1rem',
-                    border: '1px solid hsl(var(--border))',
-                    borderTop: 'none',
-                }}
-            >
-                {String(children).replace(/\n$/, '')}
-            </SyntaxHighlighter>
-        </div>
-    ) : (
-        <code
-            className={cn('text-sm bg-muted px-1.5 py-0.5 rounded-md font-mono', className)}
-            {...props}
-        >
-            {children}
-        </code>
+            </motion.div>
+        </AnimatePresence>
     );
-};
-
-const markdownComponents = {
-    code: CodeBlock,
-    table: ({ children }: any) => <Table className="border my-4">{children}</Table>,
-    thead: ({ children }: any) => <TableHeader className="bg-muted/50">{children}</TableHeader>,
-    tbody: ({ children }: any) => <TableBody>{children}</TableBody>,
-    tr: ({ children }: any) => <TableRow className="hover:bg-muted/30">{children}</TableRow>,
-    th: ({ children }: any) => <TableHead className="font-semibold">{children}</TableHead>,
-    td: ({ children }: any) => <TableCell>{children}</TableCell>,
-    p: ({ children }: any) => <p className="mb-4 leading-7 text-neutral-300">{children}</p>,
-    h1: ({ children }: any) => <h1 className="text-3xl font-bold mt-6 mb-4">{children}</h1>,
-    h2: ({ children }: any) => <h2 className="text-2xl font-semibold mt-5 mb-3">{children}</h2>,
-    h3: ({ children }: any) => <h3 className="text-xl font-semibold mt-4 mb-2">{children}</h3>,
-    ul: ({ children }: any) => (
-        <ul className="list-disc marker:text-muted-foreground list-outside pl-6 mb-4">
-            {children}
-        </ul>
-    ),
-    ol: ({ children }: any) => <ol className="list-decimal list-outside pl-6 mb-4">{children}</ol>,
-    li: ({ children }: any) => <li className="mb-1 text-neutral-300">{children}</li>,
-    blockquote: ({ children }: any) => (
-        <blockquote className="border-l-4 border-muted pl-4 italic my-4">{children}</blockquote>
-    ),
-    a: ({ children, href }: any) => (
-        <Link href={href} target="_blank" className="text-xs text-muted-foreground hover:underline">
-            {href ? extractDomain(href) : children}
-        </Link>
-    ),
-    strong: ({ children }: any) => (
-        <strong className="font-bold text-neutral-100">{children}</strong>
-    ),
-    inlineMath: ({ value }: { value: string }) => <span className="math math-inline">{value}</span>,
-    math: ({ value }: { value: string }) => <div className="math math-display">{value}</div>,
-};
-
-interface BotMessageProps {
-    message: string;
-    className?: string;
 }
 
-export function BotMessage({ message, className }: BotMessageProps) {
-    // const cleanedMessage = removeContemplateContent(message || '');
-    const containsLaTeX = /\\\[([\s\S]*?)\\\]|\\\(([\s\S]*?)\\\)/.test(message);
-    const processedData = preprocessLaTeX(message);
+export const PreviewMessage = memo(Message, (prevProps, nextProps) => {
+    if (prevProps.isLoading !== nextProps.isLoading) return false;
+    if (prevProps.message.id !== nextProps.message.id) return false;
+    if (prevProps.requiresScrollPadding !== nextProps.requiresScrollPadding) return false;
+    if (prevProps.message.parts !== nextProps.message.parts) return false;
+
+    return true;
+});
+
+export const ThinkingMessage = () => {
+    const role = 'assistant';
 
     return (
-        <div className={cn('group/message relative flex w-full items-start gap-3 pt-4', className)}>
-            <div className="flex-1 space-y-2 ">
-                <div className="prose prose-neutral dark:prose-invert max-w-none break-words">
-                    <MemoizedReactMarkdown
-                        className="prose break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 max-w-none"
-                        remarkPlugins={[remarkGfm, remarkMath]}
-                        rehypePlugins={[
-                            rehypeKatex,
-                            rehypeRaw,
-                            [
-                                rehypeExternalLinks,
-                                {
-                                    target: '_blank',
-                                    rel: ['nofollow', 'noopener', 'noreferrer'],
-                                },
-                            ],
-                        ]}
-                        components={markdownComponents}
-                    >
-                        {processedData}
-                    </MemoizedReactMarkdown>
+        <motion.div
+            data-testid="message-assistant-loading"
+            className="w-full mx-auto max-w-3xl px-4 group/message min-h-96"
+            initial={{ y: 5, opacity: 0 }}
+            animate={{ y: 0, opacity: 1, transition: { delay: 1 } }}
+            data-role={role}
+        >
+            <div
+                className={cx(
+                    'flex gap-4 group-data-[role=user]/message:px-3 w-full group-data-[role=user]/message:w-fit group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl group-data-[role=user]/message:py-2 rounded-xl',
+                    {
+                        'group-data-[role=user]/message:bg-muted': true,
+                    }
+                )}
+            >
+                <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
+                    <BrainIcon size={14} />
+                </div>
+
+                <div className="flex flex-col gap-2 w-full">
+                    <div className="flex flex-col gap-4 text-muted-foreground">Hmm...</div>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
-}
-
-const preprocessLaTeX = (content: string) => {
-    const blockProcessedContent = content.replace(
-        /\\\[([\s\S]*?)\\\]/g,
-        (_, equation) => `$$${equation}$$`
-    );
-    const inlineProcessedContent = blockProcessedContent.replace(
-        /\\\(([\s\S]*?)\\\)/g,
-        (_, equation) => `$${equation}$`
-    );
-    return inlineProcessedContent;
 };

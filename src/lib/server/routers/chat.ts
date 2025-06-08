@@ -14,15 +14,10 @@ export const chatRouter = router({
             })
         )
         .mutation(async ({ ctx, input }) => {
-            try {
-                const messageInsertSchema = createInsertSchema(message);
-                const parsedMessages = input.messages.map((message) =>
-                    messageInsertSchema.parse(message)
-                );
-                return await db.insert(message).values(parsedMessages);
-            } catch (error) {
-                console.error(error);
-                throw new TRPCError('BAD_REQUEST');
-            }
+            const messageInsertSchema = createInsertSchema(message);
+            const parsedMessages = input.messages.map((message: Message) =>
+                messageInsertSchema.parse(message)
+            );
+            return await db.insert(message).values(parsedMessages);
         }),
 });

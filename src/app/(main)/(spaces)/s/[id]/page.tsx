@@ -1,6 +1,6 @@
 import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 import { db } from '@/lib/db';
-import { chats, knowledge, spaces } from '@/lib/db/schema/app';
+import { chat as chats, knowledge, spaces } from '@/lib/db/schema/app';
 import { and, desc, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { SettingsIcon } from 'lucide-react';
@@ -8,6 +8,7 @@ import { Chat } from '@/components/Chat';
 import { generateId } from 'ai';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { KnowledgeDialog } from '@/components/spaces/KnowledgeDialog';
+import { Session } from 'next-auth';
 
 export type ChatData = {
     id: string;
@@ -31,6 +32,10 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
         .from(spaces)
         .where(and(eq(spaces.id, spaceId), eq(spaces.userId, user.id)));
 
+    if (!spaceData) {
+        return notFound();
+    }
+
     const chatsData = await db
         .select()
         .from(chats)
@@ -43,14 +48,16 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
         .from(knowledge)
         .where(and(eq(knowledge.spaceId, spaceId), eq(knowledge.userId, user.id)));
 
-    if (!spaceData) {
-        return notFound();
-    }
-
     return (
         <div className="mx-20 flex flex-row justify-evenly gap-20">
             <div className="max-w-2xl w-full">
-                <Chat chatsData={chatsData} spaceId={spaceData.id} id={chatId} />
+                <Chat
+                    spaceId={spaceData.id}
+                    id={chatId}
+                    initialMessages={[]}
+                    session={session as Session}
+                    autoResume={false}
+                />
             </div>
             <div className="mt-20 max-w-lg flex flex-col gap-10 w-full">
                 <div className="w-full flex flex-col justify-end items-end gap-2">

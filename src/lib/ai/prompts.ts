@@ -39,12 +39,10 @@ FORMAT YOUR RESPONSE ACCORDING TO THE SCHEMA PROVIDED.
 export const Prompt = ({
     webSearch,
     knowledgeSearch,
-    xSearch,
     academicSearch,
 }: {
     webSearch: boolean;
     knowledgeSearch: boolean;
-    xSearch: boolean;
     academicSearch: boolean;
 }) => {
     return `

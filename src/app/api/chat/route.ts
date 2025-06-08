@@ -1,13 +1,9 @@
 import {
     convertToCoreMessages,
     appendResponseMessages,
-    appendClientMessage,
     smoothStream,
-    Message,
     streamText,
-    embed,
     embedMany,
-    generateObject,
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { getTrailingMessageId } from '@/lib/ai/utils';
@@ -16,14 +12,13 @@ import { env } from '@/lib/env.mjs';
 
 import { getUserAuth } from '@/lib/auth/utils';
 import { api } from '@/lib/trpc/api';
-import { Prompt, ResearchPrompt } from '@/lib/ai/prompts';
-import { object, z } from 'zod';
+import { Prompt } from '@/lib/ai/prompts';
+import { z } from 'zod';
 import { tavily } from '@tavily/core';
 import { createDataStreamResponse, tool } from 'ai';
 import { google } from '@ai-sdk/google';
 import { cosineDistance, sql, eq, and, gt, desc } from 'drizzle-orm';
 import { knowledge, knowledgeEmbeddings } from '@/lib/db/schema/app';
-import { anthropic } from '@ai-sdk/anthropic';
 import { db } from '@/lib/db';
 
 export const maxDuration = 60;
@@ -35,8 +30,8 @@ const openrouter = createOpenRouter({
 });
 
 // const smallModel = openrouter('google/gemini-2.0-flash-001');
-// const largeModel = openrouter('anthropic/claude-sonnet-4');
-const largeModel = openrouter('deepseek/deepseek-r1-0528:free');
+const largeModel = openrouter('anthropic/claude-sonnet-4');
+// const largeModel = openrouter('deepseek/deepseek-r1-0528:free');
 
 const extractDomain = (url: string): string => {
     const urlPattern = /^https?:\/\/([^/?#]+)(?:[/?#]|$)/i;
@@ -75,7 +70,6 @@ export async function POST(req: Request) {
             webSearch,
             knowledgeSearch,
             academicSearch,
-            xSearch,
         } = await req.json();
         if (!messages || !chatId) {
             throw new Error('Invalid Body');
@@ -89,7 +83,6 @@ export async function POST(req: Request) {
                     system: Prompt({
                         webSearch,
                         knowledgeSearch,
-                        xSearch: false,
                         academicSearch: false,
                     }),
                     maxSteps: 7,
@@ -135,11 +128,9 @@ export async function POST(req: Request) {
                         }
                     },
                     experimental_activeTools: [
-                        // 'research',
                         webSearch && webSearch === true && 'web_search',
                         knowledgeSearch && knowledgeSearch === true && 'knowledge_search',
                         academicSearch && academicSearch === true && 'academic_search',
-                        xSearch && xSearch === true && 'x_search',
                     ],
                     tools: {
                         research: tool({
@@ -309,29 +300,6 @@ export async function POST(req: Request) {
                                 return {
                                     results,
                                 };
-                            },
-                        }),
-                        x_search: tool({
-                            description:
-                                'Performs a search on X (Formerly Twitter) for relevant posts.',
-                            parameters: z.object({
-                                x_search_query: z.string(),
-                            }),
-                            execute: async ({ x_search_query: query }, { toolCallId }) => {
-                                dataStream.writeMessageAnnotation({
-                                    type: 'tool-call',
-                                    data: {
-                                        toolCallId,
-                                        toolName: 'x_search',
-                                        state: 'call',
-                                        args: JSON.stringify(query),
-                                    },
-                                });
-
-                                console.log('X Search Query: ', query);
-
-                                // TODO
-                                return null;
                             },
                         }),
                         academic_search: tool({

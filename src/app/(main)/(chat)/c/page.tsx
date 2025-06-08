@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
 import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 import { db } from '@/lib/db';
-import { Chat, chats as chatsSchema } from '@/lib/db/schema/app';
+import { Chat, chat as chatsSchema } from '@/lib/db/schema/app';
 import { CoreMessage } from 'ai';
 import { desc, eq } from 'drizzle-orm';
 
@@ -34,12 +34,7 @@ export default async function Spaces() {
             <Header />
             <div className="mt-5 max-w-5xl w-full flex flex-row flex-wrap justify-start items-start gap-3">
                 {chats.map((chat) => {
-                    const chatData: Chat = {
-                        ...chat,
-                        messages: convertToUIMessages(chat.messages as Array<CoreMessage>),
-                    };
-
-                    return <ChatDisplayCard key={chatData.id} chat={chatData} />;
+                    return <ChatDisplayCard key={chat.id} chat={chat} />;
                 })}
             </div>
         </div>

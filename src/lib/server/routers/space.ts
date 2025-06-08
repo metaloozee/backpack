@@ -2,7 +2,7 @@ import { generateEmbeddings } from '@/lib/ai/embedding';
 import { extractRawText, sanitizeData } from '@/lib/ai/extractWebPage';
 import { db } from '@/lib/db';
 import { and, eq } from 'drizzle-orm';
-import { knowledge, knowledgeEmbeddings, spaces } from '@/lib/db/schema/app';
+import { knowledge, knowledgeEmbeddings, spaces, KnowledgeTypeEnum } from '@/lib/db/schema/app';
 import { protectedProcedure, router } from '@/lib/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { revalidatePath } from 'next/cache';
@@ -13,33 +13,35 @@ export const spaceRouter = router({
         .input(
             z.object({
                 userId: z.string(),
-                spaceTitle: z.string(),
-                spaceDescription: z.string().optional(),
-                spaceCustomInstructions: z.string().optional(),
+                spaceTitle: z.string().min(1).max(255),
+                spaceDescription: z.string().max(1000).optional(),
+                spaceCustomInstructions: z.string().max(2000).optional(),
             })
         )
         .mutation(async ({ ctx, input }) => {
-            try {
-                const [space] = await db
-                    .insert(spaces)
-                    .values({
-                        userId: ctx.session.user.id,
-                        spaceTitle: input.spaceTitle,
-                        spaceDescription: input.spaceDescription,
-                        spaceCustomInstructions: input.spaceCustomInstructions,
-                        createdAt: new Date(),
-                    })
-                    .returning({ id: spaces.id });
+            if (input.userId !== ctx.session.user.id) {
+                throw new TRPCError({
+                    code: 'FORBIDDEN',
+                    message: 'Access denied',
+                });
+            }
 
-                if (!space.id) {
-                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-                }
+            const [space] = await db
+                .insert(spaces)
+                .values({
+                    userId: ctx.session.user.id,
+                    spaceTitle: input.spaceTitle,
+                    spaceDescription: input.spaceDescription,
+                    spaceCustomInstructions: input.spaceCustomInstructions,
+                    createdAt: new Date(),
+                })
+                .returning({ id: spaces.id });
 
-                return { id: space.id };
-            } catch (error) {
-                console.error(error);
+            if (!space.id) {
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
             }
+
+            return { id: space.id };
         }),
     saveWebPage: protectedProcedure
         .input(
@@ -49,52 +51,68 @@ export const spaceRouter = router({
             })
         )
         .mutation(async ({ ctx, input }) => {
-            try {
-                if (input.url.length <= 0) {
-                    throw new TRPCError({ code: 'BAD_REQUEST' });
-                }
+            const [spaceExists] = await db
+                .select()
+                .from(spaces)
+                .where(and(eq(spaces.id, input.spaceId), eq(spaces.userId, ctx.session.user.id)))
+                .limit(1);
 
-                const { success, result } = await extractRawText({ url: input.url });
-                if (!success) {
-                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-                }
-
-                const { success: sanitizedSuccess, sanitizedText } = await sanitizeData({
-                    rawText: result![0].rawContent,
+            if (!spaceExists) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: 'Space not found',
                 });
-                if (!sanitizedSuccess) {
-                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-                }
-
-                const embeddings = await generateEmbeddings(sanitizedText);
-                if (!embeddings) {
-                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-                }
-
-                const [knowledgeData] = await db
-                    .insert(knowledge)
-                    .values({
-                        userId: ctx.session.user.id,
-                        spaceId: input.spaceId,
-                        knowledgeType: 'webpage',
-                        knowledgeName: input.url,
-                        uploadedAt: new Date(),
-                    })
-                    .returning({ id: knowledge.id });
-
-                await db.insert(knowledgeEmbeddings).values(
-                    embeddings.map((embedding) => ({
-                        knowledgeId: knowledgeData.id,
-                        createdAt: new Date(),
-                        ...embedding,
-                    }))
-                );
-
-                revalidatePath(`/s/${input.spaceId}`);
-                return { success: true };
-            } catch (e) {
-                console.error(e);
-                throw e;
             }
+
+            const { success, result } = await extractRawText({ url: input.url });
+            if (!success || !result) {
+                throw new TRPCError({
+                    code: 'BAD_REQUEST',
+                    message: 'Failed to extract content from URL',
+                });
+            }
+
+            const { success: sanitizedSuccess, sanitizedText } = await sanitizeData({
+                rawText: result[0].rawContent,
+            });
+            if (!sanitizedSuccess || !sanitizedText) {
+                throw new TRPCError({
+                    code: 'BAD_REQUEST',
+                    message: 'Failed to sanitize extracted content',
+                });
+            }
+
+            const embeddings = await generateEmbeddings(sanitizedText);
+            if (!embeddings || embeddings.length === 0) {
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: 'Failed to generate embeddings',
+                });
+            }
+
+            const [knowledgeData] = await db
+                .insert(knowledge)
+                .values({
+                    userId: ctx.session.user.id,
+                    spaceId: input.spaceId,
+                    knowledgeType: 'webpage' as const,
+                    knowledgeName: input.url,
+                    knowledgeSummary:
+                        sanitizedText.slice(0, 500) + (sanitizedText.length > 500 ? '...' : ''),
+                    uploadedAt: new Date(),
+                })
+                .returning({ id: knowledge.id });
+
+            await db.insert(knowledgeEmbeddings).values(
+                embeddings.map((embedding) => ({
+                    knowledgeId: knowledgeData.id,
+                    createdAt: new Date(),
+                    content: embedding.content,
+                    embedding: embedding.embedding,
+                }))
+            );
+
+            revalidatePath(`/s/${input.spaceId}`);
+            return { success: true };
         }),
 });

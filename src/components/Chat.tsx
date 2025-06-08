@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Message, useChat } from '@ai-sdk/react';
 import { Input as InputPanel } from '@/components/Input';
 import { cn } from '@/lib/utils';
-import { ChatMessages } from '@/components/chat/Messages';
+import { ChatMessages } from '@/components/chat/messages';
 import { toast } from 'sonner';
 import { ScrollArea } from './ui/scroll-area';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -18,12 +18,14 @@ export function Chat({
     initialMessages,
     session,
     autoResume,
+    chatsData,
 }: {
     id: string;
     spaceId?: string;
     initialMessages: Array<UIMessage>;
     session: Session;
     autoResume: boolean;
+    chatsData?: Array<ChatData>;
 }) {
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
@@ -31,7 +33,6 @@ export function Chat({
     const [webSearch, setWebSearch] = React.useState(true);
     const [knowledgeBase, setKnowledgeBase] = React.useState(false);
     const [academicSearch, setAcademicSearch] = React.useState(false);
-    const [socialSearch, setSocialSearch] = React.useState(false);
 
     const { messages, setMessages, stop, append, reload, status } = useChat({
         initialMessages,
@@ -41,7 +42,6 @@ export function Chat({
             webSearch,
             knowledgeSearch: knowledgeBase,
             academicSearch,
-            socialSearch,
         },
         onFinish: () => {
             if (messages.length === 0) {
@@ -70,6 +70,9 @@ export function Chat({
         }
     }, [query, append, hasAppendedQuery, id]);
 
+    // Convert status to boolean for isLoading
+    const isLoading = status === 'submitted' || status === 'streaming';
+
     return (
         <div
             className={cn(
@@ -93,23 +96,21 @@ export function Chat({
                 </ScrollArea>
             )}
 
-            {/* <InputPanel
+            <InputPanel
                 isLoading={isLoading}
                 messages={messages}
                 setMessages={setMessages}
+                query={query || undefined}
                 stop={stop}
-                query={query}
                 append={append}
-                chatsData={chatsData}
                 webSearch={webSearch}
                 setWebSearch={setWebSearch}
                 knowledgeBase={knowledgeBase}
                 setKnowledgeBase={setKnowledgeBase}
                 academicSearch={academicSearch}
                 setAcademicSearch={setAcademicSearch}
-                socialSearch={socialSearch}
-                setSocialSearch={setSocialSearch}
-            /> */}
+                chatsData={chatsData}
+            />
         </div>
     );
 }
