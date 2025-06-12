@@ -29,15 +29,22 @@ export const chatRouter = router({
             })
         )
         .mutation(async ({ ctx, input }) => {
-            if (input.userId !== ctx.session.user.id) {
-                throw new TRPCError({ code: 'UNAUTHORIZED' });
-            }
-
             return await db.insert(chat).values({
                 id: input.id,
                 userId: ctx.session.user.id,
                 title: input.title,
                 createdAt: new Date(),
             });
+        }),
+    deleteChat: protectedProcedure
+        .input(
+            z.object({
+                chatId: z.string().uuid(),
+            })
+        )
+        .mutation(async ({ ctx, input }) => {
+            return await db
+                .delete(chat)
+                .where(and(eq(chat.id, input.chatId), eq(chat.userId, ctx.session.user.id)));
         }),
 });

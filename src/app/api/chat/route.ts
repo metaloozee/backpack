@@ -64,7 +64,7 @@ const deduplicateByDomainAndUrl = <T extends { url: string }>(items: T[]): T[] =
     });
 };
 
-export const requestBodySchema = z.object({
+const requestBodySchema = z.object({
     id: z.string().uuid(),
     spaceId: z.string().uuid().optional().nullable(),
     message: z.object({
@@ -372,7 +372,7 @@ export async function POST(req: Request) {
 
                 result.consumeStream();
                 result.mergeIntoDataStream(dataStream, {
-                    sendReasoning: false,
+                    sendReasoning: true,
                 });
             },
             onError: () => {

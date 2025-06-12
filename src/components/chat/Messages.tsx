@@ -30,7 +30,10 @@ export function ChatMessages({ chatId, status, messages, setMessages, reload }: 
     });
 
     return (
-        <div ref={messageContainerRef} className="px-4 w-full mt-10 mx-auto max-w-3xl">
+        <div
+            ref={messageContainerRef}
+            className="px-4 flex flex-col items-center w-full mt-10 mx-auto max-w-3xl"
+        >
             {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full">
                     <p className="text-sm text-muted-foreground">
@@ -54,7 +57,7 @@ export function ChatMessages({ chatId, status, messages, setMessages, reload }: 
             {status === 'submitted' &&
                 messages.length > 0 &&
                 messages[messages.length - 1].role === 'user' && (
-                    <LoaderIcon className="animate-spin" />
+                    <LoaderIcon className="my-10 animate-spin size-4 text-muted-foreground" />
                 )}
 
             <motion.div

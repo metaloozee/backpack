@@ -85,10 +85,10 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
                     animate="visible"
                     className="flex flex-col gap-1 justify-start items-start w-full"
                 >
-                    <p className="max-w-md truncate">{chat.chatName}</p>
+                    <p className="max-w-md truncate">{chat.title}</p>
 
                     <p className="text-xs text-muted-foreground truncate max-w-md">
-                        {chat.messages[1]?.content || 'No messages yet'}
+                        Created on {chat.createdAt.toLocaleDateString()}
                     </p>
                 </motion.div>
             </Link>

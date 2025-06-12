@@ -1,14 +1,13 @@
 import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 import { db } from '@/lib/db';
-import { chat as chats, knowledge, spaces } from '@/lib/db/schema/app';
-import { and, desc, eq } from 'drizzle-orm';
+import { knowledge, spaces } from '@/lib/db/schema/app';
+import { and, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { SettingsIcon } from 'lucide-react';
 import { Chat } from '@/components/Chat';
-import { generateId } from 'ai';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { KnowledgeDialog } from '@/components/spaces/KnowledgeDialog';
-import { Session } from 'next-auth';
+import { generateUUID } from '@/lib/ai/utils';
 
 export type ChatData = {
     id: string;
@@ -25,7 +24,7 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
 
     const user = session!.user;
     const { id: spaceId } = await params;
-    const chatId = generateId();
+    const chatId = generateUUID();
 
     const [spaceData] = await db
         .select()
@@ -35,13 +34,6 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
     if (!spaceData) {
         return notFound();
     }
-
-    const chatsData = await db
-        .select()
-        .from(chats)
-        .where(and(eq(chats.spaceId, spaceId), eq(chats.userId, user.id)))
-        .orderBy(desc(chats.createdAt))
-        .limit(3);
 
     const knowledgeData = await db
         .select()
@@ -55,7 +47,7 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
                     spaceId={spaceData.id}
                     id={chatId}
                     initialMessages={[]}
-                    session={session as Session}
+                    session={session}
                     autoResume={false}
                 />
             </div>

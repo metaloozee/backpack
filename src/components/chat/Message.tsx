@@ -113,7 +113,7 @@ export function Message({
             >
                 <div
                     className={cn(
-                        'flex gap-4 w-full group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl'
+                        'flex gap-4 w-full group-data-[role=user]/message:max-w-2xl group-data-[role=user]/message:my-10'
                     )}
                 >
                     <div
@@ -152,11 +152,14 @@ export function Message({
 
                             if (type === 'text') {
                                 return (
-                                    <div key={key} className="flex flex-row gap-2 items-start">
+                                    <div
+                                        key={key}
+                                        className="flex flex-row gap-2 items-start w-full"
+                                    >
                                         <div
                                             data-testid="message-content"
                                             className={cn('flex flex-col gap-4', {
-                                                'bg-neutral-950 px-3 py-2 rounded-xl':
+                                                'bg-background border px-4 py-2 rounded-md':
                                                     message.role === 'user',
                                             })}
                                         >
