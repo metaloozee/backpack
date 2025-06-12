@@ -9,8 +9,9 @@ import { toast } from 'sonner';
 import { ScrollArea } from './ui/scroll-area';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { ChatData } from '@/app/(main)/(spaces)/s/[id]/page';
-import { UIMessage } from 'ai';
+import { Attachment, UIMessage } from 'ai';
 import { Session } from 'next-auth';
+import { generateUUID } from '@/lib/ai/utils';
 
 export function Chat({
     id,
@@ -23,7 +24,7 @@ export function Chat({
     id: string;
     spaceId?: string;
     initialMessages: Array<UIMessage>;
-    session: Session;
+    session: Session | null;
     autoResume: boolean;
     chatsData?: Array<ChatData>;
 }) {
@@ -31,17 +32,35 @@ export function Chat({
     const isSpaceChat = pathname.startsWith('/s/');
 
     const [webSearch, setWebSearch] = React.useState(true);
-    const [knowledgeBase, setKnowledgeBase] = React.useState(false);
+    const [knowledgeSearch, setKnowledgeSearch] = React.useState(false);
     const [academicSearch, setAcademicSearch] = React.useState(false);
 
-    const { messages, setMessages, stop, append, reload, status } = useChat({
+    const {
+        messages,
+        setMessages,
+        handleSubmit,
+        input,
+        setInput,
+        append,
+        status,
+        stop,
+        reload,
+        experimental_resume,
+        data,
+    } = useChat({
+        id,
         initialMessages,
-        body: {
-            id,
-            spaceId: spaceId ?? null,
-            webSearch,
-            knowledgeSearch: knowledgeBase,
-            academicSearch,
+        generateId: generateUUID,
+        sendExtraMessageFields: true,
+        experimental_prepareRequestBody: (body) => {
+            return {
+                id,
+                spaceId: spaceId ?? null,
+                message: body.messages.at(-1),
+                webSearch,
+                knowledgeSearch,
+                academicSearch,
+            };
         },
         onFinish: () => {
             if (messages.length === 0) {
@@ -51,7 +70,6 @@ export function Chat({
         onError: (error) => {
             toast.error('uh oh!', { description: error.message });
         },
-        sendExtraMessageFields: false,
     });
 
     const searchParams = useSearchParams();
@@ -70,8 +88,7 @@ export function Chat({
         }
     }, [query, append, hasAppendedQuery, id]);
 
-    // Convert status to boolean for isLoading
-    const isLoading = status === 'submitted' || status === 'streaming';
+    const [attachments, setAttachments] = React.useState<Array<Attachment>>([]);
 
     return (
         <div
@@ -97,19 +114,23 @@ export function Chat({
             )}
 
             <InputPanel
-                isLoading={isLoading}
+                chatId={id}
+                input={input}
+                setInput={setInput}
+                handleSubmit={handleSubmit}
+                status={status}
+                stop={stop}
+                attachments={attachments}
+                setAttachments={setAttachments}
                 messages={messages}
                 setMessages={setMessages}
-                query={query || undefined}
-                stop={stop}
                 append={append}
                 webSearch={webSearch}
                 setWebSearch={setWebSearch}
-                knowledgeBase={knowledgeBase}
-                setKnowledgeBase={setKnowledgeBase}
+                knowledgeSearch={knowledgeSearch}
+                setKnowledgeSearch={setKnowledgeSearch}
                 academicSearch={academicSearch}
                 setAcademicSearch={setAcademicSearch}
-                chatsData={chatsData}
             />
         </div>
     );

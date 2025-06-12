@@ -5,7 +5,6 @@ import { chat as DBChat, message as DBMessage } from '@/lib/db/schema/app';
 import { and, eq, asc } from 'drizzle-orm';
 import { Chat as PreviewChat } from '@/components/Chat';
 import { notFound } from 'next/navigation';
-import { Session } from 'next-auth';
 
 export default async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
     await checkAuth();
@@ -38,7 +37,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
                     : undefined
             }
             initialMessages={convertToUIMessages(messages)}
-            session={session as Session}
+            session={session}
             autoResume={true}
         />
     );

@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { type Message, message } from '@/lib/db/schema/app';
+import { chat, type Message, message } from '@/lib/db/schema/app';
 import { protectedProcedure, router } from '@/lib/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
@@ -19,5 +19,25 @@ export const chatRouter = router({
                 messageInsertSchema.parse(message)
             );
             return await db.insert(message).values(parsedMessages);
+        }),
+    saveChat: protectedProcedure
+        .input(
+            z.object({
+                id: z.string().uuid(),
+                userId: z.string().uuid(),
+                title: z.string().max(100),
+            })
+        )
+        .mutation(async ({ ctx, input }) => {
+            if (input.userId !== ctx.session.user.id) {
+                throw new TRPCError({ code: 'UNAUTHORIZED' });
+            }
+
+            return await db.insert(chat).values({
+                id: input.id,
+                userId: ctx.session.user.id,
+                title: input.title,
+                createdAt: new Date(),
+            });
         }),
 });

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { CoreMessage, Message } from 'ai';
+import { CoreMessage, Message, Attachment, UIMessage } from 'ai';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
@@ -41,25 +41,27 @@ import {
     slideVariants,
     transitions,
 } from '@/lib/animations';
+import { UseChatHelpers } from '@ai-sdk/react';
+import { Dispatch, SetStateAction } from 'react';
 
 interface InputPanelProps {
-    isLoading: boolean;
-    messages: Array<Message>;
-    setMessages: (messages: Array<Message>) => void;
-    query?: string;
+    chatId: string;
+    input: UseChatHelpers['input'];
+    setInput: UseChatHelpers['setInput'];
+    handleSubmit: UseChatHelpers['handleSubmit'];
+    status: UseChatHelpers['status'];
     stop: () => void;
-    append: (message: any) => void;
-
+    attachments: Array<Attachment>;
+    setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
+    messages: Array<UIMessage>;
+    setMessages: UseChatHelpers['setMessages'];
+    append: UseChatHelpers['append'];
     webSearch: boolean;
     setWebSearch: (webSearch: boolean) => void;
-
-    knowledgeBase: boolean;
-    setKnowledgeBase: (knowledgeBase: boolean) => void;
-
+    knowledgeSearch: boolean;
+    setKnowledgeSearch: (knowledgeSearch: boolean) => void;
     academicSearch: boolean;
     setAcademicSearch: (academicSearch: boolean) => void;
-
-    chatsData?: Array<ChatData>;
 }
 
 const modeTypes = [
@@ -68,7 +70,7 @@ const modeTypes = [
         label: 'Ask',
         description: 'Standard mode with all features',
         showWebSearch: true,
-        showKnowledgeBase: true,
+        showKnowledgeSearch: true,
         showAcademicSearch: true,
         disabled: false,
     },
@@ -77,7 +79,7 @@ const modeTypes = [
         label: 'Research',
         description: 'Specialized for academic research',
         showWebSearch: true,
-        showKnowledgeBase: true,
+        showKnowledgeSearch: true,
         showAcademicSearch: true,
         disabled: true,
     },
@@ -86,17 +88,21 @@ const modeTypes = [
 type ModeType = (typeof modeTypes)[number]['value'];
 
 function PureInput({
-    isLoading,
+    chatId,
+    input,
+    setInput,
+    handleSubmit,
+    status,
+    stop,
+    attachments,
+    setAttachments,
     messages,
     setMessages,
-    query,
-    stop,
     append,
-    chatsData,
     webSearch,
     setWebSearch,
-    knowledgeBase,
-    setKnowledgeBase,
+    knowledgeSearch,
+    setKnowledgeSearch,
     academicSearch,
     setAcademicSearch,
 }: InputPanelProps) {
@@ -113,7 +119,8 @@ function PureInput({
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
     const { width } = useWindowSize();
 
-    const [input, setInput] = React.useState('');
+    const isLoading = status === 'submitted' || status === 'streaming';
+
     const [localStorageInput, setLocalStorageInput] = useLocalStorage('input', '');
     const [isComposing, setIsComposing] = React.useState(false);
     const [enterDisabled, setEnterDisabled] = React.useState(false);
@@ -123,8 +130,6 @@ function PureInput({
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
     const router = useRouter();
-
-    const processedInitialQuery = React.useRef(false);
 
     const adjustHeight = React.useCallback(() => {
         if (textareaRef.current) {
@@ -142,12 +147,9 @@ function PureInput({
 
     React.useEffect(() => {
         if (textareaRef.current) {
-            const domValue = textareaRef.current.value;
-            const finalValue = domValue || localStorageInput || '';
-            setInput(finalValue);
             adjustHeight();
         }
-    }, []);
+    }, [input, adjustHeight]);
 
     React.useEffect(() => {
         setLocalStorageInput(input);
@@ -158,7 +160,7 @@ function PureInput({
             setInput(event.target.value);
             adjustHeight();
         },
-        [adjustHeight]
+        [setInput, adjustHeight]
     );
 
     const updateWebSearch = React.useCallback(
@@ -170,13 +172,13 @@ function PureInput({
         [setWebSearch]
     );
 
-    const updateKnowledgeBase = React.useCallback(
+    const updateKnowledgeSearch = React.useCallback(
         (value: boolean) => {
-            if (typeof setKnowledgeBase === 'function') {
-                setKnowledgeBase(value);
+            if (typeof setKnowledgeSearch === 'function') {
+                setKnowledgeSearch(value);
             }
         },
-        [setKnowledgeBase]
+        [setKnowledgeSearch]
     );
 
     const updateAcademicSearch = React.useCallback(
@@ -187,16 +189,6 @@ function PureInput({
         },
         [setAcademicSearch]
     );
-
-    React.useEffect(() => {
-        if (query && query.trim().length > 0 && !processedInitialQuery.current) {
-            append({
-                role: 'user',
-                content: query,
-            });
-            processedInitialQuery.current = true;
-        }
-    }, [query, append]);
 
     const handlerCompositionStart = React.useCallback(() => setIsComposing(true), []);
 
@@ -218,29 +210,31 @@ function PureInput({
             const selectedModeConfig = modeTypes.find((m) => m.value === newMode);
             if (selectedModeConfig) {
                 updateWebSearch(selectedModeConfig.showWebSearch);
-                updateKnowledgeBase(selectedModeConfig.showKnowledgeBase);
+                updateKnowledgeSearch(selectedModeConfig.showKnowledgeSearch);
                 updateAcademicSearch(selectedModeConfig.showAcademicSearch);
             }
         },
-        [updateWebSearch, updateKnowledgeBase, updateAcademicSearch]
+        [updateWebSearch, updateKnowledgeSearch, updateAcademicSearch]
     );
 
-    const submitForm = React.useCallback(() => {
-        if (!input.trim()) return;
+    const submitForm = React.useCallback(
+        (event?: React.FormEvent) => {
+            if (event) {
+                event.preventDefault();
+            }
 
-        append({
-            role: 'user',
-            content: input.trim(),
-        });
+            if (!input.trim()) return;
 
-        setInput('');
-        setLocalStorageInput('');
-        resetHeight();
+            handleSubmit(event);
 
-        if (width && width > 768) {
-            textareaRef.current?.focus();
-        }
-    }, [input, append, setLocalStorageInput, resetHeight, width]);
+            resetHeight();
+
+            if (width && width > 768) {
+                textareaRef.current?.focus();
+            }
+        },
+        [input, handleSubmit, resetHeight, width]
+    );
 
     const handleKeyDown = React.useCallback(
         (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -381,23 +375,25 @@ function PureInput({
                                         </motion.div>
                                     )}
                                     {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
-                                        ?.showKnowledgeBase && (
+                                        ?.showKnowledgeSearch && (
                                         <motion.div
                                             variants={staggerVariants.item}
-                                            key="knowledge-base-card"
+                                            key="knowledge-search-card"
                                             layout
-                                            layoutId="knowledge-base-section"
+                                            layoutId="knowledge-search-section"
                                         >
                                             <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <div
                                                             onClick={() =>
-                                                                updateKnowledgeBase(!knowledgeBase)
+                                                                updateKnowledgeSearch(
+                                                                    !knowledgeSearch
+                                                                )
                                                             }
                                                             className={cn(
                                                                 'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justify-center items-center gap-2 text-xs transition-all duration-200',
-                                                                knowledgeBase
+                                                                knowledgeSearch
                                                                     ? 'bg-neutral-800 border-neutral-800 text-primary'
                                                                     : 'bg-neutral-900 border-neutral-800'
                                                             )}
@@ -406,7 +402,7 @@ function PureInput({
                                                         </div>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>Knowledge Base</p>
+                                                        <p>Knowledge Search</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
@@ -467,47 +463,6 @@ function PureInput({
                     </div>
                 </div>
             </div>
-
-            {messages.length === 0 && chatsData && chatsData.length > 0 && (
-                <div className="mt-12 space-y-5 max-w-2xl">
-                    <div className="space-y-4 w-full">
-                        <h1 className="text-lg w-full flex gap-2 items-center">
-                            <BookOpenTextIcon /> Recent Chats
-                        </h1>
-                        <Separator />
-                    </div>
-                    <motion.div
-                        variants={staggerVariants.container}
-                        initial="hidden"
-                        animate="visible"
-                        className="flex flex-col w-full justify-start items-start gap-3"
-                    >
-                        <AnimatePresence>
-                            {chatsData.map((chat) => {
-                                // Fix the type issue by only using valid Chat properties
-                                const chatData: Chat = {
-                                    id: chat.id,
-                                    title: chat.chatName,
-                                    spaceId: chat.spaceId,
-                                    createdAt: chat.createdAt,
-                                    userId: chat.userId,
-                                };
-
-                                return (
-                                    <motion.div
-                                        key={chatData.id}
-                                        variants={staggerVariants.item}
-                                        layout
-                                        className="w-full"
-                                    >
-                                        <ChatDisplayCard chat={chatData} />
-                                    </motion.div>
-                                );
-                            })}
-                        </AnimatePresence>
-                    </motion.div>
-                </div>
-            )}
         </motion.div>
     );
 }
@@ -569,13 +524,12 @@ StopButton.displayName = 'StopButton';
 SendButton.displayName = 'SendButton';
 
 export const Input = React.memo(PureInput, (prevProps, nextProps) => {
-    if (prevProps.isLoading !== nextProps.isLoading) return false;
+    if (prevProps.status !== nextProps.status) return false;
     if (prevProps.messages.length !== nextProps.messages.length) return false;
-    if (prevProps.query !== nextProps.query) return false;
+    if (prevProps.input !== nextProps.input) return false;
     if (prevProps.webSearch !== nextProps.webSearch) return false;
-    if (prevProps.knowledgeBase !== nextProps.knowledgeBase) return false;
+    if (prevProps.knowledgeSearch !== nextProps.knowledgeSearch) return false;
     if (prevProps.academicSearch !== nextProps.academicSearch) return false;
-    if (prevProps.chatsData?.length !== nextProps.chatsData?.length) return false;
 
     return true;
 });

@@ -116,14 +116,6 @@ export function Message({
                         'flex gap-4 w-full group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl'
                     )}
                 >
-                    {message.role === 'assistant' && (
-                        <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border bg-background">
-                            <div className="translate-y-px">
-                                <BrainIcon size={14} />
-                            </div>
-                        </div>
-                    )}
-
                     <div
                         className={cn('flex flex-col gap-4 w-full', {
                             'min-h-96': message.role === 'assistant' && requiresScrollPadding,
@@ -164,7 +156,7 @@ export function Message({
                                         <div
                                             data-testid="message-content"
                                             className={cn('flex flex-col gap-4', {
-                                                'bg-primary text-primary-foreground px-3 py-2 rounded-xl':
+                                                'bg-neutral-950 px-3 py-2 rounded-xl':
                                                     message.role === 'user',
                                             })}
                                         >

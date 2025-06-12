@@ -4,9 +4,12 @@ import {
     smoothStream,
     streamText,
     embedMany,
+    appendClientMessage,
+    createDataStream,
+    generateObject,
 } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { getTrailingMessageId } from '@/lib/ai/utils';
+import { generateUUID, getTrailingMessageId } from '@/lib/ai/utils';
 
 import { env } from '@/lib/env.mjs';
 
@@ -18,7 +21,12 @@ import { tavily } from '@tavily/core';
 import { createDataStreamResponse, tool } from 'ai';
 import { google } from '@ai-sdk/google';
 import { cosineDistance, sql, eq, and, gt, desc } from 'drizzle-orm';
-import { knowledge, knowledgeEmbeddings } from '@/lib/db/schema/app';
+import {
+    knowledge,
+    knowledgeEmbeddings,
+    message as dbMessage,
+    chat as dbChat,
+} from '@/lib/db/schema/app';
 import { db } from '@/lib/db';
 
 export const maxDuration = 60;
@@ -56,47 +64,106 @@ const deduplicateByDomainAndUrl = <T extends { url: string }>(items: T[]): T[] =
     });
 };
 
+export const requestBodySchema = z.object({
+    id: z.string().uuid(),
+    spaceId: z.string().uuid().optional().nullable(),
+    message: z.object({
+        id: z.string().uuid(),
+        createdAt: z.coerce.date(),
+        role: z.enum(['user']),
+        content: z.string().min(1).max(2000),
+        parts: z.array(
+            z.object({
+                text: z.string().min(1).max(2000),
+                type: z.enum(['text']),
+            })
+        ),
+        experimental_attachments: z
+            .array(
+                z.object({
+                    url: z.string().url(),
+                    name: z.string().min(1).max(2000),
+                    contentType: z.enum(['image/png', 'image/jpeg', 'image/jpg']),
+                })
+            )
+            .optional()
+            .default([]),
+    }),
+    webSearch: z.boolean().optional(),
+    knowledgeSearch: z.boolean().optional(),
+    academicSearch: z.boolean().optional(),
+});
+
 export async function POST(req: Request) {
     try {
         const { session } = await getUserAuth();
-        if (!session) {
+        if (!session?.user) {
             throw new Error('Access Denied');
         }
 
-        const {
-            messages,
-            id: chatId,
-            spaceId,
-            webSearch,
-            knowledgeSearch,
-            academicSearch,
-        } = await req.json();
-        if (!messages || !chatId) {
+        const json = await req.json();
+        const requestBody = requestBodySchema.parse(json);
+
+        const { message, id, spaceId, webSearch, knowledgeSearch, academicSearch } = requestBody;
+
+        if (!message || !id) {
             throw new Error('Invalid Body');
         }
 
-        return createDataStreamResponse({
-            async execute(dataStream) {
+        const [chat] = await db
+            .select()
+            .from(dbChat)
+            .where(and(eq(dbChat.id, id), eq(dbChat.userId, session.user.id)))
+            .limit(1);
+        if (!chat) {
+            await api.chat.saveChat.mutate({
+                id,
+                userId: session.user.id,
+                title: 'Unnamed Chat',
+            });
+        }
+
+        const previousMessages = await db.select().from(dbMessage).where(eq(dbMessage.chatId, id));
+        const messages = appendClientMessage({
+            // @ts-expect-error todo: type conversion from DBMessage[] to UIMessage[]
+            messages: previousMessages,
+            message,
+        });
+
+        await api.chat.saveMessages.mutate({
+            messages: [
+                {
+                    chatId: id,
+                    id: message.id,
+                    role: 'user',
+                    parts: message.parts,
+                    attachments: message.experimental_attachments ?? [],
+                    createdAt: new Date(),
+                },
+            ],
+        });
+
+        const streamId = generateUUID();
+
+        const stream = createDataStream({
+            execute: (dataStream) => {
                 const result = streamText({
                     model: largeModel,
                     messages: convertToCoreMessages(messages),
                     system: Prompt({
-                        webSearch,
-                        knowledgeSearch,
-                        academicSearch: false,
+                        webSearch: webSearch ?? false,
+                        knowledgeSearch: knowledgeSearch ?? false,
+                        academicSearch: academicSearch ?? false,
                     }),
-                    maxSteps: 7,
-                    experimental_transform: smoothStream({
-                        chunking: 'word',
-                        delayInMs: 10,
-                    }),
-                    toolCallStreaming: true,
-                    async onFinish({ response }) {
+                    maxSteps: 10,
+                    experimental_transform: smoothStream({ chunking: 'word', delayInMs: 10 }),
+                    experimental_generateMessageId: generateUUID,
+                    onFinish: async ({ response }) => {
                         if (session.user?.id) {
                             try {
                                 const assistantId = getTrailingMessageId({
                                     messages: response.messages.filter(
-                                        (message: any) => message.role === 'assistant'
+                                        (message) => message.role === 'assistant'
                                     ),
                                 });
 
@@ -105,7 +172,7 @@ export async function POST(req: Request) {
                                 }
 
                                 const [_, assistantMessage] = appendResponseMessages({
-                                    messages: [messages],
+                                    messages: [message],
                                     responseMessages: response.messages,
                                 });
 
@@ -113,7 +180,7 @@ export async function POST(req: Request) {
                                     messages: [
                                         {
                                             id: assistantId,
-                                            chatId: chatId,
+                                            chatId: id,
                                             role: assistantMessage.role,
                                             parts: assistantMessage.parts,
                                             attachments:
@@ -127,36 +194,8 @@ export async function POST(req: Request) {
                             }
                         }
                     },
-                    experimental_activeTools: [
-                        webSearch && webSearch === true && 'web_search',
-                        knowledgeSearch && knowledgeSearch === true && 'knowledge_search',
-                        academicSearch && academicSearch === true && 'academic_search',
-                    ],
+                    toolCallStreaming: true,
                     tools: {
-                        research: tool({
-                            description: 'Generates parameters to be used for additional tools.',
-                            parameters: z.object({
-                                topic: z
-                                    .string()
-                                    .describe(
-                                        'The main topic or question to generate a research plan.'
-                                    ),
-                            }),
-                            execute: async ({ topic }, { toolCallId }) => {
-                                dataStream.writeMessageAnnotation({
-                                    type: 'tool-call',
-                                    data: {
-                                        toolCallId,
-                                        toolName: 'research',
-                                        state: 'call',
-                                        args: JSON.stringify(topic),
-                                    },
-                                });
-
-                                // TODO
-                                return null;
-                            },
-                        }),
                         web_search: tool({
                             description: 'Performs a search over the internet for current data.',
                             parameters: z.object({
@@ -332,10 +371,16 @@ export async function POST(req: Request) {
                 });
 
                 result.consumeStream();
-
-                return result.mergeIntoDataStream(dataStream);
+                result.mergeIntoDataStream(dataStream, {
+                    sendReasoning: false,
+                });
+            },
+            onError: () => {
+                return 'Oops, an error occurred while processing your request.';
             },
         });
+
+        return new Response(stream);
     } catch (error) {
         console.error(error);
         return new Response((error as Error).message, { status: 500 });
