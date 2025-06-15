@@ -37,8 +37,8 @@ const openrouter = createOpenRouter({
     apiKey: env.OPENROUTER_API_KEY,
 });
 
-// const smallModel = openrouter('google/gemini-2.0-flash-001');
-const largeModel = openrouter('anthropic/claude-sonnet-4');
+const largeModel = openrouter('google/gemini-2.5-flash-preview-05-20');
+// const largeModel = openrouter('anthropic/claude-sonnet-4');
 // const largeModel = openrouter('google/gemini-2.5-pro-preview');
 
 export async function POST(req: Request) {
