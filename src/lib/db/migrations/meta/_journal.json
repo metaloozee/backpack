@@ -15,6 +15,13 @@
       "when": 1749201944548,
       "tag": "0001_thin_sway",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1749979080625,
+      "tag": "0002_little_madame_web",
+      "breakpoints": true
     }
   ]
 }

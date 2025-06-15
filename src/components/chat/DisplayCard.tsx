@@ -29,6 +29,7 @@ import {
     staggerVariants,
     transitions,
 } from '@/lib/animations';
+import { format } from 'timeago.js';
 
 export default function ChatDisplayCard({ chat }: { chat: Chat }) {
     const pathName = usePathname();
@@ -88,7 +89,7 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
                     <p className="max-w-md truncate">{chat.title}</p>
 
                     <p className="text-xs text-muted-foreground truncate max-w-md">
-                        Created on {chat.createdAt.toLocaleDateString()}
+                        Created {format(chat.createdAt)}
                     </p>
                 </motion.div>
             </Link>

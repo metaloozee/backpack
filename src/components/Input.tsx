@@ -282,11 +282,11 @@ function PureInput({
             layout
             transition={layoutTransition}
             className={cn(
-                'mx-auto w-full bg-background',
+                'w-full bg-background',
                 messages.length > 0
                     ? 'bottom-0 left-0 right-0'
                     : isSpaceChat
-                      ? 'pt-20'
+                      ? 'mt-20'
                       : 'flex flex-col items-center justify-center'
             )}
         >
@@ -303,7 +303,7 @@ function PureInput({
                     </h1>
                 </motion.div>
             )}
-            <div className={cn(isSpaceChat ? 'max-w-2xl w-full' : 'max-w-3xl w-full mx-auto')}>
+            <div className={cn('max-w-3xl w-full mx-auto')}>
                 <div
                     className={cn(
                         'relative flex flex-col w-full p-4 gap-4 border-input bg-neutral-900/50 focus-within:border-neutral-700/70 hover:border-neutral-700/70 transition-all duration-200',

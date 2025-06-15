@@ -77,6 +77,7 @@ Follow the schema provided.
             await api.chat.saveChat.mutate({
                 id,
                 userId: session.user.id,
+                spaceId,
                 title: object.title ?? 'Unnamed Chat',
             });
         }
@@ -102,6 +103,12 @@ Follow the schema provided.
         });
 
         const streamId = generateUUID();
+
+        const activeTools: ('web_search' | 'knowledge_search' | 'academic_search')[] = [];
+
+        if (webSearch) activeTools.push('web_search');
+        if (knowledgeSearch) activeTools.push('knowledge_search');
+        if (academicSearch) activeTools.push('academic_search');
 
         const stream = createDataStream({
             execute: (dataStream) => {
@@ -155,6 +162,7 @@ Follow the schema provided.
                         }
                     },
                     toolCallStreaming: true,
+                    experimental_activeTools: activeTools,
                     tools: {
                         web_search: tool({
                             description: 'Performs a search over the internet for current data.',
@@ -177,7 +185,7 @@ Follow the schema provided.
                                 const searchPromises = queries.map(
                                     async (query: string, index: number) => {
                                         const res = await tvly.search(query, {
-                                            maxResults: 5,
+                                            maxResults: 2,
                                             searchDepth: 'advanced',
                                             includeAnswer: true,
                                         });
@@ -372,7 +380,7 @@ const deduplicateByDomainAndUrl = <T extends { url: string }>(items: T[]): T[] =
 
 const requestBodySchema = z.object({
     id: z.string().uuid(),
-    spaceId: z.string().uuid().optional().nullable(),
+    spaceId: z.string().uuid().optional(),
     message: z.object({
         id: z.string().uuid(),
         createdAt: z.coerce.date(),

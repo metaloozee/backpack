@@ -8,10 +8,13 @@ import { ChatMessages } from '@/components/chat/messages';
 import { toast } from 'sonner';
 import { ScrollArea } from './ui/scroll-area';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { ChatData } from '@/app/(main)/(spaces)/s/[id]/page';
 import { Attachment, UIMessage } from 'ai';
 import { Session } from 'next-auth';
 import { generateUUID } from '@/lib/ai/utils';
+import { Chat as ChatType } from '@/lib/db/schema/app';
+import ChatDisplayCard from './chat/DisplayCard';
+import { Separator } from './ui/separator';
+import { BookOpenIcon } from 'lucide-react';
 
 export function Chat({
     id,
@@ -26,7 +29,7 @@ export function Chat({
     initialMessages: Array<UIMessage>;
     session: Session | null;
     autoResume: boolean;
-    chatsData?: Array<ChatData>;
+    chatsData?: Array<ChatType>;
 }) {
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
@@ -55,7 +58,7 @@ export function Chat({
         experimental_prepareRequestBody: (body) => {
             return {
                 id,
-                spaceId: spaceId ?? null,
+                spaceId: spaceId ?? undefined,
                 message: body.messages.at(-1),
                 webSearch,
                 knowledgeSearch,
@@ -93,7 +96,7 @@ export function Chat({
     return (
         <div
             className={cn(
-                'h-screen mx-auto flex flex-col w-full',
+                'flex flex-col w-full h-screen',
                 messages.length === 0
                     ? isSpaceChat
                         ? 'justify-start items-start'
@@ -132,6 +135,19 @@ export function Chat({
                 academicSearch={academicSearch}
                 setAcademicSearch={setAcademicSearch}
             />
+
+            {isSpaceChat && chatsData && chatsData.length > 0 && messages.length === 0 && (
+                <div className="flex flex-col gap-2 w-full my-20">
+                    <div className="flex flex-row gap-2 items-center">
+                        <BookOpenIcon className="size-5" />
+                        <h2 className="text-lg font-medium">Chat History</h2>
+                    </div>
+                    <Separator className="my-2 max-w-[25vw]" />
+                    {chatsData.map((chat) => (
+                        <ChatDisplayCard key={chat.id} chat={chat} />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

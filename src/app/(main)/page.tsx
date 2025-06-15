@@ -11,5 +11,9 @@ export default async function IndexPage() {
 
     const id = generateUUID();
 
-    return <Chat id={id} initialMessages={[]} session={session} autoResume={false} />;
+    return (
+        <div className="h-screen w-full flex flex-col justify-center items-center">
+            <Chat id={id} initialMessages={[]} session={session} autoResume={false} />
+        </div>
+    );
 }

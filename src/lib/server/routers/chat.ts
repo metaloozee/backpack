@@ -25,12 +25,14 @@ export const chatRouter = router({
             z.object({
                 id: z.string().uuid(),
                 userId: z.string().uuid(),
+                spaceId: z.string().uuid().optional(),
                 title: z.string().max(100),
             })
         )
         .mutation(async ({ ctx, input }) => {
             return await db.insert(chat).values({
                 id: input.id,
+                spaceId: input.spaceId,
                 userId: ctx.session.user.id,
                 title: input.title,
                 createdAt: new Date(),
