@@ -12,24 +12,15 @@ import { CoreMessage, Message, Attachment, UIMessage } from 'ai';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
-    Check,
-    ChevronDownIcon,
     CornerDownLeftIcon,
-    Brain,
     StopCircleIcon,
-    BookOpenTextIcon,
     GlobeIcon,
     BookCopyIcon,
     GraduationCapIcon,
     FlaskConical,
-    SparklesIcon,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { ChatData } from '@/app/(main)/(spaces)/s/[id]/page';
-import { Separator } from './ui/separator';
-import { Chat } from '@/lib/db/schema/app';
-import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
-import ChatDisplayCard from './chat/DisplayCard';
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
@@ -37,7 +28,6 @@ import {
     layoutTransition,
     staggerVariants,
     fadeVariants,
-    buttonVariants,
     slideVariants,
     transitions,
 } from '@/lib/animations';
@@ -69,19 +59,21 @@ const modeTypes = [
         value: 'ask',
         label: 'Ask',
         description: 'Standard mode with all features',
-        showWebSearch: true,
-        showKnowledgeSearch: true,
-        showAcademicSearch: true,
+        tools: {
+            webSearch: true,
+            knowledgeSearch: true,
+            academicSearch: true,
+        },
         disabled: false,
     },
     {
-        value: 'research',
-        label: 'Research',
+        value: 'agent',
+        label: 'Agent',
         description: 'Specialized for academic research',
-        showWebSearch: true,
-        showKnowledgeSearch: true,
-        showAcademicSearch: true,
-        disabled: true,
+        agents: {
+            research: true,
+        },
+        disabled: false,
     },
 ] as const;
 
@@ -126,6 +118,7 @@ function PureInput({
     const [enterDisabled, setEnterDisabled] = React.useState(false);
     const [selectedMode, setSelectedMode] = React.useState<ModeType>('ask');
     const [showEmptyScreen, setShowEmptyScreen] = React.useState(false);
+    const [selectedAgent, setSelectedAgent] = React.useState<string | null>(null);
 
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
@@ -190,6 +183,20 @@ function PureInput({
         [setAcademicSearch]
     );
 
+    React.useEffect(() => {
+        if (selectedMode === 'ask') {
+            if (isSpaceChat) {
+                updateWebSearch(true);
+                updateKnowledgeSearch(true);
+                updateAcademicSearch(false);
+            } else {
+                updateWebSearch(true);
+                updateKnowledgeSearch(false);
+                updateAcademicSearch(false);
+            }
+        }
+    }, [isSpaceChat, selectedMode, updateWebSearch, updateKnowledgeSearch, updateAcademicSearch]);
+
     const handlerCompositionStart = React.useCallback(() => setIsComposing(true), []);
 
     const handleCompositionEnd = React.useCallback(() => {
@@ -209,9 +216,24 @@ function PureInput({
 
             const selectedModeConfig = modeTypes.find((m) => m.value === newMode);
             if (selectedModeConfig) {
-                updateWebSearch(selectedModeConfig.showWebSearch);
-                updateKnowledgeSearch(selectedModeConfig.showKnowledgeSearch);
-                updateAcademicSearch(selectedModeConfig.showAcademicSearch);
+                if ('tools' in selectedModeConfig && selectedModeConfig.tools) {
+                    if (isSpaceChat) {
+                        updateWebSearch(true);
+                        updateKnowledgeSearch(true);
+                        updateAcademicSearch(false);
+                    } else {
+                        updateWebSearch(true);
+                        updateKnowledgeSearch(false);
+                        updateAcademicSearch(false);
+                    }
+                    setSelectedAgent(null);
+                } else if ('agents' in selectedModeConfig && selectedModeConfig.agents) {
+                    updateWebSearch(false);
+                    updateKnowledgeSearch(false);
+                    updateAcademicSearch(false);
+                    const defaultAgent = Object.keys(selectedModeConfig.agents)[0];
+                    setSelectedAgent(defaultAgent || null);
+                }
             }
         },
         [updateWebSearch, updateKnowledgeSearch, updateAcademicSearch]
@@ -342,8 +364,12 @@ function PureInput({
                                     exit="exit"
                                     key={`cards-container-${selectedMode}`}
                                 >
-                                    {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
-                                        ?.showWebSearch && (
+                                    {(() => {
+                                        const mode = modeTypes.find(
+                                            (m) => m.value === selectedMode && !m.disabled
+                                        );
+                                        return mode && 'tools' in mode && mode.tools?.webSearch;
+                                    })() && (
                                         <motion.div
                                             variants={staggerVariants.item}
                                             key="web-search-card"
@@ -374,8 +400,14 @@ function PureInput({
                                             </TooltipProvider>
                                         </motion.div>
                                     )}
-                                    {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
-                                        ?.showKnowledgeSearch && (
+                                    {(() => {
+                                        const mode = modeTypes.find(
+                                            (m) => m.value === selectedMode && !m.disabled
+                                        );
+                                        return (
+                                            mode && 'tools' in mode && mode.tools?.knowledgeSearch
+                                        );
+                                    })() && (
                                         <motion.div
                                             variants={staggerVariants.item}
                                             key="knowledge-search-card"
@@ -408,8 +440,14 @@ function PureInput({
                                             </TooltipProvider>
                                         </motion.div>
                                     )}
-                                    {modeTypes.find((m) => m.value === selectedMode && !m.disabled)
-                                        ?.showAcademicSearch && (
+                                    {(() => {
+                                        const mode = modeTypes.find(
+                                            (m) => m.value === selectedMode && !m.disabled
+                                        );
+                                        return (
+                                            mode && 'tools' in mode && mode.tools?.academicSearch
+                                        );
+                                    })() && (
                                         <motion.div
                                             variants={staggerVariants.item}
                                             key="academic-search-card"
@@ -442,6 +480,69 @@ function PureInput({
                                             </TooltipProvider>
                                         </motion.div>
                                     )}
+
+                                    {(() => {
+                                        const mode = modeTypes.find(
+                                            (m) => m.value === selectedMode && !m.disabled
+                                        );
+                                        if (mode && 'agents' in mode && mode.agents) {
+                                            return Object.entries(mode.agents).map(
+                                                ([agentKey, enabled]) => {
+                                                    if (!enabled) return null;
+
+                                                    return (
+                                                        <motion.div
+                                                            variants={staggerVariants.item}
+                                                            key={`${agentKey}-agent-card`}
+                                                            layout
+                                                            layoutId={`${agentKey}-agent-section`}
+                                                        >
+                                                            <TooltipProvider>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <div
+                                                                            onClick={() =>
+                                                                                setSelectedAgent(
+                                                                                    selectedAgent ===
+                                                                                        agentKey
+                                                                                        ? null
+                                                                                        : agentKey
+                                                                                )
+                                                                            }
+                                                                            className={cn(
+                                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justify-center items-center gap-2 text-xs transition-all duration-200',
+                                                                                selectedAgent ===
+                                                                                    agentKey
+                                                                                    ? 'bg-neutral-800 border-neutral-800 text-primary'
+                                                                                    : 'bg-neutral-900 border-neutral-800'
+                                                                            )}
+                                                                        >
+                                                                            {agentKey ===
+                                                                                'research' && (
+                                                                                <FlaskConical className="size-3.5" />
+                                                                            )}
+                                                                        </div>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>
+                                                                        <p>
+                                                                            {agentKey
+                                                                                .charAt(0)
+                                                                                .toUpperCase() +
+                                                                                agentKey.slice(
+                                                                                    1
+                                                                                )}{' '}
+                                                                            Agent
+                                                                        </p>
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                            </TooltipProvider>
+                                                        </motion.div>
+                                                    );
+                                                }
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                 </motion.div>
                             </AnimatePresence>
                         </div>

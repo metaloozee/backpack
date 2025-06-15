@@ -15,7 +15,7 @@ import { env } from '@/lib/env.mjs';
 
 import { getUserAuth } from '@/lib/auth/utils';
 import { api } from '@/lib/trpc/api';
-import { Prompt } from '@/lib/ai/prompts';
+import { AskModePrompt } from '@/lib/ai/prompts';
 import { z } from 'zod';
 import { tavily } from '@tavily/core';
 import { createDataStreamResponse, tool } from 'ai';
@@ -39,60 +39,7 @@ const openrouter = createOpenRouter({
 
 // const smallModel = openrouter('google/gemini-2.0-flash-001');
 const largeModel = openrouter('anthropic/claude-sonnet-4');
-// const largeModel = openrouter('deepseek/deepseek-r1-0528:free');
-
-const extractDomain = (url: string): string => {
-    const urlPattern = /^https?:\/\/([^/?#]+)(?:[/?#]|$)/i;
-    return url.match(urlPattern)?.[1] || url;
-};
-
-const deduplicateByDomainAndUrl = <T extends { url: string }>(items: T[]): T[] => {
-    const seenDomains = new Set<string>();
-    const seenUrls = new Set<string>();
-
-    return items.filter((item) => {
-        const domain = extractDomain(item.url);
-        const isNewUrl = !seenUrls.has(item.url);
-        const isNewDomain = !seenDomains.has(domain);
-
-        if (isNewUrl && isNewDomain) {
-            seenUrls.add(item.url);
-            seenDomains.add(domain);
-            return true;
-        }
-        return false;
-    });
-};
-
-const requestBodySchema = z.object({
-    id: z.string().uuid(),
-    spaceId: z.string().uuid().optional().nullable(),
-    message: z.object({
-        id: z.string().uuid(),
-        createdAt: z.coerce.date(),
-        role: z.enum(['user']),
-        content: z.string().min(1).max(2000),
-        parts: z.array(
-            z.object({
-                text: z.string().min(1).max(2000),
-                type: z.enum(['text']),
-            })
-        ),
-        experimental_attachments: z
-            .array(
-                z.object({
-                    url: z.string().url(),
-                    name: z.string().min(1).max(2000),
-                    contentType: z.enum(['image/png', 'image/jpeg', 'image/jpg']),
-                })
-            )
-            .optional()
-            .default([]),
-    }),
-    webSearch: z.boolean().optional(),
-    knowledgeSearch: z.boolean().optional(),
-    academicSearch: z.boolean().optional(),
-});
+// const largeModel = openrouter('google/gemini-2.5-pro-preview');
 
 export async function POST(req: Request) {
     try {
@@ -116,10 +63,21 @@ export async function POST(req: Request) {
             .where(and(eq(dbChat.id, id), eq(dbChat.userId, session.user.id)))
             .limit(1);
         if (!chat) {
+            const { object } = await generateObject({
+                model: openrouter('google/gemini-2.0-flash-lite-001'),
+                schema: z.object({
+                    title: z.string().max(100),
+                }),
+                prompt: `
+Given the following query, generate a title for the chat: ${message.content}.
+Follow the schema provided.
+                    `,
+            });
+
             await api.chat.saveChat.mutate({
                 id,
                 userId: session.user.id,
-                title: 'Unnamed Chat',
+                title: object.title ?? 'Unnamed Chat',
             });
         }
 
@@ -150,10 +108,12 @@ export async function POST(req: Request) {
                 const result = streamText({
                     model: largeModel,
                     messages: convertToCoreMessages(messages),
-                    system: Prompt({
-                        webSearch: webSearch ?? false,
-                        knowledgeSearch: knowledgeSearch ?? false,
-                        academicSearch: academicSearch ?? false,
+                    system: AskModePrompt({
+                        tools: {
+                            webSearch: webSearch ?? false,
+                            knowledgeSearch: knowledgeSearch ?? false,
+                            academicSearch: academicSearch ?? false,
+                        },
                     }),
                     maxSteps: 10,
                     experimental_transform: smoothStream({ chunking: 'word', delayInMs: 10 }),
@@ -386,3 +346,56 @@ export async function POST(req: Request) {
         return new Response((error as Error).message, { status: 500 });
     }
 }
+
+const extractDomain = (url: string): string => {
+    const urlPattern = /^https?:\/\/([^/?#]+)(?:[/?#]|$)/i;
+    return url.match(urlPattern)?.[1] || url;
+};
+
+const deduplicateByDomainAndUrl = <T extends { url: string }>(items: T[]): T[] => {
+    const seenDomains = new Set<string>();
+    const seenUrls = new Set<string>();
+
+    return items.filter((item) => {
+        const domain = extractDomain(item.url);
+        const isNewUrl = !seenUrls.has(item.url);
+        const isNewDomain = !seenDomains.has(domain);
+
+        if (isNewUrl && isNewDomain) {
+            seenUrls.add(item.url);
+            seenDomains.add(domain);
+            return true;
+        }
+        return false;
+    });
+};
+
+const requestBodySchema = z.object({
+    id: z.string().uuid(),
+    spaceId: z.string().uuid().optional().nullable(),
+    message: z.object({
+        id: z.string().uuid(),
+        createdAt: z.coerce.date(),
+        role: z.enum(['user']),
+        content: z.string().min(1).max(2000),
+        parts: z.array(
+            z.object({
+                text: z.string().min(1).max(2000),
+                type: z.enum(['text']),
+            })
+        ),
+        experimental_attachments: z
+            .array(
+                z.object({
+                    url: z.string().url(),
+                    name: z.string().min(1).max(2000),
+                    contentType: z.enum(['image/png', 'image/jpeg', 'image/jpg']),
+                })
+            )
+            .optional()
+            .default([]),
+    }),
+    webSearch: z.boolean().optional(),
+    knowledgeSearch: z.boolean().optional(),
+    academicSearch: z.boolean().optional(),
+});
