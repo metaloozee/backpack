@@ -81,7 +81,7 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
                             >
                                 <Label className="text-muted-foreground text-xs">Title</Label>
                                 <Input
-                                    disabled={mutation.isLoading}
+                                    disabled={mutation.isPending}
                                     id="spaceName"
                                     value={spaceTitle}
                                     onChange={(e: any) => setSpaceTitle(e.target.value)}
@@ -100,7 +100,7 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
                                     Description (optional)
                                 </Label>
                                 <Textarea
-                                    disabled={mutation.isLoading}
+                                    disabled={mutation.isPending}
                                     id="spaceDescription"
                                     value={spaceDescription}
                                     onChange={(e: any) => setSpaceDescription(e.target.value)}
@@ -118,7 +118,7 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
                                     Custom Instructions (optional)
                                 </Label>
                                 <Textarea
-                                    disabled={mutation.isLoading}
+                                    disabled={mutation.isPending}
                                     id="customIns"
                                     value={customIns}
                                     onChange={(e: any) => setCustomIns(e.target.value)}
@@ -132,11 +132,11 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
                                 className="w-full flex justify-end"
                             >
                                 <Button
-                                    disabled={mutation.isLoading}
+                                    disabled={mutation.isPending}
                                     type="submit"
                                     className="text-xs"
                                 >
-                                    {mutation.isLoading ? (
+                                    {mutation.isPending ? (
                                         <Loader className="size-4 animate-spin" />
                                     ) : (
                                         'Create Space'

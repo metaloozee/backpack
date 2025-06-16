@@ -5,6 +5,7 @@ import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { createInsertSchema } from 'drizzle-zod';
+import { revalidatePath } from 'next/cache';
 
 export const chatRouter = router({
     saveMessages: protectedProcedure
@@ -45,8 +46,10 @@ export const chatRouter = router({
             })
         )
         .mutation(async ({ ctx, input }) => {
-            return await db
+            await db
                 .delete(chat)
                 .where(and(eq(chat.id, input.chatId), eq(chat.userId, ctx.session.user.id)));
+
+            revalidatePath(`/c}`);
         }),
 });

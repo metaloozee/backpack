@@ -10,8 +10,8 @@ export const env = createEnv({
         GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
         OPENROUTER_API_KEY: z.string().min(1).startsWith("sk-"),
         TAVILY_API_KEY: z.string().min(1).startsWith("tvly-"),
-        ANTHROPIC_API_KEY: z.string().min(1).startsWith("sk-ant-"),
-
+        MISTRAL_API_KEY: z.string().min(1),
+        
         NEXTAUTH_SECRET:
             process.env.NODE_ENV === 'production'
                 ? z.string().min(1)

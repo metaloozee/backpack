@@ -27,11 +27,15 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
     const webpageKnowledge = knowledgeData.filter((k) => k.knowledgeType === 'webpage');
     const pdfKnowledge = knowledgeData.filter((k) => k.knowledgeType === 'pdf');
     const [activeTab, setActiveTab] = React.useState<'webpage' | 'pdf'>('webpage');
+
     const [url, setUrl] = React.useState('');
+    const webPageMutation = trpc.space.saveWebPage.useMutation();
+
+    const [pdfFiles, setPdfFiles] = React.useState<File[]>([]);
+    const [isUploadingPdf, setIsUploadingPdf] = React.useState(false);
+    const pdfMutation = trpc.space.savePdf.useMutation();
 
     const [isOpen, setIsOpen] = React.useState(false);
-
-    const webPageMutation = trpc.space.saveWebPage.useMutation();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -55,14 +59,75 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
     };
 
     const renderUploadForm = () => {
+        // PDF Upload Form
         if (activeTab === 'pdf') {
+            const handlePdfSubmit = async (e: React.FormEvent) => {
+                e.preventDefault();
+
+                if (pdfFiles.length === 0) {
+                    return toast.error('Please select at least one PDF');
+                }
+
+                setIsUploadingPdf(true);
+
+                /*
+                 * Here, I am sequentially uploading each PDF file for its processing.
+                 * TODO: Move heavy PDF processing to a real background job queue using Upstash QStash.
+                 */
+
+                for (const file of pdfFiles) {
+                    const formData = new FormData();
+                    formData.append('spaceId', spaceId);
+                    formData.append('file', file);
+
+                    try {
+                        await pdfMutation.mutateAsync(formData);
+                        toast.success(`${file.name} processed`);
+                    } catch (e) {
+                        toast.error(`Failed to process ${file.name}`, {
+                            description: (e as Error).message,
+                        });
+                    }
+                }
+
+                setIsUploadingPdf(false);
+                setPdfFiles([]);
+                setIsOpen(false);
+            };
+
             return (
-                <div className="w-full text-center p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">PDF upload coming soon...</p>
-                </div>
+                <form
+                    onSubmit={handlePdfSubmit}
+                    className="w-full h-full flex justify-center items-center gap-2"
+                >
+                    <Input
+                        type="file"
+                        accept="application/pdf"
+                        multiple
+                        className="flex-1 focus-visible:ring-1"
+                        disabled={isUploadingPdf}
+                        onChange={(e) => {
+                            if (e.target.files && e.target.files.length > 0) {
+                                setPdfFiles(Array.from(e.target.files));
+                            }
+                        }}
+                        required
+                    />
+                    <Button type="submit" variant={'secondary'} disabled={isUploadingPdf}>
+                        {isUploadingPdf ? (
+                            <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                            <>
+                                <PlusIcon className="size-4" />
+                                Upload
+                            </>
+                        )}
+                    </Button>
+                </form>
             );
         }
 
+        // WebPage Upload Form
         return (
             <form
                 onSubmit={handleSubmit}
@@ -70,15 +135,15 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
             >
                 <Input
                     className="flex-1 focus-visible:ring-1"
-                    disabled={webPageMutation.isLoading}
+                    disabled={webPageMutation.isPending}
                     type="url"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     placeholder="Enter webpage URL"
                     required
                 />
-                <Button type="submit" variant={'secondary'} disabled={webPageMutation.isLoading}>
-                    {webPageMutation.isLoading ? (
+                <Button type="submit" variant={'secondary'} disabled={webPageMutation.isPending}>
+                    {webPageMutation.isPending ? (
                         <Loader2 className="size-4 animate-spin" />
                     ) : (
                         <>

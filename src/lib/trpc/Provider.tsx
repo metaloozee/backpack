@@ -1,7 +1,13 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { loggerLink, unstable_httpBatchStreamLink } from '@trpc/client';
+import {
+    loggerLink,
+    httpBatchStreamLink,
+    httpLink,
+    isNonJsonSerializable,
+    splitLink,
+} from '@trpc/client';
 import React, { useState } from 'react';
 
 import { trpc } from './client';
@@ -19,21 +25,38 @@ export default function TrpcProvider({
     const [queryClient] = useState(() => new QueryClient({}));
     const [trpcClient] = useState(() =>
         trpc.createClient({
-            transformer: SuperJSON,
             links: [
                 loggerLink({
                     enabled: (op) =>
                         process.env.NODE_ENV === 'development' ||
                         (op.direction === 'down' && op.result instanceof Error),
                 }),
-                unstable_httpBatchStreamLink({
-                    url: getUrl(),
-                    headers() {
-                        return {
-                            cookie: cookies,
-                            'x-trpc-source': 'react',
-                        };
-                    },
+                splitLink({
+                    condition: (op) =>
+                        op.input instanceof FormData || isNonJsonSerializable(op.input),
+                    true: httpLink({
+                        url: getUrl(),
+                        transformer: {
+                            serialize: (data) => data as any,
+                            deserialize: SuperJSON.deserialize as any,
+                        },
+                        headers() {
+                            return {
+                                cookie: cookies,
+                                'x-trpc-source': 'react',
+                            };
+                        },
+                    }),
+                    false: httpBatchStreamLink({
+                        url: getUrl(),
+                        transformer: SuperJSON,
+                        headers() {
+                            return {
+                                cookie: cookies,
+                                'x-trpc-source': 'react',
+                            };
+                        },
+                    }),
                 }),
             ],
         })

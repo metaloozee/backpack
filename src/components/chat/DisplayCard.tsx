@@ -153,7 +153,7 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
                                     >
                                         <Button
                                             variant={'destructive'}
-                                            disabled={mutation.isLoading}
+                                            disabled={mutation.isPending}
                                             className="text-xs"
                                             onClick={handleDelete}
                                         >
@@ -163,7 +163,7 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
                                                 animate="visible"
                                                 className="flex justify-center items-center gap-2 w-full"
                                             >
-                                                {mutation.isLoading ? (
+                                                {mutation.isPending ? (
                                                     <motion.div
                                                         variants={iconVariants}
                                                         initial="rest"

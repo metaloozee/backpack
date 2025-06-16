@@ -20,7 +20,7 @@ export async function extractRawText({ url }: { url: string }) {
 
 export async function sanitizeData({ rawText }: { rawText: string }) {
     const result = await generateText({
-        model: openrouter('google/gemini-2.0-flash-lite-preview-02-05:free'),
+        model: openrouter('google/gemini-2.5-flash-preview-05-20'),
         prompt: `
 You are an expert Content Curator with extensive experience in digital content refinement and data preparation for AI systems. Your specialty lies in transforming raw web content into pristine, machine-learning ready text while preserving all meaningful information. You understand the delicate balance between removing noise and retaining context.
 
