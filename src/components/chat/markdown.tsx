@@ -9,9 +9,20 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
 const components: Partial<Components> = {
-    // @ts-expect-error
-    code: CodeBlock,
-    pre: ({ children }) => <>{children}</>,
+    code: ({ node, className, children, ...props }) => {
+        const match = /language-(\w+)/.exec(className || '');
+        return match ? (
+            <CodeBlock className={className}>{children}</CodeBlock>
+        ) : (
+            <code
+                className="whitespace-nowrap font-mono rounded-md px-1.5 py-0 bg-zinc-400 dark:bg-zinc-800 border border-zinc-600 text-zinc-800 dark:text-zinc-100"
+                {...props}
+            >
+                {children}
+            </code>
+        );
+    },
+    pre: ({ children }) => <div className="not-prose my-4 text-sm">{children}</div>,
     ol: ({ node, children, ...props }) => {
         return (
             <ol className="list-decimal list-outside ml-4" {...props}>
@@ -28,7 +39,7 @@ const components: Partial<Components> = {
     },
     ul: ({ node, children, ...props }) => {
         return (
-            <ul className="list-decimal list-outside ml-4" {...props}>
+            <ul className="list-disc list-outside ml-4" {...props}>
                 {children}
             </ul>
         );
@@ -95,6 +106,53 @@ const components: Partial<Components> = {
             </h6>
         );
     },
+    blockquote: ({ node, children, ...props }) => {
+        return (
+            <blockquote
+                className="border-l-4 border-zinc-300 dark:border-zinc-700 pl-4 italic my-4 text-zinc-600 dark:text-zinc-400"
+                {...props}
+            >
+                {children}
+            </blockquote>
+        );
+    },
+    hr: ({ ...props }) => (
+        <hr className="my-6 border-t border-zinc-200 dark:border-zinc-700" {...props} />
+    ),
+    table: ({ node, children, ...props }) => {
+        return (
+            <div className="my-6 overflow-x-auto">
+                <table className="w-full text-left border-collapse" {...props}>
+                    {children}
+                </table>
+            </div>
+        );
+    },
+    thead: ({ node, children, ...props }) => {
+        return (
+            <thead className="bg-zinc-50 dark:bg-zinc-800" {...props}>
+                {children}
+            </thead>
+        );
+    },
+    th: ({ node, children, ...props }) => {
+        return (
+            <th
+                className="py-2 px-3 font-semibold border-b border-zinc-200 dark:border-zinc-700"
+                {...props}
+            >
+                {children}
+            </th>
+        );
+    },
+    td: ({ node, children, ...props }) => {
+        return (
+            <td className="py-2 px-3 border-b border-zinc-200 dark:border-zinc-700" {...props}>
+                {children}
+            </td>
+        );
+    },
+    img: ({ node, ...props }) => <img className="rounded-lg max-w-full" {...props} />,
 };
 
 const remarkPlugins = [remarkGfm, remarkMath];
@@ -106,6 +164,7 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
             remarkPlugins={remarkPlugins}
             rehypePlugins={rehypePlugins}
             components={components}
+            className="text-sm sm:text-base leading-7 space-y-4"
         >
             {children}
         </ReactMarkdown>

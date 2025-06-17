@@ -17,7 +17,7 @@ import {
     GlobeIcon,
     BookCopyIcon,
     GraduationCapIcon,
-    FlaskConical,
+    TelescopeIcon,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -183,19 +183,19 @@ function PureInput({
         [setAcademicSearch]
     );
 
-    React.useEffect(() => {
-        if (selectedMode === 'ask') {
-            if (isSpaceChat) {
-                updateWebSearch(true);
-                updateKnowledgeSearch(true);
-                updateAcademicSearch(false);
-            } else {
-                updateWebSearch(true);
-                updateKnowledgeSearch(false);
-                updateAcademicSearch(false);
-            }
-        }
-    }, [isSpaceChat, selectedMode, updateWebSearch, updateKnowledgeSearch, updateAcademicSearch]);
+    // React.useEffect(() => {
+    //     if (selectedMode === 'ask') {
+    //         if (isSpaceChat) {
+    //             updateWebSearch(true);
+    //             updateKnowledgeSearch(true);
+    //             updateAcademicSearch(false);
+    //         } else {
+    //             updateWebSearch(true);
+    //             updateKnowledgeSearch(false);
+    //             updateAcademicSearch(false);
+    //         }
+    //     }
+    // }, [isSpaceChat, selectedMode, updateWebSearch, updateKnowledgeSearch, updateAcademicSearch]);
 
     const handlerCompositionStart = React.useCallback(() => setIsComposing(true), []);
 
@@ -212,20 +212,10 @@ function PureInput({
         (value: string) => {
             const newMode = value as ModeType;
             setSelectedMode(newMode);
-            console.log('Mode switched to:', newMode);
 
             const selectedModeConfig = modeTypes.find((m) => m.value === newMode);
             if (selectedModeConfig) {
                 if ('tools' in selectedModeConfig && selectedModeConfig.tools) {
-                    if (isSpaceChat) {
-                        updateWebSearch(true);
-                        updateKnowledgeSearch(true);
-                        updateAcademicSearch(false);
-                    } else {
-                        updateWebSearch(true);
-                        updateKnowledgeSearch(false);
-                        updateAcademicSearch(false);
-                    }
                     setSelectedAgent(null);
                 } else if ('agents' in selectedModeConfig && selectedModeConfig.agents) {
                     updateWebSearch(false);
@@ -519,7 +509,7 @@ function PureInput({
                                                                         >
                                                                             {agentKey ===
                                                                                 'research' && (
-                                                                                <FlaskConical className="size-3.5" />
+                                                                                <TelescopeIcon className="size-3.5" />
                                                                             )}
                                                                         </div>
                                                                     </TooltipTrigger>

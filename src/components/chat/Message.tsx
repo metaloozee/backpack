@@ -159,7 +159,7 @@ export function Message({
                                         <div
                                             data-testid="message-content"
                                             className={cn('flex flex-col gap-4', {
-                                                'bg-background border px-4 py-2 rounded-md':
+                                                'bg-neutral-800 text-primary border-2 border-neutral-700 px-3 py-1 rounded-md':
                                                     message.role === 'user',
                                             })}
                                         >

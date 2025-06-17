@@ -1,32 +1,72 @@
 'use client';
 
-interface CodeBlockProps {
-    node: any;
-    inline: boolean;
-    className: string;
-    children: any;
-}
+import React from 'react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { CopyIcon, CheckIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
-export function CodeBlock({ node, inline, className, children, ...props }: CodeBlockProps) {
-    if (!inline) {
-        return (
-            <div className="not-prose flex flex-col">
-                <pre
-                    {...props}
-                    className={`text-sm w-full overflow-x-auto dark:bg-zinc-900 p-4 border border-zinc-200 dark:border-zinc-700 rounded-xl dark:text-zinc-50 text-zinc-900`}
-                >
-                    <code className="whitespace-pre-wrap break-words">{children}</code>
-                </pre>
-            </div>
-        );
-    } else {
-        return (
-            <code
-                className={`${className} text-sm bg-zinc-100 dark:bg-zinc-800 py-0.5 px-1 rounded-md`}
-                {...props}
+export function CodeBlock({
+    className,
+    children,
+}: {
+    className?: string;
+    children?: React.ReactNode;
+}) {
+    const match = /language-(\w+)/.exec(className || '');
+    const language = match?.[1] || 'text';
+    const code = String(children).replace(/\n$/, '');
+
+    const [copied, setCopied] = React.useState(false);
+
+    const handleCopy = React.useCallback(() => {
+        if (!navigator?.clipboard) return;
+        navigator.clipboard.writeText(code).then(() => {
+            setCopied(true);
+            toast('Copied to clipboard');
+            setTimeout(() => setCopied(false), 2000);
+        });
+    }, [code]);
+
+    return (
+        <div className="relative group">
+            <SyntaxHighlighter
+                language={language}
+                style={vscDarkPlus}
+                wrapLongLines={true}
+                customStyle={{
+                    margin: 0,
+                    padding: '1rem',
+                    fontSize: '0.875rem',
+                    lineHeight: '1.5',
+                    overflowX: 'auto',
+                    borderRadius: '0.5rem',
+                }}
             >
-                {children}
-            </code>
-        );
-    }
+                {code}
+            </SyntaxHighlighter>
+
+            <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            size="icon"
+                            variant="ghost"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={handleCopy}
+                        >
+                            {copied ? (
+                                <CheckIcon className="size-4" />
+                            ) : (
+                                <CopyIcon className="size-4" />
+                            )}
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">Copy</TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        </div>
+    );
 }
