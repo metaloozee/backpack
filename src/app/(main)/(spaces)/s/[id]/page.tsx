@@ -41,7 +41,12 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
         <div className="mx-20 flex flex-row justify-evenly gap-20">
             <div className="w-full">
                 <Chat
-                    spaceId={spaceData.id}
+                    env={{
+                        inSpace: true,
+                        spaceId: spaceData.id,
+                        spaceName: spaceData.spaceTitle,
+                        spaceDescription: spaceData.spaceDescription ?? undefined,
+                    }}
                     id={chatId}
                     initialMessages={[]}
                     session={session}

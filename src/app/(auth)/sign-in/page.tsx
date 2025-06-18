@@ -26,7 +26,7 @@ export default function SignInPage() {
                     size={'lg'}
                     variant={'default'}
                     disabled
-                    onClick={() => signIn('Google', { callbackUrl: '/' })}
+                    onClick={() => signIn('google', { callbackUrl: '/' })}
                 >
                     <Image alt="Login with Google" src={Google} className="size-5" />
                     Continue with Google

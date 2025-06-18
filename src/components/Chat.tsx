@@ -18,14 +18,19 @@ import { BookOpenIcon } from 'lucide-react';
 
 export function Chat({
     id,
-    spaceId,
+    env,
     initialMessages,
     session,
     autoResume,
     chatsData,
 }: {
     id: string;
-    spaceId?: string;
+    env: {
+        inSpace: boolean;
+        spaceId?: string;
+        spaceName?: string;
+        spaceDescription?: string;
+    };
     initialMessages: Array<UIMessage>;
     session: Session | null;
     autoResume: boolean;
@@ -58,7 +63,7 @@ export function Chat({
         experimental_prepareRequestBody: (body) => {
             return {
                 id,
-                spaceId: spaceId ?? undefined,
+                env,
                 message: body.messages.at(-1),
                 webSearch,
                 knowledgeSearch,

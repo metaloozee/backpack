@@ -106,15 +106,15 @@ export function Message({
         <AnimatePresence>
             <motion.div
                 data-testid={`message-${message.id}`}
-                className="w-full mx-auto max-w-3xl px-4 group/message"
+                className="w-full mx-auto max-w-3xl px-4"
                 initial={{ y: 5, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 data-role={message.role}
             >
                 <div
-                    className={cn(
-                        'flex gap-4 w-full group-data-[role=user]/message:max-w-2xl group-data-[role=user]/message:my-10'
-                    )}
+                    className={cn('flex gap-4 w-full', {
+                        'my-10': message.role === 'user',
+                    })}
                 >
                     <div
                         className={cn('flex flex-col gap-4 w-full', {
@@ -154,12 +154,14 @@ export function Message({
                                 return (
                                     <div
                                         key={key}
-                                        className="flex flex-row gap-2 items-start w-full"
+                                        className={cn('flex flex-row gap-2 w-full', {
+                                            'justify-end': message.role == 'user',
+                                        })}
                                     >
                                         <div
                                             data-testid="message-content"
                                             className={cn('flex flex-col gap-4', {
-                                                'bg-neutral-800 text-primary border-2 border-neutral-700 px-3 py-1 rounded-md':
+                                                'text-neutral-400 bg-neutral-900 border px-3 py-1 rounded-full text-right':
                                                     message.role === 'user',
                                             })}
                                         >
@@ -266,19 +268,12 @@ export const ThinkingMessage = () => {
     return (
         <motion.div
             data-testid="message-assistant-loading"
-            className="w-full mx-auto max-w-3xl px-4 group/message min-h-96"
+            className="w-full mx-auto max-w-3xl px-4 min-h-96"
             initial={{ y: 5, opacity: 0 }}
             animate={{ y: 0, opacity: 1, transition: { delay: 1 } }}
             data-role={role}
         >
-            <div
-                className={cx(
-                    'flex gap-4 group-data-[role=user]/message:px-3 w-full group-data-[role=user]/message:w-fit group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl group-data-[role=user]/message:py-2 rounded-xl',
-                    {
-                        'group-data-[role=user]/message:bg-muted': true,
-                    }
-                )}
-            >
+            <div className={cx('flex gap-4 w-full rounded-xl')}>
                 <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
                     <BrainIcon size={14} />
                 </div>

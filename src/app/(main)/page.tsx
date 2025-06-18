@@ -13,7 +13,13 @@ export default async function IndexPage() {
 
     return (
         <div className="h-screen w-full flex flex-col justify-center items-center">
-            <Chat id={id} initialMessages={[]} session={session} autoResume={false} />
+            <Chat
+                env={{ inSpace: false }}
+                id={id}
+                initialMessages={[]}
+                session={session}
+                autoResume={false}
+            />
         </div>
     );
 }

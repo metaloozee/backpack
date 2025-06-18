@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         const json = await req.json();
         const requestBody = requestBodySchema.parse(json);
 
-        const { message, id, spaceId, webSearch, knowledgeSearch, academicSearch } = requestBody;
+        const { message, id, env, webSearch, knowledgeSearch, academicSearch } = requestBody;
 
         if (!message || !id) {
             throw new Error('Invalid Body');
@@ -77,7 +77,7 @@ Follow the schema provided.
             await api.chat.saveChat.mutate({
                 id,
                 userId: session.user.id,
-                spaceId,
+                spaceId: env.inSpace ? env.spaceId : undefined,
                 title: object.title ?? 'Unnamed Chat',
             });
         }
@@ -121,6 +121,7 @@ Follow the schema provided.
                             knowledgeSearch: knowledgeSearch ?? false,
                             academicSearch: academicSearch ?? false,
                         },
+                        env,
                     }),
                     maxSteps: 10,
                     experimental_transform: smoothStream({ chunking: 'word', delayInMs: 10 }),
@@ -233,7 +234,7 @@ Follow the schema provided.
                                 { knowledge_search_keywords: keywords },
                                 { toolCallId }
                             ) => {
-                                if (!spaceId) {
+                                if (!env.inSpace) {
                                     return null;
                                 }
 
@@ -274,7 +275,7 @@ Follow the schema provided.
                                                 and(
                                                     and(
                                                         eq(knowledge.userId, session.user.id),
-                                                        eq(knowledge.spaceId, spaceId)
+                                                        eq(knowledge.spaceId, env.spaceId!)
                                                     ),
                                                     gt(similarity, 0.5)
                                                 )
@@ -380,7 +381,12 @@ const deduplicateByDomainAndUrl = <T extends { url: string }>(items: T[]): T[] =
 
 const requestBodySchema = z.object({
     id: z.string().uuid(),
-    spaceId: z.string().uuid().optional(),
+    env: z.object({
+        inSpace: z.boolean(),
+        spaceId: z.string().uuid().optional(),
+        spaceName: z.string().optional(),
+        spaceDescription: z.string().optional(),
+    }),
     message: z.object({
         id: z.string().uuid(),
         createdAt: z.coerce.date(),
