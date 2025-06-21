@@ -1,9 +1,14 @@
 'use client';
 
-import { BookCopyIcon, BrainCircuitIcon, Loader2 } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
+import { BookCopyIcon, Loader2 } from 'lucide-react';
+import { ChevronDownIcon } from '@radix-ui/react-icons';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import {
+    Accordion,
+    AccordionItem,
+    AccordionTrigger,
+    AccordionContent,
+} from '@/components/ui/accordion';
 
 interface KnowledgeSearchToolProps {
     toolCallId: string;
@@ -26,76 +31,68 @@ interface KnowledgeSearchToolProps {
 export function KnowledgeSearchTool({ toolCallId, state, args, result }: KnowledgeSearchToolProps) {
     if (state === 'result') {
         return (
-            <Sheet>
-                <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2 rounded-md text-xs">
-                        <BookCopyIcon className="size-3" />
-                        {result &&
-                            result.results &&
-                            result.results.reduce(
-                                (total: number, searchResult: any) =>
-                                    total + searchResult.contexts.length,
-                                0
-                            )}{' '}
-                        Sources Found
-                    </Button>
-                </SheetTrigger>
-                <SheetContent className="w-full sm:max-w-3xl">
-                    <SheetHeader>
-                        <SheetTitle className="text-sm flex items-center gap-2 mb-2">
-                            <BookCopyIcon className="size-4" /> Knowledge Base Results
-                        </SheetTitle>
-                    </SheetHeader>
-                    <ScrollArea className="h-[calc(100vh-8rem)] text-xs break-words w-full pr-4">
-                        <div className="mb-4 flex flex-row flex-wrap gap-2 w-full">
-                            {args?.knowledge_search_keywords?.map(
-                                (keyword: string, index: number) => (
-                                    <div
-                                        key={index}
-                                        className="rounded-md px-4 py-2 bg-muted text-xs shrink-0 flex justify-start items-center gap-2"
-                                    >
-                                        <BrainCircuitIcon className="size-3" />
-                                        {keyword}
-                                    </div>
-                                )
-                            )}
-                        </div>
-                        {result &&
-                            result.results &&
-                            result.results.map(
-                                (searchResult: {
-                                    keyword: string;
-                                    contexts: Array<{
-                                        content: string;
-                                        knowledgeName: string;
-                                        similarity: number;
-                                    }>;
-                                }) =>
-                                    searchResult.contexts.map((context, index) => (
-                                        <div
-                                            key={index}
-                                            className="bg-card rounded-md p-2 mb-2 border"
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-muted-foreground font-medium">
-                                                    {searchResult.keyword}
-                                                </span>
-                                                <span className="text-xs text-muted-foreground">
-                                                    ({Math.round(context.similarity * 100)}% match)
-                                                </span>
-                                            </div>
-                                            <p className="text-sm text-primary truncate max-w-fit font-medium">
-                                                {context.knowledgeName}
-                                            </p>
-                                            <p className="text-xs break-words text-muted-foreground text-justify mt-1">
-                                                {context.content.slice(0, 200)}...
-                                            </p>
-                                        </div>
-                                    ))
-                            )}
-                    </ScrollArea>
-                </SheetContent>
-            </Sheet>
+            <Accordion className="w-full space-y-2">
+                {result?.results && result.results.length > 0
+                    ? result.results.map((searchResult, index) => (
+                          <AccordionItem
+                              key={`${toolCallId}-${index}`}
+                              value={`${toolCallId}-${index}`}
+                              className="border rounded-md"
+                          >
+                              <AccordionTrigger className="gap-2 h-10 text-xs w-full px-4 py-2 flex items-center justify-between">
+                                  <span className="flex items-center gap-2 truncate">
+                                      <BookCopyIcon className="size-3" />
+                                      {args?.knowledge_search_keywords?.[index] ??
+                                          searchResult.keyword}
+                                  </span>
+                                  <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                  <ScrollArea className="px-3 pb-3">
+                                      <div className="flex flex-row gap-2 w-max">
+                                          {searchResult.contexts.map((context, ctxIdx) => (
+                                              <div
+                                                  key={`${searchResult.keyword}-${ctxIdx}`}
+                                                  className="bg-neutral-900 rounded-lg shadow-sm border p-3 shrink-0 w-64 hover:shadow-md transition-shadow duration-200"
+                                              >
+                                                  <p className="text-sm font-medium text-primary line-clamp-2">
+                                                      {context.knowledgeName}
+                                                  </p>
+                                                  <p className="mt-1 text-xs text-muted-foreground">
+                                                      {Math.round(context.similarity * 100)}% match
+                                                  </p>
+                                                  <p className="mt-2 text-xs text-muted-foreground line-clamp-4">
+                                                      {context.content}
+                                                  </p>
+                                              </div>
+                                          ))}
+                                      </div>
+                                      <ScrollBar orientation="horizontal" />
+                                  </ScrollArea>
+                              </AccordionContent>
+                          </AccordionItem>
+                      ))
+                    : args?.knowledge_search_keywords?.map((keyword, index) => (
+                          <AccordionItem
+                              key={`${toolCallId}-placeholder-${index}`}
+                              value={`${toolCallId}-placeholder-${index}`}
+                              className="border rounded-md"
+                          >
+                              <AccordionTrigger className="gap-2 h-10 text-xs w-full px-4 py-2 flex items-center justify-between">
+                                  <span className="flex items-center gap-2 truncate">
+                                      <BookCopyIcon className="size-3" />
+                                      {keyword}
+                                  </span>
+                                  <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                  <div className="bg-card rounded-md p-4 text-center text-muted-foreground">
+                                      No results found.
+                                  </div>
+                              </AccordionContent>
+                          </AccordionItem>
+                      ))}
+            </Accordion>
         );
     }
 

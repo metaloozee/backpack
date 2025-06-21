@@ -3,8 +3,6 @@ import * as React from 'react';
 import { UIMessage } from 'ai';
 import { Loader, LoaderIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { TextShimmer } from '../ui/text-shimmer';
-import { Tool } from './Tool';
 import { UseChatHelpers } from '@ai-sdk/react';
 import { useMessages } from '@/hooks/use-messages';
 import { Message as PreviewMessage } from '@/components/chat/message';

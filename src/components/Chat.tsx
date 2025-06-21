@@ -110,7 +110,7 @@ export function Chat({
             )}
         >
             {messages.length > 0 && (
-                <ScrollArea className="w-full grow">
+                <ScrollArea className="w-full">
                     <ChatMessages
                         messages={messages}
                         setMessages={setMessages}

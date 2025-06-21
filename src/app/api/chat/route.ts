@@ -177,16 +177,27 @@ Follow the schema provided.
                                         toolCallId,
                                         toolName: 'web_search',
                                         state: 'call',
-                                        args: JSON.stringify(queries),
+                                        args: JSON.stringify({ web_search_queries: queries }),
                                     },
                                 });
 
                                 console.log('Web Search Queries: ', queries);
 
-                                const searchPromises = queries.map(
-                                    async (query: string, index: number) => {
+                                type SearchGroup = {
+                                    query: string;
+                                    results: {
+                                        url: string;
+                                        title: string;
+                                        content: string;
+                                        raw_content: string;
+                                        published_date: string | null;
+                                    }[];
+                                };
+
+                                const searchPromises: Promise<SearchGroup>[] = queries.map(
+                                    async (query: string) => {
                                         const res = await tvly.search(query, {
-                                            maxResults: 2,
+                                            maxResults: 5,
                                             searchDepth: 'advanced',
                                             includeAnswer: true,
                                         });
@@ -207,7 +218,6 @@ Follow the schema provided.
                                 );
 
                                 const searchResults = await Promise.all(searchPromises);
-                                const processedResults = searchResults.map((r) => r.results).flat();
 
                                 dataStream.writeMessageAnnotation({
                                     type: 'tool-call',
@@ -215,8 +225,8 @@ Follow the schema provided.
                                         toolCallId,
                                         toolName: 'web_search',
                                         state: 'result',
-                                        args: JSON.stringify({ queries }),
-                                        result: JSON.stringify({ processedResults }),
+                                        args: JSON.stringify({ web_search_queries: queries }),
+                                        result: JSON.stringify({ searches: searchResults }),
                                     },
                                 });
                                 return {
