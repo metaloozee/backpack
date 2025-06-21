@@ -255,7 +255,7 @@ export const buttonVariants = {
 };
 
 // Icon animations
-export const iconVariants = {
+export const iconVariants: Variants = {
     rest: {
         scale: 1,
         rotate: 0,
@@ -272,9 +272,9 @@ export const iconVariants = {
         rotate: 360,
         transition: {
             duration: 1,
-            ease: 'linear',
-            repeat: Infinity,
-        },
+            ease: 'linear' as any,
+            repeat: Infinity as any,
+        } as any,
     },
 };
 
