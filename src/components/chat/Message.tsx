@@ -161,7 +161,7 @@ export function Message({
                                         <div
                                             data-testid="message-content"
                                             className={cn('flex flex-col gap-4', {
-                                                'text-neutral-400 bg-neutral-900 border px-3 py-1 rounded-t-full rounded-bl-full text-right':
+                                                'text-primary bg-neutral-900 border px-4 py-1 rounded-t-full rounded-bl-full text-right':
                                                     message.role === 'user',
                                             })}
                                         >

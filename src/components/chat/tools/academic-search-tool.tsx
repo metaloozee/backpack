@@ -1,6 +1,12 @@
 'use client';
 
-import { GraduationCapIcon, Loader2 } from 'lucide-react';
+import {
+    GraduationCapIcon,
+    Loader2,
+    Loader2Icon,
+    LoaderCircleIcon,
+    SearchIcon,
+} from 'lucide-react';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import {
@@ -9,6 +15,7 @@ import {
     AccordionTrigger,
     AccordionContent,
 } from '@/components/ui/accordion';
+import { Disclosure, DisclosureContent, DisclosureTrigger } from '@/components/ui/disclosure';
 import Link from 'next/link';
 
 interface AcademicSearchToolProps {
@@ -30,86 +37,136 @@ interface AcademicSearchToolProps {
     };
 }
 
+type Paper = {
+    title: string;
+    authors?: string;
+    url: string;
+    abstract?: string;
+};
+
 export function AcademicSearchTool({ toolCallId, state, args, result }: AcademicSearchToolProps) {
     if (state === 'result') {
         return (
-            <Accordion className="w-full space-y-2">
-                {result?.searches && result.searches.length > 0
-                    ? result.searches.map((searchGroup, index) => (
-                          <AccordionItem
-                              key={`${toolCallId}-${index}`}
-                              value={`${toolCallId}-${index}`}
-                              className="border rounded-md"
-                          >
-                              <AccordionTrigger className="gap-2 h-10 text-xs w-full px-4 py-2 flex items-center justify-between">
-                                  <span className="flex items-center gap-2 truncate">
-                                      <GraduationCapIcon className="size-3" />
-                                      {args?.academic_search_queries?.[index] ?? searchGroup.query}
-                                  </span>
-                                  <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
-                              </AccordionTrigger>
-                              <AccordionContent>
-                                  <ScrollArea className="px-3 pb-3">
-                                      <div className="flex flex-row gap-2 w-max">
-                                          {searchGroup.results.map((paper, resIdx) => (
-                                              <div
-                                                  key={`${searchGroup.query}-${resIdx}`}
-                                                  className="bg-neutral-900 rounded-lg shadow-sm border p-3 shrink-0 w-64 hover:shadow-md transition-shadow duration-200"
-                                              >
-                                                  <Link
-                                                      href={paper.url}
-                                                      target="_blank"
-                                                      className="text-sm font-medium text-primary hover:underline line-clamp-2"
-                                                  >
-                                                      {paper.title}
-                                                  </Link>
-                                                  {paper.authors && (
-                                                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                                                          {paper.authors}
-                                                      </p>
-                                                  )}
-                                                  {paper.abstract && (
-                                                      <p className="mt-2 text-xs text-muted-foreground line-clamp-4">
-                                                          {paper.abstract}
-                                                      </p>
+            <Accordion className="w-full">
+                <AccordionItem value={toolCallId} className="border bg-neutral-900 rounded-md px-4">
+                    <AccordionTrigger className="gap-2 h-10 text-xs w-full flex items-center justify-between">
+                        <span className="flex items-center gap-2 truncate">
+                            <GraduationCapIcon className="size-3" />
+                            {'Academic Search'}
+                        </span>
+                        <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-1">
+                        {result?.searches && result.searches.length > 0
+                            ? result.searches.map((searchGroup, index) => (
+                                  <Disclosure
+                                      key={`${toolCallId}-${index}`}
+                                      className="w-full flex flex-col gap-2"
+                                  >
+                                      <DisclosureTrigger className="w-full">
+                                          <div className="w-full flex flex-row justify-between">
+                                              <span className="flex items-center gap-2 truncate text-xs text-neutral-400">
+                                                  <SearchIcon className="size-3" />
+                                                  {args?.academic_search_queries?.[index] ??
+                                                      searchGroup.query}
+                                              </span>
+                                          </div>
+                                      </DisclosureTrigger>
+                                      <DisclosureContent>
+                                          <ScrollArea className="px-3 pb-3">
+                                              <div className="flex flex-row gap-2 w-max">
+                                                  {searchGroup.results.map(
+                                                      (paper: Paper, resIdx: number) => (
+                                                          <div
+                                                              key={`${searchGroup.query}-${resIdx}`}
+                                                              className="bg-neutral-800 rounded-lg shadow-sm p-3 shrink-0 w-64 hover:shadow-md transition-shadow duration-200"
+                                                          >
+                                                              <Link
+                                                                  href={paper.url}
+                                                                  target="_blank"
+                                                                  className="text-sm font-medium text-primary hover:underline line-clamp-2"
+                                                              >
+                                                                  {paper.title}
+                                                              </Link>
+                                                              {paper.authors && (
+                                                                  <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                                                                      {paper.authors}
+                                                                  </p>
+                                                              )}
+                                                              {paper.abstract && (
+                                                                  <p className="mt-2 text-xs text-muted-foreground line-clamp-4">
+                                                                      {paper.abstract}
+                                                                  </p>
+                                                              )}
+                                                          </div>
+                                                      )
                                                   )}
                                               </div>
-                                          ))}
-                                      </div>
-                                      <ScrollBar orientation="horizontal" />
-                                  </ScrollArea>
-                              </AccordionContent>
-                          </AccordionItem>
-                      ))
-                    : args?.academic_search_queries?.map((query, index) => (
-                          <AccordionItem
-                              key={`${toolCallId}-placeholder-${index}`}
-                              value={`${toolCallId}-placeholder-${index}`}
-                              className="border rounded-md"
-                          >
-                              <AccordionTrigger className="gap-2 h-10 text-xs w-full px-4 py-2 flex items-center justify-between">
-                                  <span className="flex items-center gap-2 truncate">
-                                      <GraduationCapIcon className="size-3" />
-                                      {query}
-                                  </span>
-                                  <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
-                              </AccordionTrigger>
-                              <AccordionContent>
-                                  <div className="bg-card rounded-md p-4 text-center text-muted-foreground">
-                                      Academic search functionality is coming soon.
-                                  </div>
-                              </AccordionContent>
-                          </AccordionItem>
-                      ))}
+                                              <ScrollBar orientation="horizontal" />
+                                          </ScrollArea>
+                                      </DisclosureContent>
+                                  </Disclosure>
+                              ))
+                            : args?.academic_search_queries?.map((query, index) => (
+                                  <Disclosure
+                                      key={`${toolCallId}-placeholder-${index}`}
+                                      className="w-full flex flex-col gap-2"
+                                  >
+                                      <DisclosureTrigger className="w-full">
+                                          <div className="w-full flex flex-row justify-between">
+                                              <span className="flex items-center gap-2 truncate text-xs text-neutral-400">
+                                                  <GraduationCapIcon className="size-3" />
+                                                  {query}
+                                              </span>
+                                          </div>
+                                      </DisclosureTrigger>
+                                      <DisclosureContent>
+                                          <div className="bg-card rounded-md p-4 text-center text-muted-foreground">
+                                              Academic search functionality is coming soon.
+                                          </div>
+                                      </DisclosureContent>
+                                  </Disclosure>
+                              ))}
+                    </AccordionContent>
+                </AccordionItem>
             </Accordion>
         );
     }
 
     return (
-        <div className="flex items-center gap-2 rounded-md px-4 py-2 bg-muted border max-w-fit text-xs">
-            <Loader2 className="size-3 animate-spin" />
-            <GraduationCapIcon className="size-3" />
-            Searching academic papers...
-        </div>
+        <Accordion className="w-full">
+            <AccordionItem value={toolCallId} className="border bg-neutral-900 rounded-md px-4">
+                <AccordionTrigger className="gap-2 h-10 text-xs w-full flex items-center justify-between">
+                    <span className="flex items-center gap-2 truncate">
+                        <LoaderCircleIcon className="size-3 animate-spin" />
+                        {'Academic Search'}
+                    </span>
+                    <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
+                </AccordionTrigger>
+                <AccordionContent className="space-y-1">
+                    {args?.academic_search_queries?.map((query, index) => (
+                        <Disclosure
+                            key={`${toolCallId}-${index}`}
+                            className="w-full flex flex-col gap-2"
+                        >
+                            <DisclosureTrigger className="w-full">
+                                <div className="w-full flex flex-row justify-between">
+                                    <span className="flex items-center gap-2 truncate text-xs text-neutral-400">
+                                        <LoaderCircleIcon className="size-3 animate-spin" />
+                                        {query}
+                                    </span>
+                                </div>
+                            </DisclosureTrigger>
+                            <DisclosureContent>
+                                <div className="flex items-center gap-2 text-xs px-3 pb-3 text-muted-foreground">
+                                    <LoaderCircleIcon className="size-3 animate-spin" />
+                                    Searching...
+                                </div>
+                            </DisclosureContent>
+                        </Disclosure>
+                    ))}
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
     );
 }
