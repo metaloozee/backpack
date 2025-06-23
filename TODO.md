@@ -1,4 +1,5 @@
 - [ ] fix: Authentication
-- [ ] Enhance tRPC Usage
+- [x] Enhance tRPC Usage
+- [ ] Create tRPC queries to fetch data
 - [ ] Zustand for state management
-- [ ] TanStack Query
+- [x] TanStack Query

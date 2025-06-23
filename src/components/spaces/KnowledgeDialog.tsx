@@ -16,7 +16,9 @@ import { Knowledge } from '@/lib/db/schema/app';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { trpc } from '@/lib/trpc/client';
+
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useTRPC } from '@/lib/trpc/trpc';
 
 type KnowledgeDialogProps = {
     spaceId: string;
@@ -24,16 +26,18 @@ type KnowledgeDialogProps = {
 };
 
 export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps) {
+    const trpc = useTRPC();
+
     const webpageKnowledge = knowledgeData.filter((k) => k.knowledgeType === 'webpage');
     const pdfKnowledge = knowledgeData.filter((k) => k.knowledgeType === 'pdf');
     const [activeTab, setActiveTab] = React.useState<'webpage' | 'pdf'>('webpage');
 
     const [url, setUrl] = React.useState('');
-    const webPageMutation = trpc.space.saveWebPage.useMutation();
+    const webPageMutation = useMutation(trpc.space.saveWebPage.mutationOptions());
 
     const [pdfFiles, setPdfFiles] = React.useState<File[]>([]);
     const [isUploadingPdf, setIsUploadingPdf] = React.useState(false);
-    const pdfMutation = trpc.space.savePdf.useMutation();
+    const pdfMutation = useMutation(trpc.space.savePdf.mutationOptions());
 
     const [isOpen, setIsOpen] = React.useState(false);
 

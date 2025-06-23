@@ -6,7 +6,7 @@ import { Geist } from 'next/font/google';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/sonner';
-import TrpcProvider from '@/lib/trpc/Provider';
+import TrpcProvider from '@/lib/trpc/client';
 
 const geistSans = Geist({
     subsets: ['latin'],

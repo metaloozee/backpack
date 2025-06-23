@@ -14,7 +14,7 @@ import { generateUUID, getTrailingMessageId } from '@/lib/ai/utils';
 import { env } from '@/lib/env.mjs';
 
 import { getUserAuth } from '@/lib/auth/utils';
-import { api } from '@/lib/trpc/api';
+import { caller } from '@/lib/trpc/server';
 import { AskModePrompt } from '@/lib/ai/prompts';
 import { z } from 'zod';
 import { tavily } from '@tavily/core';
@@ -74,7 +74,7 @@ Follow the schema provided.
                     `,
             });
 
-            await api.chat.saveChat.mutate({
+            await caller.chat.saveChat({
                 id,
                 userId: session.user.id,
                 spaceId: env.inSpace ? env.spaceId : undefined,
@@ -89,7 +89,7 @@ Follow the schema provided.
             message,
         });
 
-        await api.chat.saveMessages.mutate({
+        await caller.chat.saveMessages({
             messages: [
                 {
                     chatId: id,
@@ -144,7 +144,7 @@ Follow the schema provided.
                                     responseMessages: response.messages,
                                 });
 
-                                await api.chat.saveMessages.mutate({
+                                await caller.chat.saveMessages({
                                     messages: [
                                         {
                                             id: assistantId,

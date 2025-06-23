@@ -14,7 +14,6 @@ import {
     DialogContent,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { trpc } from '@/lib/trpc/client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { usePathname } from 'next/navigation';
@@ -31,7 +30,11 @@ import {
 } from '@/lib/animations';
 import { format } from 'timeago.js';
 
+import { useTRPC } from '@/lib/trpc/trpc';
+import { useMutation } from '@tanstack/react-query';
+
 export default function ChatDisplayCard({ chat }: { chat: Chat }) {
+    const trpc = useTRPC();
     const pathName = usePathname();
     const isChatPage = pathName === `/c`;
 
@@ -39,12 +42,12 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
 
     const router = useRouter();
 
-    const mutation = trpc.chat.deleteChat.useMutation();
+    const mutation = useMutation(trpc.chat.deleteChat.mutationOptions());
     const handleDelete = async (e: any) => {
         e.preventDefault();
 
         try {
-            mutation.mutate({
+            await mutation.mutateAsync({
                 chatId: chat.id,
             });
 

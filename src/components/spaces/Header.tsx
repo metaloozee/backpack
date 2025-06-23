@@ -12,9 +12,12 @@ import { toast } from 'sonner';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Separator } from '../ui/separator';
-import { trpc } from '@/lib/trpc/client';
+
+import { useTRPC } from '@/lib/trpc/trpc';
+import { useMutation } from '@tanstack/react-query';
 
 export const Header: React.FC<{ userId: string }> = ({ userId }) => {
+    const trpc = useTRPC();
     const router = useRouter();
 
     const [isOpen, setIsOpen] = React.useState(false);
@@ -22,7 +25,7 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
     const [spaceDescription, setSpaceDescription] = React.useState('');
     const [customIns, setCustomIns] = React.useState('');
 
-    const mutation = trpc.space.createSpace.useMutation();
+    const mutation = useMutation(trpc.space.createSpace.mutationOptions());
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
