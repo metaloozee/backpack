@@ -1,0 +1,4 @@
+- [ ] fix: Authentication
+- [ ] Enhance tRPC Usage
+- [ ] Zustand for state management
+- [ ] TanStack Query
