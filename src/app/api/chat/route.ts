@@ -13,7 +13,6 @@ import { generateUUID, getTrailingMessageId } from '@/lib/ai/utils';
 
 import { env } from '@/lib/env.mjs';
 
-import { getUserAuth } from '@/lib/auth/utils';
 import { caller } from '@/lib/trpc/server';
 import { AskModePrompt } from '@/lib/ai/prompts';
 import { z } from 'zod';
@@ -29,6 +28,8 @@ import {
 } from '@/lib/db/schema/app';
 import { db } from '@/lib/db';
 
+import { auth } from '@/auth';
+
 export const maxDuration = 60;
 
 const tvly = tavily({ apiKey: env.TAVILY_API_KEY });
@@ -43,8 +44,8 @@ const largeModel = openrouter('google/gemini-2.5-flash-preview-05-20');
 
 export async function POST(req: Request) {
     try {
-        const { session } = await getUserAuth();
-        if (!session?.user) {
+        const session = await auth();
+        if (!session?.user?.id) {
             throw new Error('Access Denied');
         }
 

@@ -1,11 +1,11 @@
-import { getUserAuth } from '@/lib/auth/utils';
 import { db } from '@/lib/db/index';
 import { users } from '@/lib/db/schema/auth';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { auth } from '@/auth';
 
 export async function PUT(request: Request) {
-    const { session } = await getUserAuth();
+    const session = await auth();
     if (!session?.user?.id) {
         return new Response('Unauthorized', { status: 401 });
     }

@@ -1,12 +1,10 @@
 import ChatDisplayCard from '@/components/chat/DisplayCard';
 import { Header } from '@/components/chat/Header';
-import { Button } from '@/components/ui/button';
-import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
-import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 import { db } from '@/lib/db';
 import { Chat, chat as chatsSchema } from '@/lib/db/schema/app';
-import { CoreMessage } from 'ai';
 import { desc, eq } from 'drizzle-orm';
+import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
 
 export type ChatData = {
     id: string;
@@ -18,9 +16,12 @@ export type ChatData = {
 };
 
 export default async function Spaces() {
-    await checkAuth();
-    const { session } = await getUserAuth();
-    const user = session!.user!;
+    const session = await auth();
+    if (!session?.user) {
+        return redirect('/sign-in');
+    }
+
+    const user = session.user;
 
     const chats = await db
         .select()

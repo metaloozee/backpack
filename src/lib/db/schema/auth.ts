@@ -1,5 +1,5 @@
-import { timestamp, pgTable, text, primaryKey, integer, uuid } from 'drizzle-orm/pg-core';
-import type { AdapterAccount } from '@auth/core/adapters';
+import { timestamp, pgTable, text, primaryKey, integer, uuid, boolean } from 'drizzle-orm/pg-core';
+import type { AdapterAccount } from 'next-auth/adapters';
 
 export const users = pgTable('user', {
     id: uuid('id').notNull().primaryKey(),
@@ -15,7 +15,7 @@ export const accounts = pgTable(
         userId: uuid('userId')
             .notNull()
             .references(() => users.id, { onDelete: 'cascade' }),
-        type: text('type').$type<AdapterAccount['type']>().notNull(),
+        type: text('type').$type<AdapterAccount>().notNull(),
         provider: text('provider').notNull(),
         providerAccountId: text('providerAccountId').notNull(),
         refresh_token: text('refresh_token'),
@@ -27,7 +27,9 @@ export const accounts = pgTable(
         session_state: text('session_state'),
     },
     (account) => ({
-        compoundKey: primaryKey(account.provider, account.providerAccountId),
+        compoundKey: primaryKey({
+            columns: [account.provider, account.providerAccountId],
+        }),
     })
 );
 
@@ -46,7 +48,34 @@ export const verificationTokens = pgTable(
         token: text('token').notNull(),
         expires: timestamp('expires', { mode: 'date' }).notNull(),
     },
-    (vt) => ({
-        compoundKey: primaryKey(vt.identifier, vt.token),
-    })
+    (verificationToken) => [
+        {
+            compositePk: primaryKey({
+                columns: [verificationToken.identifier, verificationToken.token],
+            }),
+        },
+    ]
+);
+
+export const authenticators = pgTable(
+    'authenticator',
+    {
+        credentialID: uuid('credentialID').notNull(),
+        userId: uuid('userId')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        providerAccountId: text('providerAccountId').notNull(),
+        credentialPublicKey: text('credentialPublicKey').notNull(),
+        counter: integer('counter').notNull(),
+        credentialDeviceType: text('credentialDeviceType').notNull(),
+        credentialBackedUp: boolean('credentialBackedUp').notNull(),
+        transports: text('transports'),
+    },
+    (authenticator) => [
+        {
+            compositePK: primaryKey({
+                columns: [authenticator.userId, authenticator.credentialID],
+            }),
+        },
+    ]
 );

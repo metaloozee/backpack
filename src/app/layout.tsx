@@ -27,7 +27,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <TrpcProvider cookies={''}>
+        <TrpcProvider>
             <html lang="en" suppressHydrationWarning>
                 <body
                     className={cn('bg-background antialiased font-sans', geistSans.className)}

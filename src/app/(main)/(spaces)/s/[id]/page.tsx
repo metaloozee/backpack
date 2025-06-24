@@ -1,19 +1,22 @@
-import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 import { db } from '@/lib/db';
 import { chat, knowledge, spaces } from '@/lib/db/schema/app';
 import { and, desc, eq } from 'drizzle-orm';
-import { notFound } from 'next/navigation';
-import { BookOpenIcon, LibraryIcon, SettingsIcon } from 'lucide-react';
+import { notFound, redirect } from 'next/navigation';
+import { SettingsIcon } from 'lucide-react';
 import { Chat } from '@/components/Chat';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { KnowledgeDialog } from '@/components/spaces/KnowledgeDialog';
 import { generateUUID } from '@/lib/ai/utils';
+import { auth } from '@/auth';
 
 export default async function SpacePage({ params }: { params: Promise<{ id: string }> }) {
-    await checkAuth();
-    const { session } = await getUserAuth();
+    const session = await auth();
+    if (!session?.user) {
+        return redirect('/sign-in');
+    }
 
-    const user = session!.user;
+    const user = session.user;
+
     const { id: spaceId } = await params;
     const chatId = generateUUID();
 

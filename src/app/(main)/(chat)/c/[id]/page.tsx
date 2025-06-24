@@ -1,16 +1,18 @@
 import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
-import { checkAuth, getUserAuth } from '@/lib/auth/utils';
 import { db } from '@/lib/db';
 import { chat as DBChat, message as DBMessage, spaces as DBSpace } from '@/lib/db/schema/app';
 import { and, eq, asc } from 'drizzle-orm';
 import { Chat as PreviewChat } from '@/components/Chat';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { auth } from '@/auth';
 
 export default async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
-    await checkAuth();
-    const { session } = await getUserAuth();
+    const session = await auth();
+    if (!session?.user) {
+        return redirect('/sign-in');
+    }
 
-    const user = session!.user;
+    const user = session.user;
     const { id: chatId } = await params;
 
     const [chatData] = await db

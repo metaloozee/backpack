@@ -1,12 +1,13 @@
 import { Chat } from '@/components/Chat';
-import { getUserAuth } from '@/lib/auth/utils';
 import { generateUUID } from '@/lib/ai/utils';
+
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 
 export default async function IndexPage() {
-    const { session } = await getUserAuth();
+    const session = await auth();
     if (!session?.user) {
-        redirect('/sign-in');
+        return redirect('/sign-in');
     }
 
     const id = generateUUID();
