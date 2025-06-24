@@ -41,7 +41,7 @@ export function CodeBlock({
                     padding: '1rem',
                     fontSize: '0.875rem',
                     lineHeight: '1.5',
-                    overflowX: 'auto',
+                    overflowX: 'scroll',
                     borderRadius: '0.5rem',
                 }}
             >

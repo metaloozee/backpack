@@ -2,12 +2,48 @@ import { db } from '@/lib/db';
 import { chat, type Message, message } from '@/lib/db/schema/app';
 import { protectedProcedure, router } from '@/lib/server/trpc';
 import { TRPCError } from '@trpc/server';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, desc, lt } from 'drizzle-orm';
 import { z } from 'zod';
 import { createInsertSchema } from 'drizzle-zod';
 import { revalidatePath } from 'next/cache';
 
 export const chatRouter = router({
+    getChats: protectedProcedure
+        .input(
+            z.object({
+                limit: z.number(),
+                spaceId: z.string().uuid().optional(),
+                cursor: z.date().optional(),
+            })
+        )
+        .query(async ({ ctx, input }) => {
+            const items = await db
+                .select()
+                .from(chat)
+                .limit(input.limit + 1)
+                .where(
+                    and(
+                        and(
+                            eq(chat.userId, ctx.session.user.id),
+                            input.spaceId ? eq(chat.spaceId, input.spaceId) : undefined
+                        ),
+                        input.cursor ? lt(chat.createdAt, input.cursor) : undefined
+                    )
+                )
+                .orderBy(desc(chat.createdAt));
+
+            const hasMore = items.length > input.limit;
+            const itemsToReturn = hasMore ? items.slice(0, input.limit) : items;
+
+            const nextCursor = hasMore
+                ? itemsToReturn[itemsToReturn.length - 1].createdAt
+                : undefined;
+
+            return {
+                chats: itemsToReturn,
+                nextCursor,
+            };
+        }),
     saveMessages: protectedProcedure
         .input(
             z.object({

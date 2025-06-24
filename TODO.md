@@ -1,6 +1,5 @@
 - [x] fix: Authentication
 - [x] Enhance tRPC Usage
-- [ ] Create tRPC queries to fetch data
 - [ ] Zustand for state management
 - [x] TanStack Query
-- [ ] Infinite Scrolling with TanStack Query
+- [x] Infinite Scrolling with TanStack Query

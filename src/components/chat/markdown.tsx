@@ -22,7 +22,9 @@ const components: Partial<Components> = {
             </code>
         );
     },
-    pre: ({ children }) => <div className="not-prose my-4 text-sm">{children}</div>,
+    pre: ({ children }) => (
+        <div className="not-prose my-4 text-sm overflow-hidden max-w-full">{children}</div>
+    ),
     ol: ({ node, children, ...props }) => {
         return (
             <ol className="list-decimal list-outside ml-4" {...props}>

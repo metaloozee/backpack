@@ -12,9 +12,9 @@ import { Attachment, UIMessage } from 'ai';
 import { Session } from 'next-auth';
 import { generateUUID } from '@/lib/ai/utils';
 import { Chat as ChatType } from '@/lib/db/schema/app';
-import ChatDisplayCard from './chat/DisplayCard';
 import { Separator } from './ui/separator';
 import { BookOpenIcon } from 'lucide-react';
+import DisplayChats from './chat/display-chats';
 
 export function Chat({
     id,
@@ -148,9 +148,7 @@ export function Chat({
                         <h2 className="text-lg font-medium">Chat History</h2>
                     </div>
                     <Separator className="my-2 max-w-[25vw]" />
-                    {chatsData.map((chat) => (
-                        <ChatDisplayCard key={chat.id} chat={chat} />
-                    ))}
+                    <DisplayChats spaceId={chatsData[0].spaceId ?? undefined} />
                 </div>
             )}
         </div>

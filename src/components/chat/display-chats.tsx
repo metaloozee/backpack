@@ -1,11 +1,24 @@
 'use client';
 
-import * as React from 'react';
-import { Chat } from '@/lib/db/schema/app';
+import { useState } from 'react';
+
+import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
+import { useTRPC } from '@/lib/trpc/trpc';
+import { type Chat } from '@/lib/db/schema/app';
+
+import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+
 import { motion } from 'motion/react';
-import { Button } from '../ui/button';
-import { LibraryIcon, Loader, Trash2Icon } from 'lucide-react';
-import Link from 'next/link';
+import {
+    messageVariants,
+    buttonVariants,
+    fadeVariants,
+    iconVariants,
+    modalVariants,
+    staggerVariants,
+    transitions,
+} from '@/lib/animations';
 import {
     Dialog,
     DialogDescription,
@@ -14,61 +27,24 @@ import {
     DialogContent,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Trash2Icon, Loader, LoaderCircleIcon, LoaderIcon, ChevronsDownIcon } from 'lucide-react';
+
 import { toast } from 'sonner';
-import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+
 import { cn } from '@/lib/utils';
-import {
-    messageVariants,
-    buttonVariants,
-    fadeVariants,
-    iconVariants,
-    modalVariants,
-    backdropVariants,
-    staggerVariants,
-    transitions,
-} from '@/lib/animations';
 import { format } from 'timeago.js';
 
-import { useTRPC } from '@/lib/trpc/trpc';
-import { useMutation } from '@tanstack/react-query';
-
-export default function ChatDisplayCard({ chat }: { chat: Chat }) {
+function ChatCard({ chat }: { chat: Chat }) {
     const trpc = useTRPC();
-    const pathName = usePathname();
-    const isChatPage = pathName === `/c`;
-
-    const [isOpen, setIsOpen] = React.useState(false);
-
-    const router = useRouter();
+    const [isOpen, setIsOpen] = useState(false);
 
     const mutation = useMutation(trpc.chat.deleteChat.mutationOptions());
-    const handleDelete = async (e: any) => {
-        e.preventDefault();
-
-        try {
-            await mutation.mutateAsync({
-                chatId: chat.id,
-            });
-
-            setIsOpen(false);
-
-            if (isChatPage) {
-                router.refresh();
-            } else if (chat.spaceId && chat.spaceId.length > 0) {
-                router.push(`/s/${chat.spaceId}`);
-            } else {
-                router.push(`/`);
-            }
-
-            return toast.success('Successfully deleted the chat.');
-        } catch (e) {
-            toast.error('Uh oh!', { description: (e as Error).message });
-        }
-    };
 
     return (
         <motion.div
+            key={chat.id}
             variants={messageVariants}
             initial="hidden"
             animate="visible"
@@ -96,12 +72,6 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
                     </p>
                 </motion.div>
             </Link>
-
-            {isChatPage && chat.spaceId && chat.spaceId.length > 0 && (
-                <motion.div variants={iconVariants} initial="rest" whileHover="hover">
-                    <LibraryIcon className="mx-6 size-4 text-muted-foreground" />
-                </motion.div>
-            )}
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
@@ -158,7 +128,16 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
                                             variant={'destructive'}
                                             disabled={mutation.isPending}
                                             className="text-xs"
-                                            onClick={handleDelete}
+                                            onClick={async (e) => {
+                                                e.preventDefault();
+
+                                                await mutation.mutateAsync({
+                                                    chatId: chat.id,
+                                                });
+
+                                                toast.success('Successfully deleted the chat.');
+                                                setIsOpen(false);
+                                            }}
                                         >
                                             <motion.div
                                                 variants={fadeVariants}
@@ -210,5 +189,58 @@ export default function ChatDisplayCard({ chat }: { chat: Chat }) {
                 </DialogContent>
             </Dialog>
         </motion.div>
+    );
+}
+
+export default function DisplayChats({ spaceId }: { spaceId?: string }) {
+    const trpc = useTRPC();
+
+    const query = useInfiniteQuery(
+        trpc.chat.getChats.infiniteQueryOptions(
+            {
+                limit: spaceId ? 2 : 5,
+                spaceId,
+            },
+            {
+                getNextPageParam: (lastPage) => lastPage.nextCursor,
+            }
+        )
+    );
+    const { data, error, fetchNextPage, hasNextPage, isFetchingNextPage, status } = query;
+
+    const chats = data?.pages.flatMap((page) => page.chats) ?? [];
+
+    return (
+        <>
+            {chats.map((chat) => (
+                <ChatCard key={chat.id} chat={chat} />
+            ))}
+
+            {hasNextPage && (
+                <motion.div
+                    className="w-full flex justify-center items-center"
+                    variants={buttonVariants}
+                >
+                    <Button
+                        variant={'ghost'}
+                        onClick={() => fetchNextPage()}
+                        className="text-sm text-muted-foreground hover:cursor-pointer"
+                    >
+                        <motion.div
+                            variants={fadeVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="flex justify-center items-center gap-2 w-full text-xs"
+                        >
+                            {isFetchingNextPage ? (
+                                <LoaderIcon className="size-4 text-muted-foreground animate-spin" />
+                            ) : (
+                                <ChevronsDownIcon className="size-4 text-muted-foreground" />
+                            )}
+                        </motion.div>
+                    </Button>
+                </motion.div>
+            )}
+        </>
     );
 }

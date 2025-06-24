@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/sonner';
 import TrpcProvider from '@/lib/trpc/client';
+import { SessionProvider } from 'next-auth/react';
 
 const geistSans = Geist({
     subsets: ['latin'],
@@ -27,23 +28,25 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <TrpcProvider>
-            <html lang="en" suppressHydrationWarning>
-                <body
-                    className={cn('bg-background antialiased font-sans', geistSans.className)}
-                    suppressHydrationWarning
-                >
-                    <ThemeProvider
-                        attribute="class"
-                        defaultTheme="system"
-                        enableSystem
-                        disableTransitionOnChange
+        <SessionProvider>
+            <TrpcProvider>
+                <html lang="en" suppressHydrationWarning>
+                    <body
+                        className={cn('bg-background antialiased font-sans', geistSans.className)}
+                        suppressHydrationWarning
                     >
-                        <Toaster richColors position="top-center" />
-                        {children}
-                    </ThemeProvider>
-                </body>
-            </html>
-        </TrpcProvider>
+                        <ThemeProvider
+                            attribute="class"
+                            defaultTheme="system"
+                            enableSystem
+                            disableTransitionOnChange
+                        >
+                            <Toaster richColors position="top-center" />
+                            {children}
+                        </ThemeProvider>
+                    </body>
+                </html>
+            </TrpcProvider>
+        </SessionProvider>
     );
 }
