@@ -296,7 +296,7 @@ function PureInput({
             <div className={cn('max-w-3xl w-full mx-auto')}>
                 <div
                     className={cn(
-                        'relative flex flex-col w-full p-4 gap-4 border-input bg-neutral-900/50 focus-within:border-neutral-700/70 hover:border-neutral-700/70 transition-all duration-200',
+                        'relative flex flex-col w-full p-4  border-input bg-neutral-900/50 focus-within:border-neutral-700/70 hover:border-neutral-700/70 transition-all duration-200',
                         messages.length > 0
                             ? 'border-t-2 border-x-2 rounded-t-lg'
                             : 'border-2 rounded-lg'

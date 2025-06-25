@@ -66,11 +66,11 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
                 </div>
                 <div className="space-y-4 w-full flex flex-col justify-start items-start">
                     <Dialog>
-                        <DialogTrigger className="w-full px-6 py-4 rounded-md bg-zinc-900/50 border-2 text-left flex justify-start items-center gap-3">
+                        <DialogTrigger className="w-full px-6 py-4 rounded-md !bg-neutral-900/50 border-2 text-left flex justify-start items-center gap-3">
                             <SettingsIcon className="size-5 text-muted-foreground" />
                             Settings
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="bg-neutral-950">
                             <DialogTitle>Settings</DialogTitle>
                             <p>coming soon...</p>
                         </DialogContent>

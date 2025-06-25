@@ -162,7 +162,7 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger className="w-full px-6 py-4 rounded-md bg-neutral-900/50 border-2 text-left flex justify-start items-center gap-3">
+            <DialogTrigger className="w-full px-6 py-4 rounded-md !bg-neutral-900/50 border-2 text-left flex justify-start items-center gap-3">
                 <BookCopyIcon className="size-5 text-muted-foreground" />
                 <div className="w-full gap-2 flex justify-start items-center ">
                     <p>Knowledge Base</p>

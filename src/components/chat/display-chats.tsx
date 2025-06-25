@@ -59,20 +59,26 @@ function ChatCard({ chat }: { chat: Chat }) {
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
         >
-            <Link className="w-full" key={chat.id} href={`/c/${chat.id}`}>
-                <motion.div
-                    variants={fadeVariants}
-                    initial="hidden"
-                    animate="visible"
-                    className="flex flex-col gap-1 justify-start items-start w-full"
-                >
-                    <p className="max-w-md truncate">{chat.title}</p>
-
-                    <p className="text-xs text-muted-foreground truncate max-w-md">
-                        Created {format(chat.createdAt)}
-                    </p>
-                </motion.div>
+            <Link
+                href={`/c/${chat.id}`}
+                className="absolute inset-0"
+                aria-label={`Open chat ${chat.title}`}
+            >
+                <span className="sr-only">Open chat {chat.title}</span>
             </Link>
+
+            <motion.div
+                variants={fadeVariants}
+                initial="hidden"
+                animate="visible"
+                className="flex flex-col gap-1 justify-start items-start w-full pointer-events-none relative"
+            >
+                <p className="max-w-md truncate">{chat.title}</p>
+
+                <p className="text-xs text-muted-foreground truncate max-w-md">
+                    Created {format(chat.createdAt)}
+                </p>
+            </motion.div>
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
@@ -81,9 +87,14 @@ function ChatCard({ chat }: { chat: Chat }) {
                         initial="rest"
                         whileHover="hover"
                         whileTap="tap"
+                        className="pointer-events-auto relative z-10"
                     >
-                        <Button variant={'destructive'} size={'icon'}>
-                            <Trash2Icon className="size-3" />
+                        <Button
+                            variant={'ghost'}
+                            size={'icon'}
+                            className="pointer-events-auto relative z-10"
+                        >
+                            <Trash2Icon className="size-3 text-muted-foreground" />
                         </Button>
                     </motion.div>
                 </DialogTrigger>
@@ -119,12 +130,7 @@ function ChatCard({ chat }: { chat: Chat }) {
                                 className="w-full flex flex-row-reverse gap-2"
                             >
                                 <motion.div variants={staggerVariants.item}>
-                                    <motion.div
-                                        variants={buttonVariants}
-                                        initial="rest"
-                                        whileHover="hover"
-                                        whileTap="tap"
-                                    >
+                                    <motion.div initial="rest" whileHover="hover" whileTap="tap">
                                         <Button
                                             variant={'destructive'}
                                             disabled={mutation.isPending}
@@ -162,15 +168,10 @@ function ChatCard({ chat }: { chat: Chat }) {
                                     </motion.div>
                                 </motion.div>
                                 <motion.div variants={staggerVariants.item}>
-                                    <motion.div
-                                        variants={buttonVariants}
-                                        initial="rest"
-                                        whileHover="hover"
-                                        whileTap="tap"
-                                    >
+                                    <motion.div initial="rest" whileHover="hover" whileTap="tap">
                                         <Button
                                             onClick={() => setIsOpen(!isOpen)}
-                                            variant={'secondary'}
+                                            variant={'link'}
                                             className="text-xs"
                                         >
                                             <motion.div

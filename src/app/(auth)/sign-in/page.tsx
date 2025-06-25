@@ -12,7 +12,7 @@ export default function SignInPage() {
     return (
         <main className="bg-background w-full mx-auto my-4 flex flex-col justify-center items-center gap-7">
             <div className="flex flex-col gap-2 justify-center items-center">
-                <div className="bg-zinc-800 size-16 rounded-full flex justify-center items-center">
+                <div className="bg-neutral-800 size-16 rounded-full flex justify-center items-center">
                     <BackpackIcon className="size-8" />
                 </div>
 

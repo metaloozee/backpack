@@ -15,7 +15,7 @@ const components: Partial<Components> = {
             <CodeBlock className={className}>{children}</CodeBlock>
         ) : (
             <code
-                className="whitespace-nowrap font-mono rounded-md px-1.5 py-0 bg-zinc-400 dark:bg-zinc-800 border border-zinc-600 text-zinc-800 dark:text-zinc-100"
+                className="whitespace-nowrap font-mono rounded-md px-1.5 py-0 bg-neutral-400 dark:bg-neutral-800 border border-neutral-600 text-neutral-800 dark:text-neutral-100"
                 {...props}
             >
                 {children}
@@ -111,7 +111,7 @@ const components: Partial<Components> = {
     blockquote: ({ node, children, ...props }) => {
         return (
             <blockquote
-                className="border-l-4 border-zinc-300 dark:border-zinc-700 pl-4 italic my-4 text-zinc-600 dark:text-zinc-400"
+                className="border-l-4 border-neutral-300 dark:border-neutral-700 pl-4 italic my-4 text-neutral-600 dark:text-neutral-400"
                 {...props}
             >
                 {children}
@@ -119,7 +119,7 @@ const components: Partial<Components> = {
         );
     },
     hr: ({ ...props }) => (
-        <hr className="my-6 border-t border-zinc-200 dark:border-zinc-700" {...props} />
+        <hr className="my-6 border-t border-neutral-200 dark:border-neutral-700" {...props} />
     ),
     table: ({ node, children, ...props }) => {
         return (
@@ -132,7 +132,7 @@ const components: Partial<Components> = {
     },
     thead: ({ node, children, ...props }) => {
         return (
-            <thead className="bg-zinc-50 dark:bg-zinc-800" {...props}>
+            <thead className="bg-neutral-50 dark:bg-neutral-800" {...props}>
                 {children}
             </thead>
         );
@@ -140,7 +140,7 @@ const components: Partial<Components> = {
     th: ({ node, children, ...props }) => {
         return (
             <th
-                className="py-2 px-3 font-semibold border-b border-zinc-200 dark:border-zinc-700"
+                className="py-2 px-3 font-semibold border-b border-neutral-200 dark:border-neutral-700"
                 {...props}
             >
                 {children}
@@ -149,7 +149,10 @@ const components: Partial<Components> = {
     },
     td: ({ node, children, ...props }) => {
         return (
-            <td className="py-2 px-3 border-b border-zinc-200 dark:border-zinc-700" {...props}>
+            <td
+                className="py-2 px-3 border-b border-neutral-200 dark:border-neutral-700"
+                {...props}
+            >
                 {children}
             </td>
         );
