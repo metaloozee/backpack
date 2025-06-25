@@ -28,6 +28,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Trash2Icon, Loader, LoaderCircleIcon, LoaderIcon, ChevronsDownIcon } from 'lucide-react';
 
 import { toast } from 'sonner';
@@ -209,6 +210,28 @@ export default function DisplayChats({ spaceId }: { spaceId?: string }) {
     const { data, error, fetchNextPage, hasNextPage, isFetchingNextPage, status } = query;
 
     const chats = data?.pages.flatMap((page) => page.chats) ?? [];
+
+    if (status === 'pending') {
+        return (
+            <>
+                {Array.from({ length: spaceId ? 1 : 3 }).map((_, index) => (
+                    <motion.div
+                        key={index}
+                        variants={messageVariants}
+                        initial="hidden"
+                        animate="visible"
+                        className="relative w-full rounded-lg border border-border/50 bg-neutral-900/50 p-4 flex justify-between items-center"
+                    >
+                        <div className="flex flex-col gap-2 justify-start items-start w-full">
+                            <Skeleton className="h-4 w-3/4" />
+                            <Skeleton className="h-3 w-1/2" />
+                        </div>
+                        <Skeleton className="h-8 w-8 rounded-md" />
+                    </motion.div>
+                ))}
+            </>
+        );
+    }
 
     return (
         <>
