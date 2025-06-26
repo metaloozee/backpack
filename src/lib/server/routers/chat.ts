@@ -85,7 +85,5 @@ export const chatRouter = router({
             await db
                 .delete(chat)
                 .where(and(eq(chat.id, input.chatId), eq(chat.userId, ctx.session.user.id)));
-
-            revalidatePath(`/c}`);
         }),
 });

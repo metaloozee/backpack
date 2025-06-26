@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
-import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTRPC } from '@/lib/trpc/trpc';
 import { type Chat } from '@/lib/db/schema/app';
 
@@ -37,8 +37,10 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { format } from 'timeago.js';
 
-function ChatCard({ chat }: { chat: Chat }) {
+function ChatCard({ chat, refetch }: { chat: Chat; refetch: () => void }) {
     const trpc = useTRPC();
+    const router = useRouter();
+
     const [isOpen, setIsOpen] = useState(false);
 
     const mutation = useMutation(trpc.chat.deleteChat.mutationOptions());
@@ -137,12 +139,8 @@ function ChatCard({ chat }: { chat: Chat }) {
                                             className="text-xs"
                                             onClick={async (e) => {
                                                 e.preventDefault();
-
-                                                await mutation.mutateAsync({
-                                                    chatId: chat.id,
-                                                });
-
-                                                toast.success('Successfully deleted the chat.');
+                                                await mutation.mutateAsync({ chatId: chat.id });
+                                                refetch();
                                                 setIsOpen(false);
                                             }}
                                         >
@@ -237,7 +235,7 @@ export default function DisplayChats({ spaceId }: { spaceId?: string }) {
     return (
         <>
             {chats.map((chat) => (
-                <ChatCard key={chat.id} chat={chat} />
+                <ChatCard refetch={query.refetch} key={chat.id} chat={chat} />
             ))}
 
             {hasNextPage && (

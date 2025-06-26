@@ -4,3 +4,4 @@
 - [x] TanStack Query
 - [x] Infinite Scrolling with TanStack Query
 - [ ] Optimistic Updates
+- [ ] Resumable Streams
