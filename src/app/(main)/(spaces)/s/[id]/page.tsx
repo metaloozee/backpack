@@ -3,7 +3,7 @@ import { chat, knowledge, spaces } from '@/lib/db/schema/app';
 import { and, desc, eq } from 'drizzle-orm';
 import { notFound, redirect } from 'next/navigation';
 import { SettingsIcon } from 'lucide-react';
-import { Chat } from '@/components/Chat';
+import { Chat } from '@/components/chat';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { KnowledgeDialog } from '@/components/spaces/KnowledgeDialog';
 import { generateUUID } from '@/lib/ai/utils';
@@ -53,7 +53,7 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
                     id={chatId}
                     initialMessages={[]}
                     session={session}
-                    autoResume={false}
+                    autoResume={true}
                     chatsData={chatData}
                 />
             </div>

@@ -1,5 +1,5 @@
-import { Chat } from '@/components/Chat';
 import { generateUUID } from '@/lib/ai/utils';
+import { Chat } from '@/components/chat';
 
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
@@ -19,7 +19,7 @@ export default async function IndexPage() {
                 id={id}
                 initialMessages={[]}
                 session={session}
-                autoResume={false}
+                autoResume={true}
             />
         </div>
     );

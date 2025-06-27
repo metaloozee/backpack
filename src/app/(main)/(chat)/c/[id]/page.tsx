@@ -2,7 +2,7 @@ import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
 import { db } from '@/lib/db';
 import { chat as DBChat, message as DBMessage, spaces as DBSpace } from '@/lib/db/schema/app';
 import { and, eq, asc } from 'drizzle-orm';
-import { Chat as PreviewChat } from '@/components/Chat';
+import { Chat as PreviewChat } from '@/components/chat';
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/auth';
 

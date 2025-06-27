@@ -15,6 +15,7 @@ import { Chat as ChatType } from '@/lib/db/schema/app';
 import { Separator } from './ui/separator';
 import { BookOpenIcon } from 'lucide-react';
 import DisplayChats from './chat/display-chats';
+import { useAutoResume } from '@/lib/hooks/use-auto-resume';
 
 export function Chat({
     id,
@@ -70,9 +71,9 @@ export function Chat({
                 academicSearch,
             };
         },
-        onFinish: () => {
-            if (messages.length === 0) {
-                window.history.pushState({}, '', `/c/${id}`);
+        onResponse: (response) => {
+            if (response.status === 200) {
+                window.history.replaceState({}, '', `/c/${id}`);
             }
         },
         onError: (error) => {
@@ -97,6 +98,14 @@ export function Chat({
     }, [query, append, hasAppendedQuery, id]);
 
     const [attachments, setAttachments] = React.useState<Array<Attachment>>([]);
+
+    useAutoResume({
+        autoResume,
+        initialMessages,
+        experimental_resume,
+        data,
+        setMessages,
+    });
 
     return (
         <div

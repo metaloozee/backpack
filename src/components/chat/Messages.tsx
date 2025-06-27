@@ -4,7 +4,7 @@ import { UIMessage } from 'ai';
 import { Loader, LoaderIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UseChatHelpers } from '@ai-sdk/react';
-import { useMessages } from '@/hooks/use-messages';
+import { useMessages } from '@/lib/hooks/use-messages';
 import { Message as PreviewMessage } from '@/components/chat/message';
 
 interface ChatMessageProps {

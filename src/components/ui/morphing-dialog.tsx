@@ -5,7 +5,7 @@ import { motion, AnimatePresence, MotionConfig, Transition, Variant } from 'moti
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { XIcon } from 'lucide-react';
-import useClickOutside from '@/hooks/useClickOutside';
+import useClickOutside from '@/lib/hooks/use-click-outside';
 import { modalVariants, backdropVariants, transitions, layoutTransition } from '@/lib/animations';
 
 export type MorphingDialogContextType = {

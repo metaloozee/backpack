@@ -17,18 +17,23 @@ import { caller } from '@/lib/trpc/server';
 import { AskModePrompt } from '@/lib/ai/prompts';
 import { z } from 'zod';
 import { tavily } from '@tavily/core';
-import { createDataStreamResponse, tool } from 'ai';
+import { tool } from 'ai';
+import { createResumableStreamContext, type ResumableStreamContext } from 'resumable-stream';
 import { google } from '@ai-sdk/google';
-import { cosineDistance, sql, eq, and, gt, desc } from 'drizzle-orm';
+import { cosineDistance, sql, eq, and, gt, desc, asc } from 'drizzle-orm';
 import {
     knowledge,
     knowledgeEmbeddings,
     message as dbMessage,
     chat as dbChat,
+    stream as dbStream,
+    Chat,
 } from '@/lib/db/schema/app';
 import { db } from '@/lib/db';
+import { differenceInSeconds } from 'date-fns';
 
 import { auth } from '@/auth';
+import { after } from 'next/server';
 
 export const maxDuration = 60;
 
@@ -37,6 +42,8 @@ const tvly = tavily({ apiKey: env.TAVILY_API_KEY });
 const openrouter = createOpenRouter({
     apiKey: env.OPENROUTER_API_KEY,
 });
+
+let globalStreamContext: ResumableStreamContext | null = null;
 
 const largeModel = openrouter('google/gemini-2.5-flash-preview-05-20');
 // const largeModel = openrouter('anthropic/claude-sonnet-4');
@@ -104,6 +111,7 @@ Follow the schema provided.
         });
 
         const streamId = generateUUID();
+        await db.insert(dbStream).values({ id: streamId, chatId: id, createdAt: new Date() });
 
         const activeTools: ('web_search' | 'knowledge_search' | 'academic_search')[] = [];
 
@@ -360,12 +368,115 @@ Follow the schema provided.
             },
         });
 
-        return new Response(stream);
+        const streamContext = getStreamContext();
+        if (streamContext) {
+            return new Response(await streamContext.resumableStream(streamId, () => stream));
+        } else {
+            return new Response(stream);
+        }
     } catch (error) {
         console.error(error);
         return new Response((error as Error).message, { status: 500 });
     }
 }
+
+export async function GET(request: Request) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        throw new Error('Access Denied');
+    }
+
+    const streamContext = getStreamContext();
+    const resumeRequestedAt = new Date();
+
+    if (!streamContext) {
+        throw new Error('Stream context not found');
+    }
+
+    const { searchParams } = new URL(request.url);
+    const chatId = searchParams.get('chatId');
+
+    if (!chatId) {
+        throw new Error('Chat ID not found');
+    }
+
+    const [chat] = await db
+        .select()
+        .from(dbChat)
+        .where(and(eq(dbChat.id, chatId), eq(dbChat.userId, session.user.id)))
+        .limit(1);
+    if (!chat) {
+        throw new Error('Chat not found');
+    }
+
+    const streams = await db
+        .select({ id: dbStream.id })
+        .from(dbStream)
+        .where(eq(dbStream.chatId, chatId))
+        .orderBy(asc(dbStream.createdAt));
+    const streamIds = streams.map(({ id }) => id);
+    if (!streamIds.length) {
+        throw new Error('No streams found');
+    }
+
+    const recentStreamId = streamIds[streamIds.length - 1];
+    if (!recentStreamId) {
+        throw new Error('No recent stream found');
+    }
+
+    const emptyDataStream = createDataStream({
+        execute: () => {},
+    });
+
+    const stream = await streamContext.resumableStream(recentStreamId, () => emptyDataStream);
+    if (!stream) {
+        const messages = await db
+            .select()
+            .from(dbMessage)
+            .where(eq(dbMessage.chatId, chatId))
+            .orderBy(asc(dbMessage.createdAt));
+        const mostRecentMessage = messages[messages.length - 1];
+        if (!mostRecentMessage) {
+            return new Response(emptyDataStream, { status: 200 });
+        }
+
+        if (mostRecentMessage.role !== 'assistant') {
+            return new Response(emptyDataStream, { status: 200 });
+        }
+
+        const messageCreatedAt = new Date(mostRecentMessage.createdAt);
+        if (differenceInSeconds(resumeRequestedAt, messageCreatedAt) > 15) {
+            return new Response(emptyDataStream, { status: 200 });
+        }
+
+        const restoredStream = createDataStream({
+            execute: (buffer) => {
+                buffer.writeData({
+                    type: 'append-message',
+                    message: JSON.stringify(mostRecentMessage),
+                });
+            },
+        });
+
+        return new Response(restoredStream, { status: 200 });
+    }
+
+    return new Response(stream, { status: 200 });
+}
+
+const getStreamContext = () => {
+    if (!globalStreamContext) {
+        try {
+            globalStreamContext = createResumableStreamContext({
+                waitUntil: after,
+            });
+        } catch (error: any) {
+            console.error(error);
+        }
+    }
+
+    return globalStreamContext;
+};
 
 const extractDomain = (url: string): string => {
     const urlPattern = /^https?:\/\/([^/?#]+)(?:[/?#]|$)/i;
