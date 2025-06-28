@@ -1,7 +1,8 @@
-- [x] fix: Authentication
+- [ ] fix: Authentication
 - [x] Enhance tRPC Usage
 - [ ] Zustand for state management
 - [x] TanStack Query
 - [x] Infinite Scrolling with TanStack Query
 - [ ] Optimistic Updates
-- [ ] Resumable Streams
+- [x] Resumable Streams
+- [ ] Login Button

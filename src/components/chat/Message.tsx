@@ -4,10 +4,10 @@ import React, { useState, memo } from 'react';
 
 import { cn } from '@/lib/utils';
 
-import { BrainIcon, ChevronDownIcon, LoaderIcon } from 'lucide-react';
+import { BrainIcon, ChevronDownIcon, ChevronUpIcon, LoaderCircleIcon } from 'lucide-react';
 import { UseChatHelpers } from '@ai-sdk/react';
 import { UIMessage } from 'ai';
-import { AnimatePresence, motion, MotionConfig } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { PreviewAttachment } from '@/components/chat/preview-attachment';
 import { Markdown } from '@/components/chat/markdown';
 import {
@@ -17,6 +17,7 @@ import {
     AcademicSearchTool,
 } from '@/components/chat/tools';
 import cx from 'classnames';
+import { Button } from '@/components/ui/button';
 
 interface MessageReasoningProps {
     isLoading: boolean;
@@ -24,65 +25,56 @@ interface MessageReasoningProps {
 }
 
 export function MessageReasoning({ isLoading, reasoning }: MessageReasoningProps) {
-    const [isExpanded, setIsExpanded] = useState(true);
-
-    const variants = {
-        collapsed: {
-            height: 0,
-            opacity: 0,
-            marginTop: 0,
-            marginBottom: 0,
-        },
-        expanded: {
-            height: 'auto',
-            opacity: 1,
-            marginTop: '1rem',
-            marginBottom: '0.5rem',
-        },
-    };
+    const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-        <div className="flex flex-col">
-            {isLoading ? (
-                <div className="flex flex-row gap-2 items-center">
-                    <div className="font-medium">Reasoning</div>
-                    <div className="animate-spin">
-                        <LoaderIcon />
-                    </div>
+        <div className="relative rounded-lg text-sm">
+            <div
+                className={cn('relative overflow-hidden transition-[max-height] duration-500', {
+                    'max-h-24': !isExpanded,
+                    'max-h-[500px]': isExpanded,
+                })}
+            >
+                <div className="dark:text-neutral-400 text-neutral-600">
+                    <Markdown>{reasoning}</Markdown>
                 </div>
-            ) : (
-                <div className="flex flex-row gap-2 items-center">
-                    <div className="font-medium">Reasoned for a few seconds</div>
-                    <button
-                        data-testid="message-reasoning-toggle"
-                        type="button"
-                        className="cursor-pointer"
-                        onClick={() => {
-                            setIsExpanded(!isExpanded);
-                        }}
-                    >
-                        <ChevronDownIcon />
-                    </button>
-                </div>
-            )}
-
-            <AnimatePresence initial={false}>
-                {isExpanded && (
-                    <motion.div
-                        data-testid="message-reasoning"
-                        key="content"
-                        initial="collapsed"
-                        animate="expanded"
-                        exit="collapsed"
-                        variants={variants}
-                        transition={{ duration: 0.2, ease: 'easeInOut' }}
-                        style={{ overflow: 'hidden' }}
-                        className="pl-4 text-neutral-600 dark:text-neutral-400 border-l flex flex-col gap-4"
-                    >
-                        <Markdown>{reasoning}</Markdown>
-                    </motion.div>
+                {!isExpanded && (
+                    <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-card to-transparent pointer-events-none" />
                 )}
-            </AnimatePresence>
+            </div>
+            <div className="mt-2 flex items-center justify-center gap-2">
+                <Button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    variant="ghost"
+                    disabled={isLoading}
+                    size={'sm'}
+                    className="text-xs dark:!text-neutral-500 !text-neutral-600 overflow-hidden"
+                >
+                    <AnimatePresence mode="wait">
+                        <motion.span
+                            key={isExpanded ? 'expanded' : 'collapsed'}
+                            initial={{ y: isExpanded ? 15 : -15, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: isExpanded ? -15 : 15, opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            className="flex items-center gap-2"
+                        >
+                            {isLoading && <LoaderCircleIcon className="animate-spin size-3" />}
+                            {isExpanded ? (
+                                <>
+                                    Hide Reasoning
+                                    <ChevronUpIcon className="size-3" />
+                                </>
+                            ) : (
+                                <>
+                                    Show Reasoning
+                                    <ChevronDownIcon className="size-3" />
+                                </>
+                            )}
+                        </motion.span>
+                    </AnimatePresence>
+                </Button>
+            </div>
         </div>
     );
 }

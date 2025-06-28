@@ -8,7 +8,6 @@ import {
     createDataStream,
     generateObject,
 } from 'ai';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { generateUUID, getTrailingMessageId } from '@/lib/ai/utils';
 
 import { env } from '@/lib/env.mjs';
@@ -19,7 +18,6 @@ import { z } from 'zod';
 import { tavily } from '@tavily/core';
 import { tool } from 'ai';
 import { createResumableStreamContext, type ResumableStreamContext } from 'resumable-stream';
-import { google } from '@ai-sdk/google';
 import { cosineDistance, sql, eq, and, gt, desc, asc } from 'drizzle-orm';
 import {
     knowledge,
@@ -39,15 +37,15 @@ export const maxDuration = 60;
 
 const tvly = tavily({ apiKey: env.TAVILY_API_KEY });
 
-const openrouter = createOpenRouter({
-    apiKey: env.OPENROUTER_API_KEY,
-});
-
 let globalStreamContext: ResumableStreamContext | null = null;
 
-const largeModel = openrouter('google/gemini-2.5-flash-preview-05-20');
-// const largeModel = openrouter('anthropic/claude-sonnet-4');
-// const largeModel = openrouter('google/gemini-2.5-pro-preview');
+import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google';
+import { anthropic, AnthropicProviderOptions } from '@ai-sdk/anthropic';
+
+const gemini_pro = google('gemini-2.5-pro');
+const gemini_flash = google('gemini-2.5-flash');
+const gemini_flash_lite = google('gemini-2.5-flash-lite-preview-06-17');
+const claude_sonnet = anthropic('claude-4-sonnet-20250514');
 
 export async function POST(req: Request) {
     try {
@@ -72,7 +70,7 @@ export async function POST(req: Request) {
             .limit(1);
         if (!chat) {
             const { object } = await generateObject({
-                model: openrouter('google/gemini-2.0-flash-lite-001'),
+                model: gemini_flash_lite,
                 schema: z.object({
                     title: z.string().max(100),
                 }),
@@ -122,7 +120,21 @@ Follow the schema provided.
         const stream = createDataStream({
             execute: (dataStream) => {
                 const result = streamText({
-                    model: largeModel,
+                    model: gemini_flash,
+                    providerOptions: {
+                        anthropic: {
+                            thinking: {
+                                type: 'enabled',
+                                budgetTokens: 2048,
+                            },
+                        } satisfies AnthropicProviderOptions,
+                        google: {
+                            thinkingConfig: {
+                                thinkingBudget: 2048,
+                                includeThoughts: true,
+                            },
+                        } satisfies GoogleGenerativeAIProviderOptions,
+                    },
                     messages: convertToCoreMessages(messages),
                     system: AskModePrompt({
                         tools: {
