@@ -6,6 +6,7 @@ import { and, eq, desc, lt } from 'drizzle-orm';
 import { z } from 'zod';
 import { createInsertSchema } from 'drizzle-zod';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 
 export const chatRouter = router({
     getChats: protectedProcedure
@@ -85,5 +86,22 @@ export const chatRouter = router({
             await db
                 .delete(chat)
                 .where(and(eq(chat.id, input.chatId), eq(chat.userId, ctx.session.user.id)));
+        }),
+    setModelSelection: protectedProcedure
+        .input(
+            z.object({
+                modelId: z.string(),
+            })
+        )
+        .mutation(async ({ ctx, input }) => {
+            const cookieStore = await cookies();
+
+            cookieStore.set('X-Model-Id', input.modelId, {
+                httpOnly: false,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+            });
+
+            return { success: true, modelId: input.modelId };
         }),
 });

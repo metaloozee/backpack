@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Message, useChat } from '@ai-sdk/react';
-import { Input as InputPanel } from '@/components/Input';
+import { Input as InputPanel } from '@/components/chat-input';
 import { cn } from '@/lib/utils';
 import { ChatMessages } from '@/components/chat/messages';
 import { toast } from 'sonner';
@@ -24,6 +24,7 @@ export function Chat({
     session,
     autoResume,
     chatsData,
+    initialModel,
 }: {
     id: string;
     env: {
@@ -36,6 +37,7 @@ export function Chat({
     session: Session | null;
     autoResume: boolean;
     chatsData?: Array<ChatType>;
+    initialModel?: string;
 }) {
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
@@ -148,6 +150,7 @@ export function Chat({
                 setKnowledgeSearch={setKnowledgeSearch}
                 academicSearch={academicSearch}
                 setAcademicSearch={setAcademicSearch}
+                initialModel={initialModel}
             />
 
             {isSpaceChat && chatsData && chatsData.length > 0 && messages.length === 0 && (

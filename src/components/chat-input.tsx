@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,6 +18,7 @@ import {
     BookCopyIcon,
     GraduationCapIcon,
     TelescopeIcon,
+    CpuIcon,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -33,6 +34,7 @@ import {
 } from '@/lib/animations';
 import { UseChatHelpers } from '@ai-sdk/react';
 import { Dispatch, SetStateAction } from 'react';
+import { ModelSelector } from '@/components/model-selector';
 
 interface InputPanelProps {
     chatId: string;
@@ -52,6 +54,7 @@ interface InputPanelProps {
     setKnowledgeSearch: (knowledgeSearch: boolean) => void;
     academicSearch: boolean;
     setAcademicSearch: (academicSearch: boolean) => void;
+    initialModel?: string;
 }
 
 const modeTypes = [
@@ -97,6 +100,7 @@ function PureInput({
     setKnowledgeSearch,
     academicSearch,
     setAcademicSearch,
+    initialModel,
 }: InputPanelProps) {
     const hour = new Date().getHours();
     let greeting = '';
@@ -182,20 +186,6 @@ function PureInput({
         },
         [setAcademicSearch]
     );
-
-    // React.useEffect(() => {
-    //     if (selectedMode === 'ask') {
-    //         if (isSpaceChat) {
-    //             updateWebSearch(true);
-    //             updateKnowledgeSearch(true);
-    //             updateAcademicSearch(false);
-    //         } else {
-    //             updateWebSearch(true);
-    //             updateKnowledgeSearch(false);
-    //             updateAcademicSearch(false);
-    //         }
-    //     }
-    // }, [isSpaceChat, selectedMode, updateWebSearch, updateKnowledgeSearch, updateAcademicSearch]);
 
     const handlerCompositionStart = React.useCallback(() => setIsComposing(true), []);
 
@@ -544,11 +534,17 @@ function PureInput({
                             transition={transitions.smooth}
                         >
                             <AnimatePresence>
-                                {isLoading ? (
-                                    <StopButton stop={stop} setMessages={setMessages} />
-                                ) : (
-                                    <SendButton input={input} submitForm={submitForm} />
-                                )}
+                                <div className="flex items-center gap-2">
+                                    <motion.div variants={fadeVariants} className="flex-shrink-0">
+                                        <ModelSelector initialModel={initialModel} />
+                                    </motion.div>
+
+                                    {isLoading ? (
+                                        <StopButton stop={stop} setMessages={setMessages} />
+                                    ) : (
+                                        <SendButton input={input} submitForm={submitForm} />
+                                    )}
+                                </div>
                             </AnimatePresence>
                         </motion.div>
                     </div>
@@ -561,7 +557,6 @@ function PureInput({
 const StopButton = React.memo(
     ({ stop, setMessages }: { stop: () => void; setMessages: (messages: any) => void }) => (
         <Button
-            size={'sm'}
             variant={'destructive'}
             onClick={(event) => {
                 event.preventDefault();
@@ -586,7 +581,6 @@ const SendButton = React.memo(
     ({ input, submitForm }: { input: string; submitForm: () => void }) => (
         <Button
             className="px-4"
-            size={'sm'}
             onClick={(event) => {
                 event.preventDefault();
                 submitForm();

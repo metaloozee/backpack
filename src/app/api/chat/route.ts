@@ -31,7 +31,12 @@ import { db } from '@/lib/db';
 import { differenceInSeconds } from 'date-fns';
 
 import { auth } from '@/auth';
-import { after } from 'next/server';
+import { after, NextRequest } from 'next/server';
+import { cookies } from 'next/headers';
+import { getModel } from '@/lib/models';
+
+import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google';
+import { AnthropicProviderOptions } from '@ai-sdk/anthropic';
 
 export const maxDuration = 60;
 
@@ -39,15 +44,7 @@ const tvly = tavily({ apiKey: env.TAVILY_API_KEY });
 
 let globalStreamContext: ResumableStreamContext | null = null;
 
-import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google';
-import { anthropic, AnthropicProviderOptions } from '@ai-sdk/anthropic';
-
-const gemini_pro = google('gemini-2.5-pro');
-const gemini_flash = google('gemini-2.5-flash');
-const gemini_flash_lite = google('gemini-2.5-flash-lite-preview-06-17');
-const claude_sonnet = anthropic('claude-4-sonnet-20250514');
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     try {
         const session = await auth();
         if (!session?.user?.id) {
@@ -63,6 +60,16 @@ export async function POST(req: Request) {
             throw new Error('Invalid Body');
         }
 
+        const cookieStore = await cookies();
+        const modelId = cookieStore.get('X-Model-Id')?.value ?? 'gemini-2.5-flash';
+        const model = getModel(modelId);
+
+        if (!model) {
+            throw new Error('Invalid model selected');
+        }
+
+        console.log('Using model:', model.modelId);
+
         const [chat] = await db
             .select()
             .from(dbChat)
@@ -70,7 +77,7 @@ export async function POST(req: Request) {
             .limit(1);
         if (!chat) {
             const { object } = await generateObject({
-                model: gemini_flash_lite,
+                model: google('gemini-2.5-flash-lite-preview-06-17'),
                 schema: z.object({
                     title: z.string().max(100),
                 }),
@@ -120,7 +127,7 @@ Follow the schema provided.
         const stream = createDataStream({
             execute: (dataStream) => {
                 const result = streamText({
-                    model: gemini_flash,
+                    model: model,
                     providerOptions: {
                         anthropic: {
                             thinking: {

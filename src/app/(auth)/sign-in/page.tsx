@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { signIn } from 'next-auth/react';
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
 import { BackpackIcon } from 'lucide-react';
-import Google from 'public/google.svg';
+import Google from 'public/icons/google.svg';
 import { Separator } from '@/components/ui/separator';
 
 export default function SignInPage() {

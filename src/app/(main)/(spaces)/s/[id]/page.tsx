@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/
 import { KnowledgeDialog } from '@/components/spaces/KnowledgeDialog';
 import { generateUUID } from '@/lib/ai/utils';
 import { auth } from '@/auth';
+import { cookies } from 'next/headers';
+import { models } from '@/lib/models';
 
 export default async function SpacePage({ params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
@@ -19,6 +21,9 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
 
     const { id: spaceId } = await params;
     const chatId = generateUUID();
+
+    const cookieStore = await cookies();
+    const selectedModel = cookieStore.get('X-Model-Id')?.value ?? models[0].id;
 
     const [spaceData] = await db
         .select()
@@ -55,6 +60,7 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
                     session={session}
                     autoResume={true}
                     chatsData={chatData}
+                    initialModel={selectedModel}
                 />
             </div>
             <div className="mt-20 max-w-lg flex flex-col gap-10 w-full">

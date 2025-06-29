@@ -1,8 +1,10 @@
 import { generateUUID } from '@/lib/ai/utils';
 import { Chat } from '@/components/chat';
+import { models } from '@/lib/models';
 
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
 export default async function IndexPage() {
     const session = await auth();
@@ -11,6 +13,8 @@ export default async function IndexPage() {
     }
 
     const id = generateUUID();
+    const cookieStore = await cookies();
+    const selectedModel = cookieStore.get('X-Model-Id')?.value ?? models[0].id;
 
     return (
         <div className="h-screen w-full flex flex-col justify-center items-center">
@@ -20,6 +24,7 @@ export default async function IndexPage() {
                 initialMessages={[]}
                 session={session}
                 autoResume={true}
+                initialModel={selectedModel}
             />
         </div>
     );

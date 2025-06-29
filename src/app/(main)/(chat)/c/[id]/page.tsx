@@ -5,6 +5,8 @@ import { and, eq, asc } from 'drizzle-orm';
 import { Chat as PreviewChat } from '@/components/chat';
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/auth';
+import { cookies } from 'next/headers';
+import { models } from '@/lib/models';
 
 export default async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
@@ -14,6 +16,9 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
 
     const user = session.user;
     const { id: chatId } = await params;
+
+    const cookieStore = await cookies();
+    const selectedModel = cookieStore.get('X-Model-Id')?.value ?? models[0].id;
 
     const [chatData] = await db
         .select()
@@ -50,6 +55,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
             initialMessages={convertToUIMessages(messages)}
             session={session}
             autoResume={true}
+            initialModel={selectedModel}
         />
     );
 }

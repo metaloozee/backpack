@@ -6,3 +6,4 @@
 - [ ] Optimistic Updates
 - [x] Resumable Streams
 - [ ] Login Button
+- [x] Model Selection
