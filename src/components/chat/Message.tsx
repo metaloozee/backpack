@@ -18,6 +18,7 @@ import {
 } from '@/components/chat/tools';
 import cx from 'classnames';
 import { Button } from '@/components/ui/button';
+import { Disclosure, DisclosureTrigger, DisclosureContent } from '@/components/ui/disclosure';
 
 interface MessageReasoningProps {
     isLoading: boolean;
@@ -28,54 +29,62 @@ export function MessageReasoning({ isLoading, reasoning }: MessageReasoningProps
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-        <div className="relative rounded-lg text-sm">
-            <div
-                className={cn('relative overflow-hidden transition-[max-height] duration-500', {
-                    'max-h-24': !isExpanded,
-                    'max-h-[500px]': isExpanded,
-                })}
+        <Disclosure
+            open={isExpanded}
+            onOpenChange={setIsExpanded}
+            className="relative rounded-lg text-sm"
+            transition={{ duration: 0.5 }}
+        >
+            <motion.div
+                className="relative overflow-hidden"
+                animate={{
+                    height: isExpanded ? 'auto' : 96,
+                }}
+                transition={{ duration: 0.5 }}
             >
                 <div className="dark:text-neutral-400 text-neutral-600">
                     <Markdown>{reasoning}</Markdown>
                 </div>
                 {!isExpanded && (
-                    <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-card to-transparent pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-background to-transparent pointer-events-none" />
                 )}
-            </div>
+            </motion.div>
+
             <div className="mt-2 flex items-center justify-center gap-2">
-                <Button
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    variant="ghost"
-                    disabled={isLoading}
-                    size={'sm'}
-                    className="text-xs dark:!text-neutral-500 !text-neutral-600 overflow-hidden"
-                >
-                    <AnimatePresence mode="wait">
-                        <motion.span
-                            key={isExpanded ? 'expanded' : 'collapsed'}
-                            initial={{ y: isExpanded ? 15 : -15, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: isExpanded ? -15 : 15, opacity: 0 }}
-                            transition={{ duration: 0.15 }}
-                            className="flex items-center gap-2"
-                        >
-                            {isLoading && <LoaderCircleIcon className="animate-spin size-3" />}
-                            {isExpanded ? (
-                                <>
-                                    Hide Reasoning
-                                    <ChevronUpIcon className="size-3" />
-                                </>
-                            ) : (
-                                <>
-                                    Show Reasoning
-                                    <ChevronDownIcon className="size-3" />
-                                </>
-                            )}
-                        </motion.span>
-                    </AnimatePresence>
-                </Button>
+                <DisclosureTrigger>
+                    <Button
+                        variant="ghost"
+                        disabled={isLoading}
+                        size={'sm'}
+                        className="text-xs dark:!text-neutral-500 !text-neutral-600 overflow-hidden"
+                    >
+                        <AnimatePresence mode="wait">
+                            <motion.span
+                                key={isExpanded ? 'expanded' : 'collapsed'}
+                                initial={{ y: isExpanded ? 15 : -15, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: isExpanded ? -15 : 15, opacity: 0 }}
+                                transition={{ duration: 0.15 }}
+                                className="flex items-center gap-2"
+                            >
+                                {isLoading && <LoaderCircleIcon className="animate-spin size-3" />}
+                                {isExpanded ? (
+                                    <>
+                                        Hide Reasoning
+                                        <ChevronUpIcon className="size-3" />
+                                    </>
+                                ) : (
+                                    <>
+                                        Show Reasoning
+                                        <ChevronDownIcon className="size-3" />
+                                    </>
+                                )}
+                            </motion.span>
+                        </AnimatePresence>
+                    </Button>
+                </DisclosureTrigger>
             </div>
-        </div>
+        </Disclosure>
     );
 }
 
