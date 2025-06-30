@@ -71,7 +71,7 @@ export function KnowledgeSearchTool({ toolCallId, state, args, result }: Knowled
                                                       ) => (
                                                           <div
                                                               key={`${searchResult.keyword}-${ctxIdx}`}
-                                                              className="bg-neutral-800 rounded-lg shadow-sm p-3 shrink-0 w-64 hover:shadow-md transition-shadow duration-200"
+                                                              className="bg-neutral-950 rounded-lg shadow-sm p-3 shrink-0 w-64 hover:shadow-md transition-shadow duration-200"
                                                           >
                                                               <p className="text-sm font-medium text-primary line-clamp-2">
                                                                   {context.knowledgeName}

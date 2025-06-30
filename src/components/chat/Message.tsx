@@ -2,9 +2,16 @@
 
 import React, { useState, memo } from 'react';
 
+import equal from 'fast-deep-equal';
 import { cn } from '@/lib/utils';
 
-import { BrainIcon, ChevronDownIcon, ChevronUpIcon, LoaderCircleIcon } from 'lucide-react';
+import {
+    ChevronDownIcon,
+    ChevronUpIcon,
+    LoaderCircleIcon,
+    PencilIcon,
+    PencilLineIcon,
+} from 'lucide-react';
 import { UseChatHelpers } from '@ai-sdk/react';
 import { UIMessage } from 'ai';
 import { AnimatePresence, motion } from 'motion/react';
@@ -16,9 +23,11 @@ import {
     KnowledgeSearchTool,
     AcademicSearchTool,
 } from '@/components/chat/tools';
-import cx from 'classnames';
 import { Button } from '@/components/ui/button';
-import { Disclosure, DisclosureTrigger, DisclosureContent } from '@/components/ui/disclosure';
+import { Disclosure, DisclosureTrigger } from '@/components/ui/disclosure';
+import { MessageActions } from '@/components/chat/message-actions';
+import { MessageEditor } from './message-editor';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 interface MessageReasoningProps {
     isLoading: boolean;
@@ -33,14 +42,12 @@ export function MessageReasoning({ isLoading, reasoning }: MessageReasoningProps
             open={isExpanded}
             onOpenChange={setIsExpanded}
             className="relative rounded-lg text-sm"
-            transition={{ duration: 0.5 }}
         >
             <motion.div
                 className="relative overflow-hidden"
                 animate={{
                     height: isExpanded ? 'auto' : 96,
                 }}
-                transition={{ duration: 0.5 }}
             >
                 <div className="dark:text-neutral-400 text-neutral-600">
                     <Markdown>{reasoning}</Markdown>
@@ -54,7 +61,6 @@ export function MessageReasoning({ isLoading, reasoning }: MessageReasoningProps
                 <DisclosureTrigger>
                     <Button
                         variant="ghost"
-                        disabled={isLoading}
                         size={'sm'}
                         className="text-xs dark:!text-neutral-500 !text-neutral-600 overflow-hidden"
                     >
@@ -103,6 +109,8 @@ export function Message({
     reload: UseChatHelpers['reload'];
     requiresScrollPadding: boolean;
 }) {
+    const [mode, setMode] = useState<'view' | 'edit'>('view');
+
     return (
         <AnimatePresence>
             <motion.div
@@ -152,24 +160,59 @@ export function Message({
                             }
 
                             if (type === 'text') {
-                                return (
-                                    <div
-                                        key={key}
-                                        className={cn('flex flex-row gap-2 w-full', {
-                                            'justify-end': message.role == 'user',
-                                        })}
-                                    >
+                                if (mode == 'view') {
+                                    return (
                                         <div
-                                            data-testid="message-content"
-                                            className={cn('flex flex-col gap-4', {
-                                                'text-primary bg-neutral-900 border px-4 py-1 rounded-t-xl rounded-bl-xl overflow-auto':
-                                                    message.role === 'user',
-                                            })}
+                                            key={key}
+                                            className={cn(
+                                                'group/message flex flex-row gap-2 w-full items-center',
+                                                {
+                                                    'justify-end': message.role == 'user',
+                                                }
+                                            )}
                                         >
-                                            <Markdown>{part.text}</Markdown>
+                                            {message.role == 'user' && (
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            data-testid="message-edit-button"
+                                                            size={'icon'}
+                                                            variant="ghost"
+                                                            className="rounded-full opacity-0 group-hover/message:opacity-100 transition-all duration-200 ease-in-out"
+                                                            onClick={() => {
+                                                                setMode('edit');
+                                                            }}
+                                                        >
+                                                            <PencilLineIcon className="size-3" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Edit Message</TooltipContent>
+                                                </Tooltip>
+                                            )}
+                                            <div
+                                                data-testid="message-content"
+                                                className={cn('flex flex-col gap-4', {
+                                                    'text-primary bg-neutral-900 border px-4 py-1 rounded-t-xl rounded-bl-xl overflow-auto':
+                                                        message.role === 'user',
+                                                })}
+                                            >
+                                                <Markdown>{part.text}</Markdown>
+                                            </div>
                                         </div>
-                                    </div>
-                                );
+                                    );
+                                } else if (mode == 'edit') {
+                                    return (
+                                        <div key={key} className="w-full">
+                                            <MessageEditor
+                                                key={message.id}
+                                                message={message}
+                                                setMode={setMode}
+                                                setMessages={setMessages}
+                                                reload={reload}
+                                            />
+                                        </div>
+                                    );
+                                }
                             }
 
                             if (type === 'tool-invocation') {
@@ -247,6 +290,8 @@ export function Message({
                                 }
                             }
                         })}
+
+                        <MessageActions chatId={chatId} message={message} isLoading={isLoading} />
                     </div>
                 </div>
             </motion.div>
@@ -255,34 +300,10 @@ export function Message({
 }
 
 export const PreviewMessage = memo(Message, (prevProps, nextProps) => {
-    if (prevProps.isLoading !== nextProps.isLoading) return false;
-    if (prevProps.message.id !== nextProps.message.id) return false;
-    if (prevProps.requiresScrollPadding !== nextProps.requiresScrollPadding) return false;
-    if (prevProps.message.parts !== nextProps.message.parts) return false;
+    if (!equal(prevProps.isLoading, nextProps.isLoading)) return false;
+    if (!equal(prevProps.message.id, nextProps.message.id)) return false;
+    if (!equal(prevProps.requiresScrollPadding, nextProps.requiresScrollPadding)) return false;
+    if (!equal(prevProps.message.parts, nextProps.message.parts)) return false;
 
     return true;
 });
-
-export const ThinkingMessage = () => {
-    const role = 'assistant';
-
-    return (
-        <motion.div
-            data-testid="message-assistant-loading"
-            className="w-full mx-auto max-w-3xl px-4 min-h-96"
-            initial={{ y: 5, opacity: 0 }}
-            animate={{ y: 0, opacity: 1, transition: { delay: 1 } }}
-            data-role={role}
-        >
-            <div className={cx('flex gap-4 w-full rounded-xl')}>
-                <div className="size-8 flex items-center rounded-full justify-center ring-1 shrink-0 ring-border">
-                    <BrainIcon size={14} />
-                </div>
-
-                <div className="flex flex-col gap-2 w-full">
-                    <div className="flex flex-col gap-4 text-muted-foreground">Hmm...</div>
-                </div>
-            </div>
-        </motion.div>
-    );
-};

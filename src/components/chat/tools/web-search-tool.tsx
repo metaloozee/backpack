@@ -69,7 +69,7 @@ export function WebSearchTool({ toolCallId, state, args, result }: WebSearchTool
                                                 (searchResult: SearchResult, resIdx: number) => (
                                                     <div
                                                         key={`${searchGroup.query}-${resIdx}`}
-                                                        className="bg-neutral-800 rounded-lg shadow-sm p-3 shrink-0 w-64 hover:shadow-md transition-shadow duration-200"
+                                                        className="bg-neutral-950 rounded-lg shadow-sm p-3 shrink-0 w-64 hover:shadow-md transition-shadow duration-200"
                                                     >
                                                         <Link
                                                             href={searchResult.url}
@@ -79,7 +79,7 @@ export function WebSearchTool({ toolCallId, state, args, result }: WebSearchTool
                                                             <img
                                                                 src={`https://www.google.com/s2/favicons?domain=${new URL(searchResult.url).hostname}&sz=16`}
                                                                 alt="favicon"
-                                                                className="inline-block w-4 h-4 mr-1.5 align-middle"
+                                                                className="inline-block size-6 border-3 mr-1.5 align-middle rounded"
                                                                 onError={(e) => {
                                                                     (
                                                                         e.target as HTMLImageElement

@@ -7,3 +7,7 @@
 - [x] Resumable Streams
 - [ ] Login Button
 - [x] Model Selection
+- [ ] Image Display
+- [ ] Citation
+- [x] Message actions
+- [ ] Attachment support

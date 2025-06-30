@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Message, useChat } from '@ai-sdk/react';
+import { useChat } from '@ai-sdk/react';
 import { Input as InputPanel } from '@/components/chat-input';
 import { cn } from '@/lib/utils';
 import { ChatMessages } from '@/components/chat/messages';

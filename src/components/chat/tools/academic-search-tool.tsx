@@ -79,7 +79,7 @@ export function AcademicSearchTool({ toolCallId, state, args, result }: Academic
                                                       (paper: Paper, resIdx: number) => (
                                                           <div
                                                               key={`${searchGroup.query}-${resIdx}`}
-                                                              className="bg-neutral-800 rounded-lg shadow-sm p-3 shrink-0 w-64 hover:shadow-md transition-shadow duration-200"
+                                                              className="bg-neutral-950 rounded-lg shadow-sm p-3 shrink-0 w-64 hover:shadow-md transition-shadow duration-200"
                                                           >
                                                               <Link
                                                                   href={paper.url}

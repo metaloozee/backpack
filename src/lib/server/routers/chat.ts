@@ -2,7 +2,7 @@ import { db } from '@/lib/db';
 import { chat, type Message, message } from '@/lib/db/schema/app';
 import { protectedProcedure, router } from '@/lib/server/trpc';
 import { TRPCError } from '@trpc/server';
-import { and, eq, desc, lt } from 'drizzle-orm';
+import { and, eq, desc, lt, gte, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { createInsertSchema } from 'drizzle-zod';
 import { revalidatePath } from 'next/cache';
@@ -83,9 +83,48 @@ export const chatRouter = router({
             })
         )
         .mutation(async ({ ctx, input }) => {
-            await db
+            return await db
                 .delete(chat)
                 .where(and(eq(chat.id, input.chatId), eq(chat.userId, ctx.session.user.id)));
+        }),
+    deleteTrailingMessages: protectedProcedure
+        .input(
+            z.object({
+                messageId: z.string().uuid(),
+            })
+        )
+        .mutation(async ({ ctx, input }) => {
+            const [currentMessage] = await db
+                .select()
+                .from(message)
+                .innerJoin(chat, eq(message.chatId, chat.id))
+                .where(and(eq(chat.userId, ctx.session.user.id), eq(message.id, input.messageId)));
+
+            if (!currentMessage) {
+                throw new TRPCError({ code: 'NOT_FOUND', message: 'Message not found' });
+            }
+
+            const messagesToDelete = await db
+                .select({ id: message.id })
+                .from(message)
+                .where(
+                    and(
+                        eq(message.chatId, currentMessage.message.chatId),
+                        gte(message.createdAt, currentMessage.message.createdAt)
+                    )
+                );
+            const messageIds = messagesToDelete.map((message) => message.id);
+
+            if (messageIds.length > 0) {
+                return await db
+                    .delete(message)
+                    .where(
+                        and(
+                            eq(message.chatId, currentMessage.message.chatId),
+                            inArray(message.id, messageIds)
+                        )
+                    );
+            }
         }),
     setModelSelection: protectedProcedure
         .input(
