@@ -95,7 +95,7 @@ export function MessageEditor({ message, setMode, setMessages, reload }: Message
     };
 
     return (
-        <div className="w-full mx-auto">
+        <div className="w-full mx-auto overflow-hidden">
             <div className="text-primary bg-neutral-900 border px-4 py-3 rounded-t-xl rounded-bl-xl overflow-auto">
                 <Textarea
                     ref={textareaRef}

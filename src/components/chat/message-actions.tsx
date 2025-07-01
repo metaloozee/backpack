@@ -77,7 +77,6 @@ export function PureMessageActions({
 
                                     await copyToClipboard(textFromParts);
                                     setIsCopied(true);
-                                    toast.success('Message copied to clipboard');
                                 }}
                             >
                                 <AnimatePresence mode="wait" initial={false}>
@@ -121,7 +120,6 @@ export function PureMessageActions({
                                 onClick={() => {
                                     console.log('Thumbs up clicked for message:', message.id);
                                     setIsThumbsUp(true);
-                                    toast.success('Message liked');
                                 }}
                             >
                                 <AnimatePresence mode="wait" initial={false}>
@@ -165,7 +163,6 @@ export function PureMessageActions({
                                 onClick={() => {
                                     console.log('Thumbs down clicked for message:', message.id);
                                     setIsThumbsDown(true);
-                                    toast.success('Message disliked');
                                 }}
                             >
                                 <AnimatePresence mode="wait" initial={false}>
