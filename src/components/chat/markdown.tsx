@@ -3,6 +3,10 @@ import React, { memo } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { CodeBlock } from '@/components/chat/code-block';
+import { useCitations } from '@/lib/hooks/use-citations';
+import { Citation } from './citation';
+import { References } from './references';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -164,15 +168,110 @@ const remarkPlugins = [remarkGfm, remarkMath];
 const rehypePlugins = [rehypeKatex];
 
 const NonMemoizedMarkdown = ({ children }: { children: string }) => {
+    const { processedContent, citations } = useCitations(children);
+
+    const renderTextWithCitations = (text: string | React.ReactNode): React.ReactNode => {
+        if (typeof text !== 'string') {
+            return text;
+        }
+
+        const citationRegex = /\[(\d+)\]/g;
+        const parts: React.ReactNode[] = [];
+        let lastIndex = 0;
+        let match;
+
+        while ((match = citationRegex.exec(text)) !== null) {
+            if (match.index > lastIndex) {
+                parts.push(text.slice(lastIndex, match.index));
+            }
+
+            const citationId = parseInt(match[1]);
+            const citation = citations.find((c) => c.id === citationId);
+
+            if (citation) {
+                parts.push(
+                    <Citation key={`citation-${citation.id}-${match.index}`} citation={citation} />
+                );
+            } else {
+                parts.push(match[0]);
+            }
+
+            lastIndex = match.index + match[0].length;
+        }
+
+        if (lastIndex < text.length) {
+            parts.push(text.slice(lastIndex));
+        }
+
+        return parts.length > 1 ? parts : text;
+    };
+
+    const citationAwareComponents: Partial<Components> = {
+        ...components,
+        p: ({ node, children, ...props }) => {
+            const processChildren = (children: React.ReactNode): React.ReactNode => {
+                if (Array.isArray(children)) {
+                    return children.map((child, index) =>
+                        typeof child === 'string' ? renderTextWithCitations(child) : child
+                    );
+                }
+                return typeof children === 'string' ? renderTextWithCitations(children) : children;
+            };
+
+            return <p {...props}>{processChildren(children)}</p>;
+        },
+        // Also handle text in other elements
+        h1: ({ node, children, ...props }) => (
+            <h1 className="text-3xl font-semibold mt-6 mb-2" {...props}>
+                {typeof children === 'string' ? renderTextWithCitations(children) : children}
+            </h1>
+        ),
+        h2: ({ node, children, ...props }) => (
+            <h2 className="text-2xl font-semibold mt-6 mb-2" {...props}>
+                {typeof children === 'string' ? renderTextWithCitations(children) : children}
+            </h2>
+        ),
+        h3: ({ node, children, ...props }) => (
+            <h3 className="text-xl font-semibold mt-6 mb-2" {...props}>
+                {typeof children === 'string' ? renderTextWithCitations(children) : children}
+            </h3>
+        ),
+        h4: ({ node, children, ...props }) => (
+            <h4 className="text-lg font-semibold mt-6 mb-2" {...props}>
+                {typeof children === 'string' ? renderTextWithCitations(children) : children}
+            </h4>
+        ),
+        h5: ({ node, children, ...props }) => (
+            <h5 className="text-base font-semibold mt-6 mb-2" {...props}>
+                {typeof children === 'string' ? renderTextWithCitations(children) : children}
+            </h5>
+        ),
+        h6: ({ node, children, ...props }) => (
+            <h6 className="text-sm font-semibold mt-6 mb-2" {...props}>
+                {typeof children === 'string' ? renderTextWithCitations(children) : children}
+            </h6>
+        ),
+        li: ({ node, children, ...props }) => (
+            <li className="py-1" {...props}>
+                {typeof children === 'string' ? renderTextWithCitations(children) : children}
+            </li>
+        ),
+    };
+
     return (
-        <ReactMarkdown
-            remarkPlugins={remarkPlugins}
-            rehypePlugins={rehypePlugins}
-            components={components}
-            className="text-sm sm:text-base leading-7 space-y-4"
-        >
-            {children}
-        </ReactMarkdown>
+        <TooltipProvider delayDuration={0}>
+            <div>
+                <ReactMarkdown
+                    remarkPlugins={remarkPlugins}
+                    rehypePlugins={rehypePlugins}
+                    components={citationAwareComponents}
+                    className="text-sm sm:text-base leading-7 space-y-4"
+                >
+                    {processedContent}
+                </ReactMarkdown>
+                {/* <References citations={citations} /> */}
+            </div>
+        </TooltipProvider>
     );
 };
 

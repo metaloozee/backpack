@@ -24,7 +24,7 @@ export default function SignInPage() {
             <div className="mt-5 flex flex-col gap-2 max-w-[20vw] w-full">
                 <Button
                     size={'lg'}
-                    variant={'default'}
+                    variant={'secondary'}
                     disabled
                     onClick={() => signIn('google', { callbackUrl: '/' })}
                 >

@@ -8,6 +8,6 @@
 - [ ] Login Button
 - [x] Model Selection
 - [ ] Image Display
-- [ ] Citation
+- [x] Citation
 - [x] Message actions
 - [ ] Attachment support
