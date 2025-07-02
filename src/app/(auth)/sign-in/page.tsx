@@ -28,7 +28,7 @@ export default function SignInPage() {
                     disabled
                     onClick={() => signIn('google', { callbackUrl: '/' })}
                 >
-                    <Image alt="Login with Google" src={Google} className="size-5" />
+                    <Image alt="Login with Google" src={Google} className="size-5 invert" />
                     Continue with Google
                 </Button>
                 <Button

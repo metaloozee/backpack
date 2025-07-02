@@ -141,6 +141,9 @@ Follow the schema provided.
                                 includeThoughts: true,
                             },
                         } satisfies GoogleGenerativeAIProviderOptions,
+                        openai: {
+                            reasoningEffort: 'low',
+                        },
                     },
                     messages: convertToCoreMessages(messages),
                     system: AskModePrompt({
