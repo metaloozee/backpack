@@ -33,10 +33,11 @@ import { differenceInSeconds } from 'date-fns';
 import { auth } from '@/auth';
 import { after, NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
-import { getModel } from '@/lib/models';
+import { getModel } from '@/lib/ai/models';
 
 import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google';
 import { AnthropicProviderOptions } from '@ai-sdk/anthropic';
+import {} from '@openrouter/ai-sdk-provider';
 
 export const maxDuration = 60;
 
@@ -143,6 +144,11 @@ Follow the schema provided.
                         } satisfies GoogleGenerativeAIProviderOptions,
                         openai: {
                             reasoningEffort: 'low',
+                        },
+                        openrouter: {
+                            reasoning: {
+                                exclude: true,
+                            },
                         },
                     },
                     messages: convertToCoreMessages(messages),

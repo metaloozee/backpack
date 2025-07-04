@@ -1,6 +1,6 @@
 import { generateUUID } from '@/lib/ai/utils';
 import { Chat } from '@/components/chat';
-import { models } from '@/lib/models';
+import { models } from '@/lib/ai/models';
 
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';

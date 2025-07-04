@@ -6,7 +6,7 @@ import { Chat as PreviewChat } from '@/components/chat';
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { cookies } from 'next/headers';
-import { models } from '@/lib/models';
+import { models } from '@/lib/ai/models';
 
 export default async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await auth();

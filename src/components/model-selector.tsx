@@ -11,13 +11,23 @@ import {
     DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { models } from '@/lib/models';
+import { models } from '@/lib/ai/models';
 import Image from 'next/image';
 import { useDebouncedCallback } from 'use-debounce';
 import { useTRPC } from '@/lib/trpc/trpc';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { BrainIcon, ChevronDown, RefreshCw, Check } from 'lucide-react';
+import {
+    BrainIcon,
+    ChevronDown,
+    RefreshCw,
+    Check,
+    StarIcon,
+    FlaskConicalIcon,
+    ShieldIcon,
+    RocketIcon,
+    SparklesIcon,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Command, CommandList } from '@/components/ui/command';
 
@@ -41,6 +51,7 @@ const providerNames = {
     anthropic: 'Claude',
     groq: 'Groq',
     openai: 'OpenAI',
+    openrouter: 'OpenRouter',
 };
 
 const getProviderIcon = (provider: string) => {
@@ -52,6 +63,16 @@ const getProviderIcon = (provider: string) => {
         case 'groq':
             return (
                 <Image className="invert" src="/icons/groq.svg" alt="Groq" width={16} height={16} />
+            );
+        case 'openrouter':
+            return (
+                <Image
+                    className="invert"
+                    src="/icons/openrouter.svg"
+                    alt="OpenRouter"
+                    width={16}
+                    height={16}
+                />
             );
         case 'openai':
             return (
@@ -115,24 +136,65 @@ export function ModelSelector({ initialModel }: ModelSelectorProps) {
                                         </span>
                                     </div>
                                 </DropdownMenuSubTrigger>
-                                <DropdownMenuSubContent sideOffset={10} className="w-[200px] p-1">
+                                <DropdownMenuSubContent sideOffset={10} className="w-auto p-1">
                                     {providerModels.map((model) => (
                                         <DropdownMenuItem
                                             key={model.id}
                                             onSelect={() => handleModelChange(model.id)}
                                             className="cursor-pointer"
                                         >
-                                            <div className="flex items-center justify-between w-full">
+                                            <div className="flex items-center justify-between w-full gap-5">
                                                 <div className="flex items-center gap-2">
                                                     {model.id === selectedModel && (
                                                         <Check className="size-3" />
                                                     )}
                                                     <span>{model.name}</span>
                                                 </div>
-                                                {model.reasoning && (
-                                                    <Badge variant={'secondary'} className="px-1">
-                                                        <BrainIcon className="size-3" />
-                                                    </Badge>
+                                                {model.properties && (
+                                                    <div className="flex flex-row gap-1">
+                                                        {model.properties.includes('reasoning') && (
+                                                            <Badge
+                                                                variant={'secondary'}
+                                                                className="px-1"
+                                                            >
+                                                                <BrainIcon className="size-3" />
+                                                            </Badge>
+                                                        )}
+                                                        {model.properties.includes('fast') && (
+                                                            <Badge
+                                                                variant={'secondary'}
+                                                                className="px-1"
+                                                            >
+                                                                <RocketIcon className="size-3" />
+                                                            </Badge>
+                                                        )}
+                                                        {model.properties.includes('quality') && (
+                                                            <Badge
+                                                                variant={'secondary'}
+                                                                className="px-1"
+                                                            >
+                                                                <SparklesIcon className="size-3" />
+                                                            </Badge>
+                                                        )}
+                                                        {model.properties.includes(
+                                                            'experimental'
+                                                        ) && (
+                                                            <Badge
+                                                                variant={'secondary'}
+                                                                className="px-1"
+                                                            >
+                                                                <FlaskConicalIcon className="size-3" />
+                                                            </Badge>
+                                                        )}
+                                                        {model.properties.includes('stealth') && (
+                                                            <Badge
+                                                                variant={'secondary'}
+                                                                className="px-1"
+                                                            >
+                                                                <ShieldIcon className="size-3" />
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
                                         </DropdownMenuItem>

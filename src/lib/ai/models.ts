@@ -2,36 +2,62 @@ import { google } from '@ai-sdk/google';
 import { anthropic } from '@ai-sdk/anthropic';
 import { groq } from '@ai-sdk/groq';
 import { openai } from '@ai-sdk/openai';
+import { openrouter } from '@openrouter/ai-sdk-provider';
+import { type LanguageModelV1 } from 'ai';
 
-export const models = [
+export type ModelProperties = 'reasoning' | 'fast' | 'quality' | 'experimental' | 'stealth';
+
+export type Model = {
+    name: string;
+    id: string;
+    provider: string;
+    instance: LanguageModelV1;
+    properties?: ModelProperties[];
+};
+
+export const models: Model[] = [
     {
         name: 'Gemini 2.5 Pro',
         id: 'gemini-2.5-pro',
         provider: 'google',
         instance: google('gemini-2.5-pro'),
-        reasoning: true,
+        properties: ['reasoning', 'quality'],
     },
     {
         name: 'Gemini 2.5 Flash',
         id: 'gemini-2.5-flash',
         provider: 'google',
         instance: google('gemini-2.5-flash'),
-        reasoning: true,
+        properties: ['experimental', 'reasoning', 'fast'],
     },
     {
         name: 'Claude Sonnet 4',
         id: 'claude-4-sonnet-20250514',
         provider: 'anthropic',
         instance: anthropic('claude-4-sonnet-20250514'),
-        reasoning: true,
+        properties: ['reasoning', 'quality'],
     },
     {
-        name: 'Qwen QwQ',
-        id: 'qwen-qwq-32b',
-        provider: 'groq',
-        instance: groq('qwen-qwq-32b'),
-        reasoning: true,
+        name: 'Cypher Alpha',
+        id: 'openrouter/cypher-alpha:free',
+        provider: 'openrouter',
+        instance: openrouter('openrouter/cypher-alpha:free'),
+        properties: ['stealth', 'experimental'],
     },
+    {
+        name: 'DeepSeek V3 0324',
+        id: 'deepseek/deepseek-chat-v3-0324:free',
+        provider: 'openrouter',
+        instance: openrouter('deepseek/deepseek-chat-v3-0324:free'),
+        properties: ['experimental'],
+    },
+    // {
+    //     name: 'Qwen QwQ',
+    //     id: 'qwen/qwq-32b:free',
+    //     provider: 'openrouter',
+    //     instance: openrouter('qwen/qwq-32b:free'),
+    //     properties: ['reasoning', 'experimental'],
+    // },
     // {
     //     name: 'GPT 4.1',
     //     id: 'gpt-4.1-2025-04-14',

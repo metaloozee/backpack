@@ -9,7 +9,7 @@ import { KnowledgeDialog } from '@/components/spaces/KnowledgeDialog';
 import { generateUUID } from '@/lib/ai/utils';
 import { auth } from '@/auth';
 import { cookies } from 'next/headers';
-import { models } from '@/lib/models';
+import { models } from '@/lib/ai/models';
 
 export default async function SpacePage({ params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
