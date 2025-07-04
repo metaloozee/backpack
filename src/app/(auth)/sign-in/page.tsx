@@ -1,12 +1,11 @@
 'use client';
 
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { signIn } from 'next-auth/react';
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
 import { BackpackIcon } from 'lucide-react';
 import Google from 'public/icons/google.svg';
 import { Separator } from '@/components/ui/separator';
+import { SignInButton } from '@/components/auth/SignInButton';
 
 export default function SignInPage() {
     return (
@@ -22,23 +21,14 @@ export default function SignInPage() {
                 </p>
             </div>
             <div className="mt-5 flex flex-col gap-2 max-w-[20vw] w-full">
-                <Button
-                    size={'lg'}
-                    variant={'secondary'}
-                    disabled
-                    onClick={() => signIn('google', { callbackUrl: '/' })}
-                >
+                <SignInButton provider="google" disabled>
                     <Image alt="Login with Google" src={Google} className="size-5 invert" />
                     Continue with Google
-                </Button>
-                <Button
-                    size={'lg'}
-                    variant={'secondary'}
-                    onClick={() => signIn('github', { callbackUrl: '/' })}
-                >
+                </SignInButton>
+                <SignInButton provider="github">
                     <GitHubLogoIcon className="size-5" />
                     Continue with GitHub
-                </Button>
+                </SignInButton>
             </div>
             <Separator className="max-w-[10vw]" />
             <p className="text-muted-foreground text-xs">

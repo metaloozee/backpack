@@ -5,7 +5,7 @@
 - [x] Infinite Scrolling with TanStack Query
 - [ ] Optimistic Updates
 - [x] Resumable Streams
-- [ ] Login Button
+- [x] Login Button
 - [x] Model Selection
 - [ ] Image Display
 - [x] Citation
