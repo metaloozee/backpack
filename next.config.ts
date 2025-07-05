@@ -11,7 +11,9 @@ const nextConfig: NextConfig = {
         ],
     },
     experimental: {
+        useCache: true,
         reactCompiler: true,
+        nodeMiddleware: true,
     },
 };
 

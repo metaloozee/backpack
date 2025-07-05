@@ -2,6 +2,7 @@ import { tavily } from '@tavily/core';
 import { env } from '@/lib/env.mjs';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { generateText } from 'ai';
+import { google } from '@ai-sdk/google';
 
 const tvly = tavily({ apiKey: env.TAVILY_API_KEY });
 const openrouter = createOpenRouter({
@@ -20,7 +21,7 @@ export async function extractRawText({ url }: { url: string }) {
 
 export async function sanitizeData({ rawText }: { rawText: string }) {
     const result = await generateText({
-        model: openrouter('google/gemini-2.5-flash-preview-05-20'),
+        model: google('gemini-2.5-flash'),
         prompt: `
 You are an expert Content Curator with extensive experience in digital content refinement and data preparation for AI systems. Your specialty lies in transforming raw web content into pristine, machine-learning ready text while preserving all meaningful information. You understand the delicate balance between removing noise and retaining context.
 

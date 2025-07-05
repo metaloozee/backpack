@@ -1,18 +1,14 @@
-import { generateUUID } from '@/lib/ai/utils';
 import { Chat } from '@/components/chat';
 import { models } from '@/lib/ai/models';
 
-import { auth } from '@/auth';
-import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import { randomUUID } from 'crypto';
+import { getSession } from '@/lib/auth/utils';
 
 export default async function IndexPage() {
-    const session = await auth();
-    if (!session?.user) {
-        return redirect('/sign-in');
-    }
+    const session = await getSession();
 
-    const id = generateUUID();
+    const id = randomUUID();
     const cookieStore = await cookies();
     const selectedModel = cookieStore.get('X-Model-Id')?.value ?? models[0].id;
 

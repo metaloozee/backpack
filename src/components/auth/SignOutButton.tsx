@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, ReactNode, ComponentPropsWithoutRef } from 'react';
-import { signOut } from 'next-auth/react';
+import { authClient } from '@/lib/auth/client';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 type SignOutButtonProps = Omit<ComponentPropsWithoutRef<typeof Button>, 'onClick'> & {
     children?: ReactNode;
@@ -11,10 +12,17 @@ type SignOutButtonProps = Omit<ComponentPropsWithoutRef<typeof Button>, 'onClick
 
 export function SignOutButton({ children, ...props }: SignOutButtonProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
 
     const handleSignOut = async () => {
         setIsLoading(true);
-        await signOut({ callbackUrl: '/' });
+        await authClient.signOut({
+            fetchOptions: {
+                onSuccess: () => {
+                    router.push('/sign-in');
+                },
+            },
+        });
     };
 
     return (

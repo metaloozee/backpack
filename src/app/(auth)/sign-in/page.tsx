@@ -1,5 +1,3 @@
-'use client';
-
 import Image from 'next/image';
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
 import { BackpackIcon } from 'lucide-react';

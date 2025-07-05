@@ -9,13 +9,13 @@ import { toast } from 'sonner';
 import { ScrollArea } from './ui/scroll-area';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Attachment, UIMessage } from 'ai';
-import { Session } from 'next-auth';
 import { generateUUID } from '@/lib/ai/utils';
 import { Chat as ChatType } from '@/lib/db/schema/app';
 import { Separator } from './ui/separator';
 import { BookOpenIcon } from 'lucide-react';
 import DisplayChats from './chat/display-chats';
 import { useAutoResume } from '@/lib/hooks/use-auto-resume';
+import { type Session } from 'better-auth';
 
 export function Chat({
     id,

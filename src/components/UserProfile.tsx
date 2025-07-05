@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';
+import { authClient } from '@/lib/auth/client';
 import { Button } from '@/components/ui/button';
 import { UserIcon, LogOutIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -14,15 +14,17 @@ import {
 } from '@/lib/animations';
 import { Avatar } from '@radix-ui/react-avatar';
 import { AvatarFallback, AvatarImage } from './ui/avatar';
+import { useRouter } from 'next/navigation';
 
 interface UserProfileProps {
     state: 'expanded' | 'collapsed';
 }
 
 export default function UserProfile({ state }: UserProfileProps) {
-    const { data: session, status } = useSession();
+    const { data: session, isPending, error, refetch } = authClient.useSession();
+    const router = useRouter();
 
-    if (status === 'loading') {
+    if (isPending) {
         return (
             <motion.div
                 variants={fadeVariants}
@@ -148,7 +150,15 @@ export default function UserProfile({ state }: UserProfileProps) {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => signOut()}
+                            onClick={() =>
+                                authClient.signOut({
+                                    fetchOptions: {
+                                        onSuccess: () => {
+                                            router.push('/sign-in');
+                                        },
+                                    },
+                                })
+                            }
                             title="Sign Out"
                         >
                             <motion.div variants={iconVariants} initial="rest" whileHover="hover">

@@ -6,17 +6,19 @@ import {
     timestamp,
     pgEnum,
     json,
-    uuid,
     varchar,
 } from 'drizzle-orm/pg-core';
 import { InferSelectModel } from 'drizzle-orm';
-import { users } from '@/lib/db/schema/auth';
+import { user } from '@/lib/db/schema/auth';
+import { randomUUID } from 'crypto';
 
 export const spaces = pgTable('spaces', {
-    id: uuid('id').primaryKey().notNull().defaultRandom(),
-    userId: uuid('user_id')
+    id: text('id')
+        .primaryKey()
+        .$defaultFn(() => randomUUID()),
+    userId: text('user_id')
         .notNull()
-        .references(() => users.id, {
+        .references(() => user.id, {
             onDelete: 'cascade',
             onUpdate: 'cascade',
         }),
@@ -31,14 +33,16 @@ export const spaces = pgTable('spaces', {
 
 export const KnowledgeTypeEnum = pgEnum('knowledge_type_enum', ['webpage', 'pdf']);
 export const knowledge = pgTable('knowledge', {
-    id: uuid('id').primaryKey().notNull().defaultRandom(),
-    userId: uuid('user_id')
+    id: text('id')
+        .primaryKey()
+        .$defaultFn(() => randomUUID()),
+    userId: text('user_id')
         .notNull()
-        .references(() => users.id, {
+        .references(() => user.id, {
             onDelete: 'cascade',
             onUpdate: 'cascade',
         }),
-    spaceId: uuid('space_id')
+    spaceId: text('space_id')
         .notNull()
         .references(() => spaces.id, {
             onDelete: 'cascade',
@@ -57,8 +61,10 @@ export type Knowledge = InferSelectModel<typeof knowledge>;
 export const knowledgeEmbeddings = pgTable(
     'knowledge_embeddings',
     {
-        id: uuid('id').primaryKey().notNull().defaultRandom(),
-        knowledgeId: uuid('knowledge_id')
+        id: text('id')
+            .primaryKey()
+            .$defaultFn(() => randomUUID()),
+        knowledgeId: text('knowledge_id')
             .notNull()
             .references(() => knowledge.id, {
                 onDelete: 'cascade',
@@ -80,16 +86,18 @@ export const knowledgeEmbeddings = pgTable(
 );
 
 export const chat = pgTable('chat', {
-    id: uuid('id').primaryKey().notNull().defaultRandom(),
+    id: text('id')
+        .primaryKey()
+        .$defaultFn(() => randomUUID()),
     title: text('title').notNull(),
     createdAt: timestamp('created_at').notNull(),
-    userId: uuid('user_id')
+    userId: text('user_id')
         .notNull()
-        .references(() => users.id, {
+        .references(() => user.id, {
             onDelete: 'cascade',
             onUpdate: 'cascade',
         }),
-    spaceId: uuid('space_id').references(() => spaces.id, {
+    spaceId: text('space_id').references(() => spaces.id, {
         onDelete: 'cascade',
         onUpdate: 'cascade',
     }),
@@ -97,8 +105,10 @@ export const chat = pgTable('chat', {
 export type Chat = InferSelectModel<typeof chat>;
 
 export const message = pgTable('message', {
-    id: uuid('id').primaryKey().notNull().defaultRandom(),
-    chatId: uuid('chat_id')
+    id: text('id')
+        .primaryKey()
+        .$defaultFn(() => randomUUID()),
+    chatId: text('chat_id')
         .notNull()
         .references(() => chat.id, {
             onDelete: 'cascade',
@@ -112,8 +122,10 @@ export const message = pgTable('message', {
 export type Message = InferSelectModel<typeof message>;
 
 export const stream = pgTable('stream', {
-    id: uuid('id').primaryKey().notNull().defaultRandom(),
-    chatId: uuid('chat_id')
+    id: text('id')
+        .primaryKey()
+        .$defaultFn(() => randomUUID()),
+    chatId: text('chat_id')
         .notNull()
         .references(() => chat.id, {
             onDelete: 'cascade',

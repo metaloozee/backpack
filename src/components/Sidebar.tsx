@@ -23,7 +23,6 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
 import UserProfile from '@/components/UserProfile';
-import { SessionProvider } from 'next-auth/react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { usePathname } from 'next/navigation';
@@ -248,9 +247,7 @@ export function AppSidebar() {
                 </motion.div>
 
                 <Separator className={cn(state === 'expanded' ? 'my-2' : 'my-0')} />
-                <SessionProvider>
-                    <UserProfile state={state} />
-                </SessionProvider>
+                <UserProfile state={state} />
             </SidebarFooter>
         </Sidebar>
     );

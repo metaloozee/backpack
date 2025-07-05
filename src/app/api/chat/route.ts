@@ -30,10 +30,10 @@ import {
 import { db } from '@/lib/db';
 import { differenceInSeconds } from 'date-fns';
 
-import { auth } from '@/auth';
 import { after, NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { getModel } from '@/lib/ai/models';
+import { getUser } from '@/lib/auth/utils';
 
 import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google';
 import { AnthropicProviderOptions } from '@ai-sdk/anthropic';
@@ -47,9 +47,9 @@ let globalStreamContext: ResumableStreamContext | null = null;
 
 export async function POST(req: NextRequest) {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            throw new Error('Access Denied');
+        const user = await getUser();
+        if (!user) {
+            return new Response('Access Denied', { status: 401 });
         }
 
         const json = await req.json();
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
         const [chat] = await db
             .select()
             .from(dbChat)
-            .where(and(eq(dbChat.id, id), eq(dbChat.userId, session.user.id)))
+            .where(and(eq(dbChat.id, id), eq(dbChat.userId, user.id)))
             .limit(1);
         if (!chat) {
             const { object } = await generateObject({
@@ -90,7 +90,7 @@ Follow the schema provided.
 
             await caller.chat.saveChat({
                 id,
-                userId: session.user.id,
+                userId: user.id,
                 spaceId: env.inSpace ? env.spaceId : undefined,
                 title: object.title ?? 'Unnamed Chat',
             });
@@ -164,7 +164,7 @@ Follow the schema provided.
                     experimental_transform: smoothStream({ chunking: 'word', delayInMs: 10 }),
                     experimental_generateMessageId: generateUUID,
                     onFinish: async ({ response }) => {
-                        if (session.user?.id) {
+                        if (user.id) {
                             try {
                                 const assistantId = getTrailingMessageId({
                                     messages: response.messages.filter(
@@ -321,7 +321,7 @@ Follow the schema provided.
                                             .where(
                                                 and(
                                                     and(
-                                                        eq(knowledge.userId, session.user.id),
+                                                        eq(knowledge.userId, user.id),
                                                         eq(knowledge.spaceId, env.spaceId!)
                                                     ),
                                                     gt(similarity, 0.5)
@@ -409,9 +409,9 @@ Follow the schema provided.
 }
 
 export async function GET(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        throw new Error('Access Denied');
+    const user = await getUser();
+    if (!user) {
+        return new Response('Access Denied', { status: 401 });
     }
 
     const streamContext = getStreamContext();
@@ -431,7 +431,7 @@ export async function GET(request: Request) {
     const [chat] = await db
         .select()
         .from(dbChat)
-        .where(and(eq(dbChat.id, chatId), eq(dbChat.userId, session.user.id)))
+        .where(and(eq(dbChat.id, chatId), eq(dbChat.userId, user.id)))
         .limit(1);
     if (!chat) {
         throw new Error('Chat not found');

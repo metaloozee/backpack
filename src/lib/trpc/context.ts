@@ -1,14 +1,16 @@
 import { db } from '@/lib/db/index';
 
-import { auth } from '@/auth';
+import { api } from '@/lib/auth/server';
+import { headers } from 'next/headers';
 
-export async function createTRPCContext(opts: { headers: Headers }) {
-    const session = await auth();
+export async function createTRPCContext() {
+    const session = await api.getSession({
+        headers: await headers(),
+    });
 
     return {
         db,
         session: session,
-        ...opts,
     };
 }
 

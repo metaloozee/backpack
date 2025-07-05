@@ -1,26 +1,26 @@
 import { db } from '@/lib/db';
 import { chat, knowledge, spaces } from '@/lib/db/schema/app';
 import { and, desc, eq } from 'drizzle-orm';
-import { notFound, redirect } from 'next/navigation';
+import { getUser } from '@/lib/auth/utils';
+
+import { notFound } from 'next/navigation';
 import { SettingsIcon } from 'lucide-react';
 import { Chat } from '@/components/chat';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { KnowledgeDialog } from '@/components/spaces/KnowledgeDialog';
 import { generateUUID } from '@/lib/ai/utils';
-import { auth } from '@/auth';
 import { cookies } from 'next/headers';
 import { models } from '@/lib/ai/models';
+import { getSession } from '@/lib/auth/utils';
+import { randomUUID } from 'crypto';
 
 export default async function SpacePage({ params }: { params: Promise<{ id: string }> }) {
-    const session = await auth();
-    if (!session?.user) {
-        return redirect('/sign-in');
-    }
+    const session = await getSession();
 
-    const user = session.user;
+    const user = await getUser();
 
     const { id: spaceId } = await params;
-    const chatId = generateUUID();
+    const chatId = randomUUID();
 
     const cookieStore = await cookies();
     const selectedModel = cookieStore.get('X-Model-Id')?.value ?? models[0].id;
@@ -28,7 +28,7 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
     const [spaceData] = await db
         .select()
         .from(spaces)
-        .where(and(eq(spaces.id, spaceId), eq(spaces.userId, user.id)));
+        .where(and(eq(spaces.id, spaceId), eq(spaces.userId, user?.id ?? '')));
 
     if (!spaceData) {
         return notFound();
@@ -37,12 +37,12 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
     const knowledgeData = await db
         .select()
         .from(knowledge)
-        .where(and(eq(knowledge.spaceId, spaceId), eq(knowledge.userId, user.id)));
+        .where(and(eq(knowledge.spaceId, spaceId), eq(knowledge.userId, user?.id ?? '')));
 
     const chatData = await db
         .select()
         .from(chat)
-        .where(and(eq(chat.spaceId, spaceId), eq(chat.userId, user.id)))
+        .where(and(eq(chat.spaceId, spaceId), eq(chat.userId, user?.id ?? '')))
         .orderBy(desc(chat.createdAt));
 
     return (

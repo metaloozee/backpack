@@ -4,17 +4,15 @@ import { chat as DBChat, message as DBMessage, spaces as DBSpace } from '@/lib/d
 import { and, eq, asc } from 'drizzle-orm';
 import { Chat as PreviewChat } from '@/components/chat';
 import { notFound, redirect } from 'next/navigation';
-import { auth } from '@/auth';
-import { cookies } from 'next/headers';
+import { api } from '@/lib/auth/server';
+import { cookies, headers } from 'next/headers';
 import { models } from '@/lib/ai/models';
+import { getSession, getUser } from '@/lib/auth/utils';
 
 export default async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
-    const session = await auth();
-    if (!session?.user) {
-        return redirect('/sign-in');
-    }
+    const session = await getSession();
+    const user = await getUser();
 
-    const user = session.user;
     const { id: chatId } = await params;
 
     const cookieStore = await cookies();
@@ -23,7 +21,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
     const [chatData] = await db
         .select()
         .from(DBChat)
-        .where(and(eq(DBChat.id, chatId), eq(DBChat.userId, user.id)));
+        .where(and(eq(DBChat.id, chatId), eq(DBChat.userId, user?.id ?? '')));
 
     if (!chatData) {
         return notFound();
@@ -33,7 +31,9 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
         ? await db
               .select()
               .from(DBSpace)
-              .where(and(eq(DBSpace.id, chatData.spaceId ?? ''), eq(DBSpace.userId, user.id)))
+              .where(
+                  and(eq(DBSpace.id, chatData.spaceId ?? ''), eq(DBSpace.userId, user?.id ?? ''))
+              )
               .limit(1)
         : [undefined];
 

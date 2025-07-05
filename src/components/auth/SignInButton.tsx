@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, ReactNode, ComponentPropsWithoutRef } from 'react';
-import { signIn } from 'next-auth/react';
+import { authClient } from '@/lib/auth/client';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
@@ -15,7 +15,7 @@ export function SignInButton({ provider, children, ...props }: SignInButtonProps
 
     const handleSignIn = async () => {
         setIsLoading(true);
-        await signIn(provider, { callbackUrl: '/' });
+        await authClient.signIn.social({ provider });
     };
 
     return (
