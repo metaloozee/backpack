@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/sonner';
 import TrpcProvider from '@/lib/trpc/client';
+import { ReactScan } from '@/components/react-scan';
 
 const geistSans = Geist({
     subsets: ['latin'],
@@ -41,6 +42,7 @@ export default function RootLayout({
                     >
                         <Toaster richColors position="top-center" />
                         {children}
+                        <ReactScan />
                     </ThemeProvider>
                 </body>
             </html>

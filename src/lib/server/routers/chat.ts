@@ -62,7 +62,7 @@ export const chatRouter = router({
         .input(
             z.object({
                 id: z.string().uuid(),
-                userId: z.string().uuid(),
+                userId: z.string(),
                 spaceId: z.string().uuid().optional(),
                 title: z.string().max(100),
             })

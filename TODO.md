@@ -1,13 +1,6 @@
 - [x] fix: Authentication
-- [x] Enhance tRPC Usage
 - [ ] Zustand for state management
-- [x] TanStack Query
-- [x] Infinite Scrolling with TanStack Query
 - [ ] Optimistic Updates
-- [x] Resumable Streams
-- [x] Login Button
-- [x] Model Selection
 - [ ] Image Display
-- [x] Citation
-- [x] Message actions
 - [ ] Attachment support
+- [ ] Vercel Blob to host files, documents, attachments
