@@ -1,0 +1,52 @@
+'use client';
+
+import { LoaderCircleIcon, PickaxeIcon } from 'lucide-react';
+
+type ExtractResult = {
+    url: string;
+    images: string[] | undefined;
+    content: string;
+};
+
+interface ExtractToolProps {
+    toolCallId: string;
+    state: 'call' | 'result';
+    args?: {
+        urls?: string[];
+    };
+    result?: ExtractResult[];
+}
+
+export function ExtractTool({ toolCallId, state, args, result }: ExtractToolProps) {
+    if (state === 'result') {
+        return (
+            <div className="w-full border bg-neutral-900 rounded-md px-4 py-3">
+                <div className="w-full flex flex-col gap-2">
+                    {result?.map((result: ExtractResult, index: number) => (
+                        <div key={`${toolCallId}-${index}`} className="w-full flex flex-col gap-2">
+                            <div className="w-full flex shrink-0 flex-row justify-start items-center gap-2">
+                                <PickaxeIcon className="size-3" />
+                                <span className="text-xs truncate">{result.url}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full border bg-neutral-900 rounded-md px-4 py-3">
+            <div className="w-full flex flex-col gap-2">
+                {args?.urls?.map((url, index) => (
+                    <div key={`${toolCallId}-${index}`} className="w-full flex flex-col gap-2">
+                        <div className="w-full flex shrink-0 flex-row justify-start items-center gap-2">
+                            <LoaderCircleIcon className="size-3 animate-spin" />
+                            <span className="text-xs text-neutral-400 truncate">{url}</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}

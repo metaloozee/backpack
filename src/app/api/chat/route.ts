@@ -199,8 +199,58 @@ Follow the schema provided.
                         }
                     },
                     toolCallStreaming: true,
-                    experimental_activeTools: activeTools,
+                    experimental_activeTools: ['extract', ...activeTools],
                     tools: {
+                        extract: tool({
+                            description:
+                                'Extract web page content from one or more specified URLs.',
+                            parameters: z.object({
+                                urls: z.array(z.string().url()),
+                            }),
+                            execute: async ({ urls }, { toolCallId }) => {
+                                dataStream.writeMessageAnnotation({
+                                    type: 'tool-call',
+                                    data: {
+                                        toolCallId,
+                                        toolName: 'extract',
+                                        state: 'call',
+                                        args: JSON.stringify({ urls }),
+                                    },
+                                });
+
+                                console.log('Extracting URLs: ', urls);
+
+                                const res = await tvly.extract(urls, { extractDepth: 'advanced' });
+
+                                type ExtractResult = {
+                                    url: string;
+                                    images: string[] | undefined;
+                                    content: string;
+                                };
+
+                                const results: ExtractResult[] = res.results.map((result) => ({
+                                    url: result.url,
+                                    images: result.images,
+                                    content: result.rawContent,
+                                }));
+
+                                dataStream.writeMessageAnnotation({
+                                    type: 'tool-call',
+                                    data: {
+                                        toolCallId,
+                                        toolName: 'extract',
+                                        state: 'result',
+                                        args: JSON.stringify({ urls }),
+                                        result: JSON.stringify({ results }),
+                                    },
+                                });
+
+                                return res.results.map((result) => ({
+                                    url: result.url,
+                                    content: result.rawContent,
+                                }));
+                            },
+                        }),
                         web_search: tool({
                             description: 'Performs a search over the internet for current data.',
                             parameters: z.object({

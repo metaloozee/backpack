@@ -4,3 +4,4 @@
 - [ ] Image Display
 - [ ] Attachment support
 - [ ] Vercel Blob to host files, documents, attachments
+- [ ] Space Settings

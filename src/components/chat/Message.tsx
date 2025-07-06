@@ -26,6 +26,7 @@ import {
     WebSearchTool,
     KnowledgeSearchTool,
     AcademicSearchTool,
+    ExtractTool,
 } from '@/components/chat/tools';
 import { Button } from '@/components/ui/button';
 import { Disclosure, DisclosureTrigger } from '@/components/ui/disclosure';
@@ -396,6 +397,12 @@ export function Message({
                                                     state={state}
                                                     args={args}
                                                 />
+                                            ) : toolName === 'extract' ? (
+                                                <ExtractTool
+                                                    toolCallId={toolCallId}
+                                                    state={state}
+                                                    args={args}
+                                                />
                                             ) : null}
                                         </div>
                                     );
@@ -426,6 +433,12 @@ export function Message({
                                                 />
                                             ) : toolName === 'academic_search' ? (
                                                 <AcademicSearchTool
+                                                    toolCallId={toolCallId}
+                                                    state={state}
+                                                    result={result}
+                                                />
+                                            ) : toolName === 'extract' ? (
+                                                <ExtractTool
                                                     toolCallId={toolCallId}
                                                     state={state}
                                                     result={result}
