@@ -15,13 +15,36 @@ export type Model = {
     properties?: ModelProperties[];
 };
 
+const googleSafetySettings: any = [
+    {
+        category: 'HARM_CATEGORY_HATE_SPEECH',
+        threshold: 'BLOCK_NONE',
+    },
+    {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_NONE',
+    },
+    {
+        category: 'HARM_CATEGORY_HARASSMENT',
+        threshold: 'BLOCK_NONE',
+    },
+    {
+        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+        threshold: 'BLOCK_NONE',
+    },
+    {
+        category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
+        threshold: 'BLOCK_NONE',
+    },
+];
+
 export const models: Model[] = [
     {
         name: 'Gemini 2.5 Pro',
         id: 'gemini-2.5-pro',
         provider: 'google',
         instance: google('gemini-2.5-pro'),
-        properties: ['reasoning', 'quality'],
+        properties: ['reasoning', 'quality', 'fast'],
     },
     {
         name: 'Gemini 2.5 Flash',

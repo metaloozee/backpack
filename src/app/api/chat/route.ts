@@ -36,7 +36,6 @@ import { getSession } from '@/lib/auth/utils';
 
 import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google';
 import { AnthropicProviderOptions } from '@ai-sdk/anthropic';
-import {} from '@openrouter/ai-sdk-provider';
 
 export const maxDuration = 60;
 
@@ -67,8 +66,6 @@ export async function POST(req: NextRequest) {
         if (!model) {
             throw new Error('Invalid model selected');
         }
-
-        console.log('Using model:', model.modelId);
 
         const [chat] = await db
             .select()
@@ -159,6 +156,9 @@ Follow the schema provided.
                         },
                         env,
                     }),
+                    onError: (error) => {
+                        console.error(error);
+                    },
                     maxSteps: 10,
                     experimental_transform: smoothStream({ chunking: 'word', delayInMs: 10 }),
                     experimental_generateMessageId: generateUUID,
@@ -205,7 +205,7 @@ Follow the schema provided.
                             description:
                                 'Extract web page content from one or more specified URLs.',
                             parameters: z.object({
-                                urls: z.array(z.string().url()),
+                                urls: z.array(z.string()),
                             }),
                             execute: async ({ urls }, { toolCallId }) => {
                                 dataStream.writeMessageAnnotation({
