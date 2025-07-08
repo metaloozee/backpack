@@ -19,6 +19,7 @@ import {
     GraduationCapIcon,
     TelescopeIcon,
     CpuIcon,
+    ArrowDown,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -33,8 +34,10 @@ import {
     transitions,
 } from '@/lib/animations';
 import { UseChatHelpers } from '@ai-sdk/react';
-import { Dispatch, SetStateAction } from 'react';
+import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 import { ModelSelector } from '@/components/model-selector';
+import { toast } from 'sonner';
+import { useScrollToBottom } from '@/lib/hooks/use-scroll-to-bottom';
 
 interface InputPanelProps {
     chatId: string;
@@ -115,18 +118,11 @@ function PureInput({
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
     const { width } = useWindowSize();
 
-    const isLoading = status === 'submitted' || status === 'streaming';
-
-    const [localStorageInput, setLocalStorageInput] = useLocalStorage('input', '');
-    const [isComposing, setIsComposing] = React.useState(false);
-    const [enterDisabled, setEnterDisabled] = React.useState(false);
-    const [selectedMode, setSelectedMode] = React.useState<ModeType>('ask');
-    const [showEmptyScreen, setShowEmptyScreen] = React.useState(false);
-    const [selectedAgent, setSelectedAgent] = React.useState<string | null>(null);
-
-    const pathname = usePathname();
-    const isSpaceChat = pathname.startsWith('/s/');
-    const router = useRouter();
+    React.useEffect(() => {
+        if (textareaRef.current) {
+            adjustHeight();
+        }
+    }, []);
 
     const adjustHeight = React.useCallback(() => {
         if (textareaRef.current) {
@@ -142,23 +138,107 @@ function PureInput({
         }
     }, []);
 
-    React.useEffect(() => {
+    const [localStorageInput, setLocalStorageInput] = useLocalStorage('input', '');
+
+    useEffect(() => {
         if (textareaRef.current) {
+            const domValue = textareaRef.current.value;
+            const finalValue = domValue || localStorageInput || '';
+            setInput(finalValue);
             adjustHeight();
         }
-    }, [input, adjustHeight]);
+    }, []);
 
     React.useEffect(() => {
         setLocalStorageInput(input);
     }, [input, setLocalStorageInput]);
 
-    const handleInput = React.useCallback(
-        (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-            setInput(event.target.value);
-            adjustHeight();
+    const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setInput(event.target.value);
+        adjustHeight();
+    };
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
+
+    const submitForm = React.useCallback(
+        (event?: React.FormEvent) => {
+            if (event) {
+                event.preventDefault();
+            }
+
+            if (!input.trim()) return;
+
+            handleSubmit(event);
+
+            resetHeight();
+
+            if (width && width > 768) {
+                textareaRef.current?.focus();
+            }
         },
-        [setInput, adjustHeight]
+        [input, handleSubmit, resetHeight, width]
     );
+
+    const uploadFile = async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/files/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const { url, pathname, contentType } = data;
+
+                return {
+                    url,
+                    name: pathname,
+                    contentType: contentType,
+                };
+            }
+            const { error } = await response.json();
+            toast.error(error);
+        } catch (error) {
+            toast.error('Failed to upload file, please try again!');
+        }
+    };
+
+    const handleFileChange = useCallback(
+        async (event: React.ChangeEvent<HTMLInputElement>) => {
+            const files = Array.from(event.target.files || []);
+
+            setUploadQueue(files.map((file) => file.name));
+
+            try {
+                const uploadPromises = files.map((file) => uploadFile(file));
+                const uploadedAttachments = await Promise.all(uploadPromises);
+                const successfullyUploadedAttachments = uploadedAttachments.filter(
+                    (attachment) => attachment !== undefined
+                );
+
+                setAttachments((currentAttachments) => [
+                    ...currentAttachments,
+                    ...successfullyUploadedAttachments,
+                ]);
+            } catch (error) {
+                console.error('Error uploading files!', error);
+            } finally {
+                setUploadQueue([]);
+            }
+        },
+        [setAttachments]
+    );
+
+    const [selectedMode, setSelectedMode] = React.useState<ModeType>('ask');
+    const [selectedAgent, setSelectedAgent] = React.useState<string | null>(null);
+
+    const pathname = usePathname();
+    const isSpaceChat = pathname.startsWith('/s/');
+    const router = useRouter();
 
     const updateWebSearch = React.useCallback(
         (value: boolean) => {
@@ -187,17 +267,6 @@ function PureInput({
         [setAcademicSearch]
     );
 
-    const handlerCompositionStart = React.useCallback(() => setIsComposing(true), []);
-
-    const handleCompositionEnd = React.useCallback(() => {
-        setIsComposing(false);
-        setEnterDisabled(true);
-
-        setTimeout(() => {
-            setEnterDisabled(false);
-        }, 300);
-    }, []);
-
     const handleModeChange = React.useCallback(
         (value: string) => {
             const newMode = value as ModeType;
@@ -219,43 +288,15 @@ function PureInput({
         [updateWebSearch, updateKnowledgeSearch, updateAcademicSearch]
     );
 
-    const submitForm = React.useCallback(
-        (event?: React.FormEvent) => {
-            if (event) {
-                event.preventDefault();
-            }
+    const isLoading = status === 'submitted' || status === 'streaming';
 
-            if (!input.trim()) return;
+    const { isAtBottom, scrollToBottom } = useScrollToBottom();
 
-            handleSubmit(event);
-
-            resetHeight();
-
-            if (width && width > 768) {
-                textareaRef.current?.focus();
-            }
-        },
-        [input, handleSubmit, resetHeight, width]
-    );
-
-    const handleKeyDown = React.useCallback(
-        (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-            if (
-                e.key === 'Enter' &&
-                !e.shiftKey &&
-                !isComposing &&
-                !enterDisabled &&
-                !e.nativeEvent.isComposing
-            ) {
-                e.preventDefault();
-
-                if (!input.trim()) return;
-
-                submitForm();
-            }
-        },
-        [isComposing, enterDisabled, input, submitForm]
-    );
+    useEffect(() => {
+        if (status === 'submitted') {
+            scrollToBottom();
+        }
+    }, [status, scrollToBottom]);
 
     return (
         <motion.div
@@ -270,19 +311,44 @@ function PureInput({
                       : 'flex flex-col items-center justify-center'
             )}
         >
-            {messages.length === 0 && !isSpaceChat && (
-                <motion.div
-                    variants={slideVariants.down}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    className="mb-6"
-                >
-                    <h1 className="text-3xl text-transparent bg-clip-text bg-linear-to-br from-white to-neutral-500">
-                        {greeting}
-                    </h1>
-                </motion.div>
-            )}
+            <AnimatePresence>
+                {messages.length === 0 && !isSpaceChat && (
+                    <motion.div
+                        variants={slideVariants.down}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        className="mb-6"
+                    >
+                        <h1 className="text-3xl text-transparent bg-clip-text bg-linear-to-br from-white to-neutral-500">
+                            {greeting}
+                        </h1>
+                    </motion.div>
+                )}
+                {messages.length > 0 && !isAtBottom && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                        className="absolute left-1/2 right-1/2 w-fit bottom-36 bg-background/10 backdrop-blur-md rounded-full"
+                    >
+                        <Button
+                            data-testid="scroll-to-bottom-button"
+                            className="rounded-full"
+                            size={'icon'}
+                            variant="outline"
+                            onClick={(event) => {
+                                event.preventDefault();
+                                scrollToBottom();
+                            }}
+                        >
+                            <ArrowDown />
+                        </Button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <div className={cn('max-w-3xl w-full mx-auto')}>
                 <div
                     className={cn(
@@ -296,11 +362,23 @@ function PureInput({
                         ref={textareaRef}
                         value={input}
                         onChange={handleInput}
-                        onKeyDown={handleKeyDown}
-                        onCompositionStart={handlerCompositionStart}
-                        onCompositionEnd={handleCompositionEnd}
-                        onFocus={() => setShowEmptyScreen(true)}
-                        onBlur={() => setShowEmptyScreen(false)}
+                        onKeyDown={(event) => {
+                            if (
+                                event.key === 'Enter' &&
+                                !event.shiftKey &&
+                                !event.nativeEvent.isComposing
+                            ) {
+                                event.preventDefault();
+
+                                if (status !== 'ready') {
+                                    toast.error(
+                                        'Please wait for the model to finish its response!'
+                                    );
+                                } else {
+                                    submitForm();
+                                }
+                            }
+                        }}
                         placeholder="Ask me anything..."
                         autoFocus
                         tabIndex={0}
