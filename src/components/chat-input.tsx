@@ -20,6 +20,9 @@ import {
     TelescopeIcon,
     CpuIcon,
     ArrowDown,
+    ChevronDownIcon,
+    PlusIcon,
+    PaperclipIcon,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -38,6 +41,8 @@ import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } fr
 import { ModelSelector } from '@/components/model-selector';
 import { toast } from 'sonner';
 import { useScrollToBottom } from '@/lib/hooks/use-scroll-to-bottom';
+import { PreviewAttachment } from './chat/preview-attachment';
+import { ScrollArea, ScrollBar } from './ui/scroll-area';
 
 interface InputPanelProps {
     chatId: string;
@@ -47,7 +52,7 @@ interface InputPanelProps {
     status: UseChatHelpers['status'];
     stop: () => void;
     attachments: Array<Attachment>;
-    setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
+    setAttachments: Dispatch<SetStateAction<Attachment[]>>;
     messages: Array<UIMessage>;
     setMessages: UseChatHelpers['setMessages'];
     append: UseChatHelpers['append'];
@@ -117,10 +122,20 @@ function PureInput({
 
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
     const { width } = useWindowSize();
+    const inputContainerRef = React.useRef<HTMLDivElement>(null);
+    const [inputContainerHeight, setInputContainerHeight] = React.useState(0);
 
     React.useEffect(() => {
-        if (textareaRef.current) {
-            adjustHeight();
+        const inputEl = inputContainerRef.current;
+
+        if (inputEl) {
+            const resizeObserver = new ResizeObserver(() => {
+                setInputContainerHeight(inputEl.offsetHeight);
+            });
+            resizeObserver.observe(inputEl);
+            return () => {
+                resizeObserver.unobserve(inputEl);
+            };
         }
     }, []);
 
@@ -137,6 +152,12 @@ function PureInput({
             textareaRef.current.style.height = '98px';
         }
     }, []);
+
+    React.useEffect(() => {
+        if (textareaRef.current) {
+            adjustHeight();
+        }
+    }, [input, adjustHeight]);
 
     const [localStorageInput, setLocalStorageInput] = useLocalStorage('input', '');
 
@@ -169,15 +190,18 @@ function PureInput({
 
             if (!input.trim()) return;
 
-            handleSubmit(event);
+            handleSubmit(event, {
+                experimental_attachments: attachments,
+            });
 
             resetHeight();
 
+            setAttachments([]);
             if (width && width > 768) {
                 textareaRef.current?.focus();
             }
         },
-        [input, handleSubmit, resetHeight, width]
+        [input, handleSubmit, resetHeight, width, attachments, setAttachments]
     );
 
     const uploadFile = async (file: File) => {
@@ -193,6 +217,8 @@ function PureInput({
             if (response.ok) {
                 const data = await response.json();
                 const { url, pathname, contentType } = data;
+
+                console.log(data);
 
                 return {
                     url,
@@ -220,7 +246,7 @@ function PureInput({
                     (attachment) => attachment !== undefined
                 );
 
-                setAttachments((currentAttachments) => [
+                await setAttachments((currentAttachments: Attachment[]) => [
                     ...currentAttachments,
                     ...successfullyUploadedAttachments,
                 ]);
@@ -303,7 +329,7 @@ function PureInput({
             layout
             transition={layoutTransition}
             className={cn(
-                'w-full bg-background',
+                'w-full bg-background relative',
                 messages.length > 0
                     ? 'bottom-0 left-0 right-0'
                     : isSpaceChat
@@ -311,6 +337,15 @@ function PureInput({
                       : 'flex flex-col items-center justify-center'
             )}
         >
+            <input
+                type="file"
+                className="fixed -top-4 -left-4 size-0.5 opacity-0 pointer-events-none"
+                ref={fileInputRef}
+                multiple
+                onChange={handleFileChange}
+                tabIndex={-1}
+            />
+
             <AnimatePresence>
                 {messages.length === 0 && !isSpaceChat && (
                     <motion.div
@@ -331,25 +366,60 @@ function PureInput({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                        className="absolute left-1/2 right-1/2 w-fit bottom-36 bg-background/10 backdrop-blur-md rounded-full"
+                        className="absolute left-1/2 -translate-x-1/2 bg-background/40 rounded-full backdrop-blur-md"
+                        style={{ bottom: `${inputContainerHeight + 16}px` }}
                     >
                         <Button
                             data-testid="scroll-to-bottom-button"
-                            className="rounded-full"
-                            size={'icon'}
-                            variant="outline"
+                            className="rounded-full !bg-transparent border"
+                            size={'sm'}
+                            variant="secondary"
                             onClick={(event) => {
                                 event.preventDefault();
                                 scrollToBottom();
                             }}
                         >
-                            <ArrowDown />
+                            <p className="text-xs font-normal">Scroll to bottom</p>
+                            <ChevronDownIcon className="size-3" />
                         </Button>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            <div className={cn('max-w-3xl w-full mx-auto')}>
+            <div ref={inputContainerRef} className={cn('max-w-3xl w-full mx-auto')}>
+                {(attachments.length > 0 || uploadQueue.length > 0) && (
+                    <div className="mx-6 p-2 border-b-0 border rounded-t-md bg-neutral-900/50">
+                        <ScrollArea>
+                            <motion.div
+                                data-testid="attachments-preview"
+                                className="flex flex-row gap-2 items-end justify-start"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                {attachments.map((attachment) => (
+                                    <PreviewAttachment
+                                        key={attachment.url}
+                                        attachment={attachment}
+                                    />
+                                ))}
+                                {uploadQueue.map((fileName) => (
+                                    <PreviewAttachment
+                                        key={fileName}
+                                        attachment={{
+                                            url: '',
+                                            name: fileName,
+                                            contentType: '',
+                                        }}
+                                        isUploading={true}
+                                    />
+                                ))}
+                            </motion.div>
+                            <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                    </div>
+                )}
                 <div
                     className={cn(
                         'relative flex flex-col w-full p-4  border-input bg-neutral-900/50 focus-within:border-neutral-700/70 hover:border-neutral-700/70 transition-all duration-200',
@@ -613,6 +683,8 @@ function PureInput({
                         >
                             <AnimatePresence>
                                 <div className="flex items-center gap-2">
+                                    <AttachmentButton fileInputRef={fileInputRef} status={status} />
+
                                     <motion.div variants={fadeVariants} className="flex-shrink-0">
                                         <ModelSelector initialModel={initialModel} />
                                     </motion.div>
@@ -631,6 +703,30 @@ function PureInput({
         </motion.div>
     );
 }
+
+const AttachmentButton = React.memo(
+    ({
+        fileInputRef,
+        status,
+    }: {
+        fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
+        status: UseChatHelpers['status'];
+    }) => (
+        <Button
+            variant={'ghost'}
+            className="flex-shrink-0"
+            onClick={(event) => {
+                event.preventDefault();
+                fileInputRef.current?.click();
+            }}
+            disabled={status !== 'ready'}
+        >
+            <PaperclipIcon className="size-3 text-muted-foreground" />
+        </Button>
+    )
+);
+
+AttachmentButton.displayName = 'AttachmentButton';
 
 const StopButton = React.memo(
     ({ stop, setMessages }: { stop: () => void; setMessages: (messages: any) => void }) => (
@@ -654,6 +750,8 @@ const StopButton = React.memo(
         </Button>
     )
 );
+
+StopButton.displayName = 'StopButton';
 
 const SendButton = React.memo(
     ({ input, submitForm }: { input: string; submitForm: () => void }) => (
@@ -683,7 +781,6 @@ const SendButton = React.memo(
     )
 );
 
-StopButton.displayName = 'StopButton';
 SendButton.displayName = 'SendButton';
 
 export const Input = React.memo(PureInput, (prevProps, nextProps) => {

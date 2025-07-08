@@ -99,7 +99,7 @@ export function Chat({
         }
     }, [query, append, hasAppendedQuery, id]);
 
-    const [attachments, setAttachments] = React.useState<Array<Attachment>>([]);
+    const [attachments, setAttachments] = React.useState<Attachment[]>([]);
 
     useAutoResume({
         autoResume,

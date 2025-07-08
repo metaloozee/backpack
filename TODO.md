@@ -2,6 +2,8 @@
 - [ ] Zustand for state management
 - [ ] Optimistic Updates
 - [ ] Image Display
-- [ ] Attachment support
-- [ ] Vercel Blob to host files, documents, attachments
+- [x] Attachment support
+- [x] Vercel Blob to host files, documents, attachments
 - [ ] Space Settings
+
+- [ ] Research Agent

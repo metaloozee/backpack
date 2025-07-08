@@ -329,10 +329,18 @@ export function Message({
                                                         )}
                                                         <div
                                                             data-testid="message-content"
-                                                            className={cn('flex flex-col gap-4', {
-                                                                'text-primary bg-neutral-900 border px-4 py-1 rounded-t-xl rounded-bl-xl overflow-auto':
-                                                                    message.role === 'user',
-                                                            })}
+                                                            className={cn(
+                                                                'flex flex-col gap-4',
+                                                                {
+                                                                    'text-primary bg-neutral-900 border px-4 py-1 overflow-auto':
+                                                                        message.role === 'user',
+                                                                },
+                                                                message.experimental_attachments &&
+                                                                    message.experimental_attachments
+                                                                        .length > 0
+                                                                    ? 'rounded-b-xl rounded-tl-xl'
+                                                                    : 'rounded-t-xl rounded-bl-xl'
+                                                            )}
                                                         >
                                                             <Markdown>{part.text}</Markdown>
                                                         </div>
