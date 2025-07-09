@@ -23,10 +23,18 @@ import {
     ChevronDownIcon,
     PlusIcon,
     PaperclipIcon,
+    WrenchIcon,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Switch } from '@/components/ui/switch';
 
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 import {
@@ -43,6 +51,7 @@ import { toast } from 'sonner';
 import { useScrollToBottom } from '@/lib/hooks/use-scroll-to-bottom';
 import { PreviewAttachment } from './chat/preview-attachment';
 import { ScrollArea, ScrollBar } from './ui/scroll-area';
+import { defaultTools, type ToolsState } from '@/lib/ai/tools';
 
 interface InputPanelProps {
     chatId: string;
@@ -56,12 +65,8 @@ interface InputPanelProps {
     messages: Array<UIMessage>;
     setMessages: UseChatHelpers['setMessages'];
     append: UseChatHelpers['append'];
-    webSearch: boolean;
-    setWebSearch: (webSearch: boolean) => void;
-    knowledgeSearch: boolean;
-    setKnowledgeSearch: (knowledgeSearch: boolean) => void;
-    academicSearch: boolean;
-    setAcademicSearch: (academicSearch: boolean) => void;
+    tools: ToolsState;
+    setTools: Dispatch<SetStateAction<ToolsState>>;
     initialModel?: string;
 }
 
@@ -102,12 +107,8 @@ function PureInput({
     messages,
     setMessages,
     append,
-    webSearch,
-    setWebSearch,
-    knowledgeSearch,
-    setKnowledgeSearch,
-    academicSearch,
-    setAcademicSearch,
+    tools,
+    setTools,
     initialModel,
 }: InputPanelProps) {
     const hour = new Date().getHours();
@@ -266,31 +267,14 @@ function PureInput({
     const isSpaceChat = pathname.startsWith('/s/');
     const router = useRouter();
 
-    const updateWebSearch = React.useCallback(
-        (value: boolean) => {
-            if (typeof setWebSearch === 'function') {
-                setWebSearch(value);
-            }
+    const updateTool = React.useCallback(
+        (toolId: string, value: boolean) => {
+            setTools((prev) => ({
+                ...prev,
+                [toolId]: value,
+            }));
         },
-        [setWebSearch]
-    );
-
-    const updateKnowledgeSearch = React.useCallback(
-        (value: boolean) => {
-            if (typeof setKnowledgeSearch === 'function') {
-                setKnowledgeSearch(value);
-            }
-        },
-        [setKnowledgeSearch]
-    );
-
-    const updateAcademicSearch = React.useCallback(
-        (value: boolean) => {
-            if (typeof setAcademicSearch === 'function') {
-                setAcademicSearch(value);
-            }
-        },
-        [setAcademicSearch]
+        [setTools]
     );
 
     const handleModeChange = React.useCallback(
@@ -303,15 +287,15 @@ function PureInput({
                 if ('tools' in selectedModeConfig && selectedModeConfig.tools) {
                     setSelectedAgent(null);
                 } else if ('agents' in selectedModeConfig && selectedModeConfig.agents) {
-                    updateWebSearch(false);
-                    updateKnowledgeSearch(false);
-                    updateAcademicSearch(false);
+                    updateTool('webSearch', false);
+                    updateTool('knowledgeSearch', false);
+                    updateTool('academicSearch', false);
                     const defaultAgent = Object.keys(selectedModeConfig.agents)[0];
                     setSelectedAgent(defaultAgent || null);
                 }
             }
         },
-        [updateWebSearch, updateKnowledgeSearch, updateAcademicSearch]
+        [updateTool]
     );
 
     const isLoading = status === 'submitted' || status === 'streaming';
@@ -484,194 +468,134 @@ function PureInput({
                                 </Tabs>
                             </motion.div>
                             <AnimatePresence mode="wait">
-                                <motion.div
-                                    className="flex flex-row gap-2"
-                                    variants={staggerVariants.container}
-                                    initial="hidden"
-                                    animate="visible"
-                                    exit="exit"
-                                    key={`cards-container-${selectedMode}`}
-                                >
-                                    {(() => {
-                                        const mode = modeTypes.find(
-                                            (m) => m.value === selectedMode && !m.disabled
-                                        );
-                                        return mode && 'tools' in mode && mode.tools?.webSearch;
-                                    })() && (
-                                        <motion.div
-                                            variants={staggerVariants.item}
-                                            key="web-search-card"
-                                            layout
-                                            layoutId="web-search-section"
-                                        >
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <div
-                                                            onClick={() =>
-                                                                updateWebSearch(!webSearch)
-                                                            }
-                                                            className={cn(
-                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justify-center items-center gap-2 text-xs transition-all duration-200',
-                                                                webSearch
-                                                                    ? 'bg-neutral-800 border-neutral-800 text-primary'
-                                                                    : 'bg-neutral-900 border-neutral-800'
-                                                            )}
-                                                        >
-                                                            <GlobeIcon className="size-3.5" />
-                                                        </div>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>Web Search</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        </motion.div>
-                                    )}
-                                    {(() => {
-                                        const mode = modeTypes.find(
-                                            (m) => m.value === selectedMode && !m.disabled
-                                        );
-                                        return (
-                                            mode && 'tools' in mode && mode.tools?.knowledgeSearch
-                                        );
-                                    })() && (
-                                        <motion.div
-                                            variants={staggerVariants.item}
-                                            key="knowledge-search-card"
-                                            layout
-                                            layoutId="knowledge-search-section"
-                                        >
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <div
-                                                            onClick={() =>
-                                                                updateKnowledgeSearch(
-                                                                    !knowledgeSearch
-                                                                )
-                                                            }
-                                                            className={cn(
-                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justify-center items-center gap-2 text-xs transition-all duration-200',
-                                                                knowledgeSearch
-                                                                    ? 'bg-neutral-800 border-neutral-800 text-primary'
-                                                                    : 'bg-neutral-900 border-neutral-800'
-                                                            )}
-                                                        >
-                                                            <BookCopyIcon className="size-3.5" />
-                                                        </div>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>Knowledge Search</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        </motion.div>
-                                    )}
-                                    {(() => {
-                                        const mode = modeTypes.find(
-                                            (m) => m.value === selectedMode && !m.disabled
-                                        );
-                                        return (
-                                            mode && 'tools' in mode && mode.tools?.academicSearch
-                                        );
-                                    })() && (
-                                        <motion.div
-                                            variants={staggerVariants.item}
-                                            key="academic-search-card"
-                                            layout
-                                            layoutId="academic-search-section"
-                                        >
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <div
-                                                            onClick={() =>
-                                                                updateAcademicSearch(
-                                                                    !academicSearch
-                                                                )
-                                                            }
-                                                            className={cn(
-                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justify-center items-center gap-2 text-xs transition-all duration-200',
-                                                                academicSearch
-                                                                    ? 'bg-neutral-800 border-neutral-800 text-primary'
-                                                                    : 'bg-neutral-900 border-neutral-800'
-                                                            )}
-                                                        >
-                                                            <GraduationCapIcon className="size-3.5" />
-                                                        </div>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>Academic Search</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        </motion.div>
-                                    )}
+                                {(() => {
+                                    const mode = modeTypes.find(
+                                        (m) => m.value === selectedMode && !m.disabled
+                                    );
 
-                                    {(() => {
-                                        const mode = modeTypes.find(
-                                            (m) => m.value === selectedMode && !m.disabled
-                                        );
-                                        if (mode && 'agents' in mode && mode.agents) {
-                                            return Object.entries(mode.agents).map(
-                                                ([agentKey, enabled]) => {
-                                                    if (!enabled) return null;
-
-                                                    return (
-                                                        <motion.div
-                                                            variants={staggerVariants.item}
-                                                            key={`${agentKey}-agent-card`}
-                                                            layout
-                                                            layoutId={`${agentKey}-agent-section`}
+                                    if (mode && 'tools' in mode && mode.tools) {
+                                        return (
+                                            <motion.div
+                                                variants={staggerVariants.item}
+                                                initial="hidden"
+                                                animate="visible"
+                                                exit="exit"
+                                                key="tools-dropdown"
+                                            >
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="text-xs bg-neutral-900 border-neutral-800 hover:bg-neutral-800"
                                                         >
-                                                            <TooltipProvider>
-                                                                <Tooltip>
-                                                                    <TooltipTrigger asChild>
-                                                                        <div
-                                                                            onClick={() =>
-                                                                                setSelectedAgent(
-                                                                                    selectedAgent ===
-                                                                                        agentKey
-                                                                                        ? null
-                                                                                        : agentKey
-                                                                                )
-                                                                            }
-                                                                            className={cn(
-                                                                                'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justify-center items-center gap-2 text-xs transition-all duration-200',
+                                                            <WrenchIcon className="size-3.5" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent
+                                                        align="start"
+                                                        className="w-xs bg-neutral-950 border-neutral-800"
+                                                    >
+                                                        {defaultTools.map((tool) => {
+                                                            const IconComponent = tool.icon;
+                                                            return (
+                                                                <DropdownMenuItem
+                                                                    key={tool.id}
+                                                                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-neutral-800"
+                                                                    onClick={(e) =>
+                                                                        e.preventDefault()
+                                                                    }
+                                                                >
+                                                                    <div className="flex items-center gap-3">
+                                                                        <IconComponent className="size-4 text-muted-foreground" />
+                                                                        <div className="flex flex-col">
+                                                                            <span className="text-sm font-medium">
+                                                                                {tool.name}
+                                                                            </span>
+                                                                            <span className="text-xs text-muted-foreground">
+                                                                                {tool.description}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <Switch
+                                                                        checked={
+                                                                            tools[tool.id] || false
+                                                                        }
+                                                                        onCheckedChange={(
+                                                                            checked
+                                                                        ) =>
+                                                                            updateTool(
+                                                                                tool.id,
+                                                                                checked
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                </DropdownMenuItem>
+                                                            );
+                                                        })}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </motion.div>
+                                        );
+                                    }
+
+                                    if (mode && 'agents' in mode && mode.agents) {
+                                        return Object.entries(mode.agents).map(
+                                            ([agentKey, enabled]) => {
+                                                if (!enabled) return null;
+
+                                                return (
+                                                    <motion.div
+                                                        variants={staggerVariants.item}
+                                                        key={`${agentKey}-agent-card`}
+                                                        layout
+                                                        layoutId={`${agentKey}-agent-section`}
+                                                    >
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <div
+                                                                        onClick={() =>
+                                                                            setSelectedAgent(
                                                                                 selectedAgent ===
                                                                                     agentKey
-                                                                                    ? 'bg-neutral-800 border-neutral-800 text-primary'
-                                                                                    : 'bg-neutral-900 border-neutral-800'
-                                                                            )}
-                                                                        >
-                                                                            {agentKey ===
-                                                                                'research' && (
-                                                                                <TelescopeIcon className="size-3.5" />
-                                                                            )}
-                                                                        </div>
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent>
-                                                                        <p>
-                                                                            {agentKey
-                                                                                .charAt(0)
-                                                                                .toUpperCase() +
-                                                                                agentKey.slice(
-                                                                                    1
-                                                                                )}{' '}
-                                                                            Agent
-                                                                        </p>
-                                                                    </TooltipContent>
-                                                                </Tooltip>
-                                                            </TooltipProvider>
-                                                        </motion.div>
-                                                    );
-                                                }
-                                            );
-                                        }
-                                        return null;
-                                    })()}
-                                </motion.div>
+                                                                                    ? null
+                                                                                    : agentKey
+                                                                            )
+                                                                        }
+                                                                        className={cn(
+                                                                            'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justify-center items-center gap-2 text-xs transition-all duration-200',
+                                                                            selectedAgent ===
+                                                                                agentKey
+                                                                                ? 'bg-neutral-800 border-neutral-800 text-primary'
+                                                                                : 'bg-neutral-900 border-neutral-800'
+                                                                        )}
+                                                                    >
+                                                                        {agentKey ===
+                                                                            'research' && (
+                                                                            <TelescopeIcon className="size-3.5" />
+                                                                        )}
+                                                                    </div>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>
+                                                                        {agentKey
+                                                                            .charAt(0)
+                                                                            .toUpperCase() +
+                                                                            agentKey.slice(1)}{' '}
+                                                                        Agent
+                                                                    </p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                    </motion.div>
+                                                );
+                                            }
+                                        );
+                                    }
+
+                                    return null;
+                                })()}
                             </AnimatePresence>
                         </div>
 
@@ -787,9 +711,7 @@ export const Input = React.memo(PureInput, (prevProps, nextProps) => {
     if (prevProps.status !== nextProps.status) return false;
     if (prevProps.messages.length !== nextProps.messages.length) return false;
     if (prevProps.input !== nextProps.input) return false;
-    if (prevProps.webSearch !== nextProps.webSearch) return false;
-    if (prevProps.knowledgeSearch !== nextProps.knowledgeSearch) return false;
-    if (prevProps.academicSearch !== nextProps.academicSearch) return false;
+    if (JSON.stringify(prevProps.tools) !== JSON.stringify(nextProps.tools)) return false;
 
     return true;
 });

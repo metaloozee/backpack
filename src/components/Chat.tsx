@@ -16,6 +16,7 @@ import { BookOpenIcon } from 'lucide-react';
 import DisplayChats from './chat/display-chats';
 import { useAutoResume } from '@/lib/hooks/use-auto-resume';
 import { type Session } from 'better-auth';
+import { getDefaultToolsState, type ToolsState } from '@/lib/ai/tools';
 
 export function Chat({
     id,
@@ -42,9 +43,7 @@ export function Chat({
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
 
-    const [webSearch, setWebSearch] = React.useState(true);
-    const [knowledgeSearch, setKnowledgeSearch] = React.useState(false);
-    const [academicSearch, setAcademicSearch] = React.useState(false);
+    const [tools, setTools] = React.useState<ToolsState>(getDefaultToolsState());
 
     const {
         messages,
@@ -68,9 +67,9 @@ export function Chat({
                 id,
                 env,
                 message: body.messages.at(-1),
-                webSearch,
-                knowledgeSearch,
-                academicSearch,
+                webSearch: tools.webSearch,
+                knowledgeSearch: tools.knowledgeSearch,
+                academicSearch: tools.academicSearch,
             };
         },
         onResponse: (response) => {
@@ -144,12 +143,8 @@ export function Chat({
                 messages={messages}
                 setMessages={setMessages}
                 append={append}
-                webSearch={webSearch}
-                setWebSearch={setWebSearch}
-                knowledgeSearch={knowledgeSearch}
-                setKnowledgeSearch={setKnowledgeSearch}
-                academicSearch={academicSearch}
-                setAcademicSearch={setAcademicSearch}
+                tools={tools}
+                setTools={setTools}
                 initialModel={initialModel}
             />
 
