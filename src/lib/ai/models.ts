@@ -4,6 +4,7 @@ import { groq } from '@ai-sdk/groq';
 import { openai } from '@ai-sdk/openai';
 import { openrouter } from '@openrouter/ai-sdk-provider';
 import { type LanguageModelV1 } from 'ai';
+import { mistral } from '@ai-sdk/mistral';
 
 export type ModelProperties = 'reasoning' | 'fast' | 'quality' | 'experimental' | 'stealth';
 
@@ -81,27 +82,27 @@ export const models: Model[] = [
     //     instance: openrouter('qwen/qwq-32b:free'),
     //     properties: ['reasoning', 'experimental'],
     // },
-    // {
-    //     name: 'GPT 4.1',
-    //     id: 'gpt-4.1-2025-04-14',
-    //     provider: 'openai',
-    //     instance: openai('gpt-4.1-2025-04-14'),
-    //     reasoning: false,
-    // },
-    // {
-    //     name: 'o4 mini',
-    //     id: 'o4-mini-2025-04-16',
-    //     provider: 'openai',
-    //     instance: openai('o4-mini-2025-04-16'),
-    //     reasoning: true,
-    // },
-    // {
-    //     name: 'o3',
-    //     id: 'o3-2025-04-16',
-    //     provider: 'openai',
-    //     instance: openai('o3-2025-04-16'),
-    //     reasoning: true,
-    // }
+    {
+        name: 'GPT 4.1',
+        id: 'gpt-4.1-2025-04-14',
+        provider: 'openai',
+        instance: openai('gpt-4.1-2025-04-14'),
+        properties: ['fast'],
+    },
+    {
+        name: 'o4 mini',
+        id: 'o4-mini-2025-04-16',
+        provider: 'openai',
+        instance: openai('o4-mini-2025-04-16'),
+        properties: ['quality', 'reasoning', 'fast'],
+    },
+    {
+        name: 'o3',
+        id: 'o3-2025-04-16',
+        provider: 'openai',
+        instance: openai('o3-2025-04-16'),
+        properties: ['quality', 'reasoning', 'fast'],
+    },
 ];
 
 export const getModel = (modelId: string) => {

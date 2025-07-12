@@ -277,26 +277,10 @@ function PureInput({
         [setTools]
     );
 
-    const handleModeChange = React.useCallback(
-        (value: string) => {
-            const newMode = value as ModeType;
-            setSelectedMode(newMode);
-
-            const selectedModeConfig = modeTypes.find((m) => m.value === newMode);
-            if (selectedModeConfig) {
-                if ('tools' in selectedModeConfig && selectedModeConfig.tools) {
-                    setSelectedAgent(null);
-                } else if ('agents' in selectedModeConfig && selectedModeConfig.agents) {
-                    updateTool('webSearch', false);
-                    updateTool('knowledgeSearch', false);
-                    updateTool('academicSearch', false);
-                    const defaultAgent = Object.keys(selectedModeConfig.agents)[0];
-                    setSelectedAgent(defaultAgent || null);
-                }
-            }
-        },
-        [updateTool]
-    );
+    const handleModeChange = React.useCallback((value: string) => {
+        const newMode = value as ModeType;
+        setSelectedMode(newMode);
+    }, []);
 
     const isLoading = status === 'submitted' || status === 'streaming';
 
@@ -486,10 +470,11 @@ function PureInput({
                                                     <DropdownMenuTrigger asChild>
                                                         <Button
                                                             variant="outline"
-                                                            size="sm"
-                                                            className="text-xs bg-neutral-900 border-neutral-800 hover:bg-neutral-800"
+                                                            size={'sm'}
+                                                            className="text-xs"
                                                         >
-                                                            <WrenchIcon className="size-3.5" />
+                                                            <WrenchIcon className="size-3.5 mr-1" />
+                                                            Tools
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent

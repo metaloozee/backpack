@@ -52,6 +52,7 @@ const providerNames = {
     groq: 'Groq',
     openai: 'OpenAI',
     openrouter: 'OpenRouter',
+    mistral: 'Mistral',
 };
 
 const getProviderIcon = (provider: string) => {
@@ -84,6 +85,8 @@ const getProviderIcon = (provider: string) => {
                     height={16}
                 />
             );
+        case 'mistral':
+            return <Image src="/icons/mistral-color.svg" alt="Mistral" width={16} height={16} />;
         default:
             return null;
     }
