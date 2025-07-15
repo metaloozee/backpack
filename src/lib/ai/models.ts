@@ -75,13 +75,13 @@ export const models: Model[] = [
         instance: openrouter('deepseek/deepseek-chat-v3-0324:free'),
         properties: ['experimental'],
     },
-    // {
-    //     name: 'Qwen QwQ',
-    //     id: 'qwen/qwq-32b:free',
-    //     provider: 'openrouter',
-    //     instance: openrouter('qwen/qwq-32b:free'),
-    //     properties: ['reasoning', 'experimental'],
-    // },
+    {
+        name: 'Kimi K2',
+        id: 'moonshotai/kimi-k2:free',
+        provider: 'openrouter',
+        instance: openrouter('moonshotai/kimi-k2:free'),
+        properties: ['experimental'],
+    },
     {
         name: 'GPT 4.1',
         id: 'gpt-4.1-2025-04-14',
@@ -102,6 +102,13 @@ export const models: Model[] = [
         provider: 'openai',
         instance: openai('o3-2025-04-16'),
         properties: ['quality', 'reasoning', 'fast'],
+    },
+    {
+        name: 'Kimi K2',
+        id: 'moonshotai/kimi-k2-instruct',
+        provider: 'groq',
+        instance: groq('moonshotai/kimi-k2-instruct'),
+        properties: ['quality', 'fast'],
     },
 ];
 
