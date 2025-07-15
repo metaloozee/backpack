@@ -9,6 +9,16 @@ import {
     generateObject,
 } from 'ai';
 import { generateUUID, getTrailingMessageId } from '@/lib/ai/utils';
+import { sanitizeUserInput, sanitizeFileName } from '@/lib/utils/sanitization';
+import {
+    handleApiError,
+    safeDbOperation,
+    safeExternalOperation,
+    UnauthorizedError,
+    NotFoundError,
+    ValidationError,
+    DatabaseError,
+} from '@/lib/utils/error-handling';
 
 import { env } from '@/lib/env.mjs';
 
@@ -47,7 +57,7 @@ export async function POST(req: NextRequest) {
     try {
         const session = await getSession();
         if (!session) {
-            return new Response('Access Denied', { status: 401 });
+            throw new UnauthorizedError('Access denied');
         }
 
         const json = await req.json();
@@ -56,64 +66,111 @@ export async function POST(req: NextRequest) {
         const { message, id, env, webSearch, knowledgeSearch, academicSearch } = requestBody;
 
         if (!message || !id) {
-            throw new Error('Invalid Body');
+            throw new ValidationError('Message and ID are required');
         }
+
+        // Sanitize user input
+        const sanitizedMessage = {
+            ...message,
+            content: sanitizeUserInput(message.content),
+            parts: message.parts.map((part) => ({
+                ...part,
+                text: sanitizeUserInput(part.text),
+            })),
+            experimental_attachments: message.experimental_attachments?.map((attachment) => ({
+                ...attachment,
+                name: sanitizeFileName(attachment.name),
+            })),
+        };
 
         const cookieStore = await cookies();
         const modelId = cookieStore.get('X-Model-Id')?.value ?? 'gemini-2.5-flash';
         const model = getModel(modelId);
 
         if (!model) {
-            throw new Error('Invalid model selected');
+            throw new ValidationError('Invalid model selected');
         }
 
-        const [chat] = await db
-            .select()
-            .from(dbChat)
-            .where(and(eq(dbChat.id, id), eq(dbChat.userId, session.userId)))
-            .limit(1);
+        const [chat] = await safeDbOperation(
+            () =>
+                db
+                    .select()
+                    .from(dbChat)
+                    .where(and(eq(dbChat.id, id), eq(dbChat.userId, session.userId)))
+                    .limit(1),
+            'Failed to retrieve chat'
+        );
         if (!chat) {
-            const { object } = await generateObject({
-                model: google('gemini-2.5-flash-lite-preview-06-17'),
-                schema: z.object({
-                    title: z.string().max(100),
-                }),
-                prompt: `
-Given the following query, generate a title for the chat: ${message.content}.
+            const { object } = await safeExternalOperation(
+                () =>
+                    generateObject({
+                        model: google('gemini-2.5-flash-lite-preview-06-17'),
+                        schema: z.object({
+                            title: z.string().max(100),
+                        }),
+                        prompt: `
+Given the following query, generate a title for the chat: ${sanitizedMessage.content}.
 Follow the schema provided.
-                    `,
-            });
+                        `,
+                    }),
+                'Failed to generate chat title'
+            );
 
-            await caller.chat.saveChat({
-                id,
-                userId: session.userId,
-                spaceId: env.inSpace ? env.spaceId : undefined,
-                title: object.title ?? 'Unnamed Chat',
-            });
+            await safeDbOperation(
+                () =>
+                    caller.chat.saveChat({
+                        id,
+                        userId: session.userId,
+                        spaceId: env.inSpace ? env.spaceId : undefined,
+                        title: object.title ?? 'Unnamed Chat',
+                    }),
+                'Failed to save chat'
+            );
         }
 
-        const previousMessages = await db.select().from(dbMessage).where(eq(dbMessage.chatId, id));
+        const previousMessages = await safeDbOperation(
+            () => db.select().from(dbMessage).where(eq(dbMessage.chatId, id)),
+            'Failed to retrieve previous messages'
+        );
+
         const messages = appendClientMessage({
-            // @ts-expect-error todo: type conversion from DBMessage[] to UIMessage[]
-            messages: previousMessages,
-            message,
+            messages: previousMessages.map((msg) => ({
+                id: msg.id,
+                role: msg.role as 'user' | 'assistant' | 'system',
+                parts: msg.parts as { text: string; type: 'text' }[],
+                content: '',
+                experimental_attachments: msg.attachments as {
+                    url: string;
+                    name: string;
+                    contentType: string;
+                }[],
+                createdAt: msg.createdAt,
+            })),
+            message: sanitizedMessage,
         });
 
-        await caller.chat.saveMessages({
-            messages: [
-                {
-                    chatId: id,
-                    id: message.id,
-                    role: 'user',
-                    parts: message.parts,
-                    attachments: message.experimental_attachments ?? [],
-                    createdAt: new Date(),
-                },
-            ],
-        });
+        await safeDbOperation(
+            () =>
+                caller.chat.saveMessages({
+                    messages: [
+                        {
+                            chatId: id,
+                            id: sanitizedMessage.id,
+                            role: 'user',
+                            parts: sanitizedMessage.parts,
+                            attachments: sanitizedMessage.experimental_attachments ?? [],
+                            createdAt: new Date(),
+                        },
+                    ],
+                }),
+            'Failed to save user message'
+        );
 
         const streamId = generateUUID();
-        await db.insert(dbStream).values({ id: streamId, chatId: id, createdAt: new Date() });
+        await safeDbOperation(
+            () => db.insert(dbStream).values({ id: streamId, chatId: id, createdAt: new Date() }),
+            'Failed to create stream'
+        );
 
         const activeTools: ('web_search' | 'knowledge_search' | 'academic_search')[] = [];
 
@@ -176,7 +233,7 @@ Follow the schema provided.
                                 }
 
                                 const [_, assistantMessage] = appendResponseMessages({
-                                    messages: [message],
+                                    messages: [sanitizedMessage],
                                     responseMessages: response.messages,
                                 });
 
@@ -186,7 +243,7 @@ Follow the schema provided.
                                             id: assistantId,
                                             chatId: id,
                                             role: assistantMessage.role,
-                                            parts: assistantMessage.parts,
+                                            parts: assistantMessage.parts ?? [],
                                             attachments:
                                                 assistantMessage.experimental_attachments ?? [],
                                             createdAt: new Date(),
@@ -358,32 +415,28 @@ Follow the schema provided.
                                         const contexts = await db
                                             .select({
                                                 content: knowledgeEmbeddings.content,
-                                                embedding: knowledgeEmbeddings.embedding,
                                                 knowledgeName: knowledge.knowledgeName,
+                                                knowledgeType: knowledge.knowledgeType,
                                                 similarity,
                                             })
-                                            .from(knowledge)
-                                            .fullJoin(
-                                                knowledgeEmbeddings,
-                                                eq(knowledge.id, knowledgeEmbeddings.knowledgeId)
+                                            .from(knowledgeEmbeddings)
+                                            .innerJoin(
+                                                knowledge,
+                                                eq(knowledgeEmbeddings.knowledgeId, knowledge.id)
                                             )
                                             .where(
                                                 and(
-                                                    and(
-                                                        eq(knowledge.userId, session.userId),
-                                                        eq(knowledge.spaceId, env.spaceId!)
-                                                    ),
+                                                    eq(knowledge.userId, session.userId),
+                                                    eq(knowledge.spaceId, env.spaceId!),
                                                     gt(similarity, 0.5)
                                                 )
                                             )
-                                            .orderBy((t) => desc(t.similarity))
+                                            .orderBy(desc(similarity))
                                             .limit(10);
 
                                         return {
                                             keyword: keywords[index],
-                                            contexts: contexts.map(
-                                                ({ embedding, ...rest }) => rest
-                                            ),
+                                            contexts,
                                         };
                                     }
                                 );
@@ -452,93 +505,105 @@ Follow the schema provided.
             return new Response(stream);
         }
     } catch (error) {
-        console.error(error);
-        return new Response((error as Error).message, { status: 500 });
+        return handleApiError(error);
     }
 }
 
 export async function GET(request: Request) {
-    const session = await getSession();
-    if (!session) {
-        return new Response('Access Denied', { status: 401 });
-    }
-
-    const streamContext = getStreamContext();
-    const resumeRequestedAt = new Date();
-
-    if (!streamContext) {
-        throw new Error('Stream context not found');
-    }
-
-    const { searchParams } = new URL(request.url);
-    const chatId = searchParams.get('chatId');
-
-    if (!chatId) {
-        throw new Error('Chat ID not found');
-    }
-
-    const [chat] = await db
-        .select()
-        .from(dbChat)
-        .where(and(eq(dbChat.id, chatId), eq(dbChat.userId, session.userId)))
-        .limit(1);
-    if (!chat) {
-        throw new Error('Chat not found');
-    }
-
-    const streams = await db
-        .select({ id: dbStream.id })
-        .from(dbStream)
-        .where(eq(dbStream.chatId, chatId))
-        .orderBy(asc(dbStream.createdAt));
-    const streamIds = streams.map(({ id }) => id);
-    if (!streamIds.length) {
-        throw new Error('No streams found');
-    }
-
-    const recentStreamId = streamIds[streamIds.length - 1];
-    if (!recentStreamId) {
-        throw new Error('No recent stream found');
-    }
-
-    const emptyDataStream = createDataStream({
-        execute: () => {},
-    });
-
-    const stream = await streamContext.resumableStream(recentStreamId, () => emptyDataStream);
-    if (!stream) {
-        const messages = await db
-            .select()
-            .from(dbMessage)
-            .where(eq(dbMessage.chatId, chatId))
-            .orderBy(asc(dbMessage.createdAt));
-        const mostRecentMessage = messages[messages.length - 1];
-        if (!mostRecentMessage) {
-            return new Response(emptyDataStream, { status: 200 });
+    try {
+        const session = await getSession();
+        if (!session) {
+            throw new UnauthorizedError('Access denied');
         }
 
-        if (mostRecentMessage.role !== 'assistant') {
-            return new Response(emptyDataStream, { status: 200 });
+        const streamContext = getStreamContext();
+        const resumeRequestedAt = new Date();
+
+        if (!streamContext) {
+            throw new DatabaseError('Stream context not found');
         }
 
-        const messageCreatedAt = new Date(mostRecentMessage.createdAt);
-        if (differenceInSeconds(resumeRequestedAt, messageCreatedAt) > 15) {
-            return new Response(emptyDataStream, { status: 200 });
+        const { searchParams } = new URL(request.url);
+        const chatId = searchParams.get('chatId');
+
+        if (!chatId) {
+            throw new ValidationError('Chat ID is required');
         }
 
-        const restoredStream = createDataStream({
-            execute: (buffer) => {
-                buffer.writeData({
-                    type: 'append-message',
-                    message: JSON.stringify(mostRecentMessage),
-                });
-            },
+        // Single query to verify chat ownership and get streams
+        const chatWithStreams = await safeDbOperation(
+            () =>
+                db
+                    .select({
+                        chatId: dbChat.id,
+                        streamId: dbStream.id,
+                        streamCreatedAt: dbStream.createdAt,
+                    })
+                    .from(dbChat)
+                    .leftJoin(dbStream, eq(dbChat.id, dbStream.chatId))
+                    .where(and(eq(dbChat.id, chatId), eq(dbChat.userId, session.userId)))
+                    .orderBy(asc(dbStream.createdAt)),
+            'Failed to retrieve chat and streams'
+        );
+
+        if (!chatWithStreams.length || !chatWithStreams[0].chatId) {
+            throw new NotFoundError('Chat not found');
+        }
+
+        const streamIds = chatWithStreams
+            .filter((item) => item.streamId)
+            .map((item) => item.streamId!);
+
+        if (!streamIds.length) {
+            throw new NotFoundError('No streams found');
+        }
+
+        const recentStreamId = streamIds[streamIds.length - 1];
+        if (!recentStreamId) {
+            throw new NotFoundError('No recent stream found');
+        }
+
+        const emptyDataStream = createDataStream({
+            execute: () => {},
         });
 
-        return new Response(restoredStream, { status: 200 });
-    }
+        const stream = await streamContext.resumableStream(recentStreamId, () => emptyDataStream);
+        if (!stream) {
+            const messages = await db
+                .select()
+                .from(dbMessage)
+                .where(eq(dbMessage.chatId, chatId))
+                .orderBy(asc(dbMessage.createdAt));
+            const mostRecentMessage = messages[messages.length - 1];
+            if (!mostRecentMessage) {
+                return new Response(emptyDataStream, { status: 200 });
+            }
 
-    return new Response(stream, { status: 200 });
+            if (mostRecentMessage.role !== 'assistant') {
+                return new Response(emptyDataStream, { status: 200 });
+            }
+
+            const messageCreatedAt = new Date(mostRecentMessage.createdAt);
+            if (differenceInSeconds(resumeRequestedAt, messageCreatedAt) > 15) {
+                return new Response(emptyDataStream, { status: 200 });
+            }
+
+            const restoredStream = createDataStream({
+                execute: (buffer) => {
+                    buffer.writeData({
+                        type: 'append-message',
+                        message: JSON.stringify(mostRecentMessage),
+                    });
+                },
+            });
+
+            return new Response(restoredStream, { status: 200 });
+        }
+
+        return new Response(stream, { status: 200 });
+    } catch (error) {
+        return handleApiError(error);
+    }
 }
 
 const getStreamContext = () => {

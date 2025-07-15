@@ -48,7 +48,16 @@ export const chatRouter = router({
     saveMessages: protectedProcedure
         .input(
             z.object({
-                messages: z.any(),
+                messages: z.array(
+                    z.object({
+                        id: z.string().uuid(),
+                        chatId: z.string().uuid(),
+                        role: z.enum(['user', 'data', 'assistant', 'system']),
+                        parts: z.array(z.any()).default([]),
+                        attachments: z.array(z.any()).default([]),
+                        createdAt: z.coerce.date(),
+                    })
+                ),
             })
         )
         .mutation(async ({ ctx, input }) => {
@@ -95,36 +104,29 @@ export const chatRouter = router({
         )
         .mutation(async ({ ctx, input }) => {
             const [currentMessage] = await db
-                .select()
+                .select({
+                    messageId: message.id,
+                    chatId: message.chatId,
+                    createdAt: message.createdAt,
+                    userId: chat.userId,
+                })
                 .from(message)
                 .innerJoin(chat, eq(message.chatId, chat.id))
-                .where(and(eq(chat.userId, ctx.session.user.id), eq(message.id, input.messageId)));
+                .where(and(eq(chat.userId, ctx.session.user.id), eq(message.id, input.messageId)))
+                .limit(1);
 
             if (!currentMessage) {
                 throw new TRPCError({ code: 'NOT_FOUND', message: 'Message not found' });
             }
 
-            const messagesToDelete = await db
-                .select({ id: message.id })
-                .from(message)
+            return await db
+                .delete(message)
                 .where(
                     and(
-                        eq(message.chatId, currentMessage.message.chatId),
-                        gte(message.createdAt, currentMessage.message.createdAt)
+                        eq(message.chatId, currentMessage.chatId),
+                        gte(message.createdAt, currentMessage.createdAt)
                     )
                 );
-            const messageIds = messagesToDelete.map((message) => message.id);
-
-            if (messageIds.length > 0) {
-                return await db
-                    .delete(message)
-                    .where(
-                        and(
-                            eq(message.chatId, currentMessage.message.chatId),
-                            inArray(message.id, messageIds)
-                        )
-                    );
-            }
         }),
     setModelSelection: protectedProcedure
         .input(

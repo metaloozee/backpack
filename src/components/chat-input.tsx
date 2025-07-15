@@ -297,7 +297,7 @@ function PureInput({
             layout
             transition={layoutTransition}
             className={cn(
-                'w-full bg-background relative',
+                'w-full bg-background sticky',
                 messages.length > 0
                     ? 'bottom-0 left-0 right-0'
                     : isSpaceChat

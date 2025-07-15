@@ -10,6 +10,15 @@ import { z } from 'zod';
 import { zfd } from 'zod-form-data';
 import { Mistral } from '@mistralai/mistralai';
 import { env } from '@/lib/env.mjs';
+import {
+    handleTRPCError,
+    safeDbOperation,
+    safeExternalOperation,
+    ForbiddenError,
+    NotFoundError,
+    DatabaseError,
+} from '@/lib/utils/error-handling';
+import { sanitizeUserInput, sanitizeFileName } from '@/lib/utils/sanitization';
 
 const mistral = new Mistral({ apiKey: env.MISTRAL_API_KEY });
 
@@ -23,35 +32,44 @@ export const spaceRouter = router({
         .input(
             z.object({
                 userId: z.string(),
-                spaceTitle: z.string().min(1).max(255),
-                spaceDescription: z.string().max(1000).optional(),
-                spaceCustomInstructions: z.string().max(2000).optional(),
+                spaceTitle: z.string().min(1).max(255).transform(sanitizeUserInput),
+                spaceDescription: z.string().max(1000).transform(sanitizeUserInput).optional(),
+                spaceCustomInstructions: z
+                    .string()
+                    .max(2000)
+                    .transform(sanitizeUserInput)
+                    .optional(),
             })
         )
         .mutation(async ({ ctx, input }) => {
-            if (input.userId !== ctx.session.user.id) {
-                throw new TRPCError({
-                    code: 'FORBIDDEN',
-                    message: 'Access denied',
-                });
+            try {
+                if (input.userId !== ctx.session.user.id) {
+                    throw new ForbiddenError('Access denied');
+                }
+
+                const [space] = await safeDbOperation(
+                    () =>
+                        db
+                            .insert(spaces)
+                            .values({
+                                userId: ctx.session.user.id,
+                                spaceTitle: input.spaceTitle,
+                                spaceDescription: input.spaceDescription,
+                                spaceCustomInstructions: input.spaceCustomInstructions,
+                                createdAt: new Date(),
+                            })
+                            .returning({ id: spaces.id }),
+                    'Failed to create space'
+                );
+
+                if (!space.id) {
+                    throw new DatabaseError('Failed to create space');
+                }
+
+                return { id: space.id };
+            } catch (error) {
+                throw handleTRPCError(error);
             }
-
-            const [space] = await db
-                .insert(spaces)
-                .values({
-                    userId: ctx.session.user.id,
-                    spaceTitle: input.spaceTitle,
-                    spaceDescription: input.spaceDescription,
-                    spaceCustomInstructions: input.spaceCustomInstructions,
-                    createdAt: new Date(),
-                })
-                .returning({ id: spaces.id });
-
-            if (!space.id) {
-                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-            }
-
-            return { id: space.id };
         }),
     savePdf: protectedProcedure.input(z.instanceof(FormData)).mutation(async ({ ctx, input }) => {
         const spaceId = input.get('spaceId') as string;

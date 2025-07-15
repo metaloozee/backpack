@@ -2,6 +2,13 @@ import { getSession } from '@/lib/auth/utils';
 import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+    handleApiError,
+    safeExternalOperation,
+    UnauthorizedError,
+    ValidationError,
+} from '@/lib/utils/error-handling';
+import { sanitizeFileName } from '@/lib/utils/sanitization';
 
 const FileSchema = z.object({
     file: z
@@ -15,21 +22,21 @@ const FileSchema = z.object({
 });
 
 export async function POST(request: Request) {
-    const session = await getSession();
-    if (!session) {
-        return NextResponse.json({ error: 'Access Denied' }, { status: 401 });
-    }
-
-    if (request.body === null) {
-        return new Response('Request body is empty', { status: 400 });
-    }
-
     try {
+        const session = await getSession();
+        if (!session) {
+            throw new UnauthorizedError('Access denied');
+        }
+
+        if (request.body === null) {
+            throw new ValidationError('Request body is empty');
+        }
+
         const formData = await request.formData();
         const file = formData.get('file') as File;
 
         if (!file) {
-            return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+            throw new ValidationError('No file uploaded');
         }
 
         const validatedFile = FileSchema.safeParse({ file });
@@ -37,22 +44,22 @@ export async function POST(request: Request) {
             const errorMessage = validatedFile.error.errors
                 .map((error) => error.message)
                 .join(', ');
-
-            return NextResponse.json({ error: errorMessage }, { status: 400 });
+            throw new ValidationError(errorMessage);
         }
 
-        const fileName = file.name;
+        const sanitizedFileName = sanitizeFileName(file.name);
         const fileBuffer = await file.arrayBuffer();
-        try {
-            const data = await put(`${session.userId}/chat/${fileName}`, fileBuffer, {
-                access: 'public',
-            });
 
-            return NextResponse.json(data);
-        } catch (error) {
-            return NextResponse.json({ error: 'Upload Failed' }, { status: 500 });
-        }
+        const data = await safeExternalOperation(
+            () =>
+                put(`${session.userId}/chat/${sanitizedFileName}`, fileBuffer, {
+                    access: 'public',
+                }),
+            'File upload failed'
+        );
+
+        return NextResponse.json(data);
     } catch (error) {
-        return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
+        return handleApiError(error);
     }
 }

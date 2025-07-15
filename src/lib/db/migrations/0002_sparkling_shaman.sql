@@ -1,0 +1,20 @@
+ALTER TABLE "knowledge" RENAME COLUMN "knowlegde_summary" TO "knowledge_summary";--> statement-breakpoint
+CREATE INDEX "chat_user_id_idx" ON "chat" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "chat_space_id_idx" ON "chat" USING btree ("space_id");--> statement-breakpoint
+CREATE INDEX "chat_user_space_idx" ON "chat" USING btree ("user_id","space_id");--> statement-breakpoint
+CREATE INDEX "chat_created_at_idx" ON "chat" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "chat_user_created_at_idx" ON "chat" USING btree ("user_id","created_at");--> statement-breakpoint
+CREATE INDEX "knowledge_user_id_idx" ON "knowledge" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "knowledge_space_id_idx" ON "knowledge" USING btree ("space_id");--> statement-breakpoint
+CREATE INDEX "knowledge_user_space_idx" ON "knowledge" USING btree ("user_id","space_id");--> statement-breakpoint
+CREATE INDEX "knowledge_uploaded_at_idx" ON "knowledge" USING btree ("uploaded_at");--> statement-breakpoint
+CREATE INDEX "knowledge_embeddings_knowledge_id_idx" ON "knowledge_embeddings" USING btree ("knowledge_id");--> statement-breakpoint
+CREATE INDEX "knowledge_embeddings_created_at_idx" ON "knowledge_embeddings" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "message_chat_id_idx" ON "message" USING btree ("chat_id");--> statement-breakpoint
+CREATE INDEX "message_created_at_idx" ON "message" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "message_chat_created_at_idx" ON "message" USING btree ("chat_id","created_at");--> statement-breakpoint
+CREATE INDEX "message_role_idx" ON "message" USING btree ("role");--> statement-breakpoint
+CREATE INDEX "spaces_user_id_idx" ON "spaces" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "spaces_created_at_idx" ON "spaces" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "stream_chat_id_idx" ON "stream" USING btree ("chat_id");--> statement-breakpoint
+CREATE INDEX "stream_created_at_idx" ON "stream" USING btree ("created_at");

@@ -111,7 +111,7 @@ export function Chat({
     return (
         <div
             className={cn(
-                'flex flex-col w-full h-screen',
+                'flex flex-col w-full h-full',
                 messages.length === 0
                     ? isSpaceChat
                         ? 'justify-start items-start'
@@ -120,7 +120,7 @@ export function Chat({
             )}
         >
             {messages.length > 0 && (
-                <ScrollArea className="w-full">
+                <ScrollArea className="w-full h-full">
                     <ChatMessages
                         messages={messages}
                         setMessages={setMessages}
