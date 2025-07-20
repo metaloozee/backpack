@@ -24,6 +24,7 @@ import {
     PlusIcon,
     PaperclipIcon,
     WrenchIcon,
+    AudioLinesIcon,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -390,10 +391,7 @@ function PureInput({
                 )}
                 <div
                     className={cn(
-                        'relative flex flex-col w-full p-4  border-input bg-neutral-900/50 focus-within:border-neutral-700/70 hover:border-neutral-700/70 transition-all duration-200',
-                        messages.length > 0
-                            ? 'border-t-2 border-x-2 rounded-t-lg'
-                            : 'border-2 rounded-lg'
+                        'relative mb-2 flex flex-col w-full p-4 border rounded-lg bg-neutral-900/50 focus-within:border-neutral-700/70 hover:border-neutral-700/70 transition-all duration-200'
                     )}
                 >
                     <Textarea
@@ -601,7 +599,11 @@ function PureInput({
                                     {isLoading ? (
                                         <StopButton stop={stop} setMessages={setMessages} />
                                     ) : (
-                                        <SendButton input={input} submitForm={submitForm} />
+                                        <SendButton
+                                            input={input}
+                                            submitForm={submitForm}
+                                            showAudio={messages.length === 0}
+                                        />
                                     )}
                                 </div>
                             </AnimatePresence>
@@ -663,30 +665,72 @@ const StopButton = React.memo(
 StopButton.displayName = 'StopButton';
 
 const SendButton = React.memo(
-    ({ input, submitForm }: { input: string; submitForm: () => void }) => (
-        <Button
-            className="px-4"
-            onClick={(event) => {
-                event.preventDefault();
-                submitForm();
-            }}
-            disabled={input.length === 0}
-            variant={input.trim().length > 0 ? 'default' : 'secondary'}
+    ({
+        input,
+        submitForm,
+        showAudio = true,
+    }: {
+        input: string;
+        submitForm: () => void;
+        showAudio?: boolean;
+    }) => (
+        <motion.div
+            variants={fadeVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={transitions.smooth}
         >
-            <motion.div
-                variants={slideVariants.up}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={transitions.smooth}
+            <Button
+                className="px-4"
+                onClick={(event) => {
+                    event.preventDefault();
+                    submitForm();
+                }}
             >
-                <CornerDownLeftIcon
-                    className={cn(
-                        input.trim().length > 0 ? 'text-background' : 'text-muted-foreground'
-                    )}
-                />
-            </motion.div>
-        </Button>
+                <motion.div
+                    variants={slideVariants.up}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    transition={transitions.smooth}
+                >
+                    <AnimatePresence mode="wait">
+                        {input.trim().length > 0 ? (
+                            <motion.div
+                                key="send-icon"
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                                transition={transitions.smooth}
+                            >
+                                <CornerDownLeftIcon />
+                            </motion.div>
+                        ) : showAudio ? (
+                            <motion.div
+                                key="audio-icon"
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                                transition={transitions.smooth}
+                            >
+                                <AudioLinesIcon />
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="send-icon-fallback"
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                                transition={transitions.smooth}
+                            >
+                                <CornerDownLeftIcon />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
+            </Button>
+        </motion.div>
     )
 );
 
