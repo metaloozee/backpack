@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { BookCopyIcon, Loader2, PlusIcon } from 'lucide-react';
+import { BookCopyIcon, PlusIcon } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 import {
     Dialog,
     DialogContent,
@@ -119,7 +120,7 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
                     />
                     <Button type="submit" variant={'secondary'} disabled={isUploadingPdf}>
                         {isUploadingPdf ? (
-                            <Loader2 className="size-4 animate-spin" />
+                            <Loader />
                         ) : (
                             <>
                                 <PlusIcon className="size-4" />
@@ -148,7 +149,7 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
                 />
                 <Button type="submit" variant={'secondary'} disabled={webPageMutation.isPending}>
                     {webPageMutation.isPending ? (
-                        <Loader2 className="size-4 animate-spin" />
+                        <Loader />
                     ) : (
                         <>
                             <PlusIcon className="size-4" />

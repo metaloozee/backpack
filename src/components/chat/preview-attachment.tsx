@@ -1,6 +1,6 @@
 import type { Attachment } from 'ai';
 
-import { LoaderCircleIcon } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 
 export const PreviewAttachment = ({
     attachment,
@@ -34,8 +34,8 @@ export const PreviewAttachment = ({
                 )}
 
                 {isUploading && (
-                    <div data-testid="input-attachment-loader" className="animate-spin absolute">
-                        <LoaderCircleIcon className="size-4 animate-spin" />
+                    <div data-testid="input-attachment-loader" className="absolute">
+                        <Loader />
                     </div>
                 )}
             </div>

@@ -29,7 +29,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2Icon, Loader, LoaderCircleIcon, LoaderIcon, ChevronsDownIcon } from 'lucide-react';
+import { Trash2Icon, ChevronsDownIcon } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -255,7 +256,7 @@ export default function DisplayChats({ spaceId }: { spaceId?: string }) {
                             className="flex justify-center items-center gap-2 w-full text-xs"
                         >
                             {isFetchingNextPage ? (
-                                <LoaderIcon className="size-4 text-muted-foreground animate-spin" />
+                                <Loader />
                             ) : (
                                 <ChevronsDownIcon className="size-4 text-muted-foreground" />
                             )}

@@ -53,6 +53,7 @@ import { useScrollToBottom } from '@/lib/hooks/use-scroll-to-bottom';
 import { PreviewAttachment } from './chat/preview-attachment';
 import { ScrollArea, ScrollBar } from './ui/scroll-area';
 import { defaultTools, type ToolsState } from '@/lib/ai/tools';
+import { Loader } from './ui/loader';
 
 interface InputPanelProps {
     chatId: string;

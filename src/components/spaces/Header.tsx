@@ -3,7 +3,8 @@
 import * as React from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Button } from '../ui/button';
-import { Loader, SquarePlusIcon } from 'lucide-react';
+import { SquarePlusIcon } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 import { Dialog, DialogContent, DialogDescription, DialogHeader } from '@/components/ui/dialog';
 import { DialogTitle, DialogTrigger } from '@radix-ui/react-dialog';
 import { useRouter } from 'next/navigation';
@@ -139,11 +140,7 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
                                     type="submit"
                                     className="text-xs"
                                 >
-                                    {mutation.isPending ? (
-                                        <Loader className="size-4 animate-spin" />
-                                    ) : (
-                                        'Create Space'
-                                    )}
+                                    {mutation.isPending ? <Loader /> : 'Create Space'}
                                 </Button>
                             </motion.div>
                         </motion.form>

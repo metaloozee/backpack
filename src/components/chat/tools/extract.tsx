@@ -1,6 +1,7 @@
 'use client';
 
-import { LoaderCircleIcon, PickaxeIcon } from 'lucide-react';
+import { PickaxeIcon } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 
 type ExtractResult = {
     url: string;
@@ -41,7 +42,7 @@ export function ExtractTool({ toolCallId, state, args, result }: ExtractToolProp
                 {args?.urls?.map((url, index) => (
                     <div key={`${toolCallId}-${index}`} className="w-full flex flex-col gap-2">
                         <div className="w-full flex shrink-0 flex-row justify-start items-center gap-2">
-                            <LoaderCircleIcon className="size-3 animate-spin" />
+                            <Loader size="sm" />
                             <span className="text-xs text-neutral-400 truncate">{url}</span>
                         </div>
                     </div>

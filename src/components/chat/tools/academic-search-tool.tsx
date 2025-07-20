@@ -1,12 +1,7 @@
 'use client';
 
-import {
-    GraduationCapIcon,
-    Loader2,
-    Loader2Icon,
-    LoaderCircleIcon,
-    SearchIcon,
-} from 'lucide-react';
+import { GraduationCapIcon, SearchIcon } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import {
@@ -138,7 +133,7 @@ export function AcademicSearchTool({ toolCallId, state, args, result }: Academic
             <AccordionItem value={toolCallId} className="border bg-neutral-900 rounded-md px-4">
                 <AccordionTrigger className="gap-2 h-10 text-xs w-full flex items-center justify-between">
                     <span className="flex items-center gap-2 truncate">
-                        <LoaderCircleIcon className="size-3 animate-spin" />
+                        <Loader size="sm" />
                         {'Academic Search'}
                     </span>
                     <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
@@ -152,14 +147,14 @@ export function AcademicSearchTool({ toolCallId, state, args, result }: Academic
                             <DisclosureTrigger className="w-full">
                                 <div className="w-full flex flex-row justify-between">
                                     <span className="flex items-center gap-2 truncate text-xs text-neutral-400">
-                                        <LoaderCircleIcon className="size-3 animate-spin" />
+                                        <Loader size="sm" />
                                         {query}
                                     </span>
                                 </div>
                             </DisclosureTrigger>
                             <DisclosureContent>
                                 <div className="flex items-center gap-2 text-xs px-3 pb-3 text-muted-foreground">
-                                    <LoaderCircleIcon className="size-3 animate-spin" />
+                                    <Loader size="sm" />
                                     Searching...
                                 </div>
                             </DisclosureContent>

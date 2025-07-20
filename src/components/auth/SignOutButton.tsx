@@ -3,7 +3,7 @@
 import { useState, ReactNode, ComponentPropsWithoutRef } from 'react';
 import { authClient } from '@/lib/auth/client';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 import { useRouter } from 'next/navigation';
 
 type SignOutButtonProps = Omit<ComponentPropsWithoutRef<typeof Button>, 'onClick'> & {
@@ -35,7 +35,7 @@ export function SignOutButton({ children, ...props }: SignOutButtonProps) {
         >
             {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="size-5 animate-spin" />
+                    <Loader size="md" />
                 </div>
             )}
             <div

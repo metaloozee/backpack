@@ -11,11 +11,11 @@ import {
     ChevronDownIcon,
     ChevronUpIcon,
     CopyIcon,
-    LoaderCircleIcon,
     PencilIcon,
     PencilLineIcon,
     CheckIcon,
 } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 import { UseChatHelpers } from '@ai-sdk/react';
 import { UIMessage } from 'ai';
 import { AnimatePresence, motion } from 'motion/react';
@@ -79,7 +79,7 @@ export function MessageReasoning({ isLoading, reasoning }: MessageReasoningProps
                                 transition={{ duration: 0.15 }}
                                 className="flex items-center gap-2"
                             >
-                                {isLoading && <LoaderCircleIcon className="animate-spin size-3" />}
+                                {isLoading && <Loader size="sm" />}
                                 {isExpanded ? (
                                     <>
                                         Hide Reasoning

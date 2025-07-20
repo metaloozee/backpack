@@ -1,8 +1,8 @@
 import * as React from 'react';
 
 import { UIMessage } from 'ai';
-import { Loader, LoaderIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Loader } from '@/components/ui/loader';
 import { UseChatHelpers } from '@ai-sdk/react';
 import { useMessages } from '@/lib/hooks/use-messages';
 import { Message as PreviewMessage } from '@/components/chat/message';
@@ -54,9 +54,7 @@ export function ChatMessages({ chatId, status, messages, setMessages, reload }: 
 
             {status === 'submitted' &&
                 messages.length > 0 &&
-                messages[messages.length - 1].role === 'user' && (
-                    <LoaderIcon className="my-10 animate-spin size-4 text-muted-foreground" />
-                )}
+                messages[messages.length - 1].role === 'user' && <Loader className="my-10" />}
 
             <motion.div
                 ref={messagesEndRef}
