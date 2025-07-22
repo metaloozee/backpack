@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
             const { object } = await safeExternalOperation(
                 () =>
                     generateObject({
-                        model: google('gemini-2.5-flash-lite-preview-06-17'),
+                        model: google('gemini-2.5-flash-lite'),
                         schema: z.object({
                             title: z.string().max(100),
                         }),

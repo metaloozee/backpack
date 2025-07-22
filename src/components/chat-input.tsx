@@ -127,6 +127,7 @@ function PureInput({
     const { width } = useWindowSize();
     const inputContainerRef = React.useRef<HTMLDivElement>(null);
     const [inputContainerHeight, setInputContainerHeight] = React.useState(0);
+    const [isDragging, setIsDragging] = React.useState(false);
 
     React.useEffect(() => {
         const inputEl = inputContainerRef.current;
@@ -221,7 +222,7 @@ function PureInput({
                 const data = await response.json();
                 const { url, pathname, contentType } = data;
 
-                console.log(data);
+                toast.success('File uploaded successfully!');
 
                 return {
                     url,
@@ -236,30 +237,102 @@ function PureInput({
         }
     };
 
-    const handleFileChange = useCallback(
-        async (event: React.ChangeEvent<HTMLInputElement>) => {
-            const files = Array.from(event.target.files || []);
+    const handleFiles = useCallback(
+        async (files: File[]) => {
+            if (!files || files.length === 0) return;
 
-            setUploadQueue(files.map((file) => file.name));
+            setUploadQueue((prev) => [...prev, ...files.map((file) => file.name)]);
 
             try {
                 const uploadPromises = files.map((file) => uploadFile(file));
-                const uploadedAttachments = await Promise.all(uploadPromises);
-                const successfullyUploadedAttachments = uploadedAttachments.filter(
-                    (attachment) => attachment !== undefined
-                );
+                const uploadedAttachments = (await Promise.all(uploadPromises)).filter(
+                    Boolean
+                ) as Attachment[];
 
-                await setAttachments((currentAttachments: Attachment[]) => [
+                setAttachments((currentAttachments) => [
                     ...currentAttachments,
-                    ...successfullyUploadedAttachments,
+                    ...uploadedAttachments,
                 ]);
             } catch (error) {
                 console.error('Error uploading files!', error);
+                toast.error('Failed to upload files, please try again!');
             } finally {
                 setUploadQueue([]);
             }
         },
         [setAttachments]
+    );
+
+    const handleFileChange = useCallback(
+        async (event: React.ChangeEvent<HTMLInputElement>) => {
+            const files = Array.from(event.target.files || []);
+            await handleFiles(files);
+
+            if (event.target) {
+                event.target.value = '';
+            }
+        },
+        [handleFiles]
+    );
+
+    const handleDrop = useCallback(
+        async (event: React.DragEvent<HTMLDivElement>) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsDragging(false);
+
+            const files = Array.from(event.dataTransfer.files);
+            if (files.length > 0) {
+                await handleFiles(files);
+            }
+        },
+        [handleFiles]
+    );
+
+    const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.dataTransfer.items && event.dataTransfer.items.length > 0) {
+            setIsDragging(true);
+        }
+    };
+
+    const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (event.currentTarget.contains(event.relatedTarget as Node)) {
+            return;
+        }
+        setIsDragging(false);
+    };
+
+    const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+    };
+
+    const handlePaste = useCallback(
+        async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+            const items = event.clipboardData.items;
+            const files: File[] = [];
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        files.push(file);
+                    }
+                }
+            }
+
+            if (files.length > 0) {
+                event.preventDefault();
+                await handleFiles(files);
+                // toast.success(`${files.length} image(s) pasted and uploading.`);
+            }
+        },
+        [handleFiles]
     );
 
     const [selectedMode, setSelectedMode] = React.useState<ModeType>('ask');
@@ -298,6 +371,10 @@ function PureInput({
         <motion.div
             layout
             transition={layoutTransition}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
             className={cn(
                 'w-full bg-background sticky',
                 messages.length > 0
@@ -307,6 +384,20 @@ function PureInput({
                       : 'flex flex-col items-center justify-center'
             )}
         >
+            <AnimatePresence>
+                {isDragging && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-50 bg-neutral-950/50 backdrop-blur-sm flex items-center justify-center pointer-events-none"
+                    >
+                        <div className="text-white text-2xl font-semibold">
+                            Drop files to upload
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             <input
                 type="file"
                 className="fixed -top-4 -left-4 size-0.5 opacity-0 pointer-events-none"
@@ -399,6 +490,7 @@ function PureInput({
                         ref={textareaRef}
                         value={input}
                         onChange={handleInput}
+                        onPaste={handlePaste}
                         onKeyDown={(event) => {
                             if (
                                 event.key === 'Enter' &&

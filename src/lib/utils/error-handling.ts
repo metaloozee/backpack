@@ -50,7 +50,6 @@ export class ExternalServiceError extends AppError {
     }
 }
 
-// Error handler for API routes
 export function handleApiError(error: unknown): Response {
     console.error('API Error:', error);
 
@@ -74,14 +73,12 @@ export function handleApiError(error: unknown): Response {
         );
     }
 
-    // Generic error response
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
     });
 }
 
-// Error handler for tRPC
 export function handleTRPCError(error: unknown): TRPCError {
     console.error('tRPC Error:', error);
 
@@ -127,7 +124,6 @@ function mapStatusToTRPCCode(statusCode: number): TRPCError['code'] {
     }
 }
 
-// Database operation wrapper with error handling
 export async function safeDbOperation<T>(
     operation: () => Promise<T>,
     errorMessage: string = 'Database operation failed'
@@ -140,7 +136,6 @@ export async function safeDbOperation<T>(
     }
 }
 
-// External service operation wrapper with error handling
 export async function safeExternalOperation<T>(
     operation: () => Promise<T>,
     errorMessage: string = 'External service operation failed'
@@ -153,7 +148,6 @@ export async function safeExternalOperation<T>(
     }
 }
 
-// Validation wrapper
 export function validateInput<T>(
     schema: any,
     input: unknown,

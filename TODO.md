@@ -5,6 +5,7 @@
 - [x] Attachment support
 - [x] Vercel Blob to host files, documents, attachments
 - [ ] Space Settings
-- [ ] fix: scroll to bottom button
+- [ ] Account Settings
+- [x] fix: scroll to bottom button
 
 - [ ] Research Agent
