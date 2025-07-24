@@ -22,7 +22,7 @@ import {
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
-import UserProfile from '@/components/UserProfile';
+import UserProfile from '@/components/profile';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { usePathname } from 'next/navigation';
