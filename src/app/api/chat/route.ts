@@ -35,6 +35,7 @@ import {
     message as dbMessage,
     chat as dbChat,
     stream as dbStream,
+    memories as dbMemories,
 } from '@/lib/db/schema/app';
 import { db } from '@/lib/db';
 import { differenceInSeconds } from 'date-fns';
@@ -195,14 +196,6 @@ Follow the schema provided.
                                 includeThoughts: true,
                             },
                         } satisfies GoogleGenerativeAIProviderOptions,
-                        openai: {
-                            reasoningEffort: 'low',
-                        },
-                        openrouter: {
-                            reasoning: {
-                                exclude: true,
-                            },
-                        },
                     },
                     messages: convertToCoreMessages(messages),
                     system: AskModePrompt({

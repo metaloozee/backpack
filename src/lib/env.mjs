@@ -10,6 +10,7 @@ export const env = createEnv({
         OPENROUTER_API_KEY: z.string().min(1).startsWith("sk-"),
         TAVILY_API_KEY: z.string().min(1).startsWith("tvly-"),
         MISTRAL_API_KEY: z.string().min(1),
+        OPENAI_API_KEY: z.string().min(1),
 
         REDIS_URL: z.string().url().min(1),
         BLOB_READ_WRITE_TOKEN: z.string().min(1),

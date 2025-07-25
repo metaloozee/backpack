@@ -12,6 +12,38 @@ import { InferSelectModel } from 'drizzle-orm';
 import { user } from '@/lib/db/schema/auth';
 import { randomUUID } from 'crypto';
 
+export const memories = pgTable(
+    'memories',
+    {
+        id: text('id')
+            .primaryKey()
+            .$defaultFn(() => randomUUID()),
+        userId: text('user_id')
+            .notNull()
+            .references(() => user.id, {
+                onDelete: 'cascade',
+                onUpdate: 'cascade',
+            }),
+        content: text('content').notNull(),
+        embedding: vector('embedding', { dimensions: 768 }),
+        createdAt: timestamp('created_at', {
+            withTimezone: true,
+            mode: 'date',
+        })
+            .notNull()
+            .$defaultFn(() => new Date()),
+    },
+    (table) => ({
+        embeddingIndex: index('memories_embedding_index').using(
+            'hnsw',
+            table.embedding.op('vector_cosine_ops')
+        ),
+        userIdIdx: index('memories_user_id_idx').on(table.userId),
+        createdAtIdx: index('memories_created_at_idx').on(table.createdAt),
+    })
+);
+export type Memory = InferSelectModel<typeof memories>;
+
 export const spaces = pgTable(
     'spaces',
     {

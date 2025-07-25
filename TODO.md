@@ -3,5 +3,7 @@
 - [ ] Image Display
 - [ ] Space Settings
 - [ ] Account Settings
+- [ ] Daytona
+- [ ] Memories
 
 - [ ] Research Agent

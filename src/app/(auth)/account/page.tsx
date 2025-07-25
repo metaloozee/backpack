@@ -1,13 +1,12 @@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader } from '@/components/ui/loader';
 import { Separator } from '@/components/ui/separator';
-import { getUser } from '@/lib/auth/utils';
-import { ArrowLeftIcon, CheckIcon, PencilIcon, PencilLineIcon, XIcon } from 'lucide-react';
+import { ArrowLeftIcon, PencilLineIcon } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { format } from 'timeago.js';
+import { DisplayMemories } from '@/components/display-memories';
+import { getUser } from '@/lib/auth/utils';
 
 export default async function AccountPage() {
     const user = await getUser();
@@ -47,12 +46,9 @@ export default async function AccountPage() {
             <div className="w-full flex flex-col justify-center items-center gap-4">
                 <div className="w-full flex flex-row justify-between items-center">
                     <h2 className="text-lg">Memories</h2>
-                    <Button className="text-xs" size={'sm'} variant={'secondary'}>
-                        Delete All
-                    </Button>
                 </div>
                 <Separator />
-                <Loader className="mt-2" />
+                <DisplayMemories />
             </div>
 
             <div className="bg-red-950/50 border border-red-900 rounded-lg w-full flex flex-row justify-between items-center">
