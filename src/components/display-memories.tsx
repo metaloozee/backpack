@@ -23,16 +23,9 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Memory } from '@/lib/db/schema/app';
-import { ArrowUpDown, ChevronDown, CopyIcon, MoreHorizontal, TrashIcon } from 'lucide-react';
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from './ui/dropdown-menu';
+import { CopyIcon, TrashIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { CheckIcon } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -41,24 +34,25 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from './ui/dialog';
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { format } from 'timeago.js';
 import { useTRPC } from '@/lib/trpc/trpc';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { Loader } from './ui/loader';
-import { Checkbox } from './ui/checkbox';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Loader } from '@/components/ui/loader';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export function DisplayMemories() {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-    const [rowSelection, setRowSelection] = React.useState({});
-    const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = React.useState(false);
-    const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+    const [globalFilter, setGlobalFilter] = React.useState('');
+    const [deleteDialogOpen, setDeleteDialogOpen] = React.useState<string | null>(null);
+    const [copiedId, setCopiedId] = React.useState<string | null>(null);
 
     const trpc = useTRPC();
+    const queryClient = useQueryClient();
 
     const { data: memories, isLoading } = useQuery(trpc.memories.getMemories.queryOptions());
     const deleteMemoryMutation = useMutation(trpc.memories.deleteMemory.mutationOptions());
@@ -68,28 +62,6 @@ export function DisplayMemories() {
 
     const columns: ColumnDef<Memory>[] = [
         {
-            id: 'select',
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected() ||
-                        (table.getIsSomePageRowsSelected() && 'indeterminate')
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select All"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-        },
-        {
             accessorKey: 'content',
             header: ({ column }) => {
                 return <p className="text-xs">CONTENT</p>;
@@ -97,6 +69,7 @@ export function DisplayMemories() {
             cell: ({ row }) => (
                 <div className="max-w-[500px] truncate">{row.getValue('content')}</div>
             ),
+            enableGlobalFilter: true,
         },
         {
             accessorKey: 'createdAt',
@@ -121,28 +94,62 @@ export function DisplayMemories() {
                         {
                             onSuccess: () => {
                                 toast.success('Memory deleted successfully');
-                                setDeleteDialogOpen(false);
+                                setDeleteDialogOpen(null);
+                                queryClient.invalidateQueries(
+                                    trpc.memories.getMemories.queryOptions()
+                                );
                             },
                             onError: () => {
                                 toast.error('Failed to delete memory');
-                                setDeleteDialogOpen(false);
+                                setDeleteDialogOpen(null);
                             },
                         }
                     );
                 };
 
-                const handleCopy = () => {
-                    navigator.clipboard.writeText(memory.content);
-                    toast.success('Memory content copied to clipboard');
+                const handleCopy = async () => {
+                    try {
+                        await navigator.clipboard.writeText(memory.content);
+                        setCopiedId(memory.id);
+                        toast.success('Memory content copied to clipboard');
+                        setTimeout(() => setCopiedId(null), 2000);
+                    } catch (error) {
+                        toast.error('Failed to copy to clipboard');
+                    }
                 };
 
                 return (
                     <div className="flex w-full space-x-2 justify-end">
                         <Button variant="outline" size="sm" onClick={handleCopy} className="h-8">
-                            <CopyIcon className="size-3" />
+                            <AnimatePresence mode="wait" initial={false}>
+                                {copiedId === memory.id ? (
+                                    <motion.div
+                                        key="check"
+                                        initial={{ scale: 0, opacity: 0, rotate: -180 }}
+                                        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                                        exit={{ scale: 0, opacity: 0, rotate: 180 }}
+                                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                    >
+                                        <CheckIcon className="size-3" />
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="copy"
+                                        initial={{ scale: 0, opacity: 0, rotate: -180 }}
+                                        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                                        exit={{ scale: 0, opacity: 0, rotate: 180 }}
+                                        transition={{ type: 'tween', duration: 0.2 }}
+                                    >
+                                        <CopyIcon className="size-3" />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </Button>
 
-                        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                        <Dialog
+                            open={deleteDialogOpen === memory.id}
+                            onOpenChange={(open) => setDeleteDialogOpen(open ? memory.id : null)}
+                        >
                             <DialogTrigger asChild>
                                 <Button variant="destructive" size="sm" className="h-8">
                                     <TrashIcon className="size-3" />
@@ -159,7 +166,7 @@ export function DisplayMemories() {
                                 <DialogFooter>
                                     <Button
                                         variant="outline"
-                                        onClick={() => setDeleteDialogOpen(false)}
+                                        onClick={() => setDeleteDialogOpen(null)}
                                     >
                                         Cancel
                                     </Button>
@@ -184,39 +191,23 @@ export function DisplayMemories() {
         columns,
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
+        onGlobalFilterChange: setGlobalFilter,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
-        onRowSelectionChange: setRowSelection,
+        getRowId: (row) => row.id,
         state: {
             sorting,
             columnFilters,
             columnVisibility,
-            rowSelection,
+            globalFilter,
         },
     });
 
-    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const selectedRows = table.getSelectedRowModel().rows;
     const selectedMemoryIds = selectedRows.map((row) => row.original.id);
-
-    const handleBulkDelete = () => {
-        deleteSelectedMemoriesMutation.mutate(
-            { ids: selectedMemoryIds },
-            {
-                onSuccess: () => {
-                    toast.success(`${selectedRows.length} memories deleted successfully`);
-                    table.resetRowSelection();
-                    setBulkDeleteDialogOpen(false);
-                },
-                onError: () => {
-                    toast.error('Failed to delete selected memories');
-                    setBulkDeleteDialogOpen(false);
-                },
-            }
-        );
-    };
 
     if (isLoading) return <Loader />;
 
@@ -225,48 +216,10 @@ export function DisplayMemories() {
             <div className="flex items-center justify-between pb-2">
                 <Input
                     placeholder="Filter memories..."
-                    value={(table.getColumn('content')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) =>
-                        table.getColumn('content')?.setFilterValue(event.target.value)
-                    }
-                    className="max-w-sm"
+                    value={globalFilter ?? ''}
+                    onChange={(event) => setGlobalFilter(event.target.value)}
+                    className="max-w-sm h-8"
                 />
-                {selectedRows.length > 0 && (
-                    <Dialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="secondary">
-                                <TrashIcon className="size-4" />
-                                Delete {selectedRows.length} row(s)
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Delete Selected Memories</DialogTitle>
-                                <DialogDescription>
-                                    Are you sure you want to delete {selectedRows.length} selected
-                                    memories? This action cannot be undone.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <DialogFooter>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setBulkDeleteDialogOpen(false)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    variant="destructive"
-                                    onClick={handleBulkDelete}
-                                    disabled={deleteSelectedMemoriesMutation.isPending}
-                                >
-                                    {deleteSelectedMemoriesMutation.isPending
-                                        ? 'Deleting...'
-                                        : 'Delete All'}
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                )}
             </div>
             <div className="overflow-hidden rounded-md border">
                 <Table>
@@ -316,10 +269,6 @@ export function DisplayMemories() {
                 </Table>
             </div>
             <div className="flex items-center justify-end space-x-2 py-4">
-                <div className="text-muted-foreground flex-1 text-xs">
-                    {table.getFilteredSelectedRowModel().rows.length} of{' '}
-                    {table.getFilteredRowModel().rows.length} row(s) selected.
-                </div>
                 <div className="space-x-2">
                     <Button
                         variant="outline"

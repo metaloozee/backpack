@@ -15,7 +15,7 @@ export default async function AccountPage() {
     }
 
     return (
-        <div className="mx-auto mt-20 max-w-3xl md:px-20 w-full flex flex-col justify-center items-start gap-10">
+        <div className="mx-auto my-20 max-w-3xl md:px-20 w-full flex flex-col justify-center items-start gap-10">
             <Button size={'sm'} variant={'outline'} asChild>
                 <Link href="/" className="text-xs">
                     <ArrowLeftIcon className="size-3" /> Back to Home
@@ -37,10 +37,6 @@ export default async function AccountPage() {
                             </p>
                         </div>
                     </div>
-
-                    <Button size={'icon'} variant={'outline'}>
-                        <PencilLineIcon className="size-3" />
-                    </Button>
                 </div>
             </div>
             <div className="w-full flex flex-col justify-center items-center gap-4">
@@ -59,7 +55,7 @@ export default async function AccountPage() {
                         files. <br />
                         <span className="font-semibold">This action cannot be undone.</span>
                     </p>
-                    <Button variant="destructive" size="sm" className="mt-2 w-fit">
+                    <Button variant="destructive" disabled size="sm" className="mt-2 w-fit">
                         Delete My Account
                     </Button>
                 </div>
