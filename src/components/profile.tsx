@@ -167,7 +167,7 @@ export default function UserProfile({ state }: UserProfileProps) {
                     </motion.div>
                 </motion.div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent sideOffset={10} align="end" side="right" className="w-48">
                 <DropdownMenuItem
                     asChild
                     onClick={handleAccountSettings}

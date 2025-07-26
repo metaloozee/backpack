@@ -12,6 +12,7 @@ export const AskModePrompt = ({
         spaceId?: string;
         spaceName?: string;
         spaceDescription?: string;
+        memories?: Array<{ content: string; createdAt: Date }>;
     };
 }) => {
     const environmentBanner = env.inSpace
@@ -27,6 +28,7 @@ ${environmentBanner}
 
 You are currently operating in \`ask\` mode with the following tools enabled:
 * extract - Extracts content from one or more URLs. Only use this tool if the user specifies URLs in their query to extract content from.
+* save_to_memories - Saves the information about the user to their memories for future reference and personalization.
 ${tools.webSearch && '* webSearch - Retrieves current information from the web.'}
 ${tools.knowledgeSearch && '* knowledgeSearch - Queries the internal knowledge database for proprietary or stored information.'}
 ${tools.academicSearch && '* academicSearch - Finds peer-reviewed papers, conference proceedings, and other scholarly resources.'}
@@ -140,5 +142,6 @@ Example: If \`knowledgeName: "https://company.com/security.pdf"\`, cite as \`[Co
 <Date>${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Date>
 <Context>${env.inSpace ? 'space' : 'general chat'}${env.inSpace ? `:${env.spaceName}` : ''}</Context>
 <CustomInstructions></CustomInstructions>
+<Memories>${env.memories?.map((memory) => `- ${memory.content}`).join('\n')}</Memories>
 `;
 };

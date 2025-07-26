@@ -4,6 +4,6 @@
 - [ ] Space Settings
 - [ ] Account Settings
 - [ ] Daytona
-- [ ] Memories
+- [x] Memories
 
 - [ ] Research Agent

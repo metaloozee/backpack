@@ -27,6 +27,7 @@ import {
     KnowledgeSearchTool,
     AcademicSearchTool,
     ExtractTool,
+    SaveToMemoriesTool,
 } from '@/components/chat/tools';
 import { Button } from '@/components/ui/button';
 import { Disclosure, DisclosureTrigger } from '@/components/ui/disclosure';
@@ -411,6 +412,12 @@ export function Message({
                                                     state={state}
                                                     args={args}
                                                 />
+                                            ) : toolName === 'save_to_memories' ? (
+                                                <SaveToMemoriesTool
+                                                    toolCallId={toolCallId}
+                                                    state={state}
+                                                    args={args}
+                                                />
                                             ) : null}
                                         </div>
                                     );
@@ -447,6 +454,12 @@ export function Message({
                                                 />
                                             ) : toolName === 'extract' ? (
                                                 <ExtractTool
+                                                    toolCallId={toolCallId}
+                                                    state={state}
+                                                    result={result}
+                                                />
+                                            ) : toolName === 'save_to_memories' ? (
+                                                <SaveToMemoriesTool
                                                     toolCallId={toolCallId}
                                                     state={state}
                                                     result={result}
