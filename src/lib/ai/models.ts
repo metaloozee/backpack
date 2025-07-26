@@ -48,18 +48,32 @@ export const models: Model[] = [
         properties: ['reasoning', 'quality', 'fast'],
     },
     {
+        name: 'Gemini 2.5 Flash Thinking',
+        id: 'gemini-2.5-flash:thinking',
+        provider: 'google',
+        instance: google('gemini-2.5-flash'),
+        properties: ['experimental', 'reasoning', 'fast'],
+    },
+    {
         name: 'Gemini 2.5 Flash',
         id: 'gemini-2.5-flash',
         provider: 'google',
         instance: google('gemini-2.5-flash'),
-        properties: ['experimental', 'reasoning', 'fast'],
+        properties: ['experimental', 'fast'],
+    },
+    {
+        name: 'Claude Sonnet 4 Thinking',
+        id: 'claude-4-sonnet-20250514:thinking',
+        provider: 'anthropic',
+        instance: anthropic('claude-4-sonnet-20250514'),
+        properties: ['reasoning', 'quality'],
     },
     {
         name: 'Claude Sonnet 4',
         id: 'claude-4-sonnet-20250514',
         provider: 'anthropic',
         instance: anthropic('claude-4-sonnet-20250514'),
-        properties: ['reasoning', 'quality'],
+        properties: ['quality'],
     },
     {
         name: 'GPT 4.1',
@@ -78,5 +92,5 @@ export const models: Model[] = [
 ];
 
 export const getModel = (modelId: string) => {
-    return models.find((model) => model.id === modelId)?.instance;
+    return models.find((model) => model.id === modelId);
 };

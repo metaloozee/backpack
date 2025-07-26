@@ -2,7 +2,7 @@
 - [ ] Zustand for state management
 - [ ] Image Display
 - [ ] Space Settings
-- [ ] Account Settings
+- [x] Account Settings
 - [ ] Daytona
 - [x] Memories
 

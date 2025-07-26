@@ -191,21 +191,23 @@ Follow the schema provided.
         const stream = createDataStream({
             execute: (dataStream) => {
                 const result = streamText({
-                    model: model,
-                    providerOptions: {
-                        anthropic: {
-                            thinking: {
-                                type: 'enabled',
-                                budgetTokens: 2048,
-                            },
-                        } satisfies AnthropicProviderOptions,
-                        google: {
-                            thinkingConfig: {
-                                thinkingBudget: 2048,
-                                includeThoughts: true,
-                            },
-                        } satisfies GoogleGenerativeAIProviderOptions,
-                    },
+                    model: model.instance,
+                    providerOptions: model.properties?.includes('reasoning')
+                        ? {
+                              anthropic: {
+                                  thinking: {
+                                      type: 'enabled',
+                                      budgetTokens: 2048,
+                                  },
+                              } satisfies AnthropicProviderOptions,
+                              google: {
+                                  thinkingConfig: {
+                                      thinkingBudget: 2048,
+                                      includeThoughts: true,
+                                  },
+                              } satisfies GoogleGenerativeAIProviderOptions,
+                          }
+                        : {},
                     messages: convertToCoreMessages(messages),
                     system: AskModePrompt({
                         tools: {
