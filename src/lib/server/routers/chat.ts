@@ -7,9 +7,10 @@ import { z } from 'zod';
 import { createInsertSchema } from 'drizzle-zod';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
+
 import { experimental_transcribe as transcribe } from 'ai';
-import { groq } from '@ai-sdk/groq';
 import { deepgram } from '@ai-sdk/deepgram';
+import { elevenlabs } from '@ai-sdk/elevenlabs';
 
 export const chatRouter = router({
     getChats: protectedProcedure
@@ -160,7 +161,8 @@ export const chatRouter = router({
 
             try {
                 const transcript = await transcribe({
-                    model: deepgram.transcription('nova-2'),
+                    // model: deepgram.transcription('nova-2'),
+                    model: elevenlabs.transcription('scribe_v1'),
                     audio: buffer,
                 });
 

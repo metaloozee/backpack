@@ -762,7 +762,6 @@ function PureInput({
                                         <SendButton
                                             input={input}
                                             submitForm={submitForm}
-                                            showAudio={messages.length === 0}
                                             handleRecord={handleRecord}
                                             isRecording={isRecording}
                                             isTranscribing={isTranscribing}
@@ -831,14 +830,12 @@ const SendButton = React.memo(
     ({
         input,
         submitForm,
-        showAudio = true,
         handleRecord,
         isRecording,
         isTranscribing,
     }: {
         input: string;
         submitForm: () => void;
-        showAudio?: boolean;
         handleRecord: () => void;
         isRecording: boolean;
         isTranscribing: boolean;
@@ -850,7 +847,7 @@ const SendButton = React.memo(
             exit="exit"
             transition={transitions.smooth}
         >
-            {input.trim().length <= 0 && showAudio ? (
+            {input.trim().length <= 0 ? (
                 <Button
                     className="px-4"
                     onClick={handleRecord}
