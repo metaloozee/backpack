@@ -5,5 +5,6 @@
 - [x] Account Settings
 - [ ] Daytona
 - [x] Memories
+- [x] Voice Input
 
 - [ ] Research Agent

@@ -54,6 +54,9 @@ import { PreviewAttachment } from './chat/preview-attachment';
 import { ScrollArea, ScrollBar } from './ui/scroll-area';
 import { defaultTools, type ToolsState } from '@/lib/ai/tools';
 import { Loader } from './ui/loader';
+import Link from 'next/link';
+import { useMutation } from '@tanstack/react-query';
+import { useTRPC } from '@/lib/trpc/trpc';
 
 interface InputPanelProps {
     chatId: string;
@@ -122,6 +125,8 @@ function PureInput({
     } else if ((hour >= 17 && hour <= 23) || hour < 5) {
         greeting = "Let's burn that midnight oil?";
     }
+
+    const trpc = useTRPC();
 
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
     const { width } = useWindowSize();
@@ -340,7 +345,6 @@ function PureInput({
 
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
-    const router = useRouter();
 
     const updateTool = React.useCallback(
         (toolId: string, value: boolean) => {
@@ -366,6 +370,69 @@ function PureInput({
             scrollToBottom();
         }
     }, [status, scrollToBottom]);
+
+    const [isRecording, setIsRecording] = useState(false);
+    const [isTranscribing, setIsTranscribing] = useState(false);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+
+    const transcribe = useMutation(trpc.chat.transcribe.mutationOptions());
+
+    const cleanupRecorder = () => {
+        if (mediaRecorderRef.current?.stream) {
+            mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
+        }
+        mediaRecorderRef.current = null;
+        setIsRecording(false);
+    };
+
+    const handleRecord = useCallback(async () => {
+        setIsRecording(true);
+
+        if (isRecording && mediaRecorderRef.current) {
+            mediaRecorderRef.current.stop();
+            cleanupRecorder();
+        } else {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const recorder = new MediaRecorder(stream);
+                mediaRecorderRef.current = recorder;
+
+                recorder.addEventListener('dataavailable', async (event) => {
+                    if (event.data.size > 0) {
+                        const audioBlob = event.data;
+
+                        try {
+                            setIsTranscribing(true);
+                            const formData = new FormData();
+                            formData.append('audio', audioBlob, 'audio.webm');
+
+                            const { text } = await transcribe.mutateAsync(formData);
+
+                            setInput(text);
+                            setIsTranscribing(false);
+                            setIsRecording(false);
+                        } catch (error) {
+                            setIsTranscribing(false);
+                            toast.error('Failed to transcribe audio, please try again!');
+                        } finally {
+                            cleanupRecorder();
+                        }
+                    }
+                });
+
+                recorder.addEventListener('stop', () => {
+                    stream.getTracks().forEach((track) => track.stop());
+                });
+
+                recorder.start();
+                setIsRecording(true);
+            } catch (error) {
+                setIsRecording(false);
+                console.error('Error recording audio', error);
+                toast.error('Failed to record audio, please try again!');
+            }
+        }
+    }, [isRecording, isTranscribing, cleanupRecorder, setInput]);
 
     return (
         <motion.div
@@ -696,6 +763,9 @@ function PureInput({
                                             input={input}
                                             submitForm={submitForm}
                                             showAudio={messages.length === 0}
+                                            handleRecord={handleRecord}
+                                            isRecording={isRecording}
+                                            isTranscribing={isTranscribing}
                                         />
                                     )}
                                 </div>
@@ -762,10 +832,16 @@ const SendButton = React.memo(
         input,
         submitForm,
         showAudio = true,
+        handleRecord,
+        isRecording,
+        isTranscribing,
     }: {
         input: string;
         submitForm: () => void;
         showAudio?: boolean;
+        handleRecord: () => void;
+        isRecording: boolean;
+        isTranscribing: boolean;
     }) => (
         <motion.div
             variants={fadeVariants}
@@ -774,55 +850,96 @@ const SendButton = React.memo(
             exit="exit"
             transition={transitions.smooth}
         >
-            <Button
-                className="px-4"
-                onClick={(event) => {
-                    event.preventDefault();
-                    submitForm();
-                }}
-            >
-                <motion.div
-                    variants={slideVariants.up}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    transition={transitions.smooth}
+            {input.trim().length <= 0 && showAudio ? (
+                <Button
+                    className="px-4"
+                    onClick={handleRecord}
+                    disabled={isTranscribing}
+                    variant={isRecording ? 'destructive' : 'default'}
                 >
-                    <AnimatePresence mode="wait">
-                        {input.trim().length > 0 ? (
-                            <motion.div
-                                key="send-icon"
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -5 }}
-                                transition={transitions.smooth}
-                            >
-                                <CornerDownLeftIcon />
-                            </motion.div>
-                        ) : showAudio ? (
-                            <motion.div
-                                key="audio-icon"
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -5 }}
-                                transition={transitions.smooth}
-                            >
-                                <AudioLinesIcon />
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="send-icon-fallback"
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -5 }}
-                                transition={transitions.smooth}
-                            >
-                                <CornerDownLeftIcon />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </motion.div>
-            </Button>
+                    <motion.div
+                        variants={slideVariants.up}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        transition={transitions.smooth}
+                    >
+                        <AnimatePresence mode="wait">
+                            {isTranscribing ? (
+                                <motion.div
+                                    key="transcribing-icon"
+                                    initial={{ opacity: 0, y: 5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -5 }}
+                                    transition={transitions.smooth}
+                                >
+                                    <Loader variant={'secondary'} />
+                                </motion.div>
+                            ) : isRecording ? (
+                                <motion.div
+                                    key="stop-recording-icon"
+                                    initial={{ opacity: 0, y: 5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -5 }}
+                                    transition={transitions.smooth}
+                                >
+                                    <StopCircleIcon />
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="audio-icon"
+                                    initial={{ opacity: 0, y: 5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -5 }}
+                                    transition={transitions.smooth}
+                                >
+                                    <AudioLinesIcon />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </motion.div>
+                </Button>
+            ) : (
+                <Button
+                    className="px-4"
+                    onClick={(event) => {
+                        event.preventDefault();
+                        submitForm();
+                    }}
+                >
+                    <motion.div
+                        variants={slideVariants.up}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        transition={transitions.smooth}
+                    >
+                        <AnimatePresence mode="wait">
+                            {input.trim().length > 0 ? (
+                                <motion.div
+                                    key="send-icon"
+                                    initial={{ opacity: 0, y: 5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -5 }}
+                                    transition={transitions.smooth}
+                                >
+                                    <CornerDownLeftIcon />
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="send-icon-fallback"
+                                    initial={{ opacity: 0, y: 5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -5 }}
+                                    transition={transitions.smooth}
+                                >
+                                    <CornerDownLeftIcon />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </motion.div>
+                </Button>
+            )}
         </motion.div>
     )
 );

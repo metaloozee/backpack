@@ -7,6 +7,9 @@ import { z } from 'zod';
 import { createInsertSchema } from 'drizzle-zod';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
+import { experimental_transcribe as transcribe } from 'ai';
+import { groq } from '@ai-sdk/groq';
+import { deepgram } from '@ai-sdk/deepgram';
 
 export const chatRouter = router({
     getChats: protectedProcedure
@@ -144,5 +147,40 @@ export const chatRouter = router({
             });
 
             return { success: true, modelId: input.modelId };
+        }),
+    transcribe: protectedProcedure
+        .input(z.instanceof(FormData))
+        .mutation(async ({ ctx, input }) => {
+            const audioFile = (await input.get('audio')) as File;
+            if (!audioFile) {
+                throw new TRPCError({ code: 'BAD_REQUEST', message: 'No audio file provided' });
+            }
+
+            const buffer = Buffer.from(await audioFile.arrayBuffer());
+
+            try {
+                const transcript = await transcribe({
+                    model: deepgram.transcription('nova-2'),
+                    audio: buffer,
+                });
+
+                if (!transcript) {
+                    throw new TRPCError({
+                        code: 'INTERNAL_SERVER_ERROR',
+                        message: 'Failed to transcribe audio',
+                    });
+                }
+
+                return {
+                    text: transcript.text,
+                    language: transcript.language,
+                };
+            } catch (error) {
+                console.error('Failed to transcribe audio', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: 'Failed to transcribe audio',
+                });
+            }
         }),
 });
