@@ -35,6 +35,8 @@ import { MessageEditor } from './message-editor';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { transitions } from '@/lib/animations';
 import { Attachment, ChatMessage } from '@/lib/ai/types';
+import { useDataStream } from '../data-stream-provider';
+import { sanitizeText } from '@/lib/ai/utils';
 
 interface MessageReasoningProps {
     isLoading: boolean;
@@ -129,6 +131,10 @@ export function Message({
         }
     }, [isCopied]);
 
+    const attachmentsFromMessage = message.parts.filter((part) => part.type === 'file');
+
+    useDataStream();
+
     return (
         <AnimatePresence>
             <motion.div
@@ -148,23 +154,21 @@ export function Message({
                             'min-h-96': message.role === 'assistant' && requiresScrollPadding,
                         })}
                     >
-                        {message.parts.filter((part) => part.type === 'file').length > 0 && (
+                        {attachmentsFromMessage.length > 0 && (
                             <div
                                 data-testid={`message-attachments`}
                                 className="flex flex-row justify-end gap-2"
                             >
-                                {message.parts
-                                    .filter((part) => part.type === 'file')
-                                    .map((attachment) => (
-                                        <PreviewAttachment
-                                            key={attachment.url}
-                                            attachment={{
-                                                name: attachment.filename ?? 'file',
-                                                contentType: attachment.mediaType,
-                                                url: attachment.url,
-                                            }}
-                                        />
-                                    ))}
+                                {attachmentsFromMessage.map((attachment) => (
+                                    <PreviewAttachment
+                                        key={attachment.url}
+                                        attachment={{
+                                            name: attachment.filename ?? 'file',
+                                            contentType: attachment.mediaType,
+                                            url: attachment.url,
+                                        }}
+                                    />
+                                ))}
                             </div>
                         )}
 
@@ -172,7 +176,7 @@ export function Message({
                             const { type } = part;
                             const key = `message-${message.id}-part-${index}`;
 
-                            if (type === 'reasoning') {
+                            if (type === 'reasoning' && part.text?.trim().length > 0) {
                                 return (
                                     <MessageReasoning
                                         key={key}
@@ -347,7 +351,9 @@ export function Message({
                                                                     : 'rounded-t-xl rounded-bl-xl'
                                                             )}
                                                         >
-                                                            <Markdown>{part.text}</Markdown>
+                                                            <Markdown>
+                                                                {sanitizeText(part.text)}
+                                                            </Markdown>
                                                         </div>
                                                     </div>
                                                 </motion.div>
@@ -382,18 +388,27 @@ export function Message({
 
                                 if (state == 'input-available') {
                                     const { input } = part;
-                                    <ExtractTool toolCallId={toolCallId} input={input} />;
+                                    return (
+                                        <ExtractTool
+                                            key={key}
+                                            toolCallId={toolCallId}
+                                            input={input}
+                                        />
+                                    );
                                 }
 
                                 if (state == 'output-available') {
                                     const { output } = part;
-                                    <ExtractTool
-                                        toolCallId={toolCallId}
-                                        output={output?.map((item) => ({
-                                            ...item,
-                                            images: undefined,
-                                        }))}
-                                    />;
+                                    return (
+                                        <ExtractTool
+                                            key={key}
+                                            toolCallId={toolCallId}
+                                            output={output?.map((item) => ({
+                                                ...item,
+                                                images: undefined,
+                                            }))}
+                                        />
+                                    );
                                 }
                             }
 
@@ -402,12 +417,24 @@ export function Message({
 
                                 if (state == 'input-available') {
                                     const { input } = part;
-                                    <WebSearchTool toolCallId={toolCallId} input={input} />;
+                                    return (
+                                        <WebSearchTool
+                                            key={key}
+                                            toolCallId={toolCallId}
+                                            input={input}
+                                        />
+                                    );
                                 }
 
                                 if (state == 'output-available') {
                                     const { output } = part;
-                                    <WebSearchTool toolCallId={toolCallId} output={output} />;
+                                    return (
+                                        <WebSearchTool
+                                            key={key}
+                                            toolCallId={toolCallId}
+                                            output={output}
+                                        />
+                                    );
                                 }
                             }
 
@@ -416,15 +443,24 @@ export function Message({
 
                                 if (state == 'input-available') {
                                     const { input } = part;
-                                    <KnowledgeSearchTool toolCallId={toolCallId} input={input} />;
+                                    return (
+                                        <KnowledgeSearchTool
+                                            key={key}
+                                            toolCallId={toolCallId}
+                                            input={input}
+                                        />
+                                    );
                                 }
 
                                 if (state == 'output-available') {
                                     const { output } = part;
-                                    <KnowledgeSearchTool
-                                        toolCallId={toolCallId}
-                                        output={output || undefined}
-                                    />;
+                                    return (
+                                        <KnowledgeSearchTool
+                                            key={key}
+                                            toolCallId={toolCallId}
+                                            output={output || undefined}
+                                        />
+                                    );
                                 }
                             }
 
@@ -433,15 +469,24 @@ export function Message({
 
                                 if (state == 'input-available') {
                                     const { input } = part;
-                                    <AcademicSearchTool toolCallId={toolCallId} input={input} />;
+                                    return (
+                                        <AcademicSearchTool
+                                            key={key}
+                                            toolCallId={toolCallId}
+                                            input={input}
+                                        />
+                                    );
                                 }
 
                                 if (state == 'output-available') {
                                     const { output } = part;
-                                    <AcademicSearchTool
-                                        toolCallId={toolCallId}
-                                        output={output?.results}
-                                    />;
+                                    return (
+                                        <AcademicSearchTool
+                                            key={key}
+                                            toolCallId={toolCallId}
+                                            output={output?.results}
+                                        />
+                                    );
                                 }
                             }
                         })}

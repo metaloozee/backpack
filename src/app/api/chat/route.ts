@@ -138,22 +138,22 @@ export async function POST(req: Request) {
                 execute: ({ writer: dataStream }) => {
                     const result = streamText({
                         model: model.instance,
-                        // providerOptions: model.properties?.includes('reasoning')
-                        //     ? {
-                        //           anthropic: {
-                        //               thinking: {
-                        //                   type: 'enabled',
-                        //                   budgetTokens: 2048,
-                        //               },
-                        //           } satisfies AnthropicProviderOptions,
-                        //           google: {
-                        //               thinkingConfig: {
-                        //                   thinkingBudget: 2048,
-                        //                   includeThoughts: true,
-                        //               },
-                        //           } satisfies GoogleGenerativeAIProviderOptions,
-                        //       }
-                        //     : {},
+                        providerOptions: model.properties?.includes('reasoning')
+                            ? {
+                                  anthropic: {
+                                      thinking: {
+                                          type: 'enabled',
+                                          budgetTokens: 2048,
+                                      },
+                                  } satisfies AnthropicProviderOptions,
+                                  google: {
+                                      thinkingConfig: {
+                                          thinkingBudget: 2048,
+                                          includeThoughts: true,
+                                      },
+                                  } satisfies GoogleGenerativeAIProviderOptions,
+                              }
+                            : {},
                         messages: convertToModelMessages(uiMessages),
                         system: AskModePrompt({
                             tools: {
