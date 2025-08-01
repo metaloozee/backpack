@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/sonner';
 import TrpcProvider from '@/lib/trpc/client';
+import { DataStreamProvider } from '@/components/data-stream-provider';
 // import { ReactScan } from '@/components/react-scan';
 
 const geistSans = Geist({
@@ -34,15 +35,17 @@ export default function RootLayout({
                     className={cn('bg-background antialiased font-sans', geistSans.className)}
                     suppressHydrationWarning
                 >
-                    <ThemeProvider
-                        attribute="class"
-                        defaultTheme="system"
-                        enableSystem
-                        disableTransitionOnChange
-                    >
-                        <Toaster richColors position="top-center" />
-                        {children}
-                    </ThemeProvider>
+                    <DataStreamProvider>
+                        <ThemeProvider
+                            attribute="class"
+                            defaultTheme="system"
+                            enableSystem
+                            disableTransitionOnChange
+                        >
+                            <Toaster richColors position="top-center" />
+                            {children}
+                        </ThemeProvider>
+                    </DataStreamProvider>
                 </body>
             </html>
         </TrpcProvider>

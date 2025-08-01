@@ -1,4 +1,4 @@
-import type { Message } from 'ai';
+import type { UIMessage } from 'ai';
 import { useCopyToClipboard } from 'usehooks-ts';
 import equal from 'fast-deep-equal';
 
@@ -16,7 +16,7 @@ export function PureMessageActions({
     isLoading,
 }: {
     chatId: string;
-    message: Message;
+    message: UIMessage;
     isLoading: boolean;
 }) {
     const [_, copyToClipboard] = useCopyToClipboard();

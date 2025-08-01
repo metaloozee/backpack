@@ -25,17 +25,16 @@ interface KnowledgeSearchResult {
 
 interface KnowledgeSearchToolProps {
     toolCallId: string;
-    state: 'call' | 'result';
-    args?: {
+    input?: {
         knowledge_search_keywords?: string[];
     };
-    result?: {
+    output?: {
         results?: KnowledgeSearchResult[];
     };
 }
 
-export function KnowledgeSearchTool({ toolCallId, state, args, result }: KnowledgeSearchToolProps) {
-    if (state === 'result') {
+export function KnowledgeSearchTool({ toolCallId, input, output }: KnowledgeSearchToolProps) {
+    if (output) {
         return (
             <Accordion className="w-full">
                 <AccordionItem value={toolCallId} className="border bg-neutral-900 rounded-md px-4">
@@ -47,8 +46,8 @@ export function KnowledgeSearchTool({ toolCallId, state, args, result }: Knowled
                         <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
                     </AccordionTrigger>
                     <AccordionContent className="space-y-1">
-                        {result?.results && result.results.length > 0
-                            ? result.results.map((searchResult, index) => (
+                        {output?.results && output.results.length > 0
+                            ? output.results.map((searchResult, index) => (
                                   <Disclosure
                                       key={`${toolCallId}-${index}`}
                                       className="w-full flex flex-col gap-2"
@@ -57,7 +56,7 @@ export function KnowledgeSearchTool({ toolCallId, state, args, result }: Knowled
                                           <div className="w-full flex flex-row justify-between">
                                               <span className="flex items-center gap-2 truncate text-xs text-neutral-400">
                                                   <SearchIcon className="size-3" />
-                                                  {args?.knowledge_search_keywords?.[index] ??
+                                                  {input?.knowledge_search_keywords?.[index] ??
                                                       searchResult.keyword}
                                               </span>
                                           </div>
@@ -95,26 +94,28 @@ export function KnowledgeSearchTool({ toolCallId, state, args, result }: Knowled
                                       </DisclosureContent>
                                   </Disclosure>
                               ))
-                            : args?.knowledge_search_keywords?.map((keyword, index) => (
-                                  <Disclosure
-                                      key={`${toolCallId}-placeholder-${index}`}
-                                      className="w-full flex flex-col gap-2"
-                                  >
-                                      <DisclosureTrigger className="w-full">
-                                          <div className="w-full flex flex-row justify-between">
-                                              <span className="flex items-center gap-2 truncate text-xs text-neutral-400">
-                                                  <BookCopyIcon className="size-3" />
-                                                  {keyword}
-                                              </span>
-                                          </div>
-                                      </DisclosureTrigger>
-                                      <DisclosureContent>
-                                          <div className="bg-card rounded-md p-4 text-center text-muted-foreground">
-                                              No results found.
-                                          </div>
-                                      </DisclosureContent>
-                                  </Disclosure>
-                              ))}
+                            : input?.knowledge_search_keywords?.map(
+                                  (keyword: string, index: number) => (
+                                      <Disclosure
+                                          key={`${toolCallId}-placeholder-${index}`}
+                                          className="w-full flex flex-col gap-2"
+                                      >
+                                          <DisclosureTrigger className="w-full">
+                                              <div className="w-full flex flex-row justify-between">
+                                                  <span className="flex items-center gap-2 truncate text-xs text-neutral-400">
+                                                      <BookCopyIcon className="size-3" />
+                                                      {keyword}
+                                                  </span>
+                                              </div>
+                                          </DisclosureTrigger>
+                                          <DisclosureContent>
+                                              <div className="bg-card rounded-md p-4 text-center text-muted-foreground">
+                                                  No results found.
+                                              </div>
+                                          </DisclosureContent>
+                                      </Disclosure>
+                                  )
+                              )}
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
@@ -132,7 +133,7 @@ export function KnowledgeSearchTool({ toolCallId, state, args, result }: Knowled
                     <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
                 </AccordionTrigger>
                 <AccordionContent className="space-y-1">
-                    {args?.knowledge_search_keywords?.map((keyword, index) => (
+                    {input?.knowledge_search_keywords?.map((keyword: string, index: number) => (
                         <Disclosure
                             key={`${toolCallId}-${index}`}
                             className="w-full flex flex-col gap-2"

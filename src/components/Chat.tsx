@@ -8,8 +8,8 @@ import { ChatMessages } from '@/components/chat/messages';
 import { toast } from 'sonner';
 import { ScrollArea } from './ui/scroll-area';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Attachment, UIMessage } from 'ai';
-import { generateUUID } from '@/lib/ai/utils';
+import { DefaultChatTransport, UIMessage } from 'ai';
+import { fetchWithErrorHandlers, generateUUID } from '@/lib/ai/utils';
 import { Chat as ChatType } from '@/lib/db/schema/app';
 import { Separator } from './ui/separator';
 import { BookOpenIcon } from 'lucide-react';
@@ -17,6 +17,10 @@ import DisplayChats from './chat/display-chats';
 import { useAutoResume } from '@/lib/hooks/use-auto-resume';
 import { type Session } from 'better-auth';
 import { getDefaultToolsState, type ToolsState } from '@/lib/ai/tools';
+
+import { useDataStream } from './data-stream-provider';
+import { Attachment, ChatMessage } from '@/lib/ai/types';
+import { useState } from 'react';
 
 export function Chat({
     id,
@@ -34,7 +38,7 @@ export function Chat({
         spaceName?: string;
         spaceDescription?: string;
     };
-    initialMessages: Array<UIMessage>;
+    initialMessages: ChatMessage[];
     session: Session | null;
     autoResume: boolean;
     chatsData?: Array<ChatType>;
@@ -43,44 +47,41 @@ export function Chat({
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
 
+    const [input, setInput] = useState<string>('');
     const [tools, setTools] = React.useState<ToolsState>(getDefaultToolsState());
 
-    const {
-        messages,
-        setMessages,
-        handleSubmit,
-        input,
-        setInput,
-        append,
-        status,
-        stop,
-        reload,
-        experimental_resume,
-        data,
-    } = useChat({
-        id,
-        initialMessages,
-        generateId: generateUUID,
-        sendExtraMessageFields: true,
-        experimental_prepareRequestBody: (body) => {
-            return {
-                id,
-                env,
-                message: body.messages.at(-1),
-                webSearch: tools.webSearch,
-                knowledgeSearch: tools.knowledgeSearch,
-                academicSearch: tools.academicSearch,
-            };
-        },
-        onResponse: (response) => {
-            if (response.status === 200) {
-                window.history.replaceState({}, '', `/c/${id}`);
-            }
-        },
-        onError: (error) => {
-            toast.error('uh oh!', { description: error.message });
-        },
-    });
+    const { setDataStream } = useDataStream();
+
+    const { messages, setMessages, sendMessage, status, stop, regenerate, resumeStream } =
+        useChat<ChatMessage>({
+            id,
+            messages: initialMessages,
+            generateId: generateUUID,
+            experimental_throttle: 100,
+            transport: new DefaultChatTransport({
+                api: '/api/chat',
+                fetch: fetchWithErrorHandlers,
+                prepareSendMessagesRequest({ messages, id, body }) {
+                    return {
+                        body: {
+                            id,
+                            env,
+                            message: messages.at(-1),
+                            webSearch: tools.webSearch,
+                            knowledgeSearch: tools.knowledgeSearch,
+                            academicSearch: tools.academicSearch,
+                            ...body,
+                        },
+                    };
+                },
+            }),
+            onData: (dataPart) => {
+                setDataStream((ds) => (ds ? [...ds, dataPart as any] : [dataPart as any]));
+            },
+            onError: (error) => {
+                toast.error('uh oh!', { description: error.message });
+            },
+        });
 
     const searchParams = useSearchParams();
     const query = searchParams.get('query');
@@ -88,23 +89,22 @@ export function Chat({
 
     React.useEffect(() => {
         if (query && !hasAppendedQuery) {
-            append({
+            sendMessage({
                 role: 'user',
-                content: query,
+                parts: [{ type: 'text', text: query }],
             });
 
             setHasAppendedQuery(true);
             window.history.replaceState({}, '', `/c/${id}`);
         }
-    }, [query, append, hasAppendedQuery, id]);
+    }, [query, sendMessage, hasAppendedQuery, id]);
 
-    const [attachments, setAttachments] = React.useState<Attachment[]>([]);
+    const [attachments, setAttachments] = useState<Array<Attachment>>([]);
 
     useAutoResume({
         autoResume,
         initialMessages,
-        experimental_resume,
-        data,
+        resumeStream,
         setMessages,
     });
 
@@ -124,7 +124,7 @@ export function Chat({
                     <ChatMessages
                         messages={messages}
                         setMessages={setMessages}
-                        reload={reload}
+                        regenerate={regenerate}
                         chatId={id}
                         status={status}
                     />
@@ -135,14 +135,13 @@ export function Chat({
                 chatId={id}
                 input={input}
                 setInput={setInput}
-                handleSubmit={handleSubmit}
                 status={status}
                 stop={stop}
                 attachments={attachments}
                 setAttachments={setAttachments}
                 messages={messages}
                 setMessages={setMessages}
-                append={append}
+                sendMessage={sendMessage}
                 tools={tools}
                 setTools={setTools}
                 initialModel={initialModel}

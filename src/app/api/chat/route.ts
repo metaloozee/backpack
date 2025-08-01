@@ -1,37 +1,20 @@
 import {
-    convertToCoreMessages,
-    appendResponseMessages,
+    convertToModelMessages,
     smoothStream,
     streamText,
-    embedMany,
-    appendClientMessage,
-    createDataStream,
     generateObject,
+    stepCountIs,
+    createUIMessageStream,
+    JsonToSseTransformStream,
 } from 'ai';
-import { generateUUID, getTrailingMessageId } from '@/lib/ai/utils';
-import { sanitizeUserInput, sanitizeFileName } from '@/lib/utils/sanitization';
-import {
-    handleApiError,
-    safeDbOperation,
-    safeExternalOperation,
-    UnauthorizedError,
-    NotFoundError,
-    ValidationError,
-    DatabaseError,
-} from '@/lib/utils/error-handling';
-
-import { env } from '@/lib/env.mjs';
+import { generateUUID, getTrailingMessageId, convertToUIMessages } from '@/lib/ai/utils';
 
 import { caller } from '@/lib/trpc/server';
 import { AskModePrompt } from '@/lib/ai/prompts';
 import { z } from 'zod';
-import { tavily } from '@tavily/core';
-import { tool } from 'ai';
 import { createResumableStreamContext, type ResumableStreamContext } from 'resumable-stream';
-import { cosineDistance, sql, eq, and, gt, desc, asc } from 'drizzle-orm';
+import { sql, eq, and, gt, desc, asc } from 'drizzle-orm';
 import {
-    knowledge,
-    knowledgeEmbeddings,
     message as dbMessage,
     chat as dbChat,
     stream as dbStream,
@@ -48,561 +31,201 @@ import { getSession } from '@/lib/auth/utils';
 import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google';
 import { AnthropicProviderOptions } from '@ai-sdk/anthropic';
 
-export const maxDuration = 60;
+import { saveToMemoriesTool } from '@/lib/ai/tools/saveToMemories';
+import { extractTool } from '@/lib/ai/tools/extract';
+import { webSearchTool } from '@/lib/ai/tools/webSearch';
+import { knowledgeSearchTool } from '@/lib/ai/tools/knowledgeSearch';
+import { academicSearchTool } from '@/lib/ai/tools/academicSearch';
 
-const tvly = tavily({ apiKey: env.TAVILY_API_KEY });
+export const maxDuration = 60;
 
 let globalStreamContext: ResumableStreamContext | null = null;
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
     try {
         const session = await getSession();
         if (!session) {
-            throw new UnauthorizedError('Access denied');
+            throw new Error('Access denied');
         }
 
         const json = await req.json();
         const requestBody = requestBodySchema.parse(json);
 
-        const { message, id, env, webSearch, knowledgeSearch, academicSearch } = requestBody;
+        try {
+            const {
+                message,
+                id,
+                env: requestEnv,
+                webSearch,
+                knowledgeSearch,
+                academicSearch,
+            } = requestBody;
 
-        if (!message || !id) {
-            throw new ValidationError('Message and ID are required');
-        }
+            if (!message || !id) {
+                throw new Error('Message and ID are required');
+            }
 
-        const sanitizedMessage = {
-            ...message,
-            content: sanitizeUserInput(message.content),
-            parts: message.parts.map((part) => ({
-                ...part,
-                text: sanitizeUserInput(part.text),
-            })),
-            experimental_attachments: message.experimental_attachments?.map((attachment) => ({
-                ...attachment,
-                name: sanitizeFileName(attachment.name),
-            })),
-        };
+            const cookieStore = await cookies();
+            const modelId = cookieStore.get('X-Model-Id')?.value ?? 'gemini-2.5-flash';
+            const model = getModel(modelId);
 
-        const cookieStore = await cookies();
-        const modelId = cookieStore.get('X-Model-Id')?.value ?? 'gemini-2.5-flash';
-        const model = getModel(modelId);
+            if (!model) {
+                throw new Error('Invalid model selected');
+            }
 
-        if (!model) {
-            throw new ValidationError('Invalid model selected');
-        }
+            const [chat] = await db
+                .select()
+                .from(dbChat)
+                .where(and(eq(dbChat.id, id), eq(dbChat.userId, session.userId)))
+                .limit(1);
 
-        const [chat] = await safeDbOperation(
-            () =>
-                db
-                    .select()
-                    .from(dbChat)
-                    .where(and(eq(dbChat.id, id), eq(dbChat.userId, session.userId)))
-                    .limit(1),
-            'Failed to retrieve chat'
-        );
-        if (!chat) {
-            const { object } = await safeExternalOperation(
-                () =>
-                    generateObject({
-                        model: google('gemini-2.5-flash-lite'),
-                        schema: z.object({
-                            title: z.string().max(100),
+            if (!chat) {
+                const { object } = await generateObject({
+                    model: google('gemini-2.5-flash-lite'),
+                    schema: z.object({
+                        title: z.string().max(100),
+                    }),
+                    prompt: `
+    Given the following query, generate a title for the chat: ${JSON.stringify(message)}.
+    Follow the schema provided.
+                            `,
+                });
+
+                await caller.chat.saveChat({
+                    id,
+                    userId: session.userId,
+                    spaceId: requestEnv.inSpace ? requestEnv.spaceId : undefined,
+                    title: object.title ?? 'Unnamed Chat',
+                });
+            }
+
+            const previousMessages = await db
+                .select()
+                .from(dbMessage)
+                .where(eq(dbMessage.chatId, id));
+
+            const userMemories = await db
+                .select({ content: dbMemories.content, createdAt: dbMemories.createdAt })
+                .from(dbMemories)
+                .where(eq(dbMemories.userId, session.userId))
+                .orderBy(desc(dbMemories.createdAt));
+
+            const uiMessages = [...convertToUIMessages(previousMessages), message];
+
+            await caller.chat.saveMessages({
+                messages: [
+                    {
+                        chatId: id,
+                        id: message.id,
+                        role: 'user',
+                        parts: message.parts,
+                        attachments: [],
+                        createdAt: new Date(),
+                    },
+                ],
+            });
+
+            const streamId = generateUUID();
+            await db.insert(dbStream).values({ id: streamId, chatId: id, createdAt: new Date() });
+
+            const activeTools: ('web_search' | 'knowledge_search' | 'academic_search')[] = [];
+
+            if (webSearch) activeTools.push('web_search');
+            if (knowledgeSearch) activeTools.push('knowledge_search');
+            if (academicSearch) activeTools.push('academic_search');
+
+            const stream = createUIMessageStream({
+                execute: ({ writer: dataStream }) => {
+                    const result = streamText({
+                        model: model.instance,
+                        providerOptions: model.properties?.includes('reasoning')
+                            ? {
+                                  anthropic: {
+                                      thinking: {
+                                          type: 'enabled',
+                                          budgetTokens: 2048,
+                                      },
+                                  } satisfies AnthropicProviderOptions,
+                                  google: {
+                                      thinkingConfig: {
+                                          thinkingBudget: 2048,
+                                          includeThoughts: true,
+                                      },
+                                  } satisfies GoogleGenerativeAIProviderOptions,
+                              }
+                            : {},
+                        messages: convertToModelMessages(uiMessages),
+                        system: AskModePrompt({
+                            tools: {
+                                webSearch: webSearch ?? false,
+                                knowledgeSearch: knowledgeSearch ?? false,
+                                academicSearch: academicSearch ?? false,
+                            },
+                            env: {
+                                ...requestEnv,
+                                memories: userMemories,
+                            },
                         }),
-                        prompt: `
-Given the following query, generate a title for the chat: ${sanitizedMessage.content}.
-Follow the schema provided.
-                        `,
-                    }),
-                'Failed to generate chat title'
-            );
-
-            await safeDbOperation(
-                () =>
-                    caller.chat.saveChat({
-                        id,
-                        userId: session.userId,
-                        spaceId: env.inSpace ? env.spaceId : undefined,
-                        title: object.title ?? 'Unnamed Chat',
-                    }),
-                'Failed to save chat'
-            );
-        }
-
-        const previousMessages = await safeDbOperation(
-            () => db.select().from(dbMessage).where(eq(dbMessage.chatId, id)),
-            'Failed to retrieve previous messages'
-        );
-
-        const userMemories = await safeDbOperation(
-            () =>
-                db
-                    .select({ content: dbMemories.content, createdAt: dbMemories.createdAt })
-                    .from(dbMemories)
-                    .where(eq(dbMemories.userId, session.userId))
-                    .orderBy(desc(dbMemories.createdAt)),
-            'Failed to retrieve user memories'
-        );
-
-        const messages = appendClientMessage({
-            messages: previousMessages.map((msg) => ({
-                id: msg.id,
-                role: msg.role as 'user' | 'assistant' | 'system',
-                parts: msg.parts as { text: string; type: 'text' }[],
-                content: '',
-                experimental_attachments: msg.attachments as {
-                    url: string;
-                    name: string;
-                    contentType: string;
-                }[],
-                createdAt: msg.createdAt,
-            })),
-            message: sanitizedMessage,
-        });
-
-        await safeDbOperation(
-            () =>
-                caller.chat.saveMessages({
-                    messages: [
-                        {
-                            chatId: id,
-                            id: sanitizedMessage.id,
-                            role: 'user',
-                            parts: sanitizedMessage.parts,
-                            attachments: sanitizedMessage.experimental_attachments ?? [],
-                            createdAt: new Date(),
+                        stopWhen: stepCountIs(10),
+                        experimental_transform: smoothStream({ chunking: 'word', delayInMs: 10 }),
+                        onError: (error) => {
+                            console.error(error);
                         },
-                    ],
-                }),
-            'Failed to save user message'
-        );
-
-        const streamId = generateUUID();
-        await safeDbOperation(
-            () => db.insert(dbStream).values({ id: streamId, chatId: id, createdAt: new Date() }),
-            'Failed to create stream'
-        );
-
-        const activeTools: ('web_search' | 'knowledge_search' | 'academic_search')[] = [];
-
-        if (webSearch) activeTools.push('web_search');
-        if (knowledgeSearch) activeTools.push('knowledge_search');
-        if (academicSearch) activeTools.push('academic_search');
-
-        const stream = createDataStream({
-            execute: (dataStream) => {
-                const result = streamText({
-                    model: model.instance,
-                    providerOptions: model.properties?.includes('reasoning')
-                        ? {
-                              anthropic: {
-                                  thinking: {
-                                      type: 'enabled',
-                                      budgetTokens: 2048,
-                                  },
-                              } satisfies AnthropicProviderOptions,
-                              google: {
-                                  thinkingConfig: {
-                                      thinkingBudget: 2048,
-                                      includeThoughts: true,
-                                  },
-                              } satisfies GoogleGenerativeAIProviderOptions,
-                          }
-                        : {},
-                    messages: convertToCoreMessages(messages),
-                    system: AskModePrompt({
                         tools: {
-                            webSearch: webSearch ?? false,
-                            knowledgeSearch: knowledgeSearch ?? false,
-                            academicSearch: academicSearch ?? false,
+                            save_to_memories: saveToMemoriesTool({ session, dataStream }),
+                            extract: extractTool({ session, dataStream }),
+                            web_search: webSearchTool({ session, dataStream }),
+                            knowledge_search: knowledgeSearchTool({
+                                session,
+                                dataStream,
+                                env: requestEnv,
+                            }),
+                            academic_search: academicSearchTool({ session, dataStream }),
                         },
-                        env: {
-                            ...env,
-                            memories: userMemories,
-                        },
-                    }),
-                    onError: (error) => {
-                        console.error(error);
-                    },
-                    maxSteps: 10,
-                    experimental_transform: smoothStream({ chunking: 'word', delayInMs: 10 }),
-                    experimental_generateMessageId: generateUUID,
-                    onFinish: async ({ response }) => {
-                        if (session.userId) {
-                            try {
-                                const assistantId = getTrailingMessageId({
-                                    messages: response.messages.filter(
-                                        (message) => message.role === 'assistant'
-                                    ),
-                                });
+                    });
 
-                                if (!assistantId) {
-                                    throw new Error('No assistant message found.');
-                                }
+                    result.consumeStream();
+                    dataStream.merge(result.toUIMessageStream({ sendReasoning: true }));
+                },
+                generateId: generateUUID,
+                onError: () => {
+                    return 'Oops, an error occurred while processing your request.';
+                },
+                onFinish: async ({ messages }) => {
+                    await caller.chat.saveMessages({
+                        messages: messages.map((message) => ({
+                            id: message.id,
+                            role: message.role,
+                            parts: message.parts,
+                            createdAt: new Date(),
+                            attachments: [],
+                            chatId: id,
+                        })),
+                    });
+                },
+            });
 
-                                const [_, assistantMessage] = appendResponseMessages({
-                                    messages: [sanitizedMessage],
-                                    responseMessages: response.messages,
-                                });
-
-                                await caller.chat.saveMessages({
-                                    messages: [
-                                        {
-                                            id: assistantId,
-                                            chatId: id,
-                                            role: assistantMessage.role,
-                                            parts: assistantMessage.parts ?? [],
-                                            attachments:
-                                                assistantMessage.experimental_attachments ?? [],
-                                            createdAt: new Date(),
-                                        },
-                                    ],
-                                });
-                            } catch (_) {
-                                console.error('Failed to save the chat.');
-                            }
-                        }
-                    },
-                    toolCallStreaming: true,
-                    experimental_activeTools: ['extract', 'save_to_memories', ...activeTools],
-                    tools: {
-                        save_to_memories: tool({
-                            description: 'Save the information about the user to their memories.',
-                            parameters: z.object({
-                                contents: z.array(z.string()).min(1).max(5),
-                            }),
-                            execute: async ({ contents }, { toolCallId }) => {
-                                dataStream.writeMessageAnnotation({
-                                    type: 'tool-call',
-                                    data: {
-                                        toolCallId,
-                                        toolName: 'save_to_memories',
-                                        state: 'call',
-                                        args: JSON.stringify({ contents }),
-                                    },
-                                });
-
-                                console.log('Saving memories: ', contents);
-
-                                try {
-                                    const { embeddings } = await embedMany({
-                                        model: google.textEmbeddingModel('text-embedding-004'),
-                                        values: contents,
-                                    });
-
-                                    const newMemories: {
-                                        userId: string;
-                                        content: string;
-                                        embedding: number[];
-                                        createdAt: Date;
-                                    }[] = [];
-
-                                    for (let i = 0; i < contents.length; i++) {
-                                        const content = contents[i];
-                                        const embedding = embeddings[i];
-
-                                        const similarity = sql<number>`1 - (${cosineDistance(dbMemories.embedding, embedding)})`;
-
-                                        const existingSimilarMemories = await db
-                                            .select({ similarity })
-                                            .from(dbMemories)
-                                            .where(
-                                                and(
-                                                    eq(dbMemories.userId, session.userId),
-                                                    gt(similarity, 0.85) // High similarity threshold to avoid duplicates
-                                                )
-                                            )
-                                            .limit(1);
-
-                                        if (existingSimilarMemories.length === 0) {
-                                            newMemories.push({
-                                                userId: session.userId,
-                                                content: content,
-                                                embedding: embedding,
-                                                createdAt: new Date(),
-                                            });
-                                        }
-                                    }
-
-                                    let savedCount = 0;
-                                    if (newMemories.length > 0) {
-                                        await safeDbOperation(
-                                            () => db.insert(dbMemories).values(newMemories),
-                                            'Failed to save memories'
-                                        );
-                                        savedCount = newMemories.length;
-                                    }
-
-                                    const result = {
-                                        saved_count: savedCount,
-                                        total_count: contents.length,
-                                    };
-
-                                    dataStream.writeMessageAnnotation({
-                                        type: 'tool-call',
-                                        data: {
-                                            toolCallId,
-                                            toolName: 'save_to_memories',
-                                            state: 'result',
-                                            args: JSON.stringify({ contents }),
-                                            result: JSON.stringify(result),
-                                        },
-                                    });
-
-                                    return result;
-                                } catch (error) {
-                                    console.error('Error saving memories:', error);
-                                    throw new Error('Failed to save memories');
-                                }
-                            },
-                        }),
-                        extract: tool({
-                            description:
-                                'Extract web page content from one or more specified URLs.',
-                            parameters: z.object({
-                                urls: z.array(z.string()),
-                            }),
-                            execute: async ({ urls }, { toolCallId }) => {
-                                dataStream.writeMessageAnnotation({
-                                    type: 'tool-call',
-                                    data: {
-                                        toolCallId,
-                                        toolName: 'extract',
-                                        state: 'call',
-                                        args: JSON.stringify({ urls }),
-                                    },
-                                });
-
-                                console.log('Extracting URLs: ', urls);
-
-                                const res = await tvly.extract(urls, { extractDepth: 'advanced' });
-
-                                type ExtractResult = {
-                                    url: string;
-                                    images: string[] | undefined;
-                                    content: string;
-                                };
-
-                                const results: ExtractResult[] = res.results.map((result) => ({
-                                    url: result.url,
-                                    images: result.images,
-                                    content: result.rawContent,
-                                }));
-
-                                dataStream.writeMessageAnnotation({
-                                    type: 'tool-call',
-                                    data: {
-                                        toolCallId,
-                                        toolName: 'extract',
-                                        state: 'result',
-                                        args: JSON.stringify({ urls }),
-                                        result: JSON.stringify({ results }),
-                                    },
-                                });
-
-                                return res.results.map((result) => ({
-                                    url: result.url,
-                                    content: result.rawContent,
-                                }));
-                            },
-                        }),
-                        web_search: tool({
-                            description: 'Performs a search over the internet for current data.',
-                            parameters: z.object({
-                                web_search_queries: z.array(z.string()).max(5),
-                            }),
-                            execute: async ({ web_search_queries: queries }, { toolCallId }) => {
-                                dataStream.writeMessageAnnotation({
-                                    type: 'tool-call',
-                                    data: {
-                                        toolCallId,
-                                        toolName: 'web_search',
-                                        state: 'call',
-                                        args: JSON.stringify({ web_search_queries: queries }),
-                                    },
-                                });
-
-                                console.log('Web Search Queries: ', queries);
-
-                                type SearchGroup = {
-                                    query: string;
-                                    results: {
-                                        url: string;
-                                        title: string;
-                                        content: string;
-                                        raw_content: string;
-                                        published_date: string | null;
-                                    }[];
-                                };
-
-                                const searchPromises: Promise<SearchGroup>[] = queries.map(
-                                    async (query: string) => {
-                                        const res = await tvly.search(query, {
-                                            maxResults: 5,
-                                            searchDepth: 'advanced',
-                                            includeAnswer: true,
-                                        });
-
-                                        return {
-                                            query,
-                                            results: deduplicateByDomainAndUrl(res.results).map(
-                                                (obj: any) => ({
-                                                    url: obj.url,
-                                                    title: obj.title,
-                                                    content: obj.content,
-                                                    raw_content: obj.raw_content,
-                                                    published_date: obj.published_date,
-                                                })
-                                            ),
-                                        };
-                                    }
-                                );
-
-                                const searchResults = await Promise.all(searchPromises);
-
-                                dataStream.writeMessageAnnotation({
-                                    type: 'tool-call',
-                                    data: {
-                                        toolCallId,
-                                        toolName: 'web_search',
-                                        state: 'result',
-                                        args: JSON.stringify({ web_search_queries: queries }),
-                                        result: JSON.stringify({ searches: searchResults }),
-                                    },
-                                });
-                                return {
-                                    searches: searchResults,
-                                };
-                            },
-                        }),
-                        knowledge_search: tool({
-                            description:
-                                'Performs an Internal Semantic Search on User Uploaded Documents.',
-                            parameters: z.object({
-                                knowledge_search_keywords: z.array(z.string()).max(5),
-                            }),
-                            execute: async (
-                                { knowledge_search_keywords: keywords },
-                                { toolCallId }
-                            ) => {
-                                if (!env.inSpace) {
-                                    return null;
-                                }
-
-                                dataStream.writeMessageAnnotation({
-                                    type: 'tool-call',
-                                    data: {
-                                        toolCallId,
-                                        toolName: 'knowledge_search',
-                                        state: 'call',
-                                        args: JSON.stringify(keywords),
-                                    },
-                                });
-
-                                console.log('Knowledge Search Keywords: ', keywords);
-
-                                const { embeddings } = await embedMany({
-                                    model: google.textEmbeddingModel('text-embedding-004'),
-                                    values: keywords,
-                                });
-
-                                const Promises = embeddings.map(
-                                    async (embedding: (typeof embeddings)[0], index: number) => {
-                                        const similarity = sql<number>`1 - (${cosineDistance(knowledgeEmbeddings.embedding, embedding)})`;
-
-                                        const contexts = await db
-                                            .select({
-                                                content: knowledgeEmbeddings.content,
-                                                knowledgeName: knowledge.knowledgeName,
-                                                knowledgeType: knowledge.knowledgeType,
-                                                similarity,
-                                            })
-                                            .from(knowledgeEmbeddings)
-                                            .innerJoin(
-                                                knowledge,
-                                                eq(knowledgeEmbeddings.knowledgeId, knowledge.id)
-                                            )
-                                            .where(
-                                                and(
-                                                    eq(knowledge.userId, session.userId),
-                                                    eq(knowledge.spaceId, env.spaceId!),
-                                                    gt(similarity, 0.5)
-                                                )
-                                            )
-                                            .orderBy(desc(similarity))
-                                            .limit(10);
-
-                                        return {
-                                            keyword: keywords[index],
-                                            contexts,
-                                        };
-                                    }
-                                );
-
-                                const results = await Promise.all(Promises);
-
-                                dataStream.writeMessageAnnotation({
-                                    type: 'tool-call',
-                                    data: {
-                                        toolCallId,
-                                        toolName: 'knowledge_search',
-                                        state: 'result',
-                                        args: JSON.stringify({ keywords }),
-                                        result: JSON.stringify({ results }),
-                                    },
-                                });
-
-                                return {
-                                    results,
-                                };
-                            },
-                        }),
-                        academic_search: tool({
-                            description:
-                                'Performs a search for various academic papers and researches',
-                            parameters: z.object({
-                                academic_search_queries: z.array(z.string()).max(5),
-                            }),
-                            execute: async (
-                                { academic_search_queries: queries },
-                                { toolCallId }
-                            ) => {
-                                dataStream.writeMessageAnnotation({
-                                    type: 'tool-call',
-                                    data: {
-                                        toolCallId,
-                                        toolName: 'academic_search',
-                                        state: 'call',
-                                        args: JSON.stringify(queries),
-                                    },
-                                });
-
-                                console.log('Academic Search Queries: ', queries);
-
-                                // TODO
-                                return null;
-                            },
-                        }),
-                    },
-                });
-
-                result.consumeStream();
-                result.mergeIntoDataStream(dataStream, {
-                    sendReasoning: true,
-                });
-            },
-            onError: () => {
-                return 'Oops, an error occurred while processing your request.';
-            },
-        });
-
-        const streamContext = getStreamContext();
-        if (streamContext) {
-            return new Response(await streamContext.resumableStream(streamId, () => stream));
-        } else {
-            return new Response(stream);
+            const streamContext = getStreamContext();
+            if (streamContext) {
+                return new Response(
+                    await streamContext.resumableStream(streamId, () =>
+                        stream.pipeThrough(new JsonToSseTransformStream())
+                    )
+                );
+            } else {
+                return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
+            }
+        } catch (error) {
+            console.error(error);
+            return new Response(JSON.stringify({ code: 'INTERNAL_SERVER_ERROR', cause: error }), {
+                status: 500,
+            });
         }
     } catch (error) {
-        return handleApiError(error);
+        console.error(error);
+        return new Response(JSON.stringify({ code: 'INTERNAL_SERVER_ERROR', cause: error }), {
+            status: 500,
+        });
     }
 }
 
@@ -610,41 +233,36 @@ export async function GET(request: Request) {
     try {
         const session = await getSession();
         if (!session) {
-            throw new UnauthorizedError('Access denied');
+            throw new Error('Access denied');
         }
 
         const streamContext = getStreamContext();
         const resumeRequestedAt = new Date();
 
         if (!streamContext) {
-            throw new DatabaseError('Stream context not found');
+            throw new Error('Stream context not found');
         }
 
         const { searchParams } = new URL(request.url);
         const chatId = searchParams.get('chatId');
 
         if (!chatId) {
-            throw new ValidationError('Chat ID is required');
+            throw new Error('Chat ID is required');
         }
 
-        // Single query to verify chat ownership and get streams
-        const chatWithStreams = await safeDbOperation(
-            () =>
-                db
-                    .select({
-                        chatId: dbChat.id,
-                        streamId: dbStream.id,
-                        streamCreatedAt: dbStream.createdAt,
-                    })
-                    .from(dbChat)
-                    .leftJoin(dbStream, eq(dbChat.id, dbStream.chatId))
-                    .where(and(eq(dbChat.id, chatId), eq(dbChat.userId, session.userId)))
-                    .orderBy(asc(dbStream.createdAt)),
-            'Failed to retrieve chat and streams'
-        );
+        const chatWithStreams = await db
+            .select({
+                chatId: dbChat.id,
+                streamId: dbStream.id,
+                streamCreatedAt: dbStream.createdAt,
+            })
+            .from(dbChat)
+            .leftJoin(dbStream, eq(dbChat.id, dbStream.chatId))
+            .where(and(eq(dbChat.id, chatId), eq(dbChat.userId, session.userId)))
+            .orderBy(asc(dbStream.createdAt));
 
         if (!chatWithStreams.length || !chatWithStreams[0].chatId) {
-            throw new NotFoundError('Chat not found');
+            throw new Error('Chat not found');
         }
 
         const streamIds = chatWithStreams
@@ -652,19 +270,21 @@ export async function GET(request: Request) {
             .map((item) => item.streamId!);
 
         if (!streamIds.length) {
-            throw new NotFoundError('No streams found');
+            throw new Error('No streams found');
         }
 
         const recentStreamId = streamIds[streamIds.length - 1];
         if (!recentStreamId) {
-            throw new NotFoundError('No recent stream found');
+            throw new Error('No recent stream found');
         }
 
-        const emptyDataStream = createDataStream({
+        const emptyDataStream = createUIMessageStream({
             execute: () => {},
         });
 
-        const stream = await streamContext.resumableStream(recentStreamId, () => emptyDataStream);
+        const stream = await streamContext.resumableStream(recentStreamId, () =>
+            emptyDataStream.pipeThrough(new JsonToSseTransformStream())
+        );
         if (!stream) {
             const messages = await db
                 .select()
@@ -685,21 +305,27 @@ export async function GET(request: Request) {
                 return new Response(emptyDataStream, { status: 200 });
             }
 
-            const restoredStream = createDataStream({
-                execute: (buffer) => {
-                    buffer.writeData({
-                        type: 'append-message',
-                        message: JSON.stringify(mostRecentMessage),
+            const restoredStream = createUIMessageStream({
+                execute: ({ writer }) => {
+                    writer.write({
+                        type: 'data-appendMessage',
+                        data: JSON.stringify(mostRecentMessage),
+                        transient: true,
                     });
                 },
             });
 
-            return new Response(restoredStream, { status: 200 });
+            return new Response(restoredStream.pipeThrough(new JsonToSseTransformStream()), {
+                status: 200,
+            });
         }
 
-        return new Response(stream, { status: 200 });
+        return new Response(stream.pipeThrough(new JsonToSseTransformStream()), { status: 200 });
     } catch (error) {
-        return handleApiError(error);
+        console.error(error);
+        return new Response(JSON.stringify({ code: 'INTERNAL_SERVER_ERROR', cause: error }), {
+            status: 500,
+        });
     }
 }
 
@@ -717,28 +343,17 @@ const getStreamContext = () => {
     return globalStreamContext;
 };
 
-const extractDomain = (url: string): string => {
-    const urlPattern = /^https?:\/\/([^/?#]+)(?:[/?#]|$)/i;
-    return url.match(urlPattern)?.[1] || url;
-};
+const textPartSchema = z.object({
+    type: z.enum(['text']),
+    text: z.string().min(1).max(2000),
+});
 
-const deduplicateByDomainAndUrl = <T extends { url: string }>(items: T[]): T[] => {
-    const seenDomains = new Set<string>();
-    const seenUrls = new Set<string>();
-
-    return items.filter((item) => {
-        const domain = extractDomain(item.url);
-        const isNewUrl = !seenUrls.has(item.url);
-        const isNewDomain = !seenDomains.has(domain);
-
-        if (isNewUrl && isNewDomain) {
-            seenUrls.add(item.url);
-            seenDomains.add(domain);
-            return true;
-        }
-        return false;
-    });
-};
+const filePartSchema = z.object({
+    type: z.enum(['file']),
+    mediaType: z.enum(['image/jpeg', 'image/png']),
+    name: z.string().min(1).max(100),
+    url: z.string().url(),
+});
 
 const requestBodySchema = z.object({
     id: z.string().uuid(),
@@ -750,25 +365,8 @@ const requestBodySchema = z.object({
     }),
     message: z.object({
         id: z.string().uuid(),
-        createdAt: z.coerce.date(),
         role: z.enum(['user']),
-        content: z.string().min(1).max(2000),
-        parts: z.array(
-            z.object({
-                text: z.string().min(1).max(2000),
-                type: z.enum(['text']),
-            })
-        ),
-        experimental_attachments: z
-            .array(
-                z.object({
-                    url: z.string().url(),
-                    name: z.string().min(1).max(2000),
-                    contentType: z.enum(['image/png', 'image/jpeg', 'image/jpg']),
-                })
-            )
-            .optional()
-            .default([]),
+        parts: z.array(z.union([textPartSchema, filePartSchema])),
     }),
     webSearch: z.boolean().optional(),
     knowledgeSearch: z.boolean().optional(),

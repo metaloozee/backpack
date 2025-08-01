@@ -1,13 +1,9 @@
 import { tavily } from '@tavily/core';
 import { env } from '@/lib/env.mjs';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { generateText } from 'ai';
 import { google } from '@ai-sdk/google';
 
-const tvly = tavily({ apiKey: env.TAVILY_API_KEY });
-const openrouter = createOpenRouter({
-    apiKey: env.OPENROUTER_API_KEY,
-});
+const tvly = tavily({ apiKey: env.TAVILY_API_KEY as string });
 
 export async function extractRawText({ url }: { url: string }) {
     const response = await tvly.extract([url], { extractDepth: 'advanced' });

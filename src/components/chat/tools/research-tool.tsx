@@ -5,15 +5,14 @@ import { Loader } from '@/components/ui/loader';
 
 interface ResearchToolProps {
     toolCallId: string;
-    state: 'call' | 'result';
-    args?: {
+    input?: {
         query?: string;
     };
-    result?: any;
+    output?: any;
 }
 
-export function ResearchTool({ toolCallId, state, args, result }: ResearchToolProps) {
-    if (state === 'result') {
+export function ResearchTool({ toolCallId, input, output }: ResearchToolProps) {
+    if (output) {
         return (
             <div className="flex items-center gap-2 rounded-md px-4 py-2 bg-muted border max-w-fit text-xs">
                 <BrainIcon className="size-3" />
@@ -25,8 +24,8 @@ export function ResearchTool({ toolCallId, state, args, result }: ResearchToolPr
     return (
         <div className="flex items-center gap-2 rounded-md px-4 py-2 bg-muted border max-w-fit text-xs">
             <Loader size="sm" />
-            {args?.query
-                ? `Generating Research Plan for: "${args.query}"`
+            {input?.query
+                ? `Generating Research Plan for: "${input.query}"`
                 : 'Generating Research Plan...'}
         </div>
     );

@@ -5,24 +5,23 @@ import { Loader } from '@/components/ui/loader';
 
 interface SaveToMemoriesToolProps {
     toolCallId: string;
-    state: 'call' | 'result';
-    args?: {
+    input?: {
         contents?: string[];
     };
-    result?: {
+    output?: {
         saved_count: number;
         total_count: number;
     };
 }
 
-export function SaveToMemoriesTool({ toolCallId, state, args, result }: SaveToMemoriesToolProps) {
-    if (state === 'result') {
+export function SaveToMemoriesTool({ toolCallId, input, output }: SaveToMemoriesToolProps) {
+    if (output) {
         return (
             <div className="w-full border bg-neutral-900 rounded-md px-4 py-3">
                 <div className="w-full flex flex-row items-center gap-2">
                     <Brain className="size-3" />
                     <span className="text-xs truncate">
-                        {`Saved ${result?.saved_count ?? 0} of ${result?.total_count ?? 0} memories`}
+                        {`Saved ${output?.saved_count ?? 0} of ${output?.total_count ?? 0} memories`}
                     </span>
                 </div>
             </div>
