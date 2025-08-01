@@ -27,17 +27,16 @@ type SearchGroup = {
 
 interface WebSearchToolProps {
     toolCallId: string;
-    state: 'call' | 'result';
-    args?: {
+    input?: {
         web_search_queries?: string[];
     };
-    result?: {
+    output?: {
         searches?: SearchGroup[];
     };
 }
 
-export function WebSearchTool({ toolCallId, state, args, result }: WebSearchToolProps) {
-    if (state === 'result') {
+export function WebSearchTool({ toolCallId, input, output }: WebSearchToolProps) {
+    if (output) {
         return (
             <Accordion className="w-full">
                 <AccordionItem value={toolCallId} className="border bg-neutral-900 rounded-md px-4">
@@ -49,7 +48,7 @@ export function WebSearchTool({ toolCallId, state, args, result }: WebSearchTool
                         <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
                     </AccordionTrigger>
                     <AccordionContent className="space-y-1">
-                        {result?.searches?.map((searchGroup: SearchGroup, index: number) => (
+                        {output?.searches?.map((searchGroup: SearchGroup, index: number) => (
                             <Disclosure
                                 key={`${toolCallId}-${index}`}
                                 className="w-full flex flex-col gap-2"
@@ -118,7 +117,7 @@ export function WebSearchTool({ toolCallId, state, args, result }: WebSearchTool
                     <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
                 </AccordionTrigger>
                 <AccordionContent className="space-y-1">
-                    {args?.web_search_queries?.map((query, index) => (
+                    {input?.web_search_queries?.map((query: string, index: number) => (
                         <Disclosure
                             key={`${toolCallId}-${index}`}
                             className="w-full flex flex-col gap-2"

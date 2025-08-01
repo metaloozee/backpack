@@ -11,19 +11,18 @@ type ExtractResult = {
 
 interface ExtractToolProps {
     toolCallId: string;
-    state: 'call' | 'result';
-    args?: {
+    input?: {
         urls?: string[];
     };
-    result?: ExtractResult[];
+    output?: ExtractResult[];
 }
 
-export function ExtractTool({ toolCallId, state, args, result }: ExtractToolProps) {
-    if (state === 'result') {
+export function ExtractTool({ toolCallId, input, output }: ExtractToolProps) {
+    if (output) {
         return (
             <div className="w-full border bg-neutral-900 rounded-md px-4 py-3">
                 <div className="w-full flex flex-col gap-2">
-                    {result?.map((result: ExtractResult, index: number) => (
+                    {output?.map((result: ExtractResult, index: number) => (
                         <div key={`${toolCallId}-${index}`} className="w-full flex flex-col gap-2">
                             <div className="w-full flex shrink-0 flex-row justify-start items-center gap-2">
                                 <PickaxeIcon className="size-3" />
@@ -39,7 +38,7 @@ export function ExtractTool({ toolCallId, state, args, result }: ExtractToolProp
     return (
         <div className="w-full border bg-neutral-900 rounded-md px-4 py-3">
             <div className="w-full flex flex-col gap-2">
-                {args?.urls?.map((url, index) => (
+                {input?.urls?.map((url: string, index: number) => (
                     <div key={`${toolCallId}-${index}`} className="w-full flex flex-col gap-2">
                         <div className="w-full flex shrink-0 flex-row justify-start items-center gap-2">
                             <Loader size="sm" />

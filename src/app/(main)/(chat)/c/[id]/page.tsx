@@ -1,11 +1,10 @@
-import { convertToUIMessages } from '@/lib/ai/convertToUIMessages';
+import { convertToUIMessages } from '@/lib/ai/utils';
 import { db } from '@/lib/db';
 import { chat as DBChat, message as DBMessage, spaces as DBSpace } from '@/lib/db/schema/app';
 import { and, eq, asc } from 'drizzle-orm';
 import { Chat as PreviewChat } from '@/components/chat';
-import { notFound, redirect } from 'next/navigation';
-import { api } from '@/lib/auth/server';
-import { cookies, headers } from 'next/headers';
+import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { models } from '@/lib/ai/models';
 import { getSession, getUser } from '@/lib/auth/utils';
 

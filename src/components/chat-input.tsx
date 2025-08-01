@@ -8,23 +8,17 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { CoreMessage, Message, Attachment, UIMessage } from 'ai';
+import { ModelMessage, UIMessage } from 'ai';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
     CornerDownLeftIcon,
     StopCircleIcon,
-    GlobeIcon,
-    BookCopyIcon,
-    GraduationCapIcon,
     TelescopeIcon,
-    CpuIcon,
-    ArrowDown,
-    ChevronDownIcon,
-    PlusIcon,
     PaperclipIcon,
     WrenchIcon,
     AudioLinesIcon,
+    ChevronDownIcon,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -37,7 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
 
-import { useLocalStorage, useWindowSize } from 'usehooks-ts';
+import { useLocalStorage } from 'usehooks-ts';
 import {
     layoutTransition,
     staggerVariants,
@@ -45,7 +39,7 @@ import {
     slideVariants,
     transitions,
 } from '@/lib/animations';
-import { UseChatHelpers } from '@ai-sdk/react';
+import { UseChatHelpers, UseCompletionHelpers } from '@ai-sdk/react';
 import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 import { ModelSelector } from '@/components/model-selector';
 import { toast } from 'sonner';
@@ -57,19 +51,19 @@ import { Loader } from './ui/loader';
 import Link from 'next/link';
 import { useMutation } from '@tanstack/react-query';
 import { useTRPC } from '@/lib/trpc/trpc';
+import { Attachment, ChatMessage } from '@/lib/ai/types';
 
 interface InputPanelProps {
     chatId: string;
-    input: UseChatHelpers['input'];
-    setInput: UseChatHelpers['setInput'];
-    handleSubmit: UseChatHelpers['handleSubmit'];
-    status: UseChatHelpers['status'];
+    input: string;
+    setInput: Dispatch<SetStateAction<string>>;
+    status: UseChatHelpers<ChatMessage>['status'];
     stop: () => void;
     attachments: Array<Attachment>;
     setAttachments: Dispatch<SetStateAction<Attachment[]>>;
-    messages: Array<UIMessage>;
-    setMessages: UseChatHelpers['setMessages'];
-    append: UseChatHelpers['append'];
+    messages: Array<ChatMessage>;
+    setMessages: UseChatHelpers<ChatMessage>['setMessages'];
+    sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
     tools: ToolsState;
     setTools: Dispatch<SetStateAction<ToolsState>>;
     initialModel?: string;
@@ -104,14 +98,13 @@ function PureInput({
     chatId,
     input,
     setInput,
-    handleSubmit,
     status,
     stop,
     attachments,
     setAttachments,
     messages,
     setMessages,
-    append,
+    sendMessage,
     tools,
     setTools,
     initialModel,
@@ -129,7 +122,6 @@ function PureInput({
     const trpc = useTRPC();
 
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-    const { width } = useWindowSize();
     const inputContainerRef = React.useRef<HTMLDivElement>(null);
     const [inputContainerHeight, setInputContainerHeight] = React.useState(0);
     const [isDragging, setIsDragging] = React.useState(false);
@@ -191,27 +183,32 @@ function PureInput({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
 
-    const submitForm = React.useCallback(
-        (event?: React.FormEvent) => {
-            if (event) {
-                event.preventDefault();
-            }
+    const submitForm = React.useCallback(() => {
+        window.history.replaceState({}, '', `/c/${chatId}`);
 
-            if (!input.trim()) return;
+        if (!input.trim()) return;
 
-            handleSubmit(event, {
-                experimental_attachments: attachments,
-            });
+        sendMessage({
+            role: 'user',
+            parts: [
+                ...attachments.map((attachment) => ({
+                    type: 'file' as const,
+                    url: attachment.url,
+                    name: attachment.name,
+                    mediaType: attachment.contentType,
+                })),
+                {
+                    type: 'text',
+                    text: input,
+                },
+            ],
+        });
 
-            resetHeight();
-
-            setAttachments([]);
-            if (width && width > 768) {
-                textareaRef.current?.focus();
-            }
-        },
-        [input, handleSubmit, resetHeight, width, attachments, setAttachments]
-    );
+        setAttachments([]);
+        resetHeight();
+        setInput('');
+        textareaRef.current?.focus();
+    }, [input, setInput, attachments, sendMessage, setAttachments, setLocalStorageInput, chatId]);
 
     const uploadFile = async (file: File) => {
         const formData = new FormData();
@@ -783,7 +780,7 @@ const AttachmentButton = React.memo(
         status,
     }: {
         fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
-        status: UseChatHelpers['status'];
+        status: UseChatHelpers<ChatMessage>['status'];
     }) => (
         <Button
             variant={'ghost'}

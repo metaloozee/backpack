@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { UseChatHelpers } from '@ai-sdk/react';
-import { UIMessage } from 'ai';
 import { AnimatePresence, motion } from 'motion/react';
 import { PreviewAttachment } from '@/components/chat/preview-attachment';
 import { Markdown } from '@/components/chat/markdown';
@@ -35,6 +34,7 @@ import { MessageActions } from '@/components/chat/message-actions';
 import { MessageEditor } from './message-editor';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { transitions } from '@/lib/animations';
+import { Attachment, ChatMessage } from '@/lib/ai/types';
 
 interface MessageReasoningProps {
     isLoading: boolean;
@@ -106,14 +106,14 @@ export function Message({
     message,
     isLoading,
     setMessages,
-    reload,
+    regenerate,
     requiresScrollPadding,
 }: {
     chatId: string;
-    message: UIMessage;
+    message: ChatMessage;
     isLoading: boolean;
-    setMessages: UseChatHelpers['setMessages'];
-    reload: UseChatHelpers['reload'];
+    setMessages: UseChatHelpers<ChatMessage>['setMessages'];
+    regenerate: UseChatHelpers<ChatMessage>['regenerate'];
     requiresScrollPadding: boolean;
 }) {
     const [mode, setMode] = useState<'view' | 'edit'>('view');
@@ -148,20 +148,25 @@ export function Message({
                             'min-h-96': message.role === 'assistant' && requiresScrollPadding,
                         })}
                     >
-                        {message.experimental_attachments &&
-                            message.experimental_attachments.length > 0 && (
-                                <div
-                                    data-testid={`message-attachments`}
-                                    className="flex flex-row justify-end gap-2"
-                                >
-                                    {message.experimental_attachments.map((attachment) => (
+                        {message.parts.filter((part) => part.type === 'file').length > 0 && (
+                            <div
+                                data-testid={`message-attachments`}
+                                className="flex flex-row justify-end gap-2"
+                            >
+                                {message.parts
+                                    .filter((part) => part.type === 'file')
+                                    .map((attachment) => (
                                         <PreviewAttachment
                                             key={attachment.url}
-                                            attachment={attachment}
+                                            attachment={{
+                                                name: attachment.filename ?? 'file',
+                                                contentType: attachment.mediaType,
+                                                url: attachment.url,
+                                            }}
                                         />
                                     ))}
-                                </div>
-                            )}
+                            </div>
+                        )}
 
                         {message.parts?.map((part, index) => {
                             const { type } = part;
@@ -172,11 +177,10 @@ export function Message({
                                     <MessageReasoning
                                         key={key}
                                         isLoading={isLoading}
-                                        reasoning={part.reasoning}
+                                        reasoning={part.text}
                                     />
                                 );
                             }
-
                             if (type === 'text') {
                                 return (
                                     <div key={key} className="w-full">
@@ -336,9 +340,9 @@ export function Message({
                                                                     'text-primary bg-neutral-900 border px-4 py-1 overflow-auto':
                                                                         message.role === 'user',
                                                                 },
-                                                                message.experimental_attachments &&
-                                                                    message.experimental_attachments
-                                                                        .length > 0
+                                                                message.parts.filter(
+                                                                    (part) => part.type === 'file'
+                                                                ).length > 0
                                                                     ? 'rounded-b-xl rounded-tl-xl'
                                                                     : 'rounded-t-xl rounded-bl-xl'
                                                             )}
@@ -364,7 +368,7 @@ export function Message({
                                                         message={message}
                                                         setMode={setMode}
                                                         setMessages={setMessages}
-                                                        reload={reload}
+                                                        regenerate={regenerate}
                                                     />
                                                 </motion.div>
                                             )}
@@ -373,102 +377,71 @@ export function Message({
                                 );
                             }
 
-                            if (type === 'tool-invocation') {
-                                const { toolInvocation } = part;
-                                const { toolName, toolCallId, state } = toolInvocation;
+                            if (type === 'tool-extract') {
+                                const { toolCallId, state } = part;
 
-                                if (state === 'call') {
-                                    const { args } = toolInvocation;
-
-                                    return (
-                                        <div key={toolCallId}>
-                                            {toolName === 'research' ? (
-                                                <ResearchTool
-                                                    toolCallId={toolCallId}
-                                                    state={state}
-                                                    args={args}
-                                                />
-                                            ) : toolName === 'web_search' ? (
-                                                <WebSearchTool
-                                                    toolCallId={toolCallId}
-                                                    state={state}
-                                                    args={args}
-                                                />
-                                            ) : toolName === 'knowledge_search' ? (
-                                                <KnowledgeSearchTool
-                                                    toolCallId={toolCallId}
-                                                    state={state}
-                                                    args={args}
-                                                />
-                                            ) : toolName === 'academic_search' ? (
-                                                <AcademicSearchTool
-                                                    toolCallId={toolCallId}
-                                                    state={state}
-                                                    args={args}
-                                                />
-                                            ) : toolName === 'extract' ? (
-                                                <ExtractTool
-                                                    toolCallId={toolCallId}
-                                                    state={state}
-                                                    args={args}
-                                                />
-                                            ) : toolName === 'save_to_memories' ? (
-                                                <SaveToMemoriesTool
-                                                    toolCallId={toolCallId}
-                                                    state={state}
-                                                    args={args}
-                                                />
-                                            ) : null}
-                                        </div>
-                                    );
+                                if (state == 'input-available') {
+                                    const { input } = part;
+                                    <ExtractTool toolCallId={toolCallId} input={input} />;
                                 }
 
-                                if (state === 'result') {
-                                    const { result } = toolInvocation;
+                                if (state == 'output-available') {
+                                    const { output } = part;
+                                    <ExtractTool
+                                        toolCallId={toolCallId}
+                                        output={output?.map((item) => ({
+                                            ...item,
+                                            images: undefined,
+                                        }))}
+                                    />;
+                                }
+                            }
 
-                                    return (
-                                        <div key={toolCallId}>
-                                            {toolName === 'research' ? (
-                                                <ResearchTool
-                                                    toolCallId={toolCallId}
-                                                    state={state}
-                                                    result={result}
-                                                />
-                                            ) : toolName === 'web_search' ? (
-                                                <WebSearchTool
-                                                    toolCallId={toolCallId}
-                                                    state={state}
-                                                    result={result}
-                                                />
-                                            ) : toolName === 'knowledge_search' ? (
-                                                <KnowledgeSearchTool
-                                                    toolCallId={toolCallId}
-                                                    state={state}
-                                                    result={result}
-                                                />
-                                            ) : toolName === 'academic_search' ? (
-                                                <AcademicSearchTool
-                                                    toolCallId={toolCallId}
-                                                    state={state}
-                                                    result={result}
-                                                />
-                                            ) : toolName === 'extract' ? (
-                                                <ExtractTool
-                                                    toolCallId={toolCallId}
-                                                    state={state}
-                                                    result={result}
-                                                />
-                                            ) : toolName === 'save_to_memories' ? (
-                                                <SaveToMemoriesTool
-                                                    toolCallId={toolCallId}
-                                                    state={state}
-                                                    result={result}
-                                                />
-                                            ) : (
-                                                <pre>{JSON.stringify(result, null, 2)}</pre>
-                                            )}
-                                        </div>
-                                    );
+                            if (type == 'tool-web_search') {
+                                const { toolCallId, state } = part;
+
+                                if (state == 'input-available') {
+                                    const { input } = part;
+                                    <WebSearchTool toolCallId={toolCallId} input={input} />;
+                                }
+
+                                if (state == 'output-available') {
+                                    const { output } = part;
+                                    <WebSearchTool toolCallId={toolCallId} output={output} />;
+                                }
+                            }
+
+                            if (type == 'tool-knowledge_search') {
+                                const { toolCallId, state } = part;
+
+                                if (state == 'input-available') {
+                                    const { input } = part;
+                                    <KnowledgeSearchTool toolCallId={toolCallId} input={input} />;
+                                }
+
+                                if (state == 'output-available') {
+                                    const { output } = part;
+                                    <KnowledgeSearchTool
+                                        toolCallId={toolCallId}
+                                        output={output || undefined}
+                                    />;
+                                }
+                            }
+
+                            if (type == 'tool-academic_search') {
+                                const { toolCallId, state } = part;
+
+                                if (state == 'input-available') {
+                                    const { input } = part;
+                                    <AcademicSearchTool toolCallId={toolCallId} input={input} />;
+                                }
+
+                                if (state == 'output-available') {
+                                    const { output } = part;
+                                    <AcademicSearchTool
+                                        toolCallId={toolCallId}
+                                        output={output?.results}
+                                    />;
                                 }
                             }
                         })}

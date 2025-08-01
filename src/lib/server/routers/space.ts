@@ -10,14 +10,7 @@ import { z } from 'zod';
 import { zfd } from 'zod-form-data';
 import { Mistral } from '@mistralai/mistralai';
 import { env } from '@/lib/env.mjs';
-import {
-    handleTRPCError,
-    safeDbOperation,
-    safeExternalOperation,
-    ForbiddenError,
-    NotFoundError,
-    DatabaseError,
-} from '@/lib/utils/error-handling';
+
 import { sanitizeUserInput, sanitizeFileName } from '@/lib/utils/sanitization';
 
 const mistral = new Mistral({ apiKey: env.MISTRAL_API_KEY });
@@ -44,31 +37,36 @@ export const spaceRouter = router({
         .mutation(async ({ ctx, input }) => {
             try {
                 if (input.userId !== ctx.session.user.id) {
-                    throw new ForbiddenError('Access denied');
+                    throw new TRPCError({
+                        code: 'FORBIDDEN',
+                        message: 'Access denied',
+                    });
                 }
 
-                const [space] = await safeDbOperation(
-                    () =>
-                        db
-                            .insert(spaces)
-                            .values({
-                                userId: ctx.session.user.id,
-                                spaceTitle: input.spaceTitle,
-                                spaceDescription: input.spaceDescription,
-                                spaceCustomInstructions: input.spaceCustomInstructions,
-                                createdAt: new Date(),
-                            })
-                            .returning({ id: spaces.id }),
-                    'Failed to create space'
-                );
+                const [space] = await db
+                    .insert(spaces)
+                    .values({
+                        userId: ctx.session.user.id,
+                        spaceTitle: input.spaceTitle,
+                        spaceDescription: input.spaceDescription,
+                        spaceCustomInstructions: input.spaceCustomInstructions,
+                        createdAt: new Date(),
+                    })
+                    .returning({ id: spaces.id });
 
                 if (!space.id) {
-                    throw new DatabaseError('Failed to create space');
+                    throw new TRPCError({
+                        code: 'INTERNAL_SERVER_ERROR',
+                        message: 'Failed to create space',
+                    });
                 }
 
                 return { id: space.id };
             } catch (error) {
-                throw handleTRPCError(error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: 'Failed to create space',
+                });
             }
         }),
     savePdf: protectedProcedure.input(z.instanceof(FormData)).mutation(async ({ ctx, input }) => {

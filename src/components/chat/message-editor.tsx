@@ -3,24 +3,26 @@
 import { useRef, useState, useEffect, Dispatch, SetStateAction } from 'react';
 import { useTRPC } from '@/lib/trpc/trpc';
 
-import { ChatRequestOptions, Message } from 'ai';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { UseChatHelpers } from '@ai-sdk/react';
 import { useMutation } from '@tanstack/react-query';
 import { CornerDownLeftIcon, XIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { ChatMessage } from '@/lib/ai/types';
 
 export type MessageEditorProps = {
-    message: Message;
+    message: ChatMessage;
     setMode: Dispatch<SetStateAction<'edit' | 'view'>>;
-    setMessages: UseChatHelpers['setMessages'];
-    reload: UseChatHelpers['reload'];
+    setMessages: UseChatHelpers<ChatMessage>['setMessages'];
+    regenerate: UseChatHelpers<ChatMessage>['regenerate'];
 };
 
-export function MessageEditor({ message, setMode, setMessages, reload }: MessageEditorProps) {
+export function MessageEditor({ message, setMode, setMessages, regenerate }: MessageEditorProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [draftContent, setDraftContent] = useState(message.content);
+    const [draftContent, setDraftContent] = useState(
+        message.parts.map((part) => (part.type === 'text' ? part.text : '')).join('')
+    );
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const trpc = useTRPC();
@@ -71,7 +73,7 @@ export function MessageEditor({ message, setMode, setMessages, reload }: Message
             });
 
             setMode('view');
-            reload();
+            regenerate();
         } catch (error) {
             toast.error('Failed to save message');
             console.error(error);
@@ -81,7 +83,9 @@ export function MessageEditor({ message, setMode, setMessages, reload }: Message
     };
 
     const handleCancel = () => {
-        setDraftContent(message.content);
+        setDraftContent(
+            message.parts.map((part) => (part.type === 'text' ? part.text : '')).join('')
+        );
         setMode('view');
     };
 
@@ -124,7 +128,10 @@ export function MessageEditor({ message, setMode, setMessages, reload }: Message
                         disabled={
                             isSubmitting ||
                             !draftContent.trim() ||
-                            draftContent.trim() === message.content
+                            draftContent.trim() ===
+                                message.parts
+                                    .map((part) => (part.type === 'text' ? part.text : ''))
+                                    .join('')
                         }
                     >
                         <CornerDownLeftIcon className="size-3" />

@@ -1,21 +1,27 @@
 import * as React from 'react';
 
-import { UIMessage } from 'ai';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { Loader } from '@/components/ui/loader';
 import { UseChatHelpers } from '@ai-sdk/react';
 import { useMessages } from '@/lib/hooks/use-messages';
 import { Message as PreviewMessage } from '@/components/chat/message';
+import { ChatMessage } from '@/lib/ai/types';
 
 interface ChatMessageProps {
     chatId: string;
-    status: UseChatHelpers['status'];
-    messages: Array<UIMessage>;
-    setMessages: UseChatHelpers['setMessages'];
-    reload: UseChatHelpers['reload'];
+    status: UseChatHelpers<ChatMessage>['status'];
+    messages: Array<ChatMessage>;
+    setMessages: UseChatHelpers<ChatMessage>['setMessages'];
+    regenerate: UseChatHelpers<ChatMessage>['regenerate'];
 }
 
-export function ChatMessages({ chatId, status, messages, setMessages, reload }: ChatMessageProps) {
+export function ChatMessages({
+    chatId,
+    status,
+    messages,
+    setMessages,
+    regenerate,
+}: ChatMessageProps) {
     const {
         containerRef: messageContainerRef,
         endRef: messagesEndRef,
@@ -47,7 +53,7 @@ export function ChatMessages({ chatId, status, messages, setMessages, reload }: 
                     message={message}
                     isLoading={status === 'streaming' && messages.length - 1 === index}
                     setMessages={setMessages}
-                    reload={reload}
+                    regenerate={regenerate}
                     requiresScrollPadding={hasSentMessage && index === messages.length - 1}
                 />
             ))}

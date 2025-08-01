@@ -3,7 +3,7 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { groq } from '@ai-sdk/groq';
 import { openai } from '@ai-sdk/openai';
 import { openrouter } from '@openrouter/ai-sdk-provider';
-import { type LanguageModelV1 } from 'ai';
+import { type LanguageModel } from 'ai';
 import { mistral } from '@ai-sdk/mistral';
 
 export type ModelProperties = 'reasoning' | 'fast' | 'quality' | 'experimental' | 'stealth';
@@ -12,7 +12,7 @@ export type Model = {
     name: string;
     id: string;
     provider: string;
-    instance: LanguageModelV1;
+    instance: LanguageModel;
     properties?: ModelProperties[];
 };
 

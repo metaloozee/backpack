@@ -15,21 +15,11 @@ import Link from 'next/link';
 
 interface AcademicSearchToolProps {
     toolCallId: string;
-    state: 'call' | 'result';
-    args?: {
-        academic_search_queries?: string[];
-    };
-    result?: {
-        searches?: Array<{
-            query: string;
-            results: Array<{
-                title: string;
-                authors?: string;
-                url: string;
-                abstract?: string;
-            }>;
-        }>;
-    };
+    input?: any;
+    output?: Array<{
+        query: string;
+        results: Array<Paper>;
+    }>;
 }
 
 type Paper = {
@@ -39,8 +29,8 @@ type Paper = {
     abstract?: string;
 };
 
-export function AcademicSearchTool({ toolCallId, state, args, result }: AcademicSearchToolProps) {
-    if (state === 'result') {
+export function AcademicSearchTool({ toolCallId, input, output }: AcademicSearchToolProps) {
+    if (output) {
         return (
             <Accordion className="w-full">
                 <AccordionItem value={toolCallId} className="border bg-neutral-900 rounded-md px-4">
@@ -52,8 +42,8 @@ export function AcademicSearchTool({ toolCallId, state, args, result }: Academic
                         <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
                     </AccordionTrigger>
                     <AccordionContent className="space-y-1">
-                        {result?.searches && result.searches.length > 0
-                            ? result.searches.map((searchGroup, index) => (
+                        {output && output.length > 0
+                            ? output.map((searchGroup, index) => (
                                   <Disclosure
                                       key={`${toolCallId}-${index}`}
                                       className="w-full flex flex-col gap-2"
@@ -62,7 +52,7 @@ export function AcademicSearchTool({ toolCallId, state, args, result }: Academic
                                           <div className="w-full flex flex-row justify-between">
                                               <span className="flex items-center gap-2 truncate text-xs text-neutral-400">
                                                   <SearchIcon className="size-3" />
-                                                  {args?.academic_search_queries?.[index] ??
+                                                  {input?.academic_search_queries?.[index] ??
                                                       searchGroup.query}
                                               </span>
                                           </div>
@@ -102,26 +92,28 @@ export function AcademicSearchTool({ toolCallId, state, args, result }: Academic
                                       </DisclosureContent>
                                   </Disclosure>
                               ))
-                            : args?.academic_search_queries?.map((query, index) => (
-                                  <Disclosure
-                                      key={`${toolCallId}-placeholder-${index}`}
-                                      className="w-full flex flex-col gap-2"
-                                  >
-                                      <DisclosureTrigger className="w-full">
-                                          <div className="w-full flex flex-row justify-between">
-                                              <span className="flex items-center gap-2 truncate text-xs text-neutral-400">
-                                                  <GraduationCapIcon className="size-3" />
-                                                  {query}
-                                              </span>
-                                          </div>
-                                      </DisclosureTrigger>
-                                      <DisclosureContent>
-                                          <div className="bg-card rounded-md p-4 text-center text-muted-foreground">
-                                              Academic search functionality is coming soon.
-                                          </div>
-                                      </DisclosureContent>
-                                  </Disclosure>
-                              ))}
+                            : input?.academic_search_queries?.map(
+                                  (query: string, index: number) => (
+                                      <Disclosure
+                                          key={`${toolCallId}-placeholder-${index}`}
+                                          className="w-full flex flex-col gap-2"
+                                      >
+                                          <DisclosureTrigger className="w-full">
+                                              <div className="w-full flex flex-row justify-between">
+                                                  <span className="flex items-center gap-2 truncate text-xs text-neutral-400">
+                                                      <GraduationCapIcon className="size-3" />
+                                                      {query}
+                                                  </span>
+                                              </div>
+                                          </DisclosureTrigger>
+                                          <DisclosureContent>
+                                              <div className="bg-card rounded-md p-4 text-center text-muted-foreground">
+                                                  Academic search functionality is coming soon.
+                                              </div>
+                                          </DisclosureContent>
+                                      </Disclosure>
+                                  )
+                              )}
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
@@ -139,7 +131,7 @@ export function AcademicSearchTool({ toolCallId, state, args, result }: Academic
                     <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
                 </AccordionTrigger>
                 <AccordionContent className="space-y-1">
-                    {args?.academic_search_queries?.map((query, index) => (
+                    {input?.academic_search_queries?.map((query: string, index: number) => (
                         <Disclosure
                             key={`${toolCallId}-${index}`}
                             className="w-full flex flex-col gap-2"
