@@ -6,5 +6,6 @@
 - [ ] Daytona
 - [x] Memories
 - [x] Voice Input
+- [x] AI SDK 5
 
 - [ ] Research Agent
