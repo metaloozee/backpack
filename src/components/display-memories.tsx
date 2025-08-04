@@ -67,7 +67,9 @@ export function DisplayMemories() {
                 return <p className="text-xs">CONTENT</p>;
             },
             cell: ({ row }) => (
-                <div className="max-w-[500px] truncate">{row.getValue('content')}</div>
+                <div className="max-w-[400px] break-words whitespace-pre-line">
+                    {row.getValue('content')}
+                </div>
             ),
             enableGlobalFilter: true,
         },
