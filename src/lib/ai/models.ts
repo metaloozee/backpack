@@ -2,17 +2,23 @@ import { google } from '@ai-sdk/google';
 import { anthropic } from '@ai-sdk/anthropic';
 import { groq } from '@ai-sdk/groq';
 import { openai } from '@ai-sdk/openai';
-import { openrouter } from '@openrouter/ai-sdk-provider';
+import { openrouter, type OpenRouterLanguageModel } from '@openrouter/ai-sdk-provider';
 import { type LanguageModel } from 'ai';
 import { mistral } from '@ai-sdk/mistral';
 
-export type ModelProperties = 'reasoning' | 'fast' | 'quality' | 'experimental' | 'stealth';
+export type ModelProperties =
+    | 'reasoning'
+    | 'fast'
+    | 'quality'
+    | 'experimental'
+    | 'stealth'
+    | 'lightweight';
 
 export type Model = {
     name: string;
     id: string;
     provider: string;
-    instance: LanguageModel;
+    instance: LanguageModel | OpenRouterLanguageModel;
     properties?: ModelProperties[];
 };
 
@@ -88,6 +94,13 @@ export const models: Model[] = [
         provider: 'groq',
         instance: groq('moonshotai/kimi-k2-instruct'),
         properties: ['quality', 'fast'],
+    },
+    {
+        name: 'GPT OSS 120B',
+        id: 'openai/gpt-oss-120b',
+        provider: 'groq',
+        instance: groq('openai/gpt-oss-120b'),
+        properties: ['quality', 'fast', 'experimental', 'reasoning'],
     },
 ];
 

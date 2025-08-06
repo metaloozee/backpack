@@ -53,6 +53,7 @@ const providerNames = {
     openai: 'OpenAI',
     openrouter: 'OpenRouter',
     mistral: 'Mistral',
+    cerebras: 'Cerebras',
 };
 
 const getProviderIcon = (provider: string) => {
