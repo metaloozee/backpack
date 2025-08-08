@@ -8,7 +8,7 @@ import { cookies } from 'next/headers';
 import { models } from '@/lib/ai/models';
 import { getSession, getUser } from '@/lib/auth/utils';
 
-export default async function ChatPage({ params }: { params: { id: string } }) {
+export default async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await getSession();
     const user = await getUser();
 
