@@ -6,6 +6,7 @@ import {
     stepCountIs,
     createUIMessageStream,
     JsonToSseTransformStream,
+    LanguageModel,
 } from 'ai';
 import { generateUUID, getTrailingMessageId, convertToUIMessages } from '@/lib/ai/utils';
 
@@ -128,16 +129,10 @@ export async function POST(req: Request) {
             const streamId = generateUUID();
             await db.insert(dbStream).values({ id: streamId, chatId: id, createdAt: new Date() });
 
-            const activeTools: ('web_search' | 'knowledge_search' | 'academic_search')[] = [];
-
-            if (webSearch) activeTools.push('web_search');
-            if (knowledgeSearch) activeTools.push('knowledge_search');
-            if (academicSearch) activeTools.push('academic_search');
-
             const stream = createUIMessageStream({
                 execute: ({ writer: dataStream }) => {
                     const result = streamText({
-                        model: model.instance,
+                        model: model.instance as LanguageModel,
                         providerOptions: model.properties?.includes('reasoning')
                             ? {
                                   anthropic: {
@@ -229,107 +224,7 @@ export async function POST(req: Request) {
     }
 }
 
-export async function GET(request: Request) {
-    try {
-        const session = await getSession();
-        if (!session) {
-            throw new Error('Access denied');
-        }
-
-        const streamContext = getStreamContext();
-        const resumeRequestedAt = new Date();
-
-        if (!streamContext) {
-            throw new Error('Stream context not found');
-        }
-
-        const { searchParams } = new URL(request.url);
-        const chatId = searchParams.get('chatId');
-
-        if (!chatId) {
-            throw new Error('Chat ID is required');
-        }
-
-        const chatWithStreams = await db
-            .select({
-                chatId: dbChat.id,
-                streamId: dbStream.id,
-                streamCreatedAt: dbStream.createdAt,
-            })
-            .from(dbChat)
-            .leftJoin(dbStream, eq(dbChat.id, dbStream.chatId))
-            .where(and(eq(dbChat.id, chatId), eq(dbChat.userId, session.userId)))
-            .orderBy(asc(dbStream.createdAt));
-
-        if (!chatWithStreams.length || !chatWithStreams[0].chatId) {
-            throw new Error('Chat not found');
-        }
-
-        const streamIds = chatWithStreams
-            .filter((item) => item.streamId)
-            .map((item) => item.streamId!);
-
-        if (!streamIds.length) {
-            throw new Error('No streams found');
-        }
-
-        const recentStreamId = streamIds[streamIds.length - 1];
-        if (!recentStreamId) {
-            throw new Error('No recent stream found');
-        }
-
-        const emptyDataStream = createUIMessageStream({
-            execute: () => {},
-        });
-
-        const stream = await streamContext.resumableStream(recentStreamId, () =>
-            emptyDataStream.pipeThrough(new JsonToSseTransformStream())
-        );
-        if (!stream) {
-            const messages = await db
-                .select()
-                .from(dbMessage)
-                .where(eq(dbMessage.chatId, chatId))
-                .orderBy(asc(dbMessage.createdAt));
-            const mostRecentMessage = messages[messages.length - 1];
-            if (!mostRecentMessage) {
-                return new Response(emptyDataStream, { status: 200 });
-            }
-
-            if (mostRecentMessage.role !== 'assistant') {
-                return new Response(emptyDataStream, { status: 200 });
-            }
-
-            const messageCreatedAt = new Date(mostRecentMessage.createdAt);
-            if (differenceInSeconds(resumeRequestedAt, messageCreatedAt) > 15) {
-                return new Response(emptyDataStream, { status: 200 });
-            }
-
-            const restoredStream = createUIMessageStream({
-                execute: ({ writer }) => {
-                    writer.write({
-                        type: 'data-appendMessage',
-                        data: JSON.stringify(mostRecentMessage),
-                        transient: true,
-                    });
-                },
-            });
-
-            return new Response(restoredStream.pipeThrough(new JsonToSseTransformStream()), {
-                status: 200,
-            });
-        }
-
-        return new Response(stream.pipeThrough(new JsonToSseTransformStream()), { status: 200 });
-    } catch (error) {
-        console.error(error);
-        return new Response(JSON.stringify({ code: 'INTERNAL_SERVER_ERROR', cause: error }), {
-            status: 500,
-        });
-    }
-}
-
-const getStreamContext = () => {
+export const getStreamContext = () => {
     if (!globalStreamContext) {
         try {
             globalStreamContext = createResumableStreamContext({

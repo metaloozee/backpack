@@ -14,7 +14,7 @@ import { models } from '@/lib/ai/models';
 import { getSession } from '@/lib/auth/utils';
 import { randomUUID } from 'crypto';
 
-export default async function SpacePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function SpacePage({ params }: { params: { id: string } }) {
     const session = await getSession();
 
     const user = await getUser();

@@ -7,6 +7,6 @@
 - [x] Memories
 - [x] Voice Input
 - [x] AI SDK 5
-- [ ] fix: Resumable Streams
+- [x] fix: Resumable Streams
 
 - [ ] Research Agent
