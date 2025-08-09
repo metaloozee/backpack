@@ -8,17 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { ModelMessage, UIMessage } from 'ai';
-import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
     CornerDownLeftIcon,
     StopCircleIcon,
     TelescopeIcon,
     PaperclipIcon,
-    WrenchIcon,
-    AudioLinesIcon,
     ChevronDownIcon,
+    CheckIcon,
+    MicIcon,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -353,10 +351,24 @@ function PureInput({
         [setTools]
     );
 
-    const handleModeChange = React.useCallback((value: string) => {
-        const newMode = value as ModeType;
-        setSelectedMode(newMode);
-    }, []);
+    const handleModeChange = React.useCallback(
+        (value: string) => {
+            const newMode = value as ModeType;
+            setSelectedMode(newMode);
+
+            if (newMode === 'ask') {
+                setSelectedAgent(null);
+            }
+
+            if (newMode === 'agent') {
+                const clearedTools = Object.fromEntries(
+                    defaultTools.map((tool) => [tool.id, false])
+                ) as ToolsState;
+                setTools(clearedTools);
+            }
+        },
+        [setTools]
+    );
 
     const isLoading = status === 'submitted' || status === 'streaming';
 
@@ -580,164 +592,210 @@ function PureInput({
                     />
 
                     <div className="w-full flex justify-between items-center">
-                        <div className="flex flex-row justify-start items-center gap-2">
+                        <motion.div
+                            layout
+                            className="flex flex-row justify-start items-center gap-2"
+                            transition={transitions.smooth}
+                        >
                             <motion.div
                                 variants={slideVariants.up}
                                 initial="hidden"
                                 animate="visible"
                                 transition={transitions.smooth}
                             >
-                                <Tabs
-                                    value={selectedMode}
-                                    onValueChange={handleModeChange}
-                                    className="w-auto"
-                                >
-                                    <TabsList className="grid w-full grid-cols-2 bg-neutral-950">
+                                <Tabs value={selectedMode} onValueChange={handleModeChange}>
+                                    <TabsList className="bg-neutral-950">
                                         {modeTypes.map((mode) => (
                                             <TabsTrigger
                                                 key={mode.value}
                                                 value={mode.value}
-                                                disabled={mode.disabled || messages.length !== 0}
+                                                disabled={mode.disabled}
                                                 className="text-xs"
                                             >
-                                                {mode.label}
+                                                <div className="inline-flex items-center gap-1">
+                                                    <span>{mode.label}</span>
+                                                    {(mode.value === 'ask' ||
+                                                        mode.value === 'agent') && (
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <span
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                    }}
+                                                                    onMouseDown={(event) => {
+                                                                        event.stopPropagation();
+                                                                    }}
+                                                                    onPointerDown={(event) => {
+                                                                        event.stopPropagation();
+                                                                    }}
+                                                                    className={cn(
+                                                                        'ml-1 inline-flex items-center justify-center rounded-sm ',
+                                                                        'hover:bg-neutral-900'
+                                                                    )}
+                                                                    role="button"
+                                                                    tabIndex={0}
+                                                                >
+                                                                    <ChevronDownIcon className="size-3" />
+                                                                </span>
+                                                            </DropdownMenuTrigger>
+                                                            {mode.value === 'ask' ? (
+                                                                <DropdownMenuContent
+                                                                    align="start"
+                                                                    className="w-xs bg-neutral-950 border-neutral-800"
+                                                                >
+                                                                    {defaultTools.map((tool) => {
+                                                                        const IconComponent =
+                                                                            tool.icon;
+                                                                        return (
+                                                                            <DropdownMenuItem
+                                                                                key={tool.id}
+                                                                                className="flex items-center justify-between p-3 cursor-pointer hover:bg-neutral-800"
+                                                                                onClick={(e) =>
+                                                                                    e.preventDefault()
+                                                                                }
+                                                                            >
+                                                                                <div className="flex items-center gap-3">
+                                                                                    <IconComponent className="size-4 text-muted-foreground" />
+                                                                                    <div className="flex flex-col">
+                                                                                        <span className="text-sm font-medium">
+                                                                                            {
+                                                                                                tool.name
+                                                                                            }
+                                                                                        </span>
+                                                                                        <span className="text-xs text-muted-foreground">
+                                                                                            {
+                                                                                                tool.description
+                                                                                            }
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <Switch
+                                                                                    checked={
+                                                                                        tools[
+                                                                                            tool.id
+                                                                                        ] || false
+                                                                                    }
+                                                                                    onCheckedChange={(
+                                                                                        checked
+                                                                                    ) =>
+                                                                                        updateTool(
+                                                                                            tool.id,
+                                                                                            checked
+                                                                                        )
+                                                                                    }
+                                                                                />
+                                                                            </DropdownMenuItem>
+                                                                        );
+                                                                    })}
+                                                                </DropdownMenuContent>
+                                                            ) : (
+                                                                <DropdownMenuContent
+                                                                    align="start"
+                                                                    className="w-xs bg-neutral-950 border-neutral-800"
+                                                                >
+                                                                    {Object.entries(
+                                                                        modeTypes.find(
+                                                                            (m) =>
+                                                                                m.value === 'agent'
+                                                                        )?.agents || {}
+                                                                    ).map(([agentKey, enabled]) => {
+                                                                        if (!enabled) return null;
+                                                                        const isSelected =
+                                                                            selectedAgent ===
+                                                                            agentKey;
+                                                                        return (
+                                                                            <DropdownMenuItem
+                                                                                key={agentKey}
+                                                                                className="flex items-center justify-between p-3 cursor-pointer hover:bg-neutral-800"
+                                                                                onSelect={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    setSelectedAgent(
+                                                                                        (prev) =>
+                                                                                            prev ===
+                                                                                            agentKey
+                                                                                                ? null
+                                                                                                : agentKey
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                <div className="flex items-center gap-3">
+                                                                                    <TelescopeIcon className="size-4 text-muted-foreground" />
+                                                                                    <div className="flex flex-col">
+                                                                                        <span className="text-sm font-medium">
+                                                                                            {agentKey
+                                                                                                .charAt(
+                                                                                                    0
+                                                                                                )
+                                                                                                .toUpperCase() +
+                                                                                                agentKey.slice(
+                                                                                                    1
+                                                                                                )}
+                                                                                        </span>
+                                                                                        <span className="text-xs text-muted-foreground">
+                                                                                            {agentKey
+                                                                                                .charAt(
+                                                                                                    0
+                                                                                                )
+                                                                                                .toUpperCase() +
+                                                                                                agentKey.slice(
+                                                                                                    1
+                                                                                                )}{' '}
+                                                                                            agent
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </div>
+                                                                                {isSelected && (
+                                                                                    <CheckIcon className="size-4 text-primary" />
+                                                                                )}
+                                                                            </DropdownMenuItem>
+                                                                        );
+                                                                    })}
+                                                                </DropdownMenuContent>
+                                                            )}
+                                                        </DropdownMenu>
+                                                    )}
+                                                </div>
                                             </TabsTrigger>
                                         ))}
                                     </TabsList>
                                 </Tabs>
                             </motion.div>
-                            <AnimatePresence mode="wait">
-                                {(() => {
-                                    const mode = modeTypes.find(
-                                        (m) => m.value === selectedMode && !m.disabled
-                                    );
-
-                                    if (mode && 'tools' in mode && mode.tools) {
-                                        return (
-                                            <motion.div
-                                                variants={staggerVariants.item}
-                                                initial="hidden"
-                                                animate="visible"
-                                                exit="exit"
-                                                key="tools-dropdown"
-                                            >
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            size={'sm'}
-                                                            className="text-xs"
-                                                        >
-                                                            <WrenchIcon className="size-3.5 mr-1" />
-                                                            Tools
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent
-                                                        align="start"
-                                                        className="w-xs bg-neutral-950 border-neutral-800"
-                                                    >
-                                                        {defaultTools.map((tool) => {
-                                                            const IconComponent = tool.icon;
-                                                            return (
-                                                                <DropdownMenuItem
-                                                                    key={tool.id}
-                                                                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-neutral-800"
-                                                                    onClick={(e) =>
-                                                                        e.preventDefault()
-                                                                    }
-                                                                >
-                                                                    <div className="flex items-center gap-3">
-                                                                        <IconComponent className="size-4 text-muted-foreground" />
-                                                                        <div className="flex flex-col">
-                                                                            <span className="text-sm font-medium">
-                                                                                {tool.name}
-                                                                            </span>
-                                                                            <span className="text-xs text-muted-foreground">
-                                                                                {tool.description}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-                                                                    <Switch
-                                                                        checked={
-                                                                            tools[tool.id] || false
-                                                                        }
-                                                                        onCheckedChange={(
-                                                                            checked
-                                                                        ) =>
-                                                                            updateTool(
-                                                                                tool.id,
-                                                                                checked
-                                                                            )
-                                                                        }
-                                                                    />
-                                                                </DropdownMenuItem>
-                                                            );
-                                                        })}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </motion.div>
-                                        );
-                                    }
-
-                                    if (mode && 'agents' in mode && mode.agents) {
-                                        return Object.entries(mode.agents).map(
-                                            ([agentKey, enabled]) => {
-                                                if (!enabled) return null;
-
+                            <div className="relative flex gap-2 w-[200px]">
+                                <AnimatePresence initial={false}>
+                                    {selectedMode === 'ask' &&
+                                        defaultTools
+                                            .filter((t) => tools[t.id])
+                                            .map((t) => {
+                                                const Icon = t.icon;
                                                 return (
                                                     <motion.div
-                                                        variants={staggerVariants.item}
-                                                        key={`${agentKey}-agent-card`}
+                                                        key={`selected-tool-${t.id}`}
+                                                        initial={{ opacity: 0, scale: 0.9, y: 2 }}
+                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                        exit={{ opacity: 0, scale: 0.9, y: -2 }}
+                                                        transition={transitions.smooth}
                                                         layout
-                                                        layoutId={`${agentKey}-agent-section`}
                                                     >
                                                         <TooltipProvider>
                                                             <Tooltip>
                                                                 <TooltipTrigger asChild>
-                                                                    <div
-                                                                        onClick={() =>
-                                                                            setSelectedAgent(
-                                                                                selectedAgent ===
-                                                                                    agentKey
-                                                                                    ? null
-                                                                                    : agentKey
-                                                                            )
-                                                                        }
-                                                                        className={cn(
-                                                                            'cursor-pointer text-muted-foreground px-4 py-2 rounded-md border-2 flex justify-center items-center gap-2 text-xs transition-all duration-200',
-                                                                            selectedAgent ===
-                                                                                agentKey
-                                                                                ? 'bg-neutral-800 border-neutral-800 text-primary'
-                                                                                : 'bg-neutral-900 border-neutral-800'
-                                                                        )}
-                                                                    >
-                                                                        {agentKey ===
-                                                                            'research' && (
-                                                                            <TelescopeIcon className="size-3.5" />
-                                                                        )}
+                                                                    <div className="size-6 rounded-full border border-neutral-800 bg-neutral-900 flex items-center justify-center">
+                                                                        <Icon className="size-3.5 text-muted-foreground" />
                                                                     </div>
                                                                 </TooltipTrigger>
                                                                 <TooltipContent>
-                                                                    <p>
-                                                                        {agentKey
-                                                                            .charAt(0)
-                                                                            .toUpperCase() +
-                                                                            agentKey.slice(1)}{' '}
-                                                                        Agent
-                                                                    </p>
+                                                                    <span className="text-xs">
+                                                                        {t.name}
+                                                                    </span>
                                                                 </TooltipContent>
                                                             </Tooltip>
                                                         </TooltipProvider>
                                                     </motion.div>
                                                 );
-                                            }
-                                        );
-                                    }
-
-                                    return null;
-                                })()}
-                            </AnimatePresence>
-                        </div>
+                                            })}
+                                </AnimatePresence>
+                            </div>
+                        </motion.div>
 
                         <motion.div
                             variants={fadeVariants}
@@ -887,7 +945,7 @@ const SendButton = React.memo(
                                     exit={{ opacity: 0, y: -5 }}
                                     transition={transitions.smooth}
                                 >
-                                    <AudioLinesIcon />
+                                    <MicIcon />
                                 </motion.div>
                             )}
                         </AnimatePresence>
