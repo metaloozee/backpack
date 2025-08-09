@@ -1,4 +1,4 @@
-- [x] fix: Authentication
+- [ ] fix: Authentication
 - [ ] Zustand for state management
 - [ ] Image Display
 - [ ] Space Settings

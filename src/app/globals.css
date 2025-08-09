@@ -79,6 +79,12 @@
     --sidebar-ring: oklch(0.709 0.01 56.259);
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
+    /* Scrollbar theme variables */
+    --scrollbar-size: 8px;
+    /* Subtle thumb that adapts to theme via color-mix */
+    --scrollbar-thumb: color-mix(in oklch, var(--foreground) 12%, var(--background) 88%);
+    --scrollbar-thumb-hover: color-mix(in oklch, var(--foreground) 20%, var(--background) 80%);
+    --scrollbar-track: transparent;
 }
 
 .dark {
@@ -122,5 +128,27 @@
     }
     body {
         @apply bg-background text-foreground;
+    }
+    /* Firefox */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
+    /* Chromium/WebKit */
+    *::-webkit-scrollbar {
+        width: var(--scrollbar-size);
+        height: var(--scrollbar-size);
+    }
+    *::-webkit-scrollbar-track {
+        background: var(--scrollbar-track);
+    }
+    *::-webkit-scrollbar-thumb {
+        background-color: var(--scrollbar-thumb);
+        border-radius: 9999px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+        background-color: var(--scrollbar-thumb-hover);
     }
 }

@@ -27,7 +27,9 @@ const components: Partial<Components> = {
         );
     },
     pre: ({ children }) => (
-        <div className="not-prose my-4 text-sm overflow-hidden max-w-full">{children}</div>
+        <div className="not-prose my-4 text-sm max-w-2xl overflow-visible whitespace-pre-wrap break-words">
+            {children}
+        </div>
     ),
     ol: ({ node, children, ...props }) => {
         return (
