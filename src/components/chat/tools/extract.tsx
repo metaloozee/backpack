@@ -5,7 +5,7 @@ import { Loader } from '@/components/ui/loader';
 
 type ExtractResult = {
     url: string;
-    images: string[] | undefined;
+    images?: string[];
     content: string;
 };
 

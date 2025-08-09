@@ -403,10 +403,33 @@ export function Message({
                                         <ExtractTool
                                             key={key}
                                             toolCallId={toolCallId}
-                                            output={output?.map((item) => ({
-                                                ...item,
-                                                images: undefined,
-                                            }))}
+                                            output={output?.results}
+                                        />
+                                    );
+                                }
+                            }
+
+                            if (type === 'tool-save_to_memories') {
+                                const { toolCallId, state } = part;
+
+                                if (state === 'input-available') {
+                                    const { input } = part;
+                                    return (
+                                        <SaveToMemoriesTool
+                                            key={key}
+                                            toolCallId={toolCallId}
+                                            input={input}
+                                        />
+                                    );
+                                }
+
+                                if (state === 'output-available') {
+                                    const { output } = part;
+                                    return (
+                                        <SaveToMemoriesTool
+                                            key={key}
+                                            toolCallId={toolCallId}
+                                            output={output}
                                         />
                                     );
                                 }

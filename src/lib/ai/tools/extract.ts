@@ -48,9 +48,11 @@ export const extractTool = ({
                 output: JSON.stringify({ results }),
             });
 
-            return results.map((res) => ({
-                url: res.url,
-                content: res.content,
-            }));
+            return {
+                results: results.map((res) => ({
+                    url: res.url,
+                    content: res.content,
+                })),
+            };
         },
     });
