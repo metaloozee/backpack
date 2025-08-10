@@ -1,6 +1,6 @@
 'use client';
 
-import { GlobeIcon, SearchIcon } from 'lucide-react';
+import { LandmarkIcon, SearchIcon } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -25,25 +25,25 @@ type SearchGroup = {
     results: SearchResult[];
 };
 
-interface WebSearchToolProps {
+interface FinanceSearchToolProps {
     toolCallId: string;
     input?: {
-        web_search_queries?: string[];
+        search_queries?: string[];
     };
     output?: {
         searches?: SearchGroup[];
     };
 }
 
-export function WebSearchTool({ toolCallId, input, output }: WebSearchToolProps) {
+export function FinanceSearchTool({ toolCallId, input, output }: FinanceSearchToolProps) {
     if (output) {
         return (
             <Accordion className="w-full">
                 <AccordionItem value={toolCallId} className="border bg-neutral-900 rounded-md px-4">
                     <AccordionTrigger className="gap-2 h-10 text-xs w-full flex items-center justify-between">
                         <span className="flex items-center gap-2 truncate">
-                            <GlobeIcon className="size-3" />
-                            {'Web Search'}
+                            <LandmarkIcon className="size-3" />
+                            {'Finance Search'}
                         </span>
                         <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
                     </AccordionTrigger>
@@ -112,12 +112,12 @@ export function WebSearchTool({ toolCallId, input, output }: WebSearchToolProps)
                 <AccordionTrigger className="gap-2 h-10 text-xs w-full flex items-center justify-between">
                     <span className="flex items-center gap-2 truncate">
                         <Loader size="sm" />
-                        {'Web Search'}
+                        {'News Search'}
                     </span>
                     <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
                 </AccordionTrigger>
                 <AccordionContent className="space-y-1">
-                    {input?.web_search_queries?.map((query: string, index: number) => (
+                    {input?.search_queries?.map((query: string, index: number) => (
                         <Disclosure
                             key={`${toolCallId}-${index}`}
                             className="w-full flex flex-col gap-2"

@@ -70,6 +70,8 @@ export function Chat({
                             webSearch: tools.webSearch,
                             knowledgeSearch: tools.knowledgeSearch,
                             academicSearch: tools.academicSearch,
+                            financeSearch: tools.financeSearch,
+                            newsSearch: tools.newsSearch,
                             ...body,
                         },
                     };

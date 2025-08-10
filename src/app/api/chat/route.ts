@@ -37,6 +37,8 @@ import { extractTool } from '@/lib/ai/tools/extract';
 import { webSearchTool } from '@/lib/ai/tools/webSearch';
 import { knowledgeSearchTool } from '@/lib/ai/tools/knowledgeSearch';
 import { academicSearchTool } from '@/lib/ai/tools/academicSearch';
+import { financeSearchTool } from '@/lib/ai/tools/financeSearch';
+import { newsSearchTool } from '@/lib/ai/tools/newsSearch';
 
 export const maxDuration = 60;
 
@@ -60,7 +62,17 @@ export async function POST(req: Request) {
                 webSearch,
                 knowledgeSearch,
                 academicSearch,
+                financeSearch,
+                newsSearch,
             } = requestBody;
+
+            console.log({
+                webSearch,
+                knowledgeSearch,
+                academicSearch,
+                financeSearch,
+                newsSearch,
+            });
 
             if (!message || !id) {
                 throw new Error('Message and ID are required');
@@ -155,6 +167,8 @@ export async function POST(req: Request) {
                                 webSearch: webSearch ?? false,
                                 knowledgeSearch: knowledgeSearch ?? false,
                                 academicSearch: academicSearch ?? false,
+                                financeSearch: financeSearch ?? false,
+                                newsSearch: newsSearch ?? false,
                             },
                             env: {
                                 ...requestEnv,
@@ -176,6 +190,8 @@ export async function POST(req: Request) {
                                 env: requestEnv,
                             }),
                             academic_search: academicSearchTool({ session, dataStream }),
+                            finance_search: financeSearchTool({ dataStream }),
+                            news_search: newsSearchTool({ dataStream }),
                         },
                     });
 
@@ -266,4 +282,6 @@ const requestBodySchema = z.object({
     webSearch: z.boolean().optional(),
     knowledgeSearch: z.boolean().optional(),
     academicSearch: z.boolean().optional(),
+    financeSearch: z.boolean().optional(),
+    newsSearch: z.boolean().optional(),
 });

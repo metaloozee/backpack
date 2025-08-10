@@ -6,6 +6,8 @@ export const AskModePrompt = ({
         webSearch: boolean;
         knowledgeSearch: boolean;
         academicSearch: boolean;
+        financeSearch: boolean;
+        newsSearch: boolean;
     };
     env: {
         inSpace: boolean;
@@ -32,6 +34,8 @@ You are currently operating in \`ask\` mode with the following tools enabled:
 ${tools.webSearch && '* webSearch - Retrieves current information from the web.'}
 ${tools.knowledgeSearch && '* knowledgeSearch - Queries the internal knowledge database for proprietary or stored information.'}
 ${tools.academicSearch && '* academicSearch - Finds peer-reviewed papers, conference proceedings, and other scholarly resources.'}
+${tools.financeSearch && '* financeSearch - Retrieves financial information and data.'}
+${tools.newsSearch && '* newsSearch - Retrieves the latest news articles and updates.'}
 
 You MUST execute each enabled tool above in the stated sequence for every query. 
 If no tools are available, rely on the conversation's context to answer the question.

@@ -1,55 +1,26 @@
-import { tool, type UIMessageStreamWriter } from 'ai';
-import { z } from 'zod';
 import { tavily } from '@tavily/core';
+import { extractDomain, deduplicateByDomainAndUrl } from '@/lib/ai/tools/webSearch';
+import { type UIMessageStreamWriter, tool } from 'ai';
+import z from 'zod';
 import { env } from '@/lib/env.mjs';
-import { Session } from 'better-auth';
 
 const tvly = tavily({ apiKey: env.TAVILY_API_KEY });
 
-export const extractDomain = (url: string): string => {
-    const urlPattern = /^https?:\/\/([^/?#]+)(?:[/?#]|$)/i;
-    return url.match(urlPattern)?.[1] || url;
-};
-
-export const deduplicateByDomainAndUrl = <T extends { url: string }>(items: T[]): T[] => {
-    const seenDomains = new Set<string>();
-    const seenUrls = new Set<string>();
-
-    return items.filter((item) => {
-        const domain = extractDomain(item.url);
-        const isNewUrl = !seenUrls.has(item.url);
-        const isNewDomain = !seenDomains.has(domain);
-
-        if (isNewUrl && isNewDomain) {
-            seenUrls.add(item.url);
-            seenDomains.add(domain);
-            return true;
-        }
-        return false;
-    });
-};
-
-export const webSearchTool = ({
-    session,
-    dataStream,
-}: {
-    session: Session;
-    dataStream: UIMessageStreamWriter;
-}) =>
+export const financeSearchTool = ({ dataStream }: { dataStream: UIMessageStreamWriter }) =>
     tool({
-        description: 'Performs a search over the internet for current data.',
+        description: 'Performs a search over financial news outlets for a particular topic.',
         inputSchema: z.object({
-            web_search_queries: z.array(z.string()).max(5),
+            search_queries: z.array(z.string()).max(2),
         }),
-        execute: async ({ web_search_queries: queries }, { toolCallId }) => {
+        execute: async ({ search_queries: queries }, { toolCallId }) => {
             dataStream.write({
                 type: 'tool-input-available',
                 toolCallId,
-                toolName: 'web_search',
-                input: JSON.stringify({ web_search_queries: queries }),
+                toolName: 'finance_search',
+                input: JSON.stringify({ search_queries: queries }),
             });
 
-            console.log('Web Search Queries: ', queries);
+            console.log('Finance Search Queries: ', queries);
 
             type SearchGroup = {
                 query: string;
@@ -62,11 +33,12 @@ export const webSearchTool = ({
                 }[];
             };
 
-            const searchPromises: Promise<SearchGroup>[] = queries.map(async (query: string) => {
+            const searchPromises: Promise<SearchGroup>[] = queries.map(async (query) => {
                 const res = await tvly.search(query, {
                     maxResults: 5,
                     searchDepth: 'advanced',
                     includeAnswer: true,
+                    topic: 'finance',
                 });
 
                 return {

@@ -1,4 +1,10 @@
-import { GlobeIcon, BookCopyIcon, GraduationCapIcon } from 'lucide-react';
+import {
+    GlobeIcon,
+    BookCopyIcon,
+    GraduationCapIcon,
+    LandmarkIcon,
+    NewspaperIcon,
+} from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
 export type Tool = {
@@ -19,7 +25,7 @@ export const defaultTools: Tool[] = [
         name: 'Web Search',
         description: 'Search the web for real-time information',
         icon: GlobeIcon,
-        enabled: true,
+        enabled: false,
     },
     {
         id: 'knowledgeSearch',
@@ -33,6 +39,20 @@ export const defaultTools: Tool[] = [
         name: 'Academic Search',
         description: 'Search academic papers and research',
         icon: GraduationCapIcon,
+        enabled: false,
+    },
+    {
+        id: 'financeSearch',
+        name: 'Finance Search',
+        description: 'Search financial data and information',
+        icon: LandmarkIcon,
+        enabled: false,
+    },
+    {
+        id: 'newsSearch',
+        name: 'News Search',
+        description: 'Search the latest news articles and updates',
+        icon: NewspaperIcon,
         enabled: false,
     },
 ];
