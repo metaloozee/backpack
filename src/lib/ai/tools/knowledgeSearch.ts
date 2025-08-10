@@ -22,10 +22,6 @@ export const knowledgeSearchTool = ({
             knowledge_search_keywords: z.array(z.string()).max(5),
         }),
         execute: async ({ knowledge_search_keywords: keywords }, { toolCallId }) => {
-            if (!env.inSpace) {
-                return null;
-            }
-
             dataStream.write({
                 type: 'tool-input-available',
                 toolCallId,
@@ -59,7 +55,7 @@ export const knowledgeSearchTool = ({
                         .where(
                             and(
                                 eq(knowledge.userId, session.userId),
-                                eq(knowledge.spaceId, env.spaceId!),
+                                env.inSpace ? eq(knowledge.spaceId, env.spaceId!) : sql`true`,
                                 gt(similarity, 0.5)
                             )
                         )

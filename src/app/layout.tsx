@@ -9,6 +9,7 @@ import { Toaster } from '@/components/ui/sonner';
 import TrpcProvider from '@/lib/trpc/client';
 import { DataStreamProvider } from '@/components/data-stream-provider';
 // import { ReactScan } from '@/components/react-scan';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 const geistSans = Geist({
     subsets: ['latin'],
@@ -42,6 +43,7 @@ export default function RootLayout({
                             enableSystem
                             disableTransitionOnChange
                         >
+                            <ReactQueryDevtools initialIsOpen={false} />
                             <Toaster richColors position="top-center" />
                             {children}
                         </ThemeProvider>

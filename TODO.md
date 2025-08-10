@@ -8,5 +8,6 @@
 - [x] Voice Input
 - [x] AI SDK 5
 - [x] fix: Resumable Streams
+- [ ] Exa
 
 - [ ] Research Agent

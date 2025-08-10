@@ -111,7 +111,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.1.4",
     "@tanstack/eslint-plugin-query": "^5.81.2",
-    "@tanstack/react-query-devtools": "^5.81.2",
+    "@tanstack/react-query-devtools": "^5.84.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
