@@ -71,7 +71,6 @@ export function Chat({
                             knowledgeSearch: tools.knowledgeSearch,
                             academicSearch: tools.academicSearch,
                             financeSearch: tools.financeSearch,
-                            newsSearch: tools.newsSearch,
                             ...body,
                         },
                     };

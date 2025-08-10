@@ -77,7 +77,6 @@ const modeTypes = [
             knowledgeSearch: true,
             academicSearch: true,
             financeSearch: true,
-            newsSearch: true,
         },
         disabled: false,
     },

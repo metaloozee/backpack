@@ -7,7 +7,6 @@ import type { knowledgeSearchTool } from './tools/knowledgeSearch';
 import type { saveToMemoriesTool } from './tools/saveToMemories';
 import type { webSearchTool } from './tools/webSearch';
 import type { financeSearchTool } from './tools/financeSearch';
-import type { newsSearchTool } from './tools/newsSearch';
 
 export const messageMetadataSchema = z.object({
     createdAt: z.string(),
@@ -21,7 +20,6 @@ type webSearchTool = InferUITool<ReturnType<typeof webSearchTool>>;
 type knowledgeSearchTool = InferUITool<ReturnType<typeof knowledgeSearchTool>>;
 type academicSearchTool = InferUITool<ReturnType<typeof academicSearchTool>>;
 type financeSearchTool = InferUITool<ReturnType<typeof financeSearchTool>>;
-type newsSearchTool = InferUITool<ReturnType<typeof newsSearchTool>>;
 
 export type ChatTools = {
     save_to_memories: saveToMemoriesTool;
@@ -30,7 +28,6 @@ export type ChatTools = {
     knowledge_search: knowledgeSearchTool;
     academic_search: academicSearchTool;
     finance_search: financeSearchTool;
-    news_search: newsSearchTool;
 };
 
 export type CustomUIDataTypes = {

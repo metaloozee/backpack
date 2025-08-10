@@ -112,7 +112,7 @@ export function FinanceSearchTool({ toolCallId, input, output }: FinanceSearchTo
                 <AccordionTrigger className="gap-2 h-10 text-xs w-full flex items-center justify-between">
                     <span className="flex items-center gap-2 truncate">
                         <Loader size="sm" />
-                        {'News Search'}
+                        {'Finance Search'}
                     </span>
                     <ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
                 </AccordionTrigger>

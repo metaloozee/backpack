@@ -1,10 +1,4 @@
-import {
-    GlobeIcon,
-    BookCopyIcon,
-    GraduationCapIcon,
-    LandmarkIcon,
-    NewspaperIcon,
-} from 'lucide-react';
+import { GlobeIcon, BookCopyIcon, GraduationCapIcon, LandmarkIcon } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
 export type Tool = {
@@ -46,13 +40,6 @@ export const defaultTools: Tool[] = [
         name: 'Finance Search',
         description: 'Search financial data and information',
         icon: LandmarkIcon,
-        enabled: false,
-    },
-    {
-        id: 'newsSearch',
-        name: 'News Search',
-        description: 'Search the latest news articles and updates',
-        icon: NewspaperIcon,
         enabled: false,
     },
 ];

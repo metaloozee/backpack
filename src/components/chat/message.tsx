@@ -28,7 +28,6 @@ import {
     ExtractTool,
     SaveToMemoriesTool,
     FinanceSearchTool,
-    NewsSearchTool,
 } from '@/components/chat/tools';
 import { Button } from '@/components/ui/button';
 import { Disclosure, DisclosureTrigger } from '@/components/ui/disclosure';
@@ -533,32 +532,6 @@ export function Message({
                                     const { output } = part;
                                     return (
                                         <FinanceSearchTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            output={output || undefined}
-                                        />
-                                    );
-                                }
-                            }
-
-                            if (type == 'tool-news_search') {
-                                const { toolCallId, state } = part;
-
-                                if (state == 'input-available') {
-                                    const { input } = part;
-                                    return (
-                                        <NewsSearchTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            input={input}
-                                        />
-                                    );
-                                }
-
-                                if (state == 'output-available') {
-                                    const { output } = part;
-                                    return (
-                                        <NewsSearchTool
                                             key={key}
                                             toolCallId={toolCallId}
                                             output={output || undefined}
