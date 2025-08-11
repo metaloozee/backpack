@@ -60,6 +60,10 @@ export const webSearchTool = ({
                     raw_content: string;
                     published_date: string | null;
                 }[];
+                images: {
+                    url: string;
+                    description: string;
+                }[];
             };
 
             const searchPromises: Promise<SearchGroup>[] = queries.map(async (query: string) => {
@@ -67,6 +71,7 @@ export const webSearchTool = ({
                     maxResults: 5,
                     searchDepth: 'advanced',
                     includeAnswer: true,
+                    includeImages: true,
                 });
 
                 return {
@@ -77,6 +82,10 @@ export const webSearchTool = ({
                         content: obj.content,
                         raw_content: obj.raw_content,
                         published_date: obj.published_date,
+                    })),
+                    images: res.images.map((img) => ({
+                        url: img.url || '',
+                        description: img.description || '',
                     })),
                 };
             });

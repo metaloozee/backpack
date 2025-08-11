@@ -1,6 +1,6 @@
 - [ ] fix: Authentication
 - [ ] Zustand for state management
-- [ ] Image Display
+- [x] Image Display
 - [ ] Space Settings
 - [x] Account Settings
 - [ ] Daytona
@@ -8,6 +8,5 @@
 - [x] Voice Input
 - [x] AI SDK 5
 - [x] fix: Resumable Streams
-- [ ] Exa
 
 - [ ] Research Agent
