@@ -17,6 +17,7 @@ import DisplayChats from './chat/display-chats';
 import { useAutoResume } from '@/lib/hooks/use-auto-resume';
 import { type Session } from 'better-auth';
 import { getDefaultToolsState, type ToolsState } from '@/lib/ai/tools';
+import { useLocalStorage } from 'usehooks-ts';
 
 import { useDataStream } from './data-stream-provider';
 import { Attachment, ChatMessage } from '@/lib/ai/types';
@@ -48,7 +49,7 @@ export function Chat({
     const isSpaceChat = pathname.startsWith('/s/');
 
     const [input, setInput] = useState<string>('');
-    const [tools, setTools] = React.useState<ToolsState>(getDefaultToolsState());
+    const [tools, setTools] = useLocalStorage<ToolsState>('tools-state', getDefaultToolsState());
 
     const { setDataStream } = useDataStream();
 

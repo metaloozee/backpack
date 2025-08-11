@@ -44,7 +44,7 @@ import { toast } from 'sonner';
 import { useScrollToBottom } from '@/lib/hooks/use-scroll-to-bottom';
 import { PreviewAttachment } from './chat/preview-attachment';
 import { ScrollArea, ScrollBar } from './ui/scroll-area';
-import { defaultTools, type ToolsState } from '@/lib/ai/tools';
+import { defaultTools, getDefaultToolsState, type ToolsState } from '@/lib/ai/tools';
 import { Loader } from './ui/loader';
 import Link from 'next/link';
 import { useMutation } from '@tanstack/react-query';
@@ -207,7 +207,16 @@ function PureInput({
         resetHeight();
         setInput('');
         textareaRef.current?.focus();
-    }, [input, setInput, attachments, sendMessage, setAttachments, setLocalStorageInput, chatId]);
+    }, [
+        input,
+        setInput,
+        attachments,
+        sendMessage,
+        setAttachments,
+        setLocalStorageInput,
+        chatId,
+        tools,
+    ]);
 
     const uploadFile = async (file: File) => {
         const formData = new FormData();
@@ -344,10 +353,13 @@ function PureInput({
 
     const updateTool = React.useCallback(
         (toolId: string, value: boolean) => {
-            setTools((prev) => ({
-                ...prev,
-                [toolId]: value,
-            }));
+            setTools((prev) => {
+                const newState = {
+                    ...prev,
+                    [toolId]: value,
+                };
+                return newState;
+            });
         },
         [setTools]
     );
@@ -359,6 +371,8 @@ function PureInput({
 
             if (newMode === 'ask') {
                 setSelectedAgent(null);
+                const defaultState = getDefaultToolsState();
+                setTools(defaultState);
             }
 
             if (newMode === 'agent') {
@@ -368,7 +382,7 @@ function PureInput({
                 setTools(clearedTools);
             }
         },
-        [setTools]
+        [setTools, selectedMode]
     );
 
     const isLoading = status === 'submitted' || status === 'streaming';
@@ -711,11 +725,14 @@ function PureInput({
                                                                                 onSelect={(e) => {
                                                                                     e.preventDefault();
                                                                                     setSelectedAgent(
-                                                                                        (prev) =>
-                                                                                            prev ===
-                                                                                            agentKey
-                                                                                                ? null
-                                                                                                : agentKey
+                                                                                        (prev) => {
+                                                                                            const newAgent =
+                                                                                                prev ===
+                                                                                                agentKey
+                                                                                                    ? null
+                                                                                                    : agentKey;
+                                                                                            return newAgent;
+                                                                                        }
                                                                                     );
                                                                                 }}
                                                                             >

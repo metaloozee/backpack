@@ -138,8 +138,25 @@ export async function POST(req: Request) {
             const streamId = generateUUID();
             await db.insert(dbStream).values({ id: streamId, chatId: id, createdAt: new Date() });
 
+            type ActiveTool =
+                | 'save_to_memories'
+                | 'extract'
+                | 'web_search'
+                | 'knowledge_search'
+                | 'academic_search'
+                | 'finance_search';
+
             const stream = createUIMessageStream({
                 execute: ({ writer: dataStream }) => {
+                    const activeTools: ActiveTool[] = [];
+
+                    if (webSearch) activeTools.push('web_search');
+                    if (knowledgeSearch) activeTools.push('knowledge_search');
+                    if (academicSearch) activeTools.push('academic_search');
+                    if (financeSearch) activeTools.push('finance_search');
+
+                    console.log(activeTools);
+
                     const result = streamText({
                         model: model.instance as LanguageModel,
                         providerOptions: model.properties?.includes('reasoning')
@@ -176,6 +193,7 @@ export async function POST(req: Request) {
                         onError: (error) => {
                             console.error(error);
                         },
+                        activeTools,
                         tools: {
                             save_to_memories: saveToMemoriesTool({ session, dataStream }),
                             extract: extractTool({ session, dataStream }),
