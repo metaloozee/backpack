@@ -112,6 +112,7 @@ export function Chat({
 
     return (
         <div
+            suppressHydrationWarning
             className={cn(
                 'flex flex-col w-full h-full',
                 messages.length === 0

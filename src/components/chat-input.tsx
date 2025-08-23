@@ -108,16 +108,7 @@ function PureInput({
     setTools,
     initialModel,
 }: InputPanelProps) {
-    const hour = new Date().getHours();
-    let greeting = '';
-    if (hour >= 5 && hour < 12) {
-        greeting = "Let's rock the AM hustle";
-    } else if (hour >= 12 && hour < 17) {
-        greeting = 'Ready to punch the midday clock?';
-    } else if ((hour >= 17 && hour <= 23) || hour < 5) {
-        greeting = "Let's burn that midnight oil?";
-    }
-
+    const greeting = 'How can I help you today?';
     const trpc = useTRPC();
 
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
