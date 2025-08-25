@@ -1,5 +1,5 @@
 - [x] fix: Authentication
-- [ ] Zustand for state management
+- [x] ~~Zustand for state management~~
 - [x] Image Display
 - [ ] Space Settings
 - [x] Account Settings
@@ -8,6 +8,6 @@
 - [x] Voice Input
 - [x] AI SDK 5
 - [x] fix: Resumable Streams
-- [ ] fix: tool selector
+- [x] fix: tool selector (cookies)
 
 - [ ] Research Agent

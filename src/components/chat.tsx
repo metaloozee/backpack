@@ -17,7 +17,6 @@ import DisplayChats from './chat/display-chats';
 import { useAutoResume } from '@/lib/hooks/use-auto-resume';
 import { type Session } from 'better-auth';
 import { getDefaultToolsState, type ToolsState } from '@/lib/ai/tools';
-import { useLocalStorage } from 'usehooks-ts';
 
 import { useDataStream } from './data-stream-provider';
 import { Attachment, ChatMessage } from '@/lib/ai/types';
@@ -31,6 +30,9 @@ export function Chat({
     autoResume,
     chatsData,
     initialModel,
+    initialTools,
+    initialMode,
+    initialAgent,
 }: {
     id: string;
     env: {
@@ -44,12 +46,15 @@ export function Chat({
     autoResume: boolean;
     chatsData?: Array<ChatType>;
     initialModel?: string;
+    initialTools?: ToolsState;
+    initialMode?: string;
+    initialAgent?: string;
 }) {
     const pathname = usePathname();
     const isSpaceChat = pathname.startsWith('/s/');
 
     const [input, setInput] = useState<string>('');
-    const [tools, setTools] = useLocalStorage<ToolsState>('tools-state', getDefaultToolsState());
+    const [tools, setTools] = useState<ToolsState>(initialTools ?? getDefaultToolsState());
 
     const { setDataStream } = useDataStream();
 
@@ -68,10 +73,6 @@ export function Chat({
                             id,
                             env,
                             message: messages.at(-1),
-                            webSearch: tools.webSearch,
-                            knowledgeSearch: tools.knowledgeSearch,
-                            academicSearch: tools.academicSearch,
-                            financeSearch: tools.financeSearch,
                             ...body,
                         },
                     };
@@ -148,6 +149,8 @@ export function Chat({
                 tools={tools}
                 setTools={setTools}
                 initialModel={initialModel}
+                initialMode={initialMode}
+                initialAgent={initialAgent}
             />
 
             {isSpaceChat && chatsData && chatsData.length > 0 && messages.length === 0 && (

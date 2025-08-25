@@ -13,6 +13,7 @@ import { cookies } from 'next/headers';
 import { models } from '@/lib/ai/models';
 import { getSession } from '@/lib/auth/utils';
 import { randomUUID } from 'crypto';
+import { getDefaultToolsState } from '@/lib/ai/tools';
 
 export default async function SpacePage({ params }: { params: Promise<{ id: string }> }) {
     const session = await getSession();
@@ -23,6 +24,19 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
 
     const cookieStore = await cookies();
     const selectedModel = cookieStore.get('X-Model-Id')?.value ?? models[0].id;
+
+    const toolsStateString = cookieStore.get('X-Tools-State')?.value;
+    let initialTools = getDefaultToolsState();
+    if (toolsStateString) {
+        try {
+            initialTools = JSON.parse(toolsStateString);
+        } catch (error) {
+            console.error('Failed to parse tools state from cookie:', error);
+            initialTools = getDefaultToolsState();
+        }
+    }
+    const initialMode = cookieStore.get('X-Mode-Selection')?.value ?? 'ask';
+    const initialAgent = cookieStore.get('X-Selected-Agent')?.value;
 
     const [spaceData] = await db
         .select()
@@ -60,6 +74,9 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
                     autoResume={true}
                     chatsData={chatData}
                     initialModel={selectedModel}
+                    initialTools={initialTools}
+                    initialMode={initialMode}
+                    initialAgent={initialAgent}
                 />
             </div>
             <div className="mt-20 max-w-lg flex flex-col gap-10 w-full">

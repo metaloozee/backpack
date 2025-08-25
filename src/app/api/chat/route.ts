@@ -54,15 +54,24 @@ export async function POST(req: Request) {
         const requestBody = requestBodySchema.parse(json);
 
         try {
-            const {
-                message,
-                id,
-                env: requestEnv,
-                webSearch,
-                knowledgeSearch,
-                academicSearch,
-                financeSearch,
-            } = requestBody;
+            const { message, id, env: requestEnv } = requestBody;
+
+            const cookieStore = await cookies();
+            const toolsStateString = cookieStore.get('X-Tools-State')?.value;
+            let toolsState: any = {};
+            if (toolsStateString) {
+                try {
+                    toolsState = JSON.parse(toolsStateString);
+                } catch (error) {
+                    console.error('Failed to parse tools state from cookie:', error);
+                    toolsState = {};
+                }
+            }
+
+            const webSearch = toolsState.webSearch ?? false;
+            const knowledgeSearch = toolsState.knowledgeSearch ?? false;
+            const academicSearch = toolsState.academicSearch ?? false;
+            const financeSearch = toolsState.financeSearch ?? false;
 
             console.log({
                 webSearch,
@@ -75,7 +84,6 @@ export async function POST(req: Request) {
                 throw new Error('Message and ID are required');
             }
 
-            const cookieStore = await cookies();
             const modelId = cookieStore.get('X-Model-Id')?.value ?? 'gemini-2.5-flash';
             const model = getModel(modelId);
 
@@ -148,7 +156,7 @@ export async function POST(req: Request) {
 
             const stream = createUIMessageStream({
                 execute: ({ writer: dataStream }) => {
-                    const activeTools: ActiveTool[] = [];
+                    const activeTools: ActiveTool[] = ['extract'];
 
                     if (webSearch) activeTools.push('web_search');
                     if (knowledgeSearch) activeTools.push('knowledge_search');
@@ -292,8 +300,4 @@ const requestBodySchema = z.object({
         role: z.enum(['user']),
         parts: z.array(z.union([textPartSchema, filePartSchema])),
     }),
-    webSearch: z.boolean().optional(),
-    knowledgeSearch: z.boolean().optional(),
-    academicSearch: z.boolean().optional(),
-    financeSearch: z.boolean().optional(),
 });

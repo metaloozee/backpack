@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { models } from '@/lib/ai/models';
 import { getSession, getUser } from '@/lib/auth/utils';
+import { getDefaultToolsState } from '@/lib/ai/tools';
 
 export default async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await getSession();
@@ -16,6 +17,19 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
 
     const cookieStore = await cookies();
     const selectedModel = cookieStore.get('X-Model-Id')?.value ?? models[0].id;
+
+    const toolsStateString = cookieStore.get('X-Tools-State')?.value;
+    let initialTools = getDefaultToolsState();
+    if (toolsStateString) {
+        try {
+            initialTools = JSON.parse(toolsStateString);
+        } catch (error) {
+            console.error('Failed to parse tools state from cookie:', error);
+            initialTools = getDefaultToolsState();
+        }
+    }
+    const initialMode = cookieStore.get('X-Mode-Selection')?.value ?? 'ask';
+    const initialAgent = cookieStore.get('X-Selected-Agent')?.value;
 
     const [chatData] = await db
         .select()
@@ -55,6 +69,9 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
             session={session}
             autoResume={true}
             initialModel={selectedModel}
+            initialTools={initialTools}
+            initialMode={initialMode}
+            initialAgent={initialAgent}
         />
     );
 }

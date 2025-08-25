@@ -149,6 +149,51 @@ export const chatRouter = router({
 
             return { success: true, modelId: input.modelId };
         }),
+    setToolsSelection: protectedProcedure
+        .input(
+            z.object({
+                tools: z.record(z.string(), z.boolean()),
+            })
+        )
+        .mutation(async ({ ctx, input }) => {
+            const cookieStore = await cookies();
+
+            cookieStore.set('X-Tools-State', JSON.stringify(input.tools), {
+                httpOnly: false,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+            });
+
+            return { success: true, tools: input.tools };
+        }),
+    setModeSelection: protectedProcedure
+        .input(
+            z.object({
+                mode: z.string(),
+                selectedAgent: z.string().optional(),
+            })
+        )
+        .mutation(async ({ ctx, input }) => {
+            const cookieStore = await cookies();
+
+            cookieStore.set('X-Mode-Selection', input.mode, {
+                httpOnly: false,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+            });
+
+            if (input.selectedAgent) {
+                cookieStore.set('X-Selected-Agent', input.selectedAgent, {
+                    httpOnly: false,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'lax',
+                });
+            } else {
+                cookieStore.delete('X-Selected-Agent');
+            }
+
+            return { success: true, mode: input.mode, selectedAgent: input.selectedAgent };
+        }),
     transcribe: protectedProcedure
         .input(z.instanceof(FormData))
         .mutation(async ({ ctx, input }) => {
