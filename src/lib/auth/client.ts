@@ -1,4 +1,3 @@
-import { createAuthClient } from 'better-auth/react';
-import { getBaseUrl } from '@/lib/trpc/utils';
+import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({});

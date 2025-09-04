@@ -1,52 +1,51 @@
-import useSWR from 'swr';
-import { useRef, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useRef } from "react";
+import useSWR from "swr";
 
 type ScrollFlag = ScrollBehavior | false;
 
 export function useScrollToBottom() {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const endRef = useRef<HTMLDivElement>(null);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const endRef = useRef<HTMLDivElement>(null);
 
-    const { data: isAtBottom = false, mutate: setIsAtBottom } = useSWR(
-        'messages:is-at-bottom',
-        null,
-        { fallbackData: false }
-    );
+	const { data: isAtBottom = false, mutate: setIsAtBottom } = useSWR("messages:is-at-bottom", null, {
+		fallbackData: false,
+	});
 
-    const { data: scrollBehavior = false, mutate: setScrollBehavior } = useSWR<ScrollFlag>(
-        'messages:should-scroll',
-        null,
-        { fallbackData: false }
-    );
+	const { data: scrollBehavior = false, mutate: setScrollBehavior } = useSWR<ScrollFlag>(
+		"messages:should-scroll",
+		null,
+		{ fallbackData: false }
+	);
 
-    useEffect(() => {
-        if (scrollBehavior) {
-            endRef.current?.scrollIntoView({ behavior: scrollBehavior });
-            setScrollBehavior(false);
-        }
-    }, [setScrollBehavior, scrollBehavior]);
+	useEffect(() => {
+		if (scrollBehavior) {
+			endRef.current?.scrollIntoView({ behavior: scrollBehavior });
+			setScrollBehavior(false);
+		}
+	}, [setScrollBehavior, scrollBehavior]);
 
-    const scrollToBottom = useCallback(
-        (scrollBehavior: ScrollBehavior = 'smooth') => {
-            setScrollBehavior(scrollBehavior);
-        },
-        [setScrollBehavior]
-    );
+	const scrollToBottom = useCallback(
+		// biome-ignore lint/nursery/noShadow: false positive
+		(scrollBehavior: ScrollBehavior = "smooth") => {
+			setScrollBehavior(scrollBehavior);
+		},
+		[setScrollBehavior]
+	);
 
-    function onViewportEnter() {
-        setIsAtBottom(true);
-    }
+	function onViewportEnter() {
+		setIsAtBottom(true);
+	}
 
-    function onViewportLeave() {
-        setIsAtBottom(false);
-    }
+	function onViewportLeave() {
+		setIsAtBottom(false);
+	}
 
-    return {
-        containerRef,
-        endRef,
-        isAtBottom,
-        scrollToBottom,
-        onViewportEnter,
-        onViewportLeave,
-    };
+	return {
+		containerRef,
+		endRef,
+		isAtBottom,
+		scrollToBottom,
+		onViewportEnter,
+		onViewportLeave,
+	};
 }

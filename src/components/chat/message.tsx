@@ -1,559 +1,529 @@
-'use client';
+"use client";
 
-import React, { useState, memo, useEffect } from 'react';
-import { useCopyToClipboard } from 'usehooks-ts';
+import type { UseChatHelpers } from "@ai-sdk/react";
+import equal from "fast-deep-equal";
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon, CopyIcon, PencilLineIcon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { memo, type ReactNode, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useCopyToClipboard } from "usehooks-ts";
+import { Markdown } from "@/components/chat/markdown";
+import { MessageActions } from "@/components/chat/message-actions";
+import { PreviewAttachment } from "@/components/chat/preview-attachment";
+import { AcademicSearchTool } from "@/components/chat/tools/academic-search-tool";
+import { ExtractTool } from "@/components/chat/tools/extract";
+import { FinanceSearchTool } from "@/components/chat/tools/finance-search-tool";
+import { KnowledgeSearchTool } from "@/components/chat/tools/knowledge-search-tool";
+import { SaveToMemoriesTool } from "@/components/chat/tools/save-to-memories";
+import { WebSearchTool } from "@/components/chat/tools/web-search-tool";
+import { Button } from "@/components/ui/button";
+import { Disclosure, DisclosureTrigger } from "@/components/ui/disclosure";
+import { Loader } from "@/components/ui/loader";
+import type { ChatMessage } from "@/lib/ai/types";
+import { sanitizeText } from "@/lib/ai/utils";
+import { transitions } from "@/lib/animations";
+import { cn } from "@/lib/utils";
+import { useDataStream } from "../data-stream-provider";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import { MessageEditor } from "./message-editor";
 
-import equal from 'fast-deep-equal';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+type MessageReasoningProps = {
+	isLoading: boolean;
+	reasoning: string;
+};
 
-import {
-    ChevronDownIcon,
-    ChevronUpIcon,
-    CopyIcon,
-    PencilIcon,
-    PencilLineIcon,
-    CheckIcon,
-} from 'lucide-react';
-import { Loader } from '@/components/ui/loader';
-import { UseChatHelpers } from '@ai-sdk/react';
-import { AnimatePresence, motion } from 'motion/react';
-import { PreviewAttachment } from '@/components/chat/preview-attachment';
-import { Markdown } from '@/components/chat/markdown';
-import {
-    ResearchTool,
-    WebSearchTool,
-    KnowledgeSearchTool,
-    AcademicSearchTool,
-    ExtractTool,
-    SaveToMemoriesTool,
-    FinanceSearchTool,
-} from '@/components/chat/tools';
-import { Button } from '@/components/ui/button';
-import { Disclosure, DisclosureTrigger } from '@/components/ui/disclosure';
-import { MessageActions } from '@/components/chat/message-actions';
-import { MessageEditor } from './message-editor';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { transitions } from '@/lib/animations';
-import { Attachment, ChatMessage } from '@/lib/ai/types';
-import { useDataStream } from '../data-stream-provider';
-import { sanitizeText } from '@/lib/ai/utils';
+// Helper function to render extract tool parts
+// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
+function renderExtractTool(part: any, key: string): ReactNode {
+	const { toolCallId, state } = part;
 
-interface MessageReasoningProps {
-    isLoading: boolean;
-    reasoning: string;
+	if (state === "input-available") {
+		const { input } = part;
+		return <ExtractTool input={input} key={key} toolCallId={toolCallId} />;
+	}
+
+	if (state === "output-available") {
+		const { output } = part;
+		return <ExtractTool key={key} output={output?.results} toolCallId={toolCallId} />;
+	}
+
+	return null;
+}
+
+// Helper function to render save to memories tool parts
+// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
+function renderSaveToMemoriesTool(part: any, key: string): ReactNode {
+	const { toolCallId, state } = part;
+
+	if (state === "input-available") {
+		const { input } = part;
+		return <SaveToMemoriesTool input={input} key={key} toolCallId={toolCallId} />;
+	}
+
+	if (state === "output-available") {
+		const { output } = part;
+		return <SaveToMemoriesTool key={key} output={output} toolCallId={toolCallId} />;
+	}
+
+	return null;
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
+function renderWebSearchTool(part: any, key: string): ReactNode {
+	const { toolCallId, state } = part;
+
+	if (state === "input-available") {
+		const { input } = part;
+		return <WebSearchTool input={input} key={key} toolCallId={toolCallId} />;
+	}
+
+	if (state === "output-available") {
+		const { output } = part;
+		return <WebSearchTool key={key} output={output} toolCallId={toolCallId} />;
+	}
+
+	return null;
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
+function renderKnowledgeSearchTool(part: any, key: string): ReactNode {
+	const { toolCallId, state } = part;
+
+	if (state === "input-available") {
+		const { input } = part;
+		return <KnowledgeSearchTool input={input} key={key} toolCallId={toolCallId} />;
+	}
+
+	if (state === "output-available") {
+		const { output } = part;
+		return <KnowledgeSearchTool key={key} output={output || undefined} toolCallId={toolCallId} />;
+	}
+
+	return null;
+}
+
+// Helper function to render academic search tool parts
+// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
+function renderAcademicSearchTool(part: any, key: string): ReactNode {
+	const { toolCallId, state } = part;
+
+	if (state === "input-available") {
+		const { input } = part;
+		return <AcademicSearchTool input={input} key={key} toolCallId={toolCallId} />;
+	}
+
+	if (state === "output-available") {
+		const { output } = part;
+		return <AcademicSearchTool key={key} output={output?.results} toolCallId={toolCallId} />;
+	}
+
+	return null;
+}
+
+// Helper function to render finance search tool parts
+// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
+function renderFinanceSearchTool(part: any, key: string): ReactNode {
+	const { toolCallId, state } = part;
+
+	if (state === "input-available") {
+		const { input } = part;
+		return <FinanceSearchTool input={input} key={key} toolCallId={toolCallId} />;
+	}
+
+	if (state === "output-available") {
+		const { output } = part;
+		return <FinanceSearchTool key={key} output={output || undefined} toolCallId={toolCallId} />;
+	}
+
+	return null;
+}
+
+function renderTextPart(
+	// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
+	messagePart: any,
+	key: string,
+	props: {
+		message: ChatMessage;
+		mode: "view" | "edit";
+		setMode: React.Dispatch<React.SetStateAction<"view" | "edit">>;
+		setMessages: UseChatHelpers<ChatMessage>["setMessages"];
+		regenerate: UseChatHelpers<ChatMessage>["regenerate"];
+		isCopied: boolean;
+		setIsCopied: (copied: boolean) => void;
+		copyToClipboard: ReturnType<typeof useCopyToClipboard>[1];
+	}
+): ReactNode {
+	const { message, mode, setMode, setMessages, regenerate, isCopied, setIsCopied, copyToClipboard } = props;
+	return (
+		<div className="w-full" key={key}>
+			<AnimatePresence initial={false} mode="wait">
+				{mode === "view" ? (
+					<motion.div
+						animate={{ opacity: 1, height: "auto" }}
+						exit={{ opacity: 0.5, height: 0 }}
+						initial={{ opacity: 0.5, height: 0 }}
+						key="view"
+						style={{ overflow: "hidden" }}
+						transition={{
+							duration: 0.3,
+							ease: "easeInOut",
+						}}
+					>
+						<div
+							className={cn("group/message flex w-full flex-row items-center gap-2", {
+								"justify-end": message.role === "user",
+							})}
+						>
+							{message.role === "user" && (
+								<TooltipProvider delayDuration={200}>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												className="rounded opacity-0 transition-all duration-200 ease-in-out group-hover/message:opacity-100"
+												data-testid="message-edit-button"
+												onClick={() => {
+													setMode("edit");
+												}}
+												size={"icon"}
+												variant="ghost"
+											>
+												<PencilLineIcon className="size-3" />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent sideOffset={10}>Edit Message</TooltipContent>
+									</Tooltip>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												className="rounded opacity-0 transition-all duration-200 ease-in-out group-hover/message:opacity-100"
+												data-testid="message-copy-button"
+												onClick={async () => {
+													const textFromParts = message.parts
+														?.filter((textPart) => textPart.type === "text")
+														.map((textPart) => textPart.text)
+														.join("\n")
+														.trim();
+
+													if (!textFromParts) {
+														return toast.error("There is no text to copy.");
+													}
+
+													await copyToClipboard(textFromParts);
+													setIsCopied(true);
+												}}
+												size={"icon"}
+												variant="ghost"
+											>
+												<AnimatePresence initial={false} mode="wait">
+													{isCopied ? (
+														<motion.div
+															animate={{
+																scale: 1,
+																opacity: 1,
+																rotate: 0,
+															}}
+															exit={{
+																scale: 0,
+																opacity: 0,
+																rotate: 180,
+															}}
+															initial={{
+																scale: 0,
+																opacity: 0,
+																rotate: -180,
+															}}
+															key="check"
+															transition={transitions.bouncy}
+														>
+															<CheckIcon className="size-3" />
+														</motion.div>
+													) : (
+														<motion.div
+															animate={{
+																scale: 1,
+																opacity: 1,
+																rotate: 0,
+															}}
+															exit={{
+																scale: 0,
+																opacity: 0,
+																rotate: 180,
+															}}
+															initial={{
+																scale: 0,
+																opacity: 0,
+																rotate: -180,
+															}}
+															key="copy"
+															transition={transitions.smooth}
+														>
+															<CopyIcon className="size-3" />
+														</motion.div>
+													)}
+												</AnimatePresence>
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent sideOffset={10}>
+											<p>{isCopied ? "Copied!" : "Copy message"}</p>
+										</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+							)}
+							<div
+								className={cn(
+									"flex flex-col gap-4",
+									{
+										"overflow-auto border bg-neutral-900 px-4 py-1 text-primary":
+											message.role === "user",
+									},
+									message.parts.filter((filePart) => filePart.type === "file").length > 0
+										? "rounded-b-xl rounded-tl-xl"
+										: "rounded-t-xl rounded-bl-xl"
+								)}
+								data-testid="message-content"
+							>
+								<Markdown>{sanitizeText(messagePart.text)}</Markdown>
+							</div>
+						</div>
+					</motion.div>
+				) : (
+					<motion.div
+						animate={{ opacity: 1, height: "auto" }}
+						exit={{ opacity: 0.5, height: 0 }}
+						initial={{ opacity: 0.5, height: 0 }}
+						key="edit"
+						style={{ overflow: "hidden" }}
+						transition={{
+							duration: 0.3,
+							ease: "easeInOut",
+						}}
+					>
+						<MessageEditor
+							key={message.id}
+							message={message}
+							regenerate={regenerate}
+							setMessages={setMessages}
+							setMode={setMode}
+						/>
+					</motion.div>
+				)}
+			</AnimatePresence>
+		</div>
+	);
+}
+
+function renderMessagePart(
+	// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
+	messagePart: any,
+	index: number,
+	props: {
+		message: ChatMessage;
+		isLoading: boolean;
+		mode: "view" | "edit";
+		setMode: React.Dispatch<React.SetStateAction<"view" | "edit">>;
+		setMessages: UseChatHelpers<ChatMessage>["setMessages"];
+		regenerate: UseChatHelpers<ChatMessage>["regenerate"];
+		isCopied: boolean;
+		setIsCopied: (copied: boolean) => void;
+		copyToClipboard: ReturnType<typeof useCopyToClipboard>[1];
+	}
+): ReactNode {
+	const { message, isLoading } = props;
+	const { type } = messagePart;
+	const key = `message-${message.id}-part-${index}`;
+
+	if (type === "reasoning" && messagePart.text?.trim().length > 0) {
+		return <MessageReasoning isLoading={isLoading} key={key} reasoning={messagePart.text} />;
+	}
+
+	if (type === "text") {
+		return renderTextPart(messagePart, key, props);
+	}
+
+	if (type === "tool-extract") {
+		return renderExtractTool(messagePart, key);
+	}
+
+	if (type === "tool-save_to_memories") {
+		return renderSaveToMemoriesTool(messagePart, key);
+	}
+
+	if (type === "tool-web_search") {
+		return renderWebSearchTool(messagePart, key);
+	}
+
+	if (type === "tool-knowledge_search") {
+		return renderKnowledgeSearchTool(messagePart, key);
+	}
+
+	if (type === "tool-academic_search") {
+		return renderAcademicSearchTool(messagePart, key);
+	}
+
+	if (type === "tool-finance_search") {
+		return renderFinanceSearchTool(messagePart, key);
+	}
+
+	return null;
 }
 
 export function MessageReasoning({ isLoading, reasoning }: MessageReasoningProps) {
-    const [isExpanded, setIsExpanded] = useState(false);
+	const [isExpanded, setIsExpanded] = useState(false);
 
-    return (
-        <Disclosure
-            open={isExpanded}
-            onOpenChange={setIsExpanded}
-            className="relative rounded-lg text-sm"
-        >
-            <motion.div
-                className="relative overflow-hidden"
-                animate={{
-                    height: isExpanded ? 'auto' : 96,
-                }}
-            >
-                <div className="dark:text-neutral-400 text-neutral-600">
-                    <Markdown>{reasoning}</Markdown>
-                </div>
-                {!isExpanded && (
-                    <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-background to-transparent pointer-events-none" />
-                )}
-            </motion.div>
+	return (
+		<Disclosure className="relative rounded-lg text-sm" onOpenChange={setIsExpanded} open={isExpanded}>
+			<motion.div
+				animate={{
+					height: isExpanded ? "auto" : 96,
+				}}
+				className="relative overflow-hidden"
+			>
+				<div className="text-neutral-600 dark:text-neutral-400">
+					<Markdown>{reasoning}</Markdown>
+				</div>
+				{!isExpanded && (
+					<div className="pointer-events-none absolute bottom-0 left-0 h-20 w-full bg-gradient-to-t from-background to-transparent" />
+				)}
+			</motion.div>
 
-            <div className="mt-2 flex items-center justify-center gap-2">
-                <DisclosureTrigger>
-                    <Button
-                        variant="ghost"
-                        size={'sm'}
-                        className="text-xs dark:!text-neutral-500 !text-neutral-600 overflow-hidden"
-                    >
-                        <AnimatePresence mode="wait">
-                            <motion.span
-                                key={isExpanded ? 'expanded' : 'collapsed'}
-                                initial={{ y: isExpanded ? 15 : -15, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                exit={{ y: isExpanded ? -15 : 15, opacity: 0 }}
-                                transition={{ duration: 0.15 }}
-                                className="flex items-center gap-2"
-                            >
-                                {isLoading && <Loader size="sm" />}
-                                {isExpanded ? (
-                                    <>
-                                        Hide Reasoning
-                                        <ChevronUpIcon className="size-3" />
-                                    </>
-                                ) : (
-                                    <>
-                                        Show Reasoning
-                                        <ChevronDownIcon className="size-3" />
-                                    </>
-                                )}
-                            </motion.span>
-                        </AnimatePresence>
-                    </Button>
-                </DisclosureTrigger>
-            </div>
-        </Disclosure>
-    );
+			<div className="mt-2 flex items-center justify-center gap-2">
+				<DisclosureTrigger>
+					<Button
+						className="dark:!text-neutral-500 !text-neutral-600 overflow-hidden text-xs"
+						size={"sm"}
+						variant="ghost"
+					>
+						<AnimatePresence mode="wait">
+							<motion.span
+								animate={{ y: 0, opacity: 1 }}
+								className="flex items-center gap-2"
+								exit={{ y: isExpanded ? -15 : 15, opacity: 0 }}
+								initial={{ y: isExpanded ? 15 : -15, opacity: 0 }}
+								key={isExpanded ? "expanded" : "collapsed"}
+								transition={{ duration: 0.15 }}
+							>
+								{isLoading && <Loader size="sm" />}
+								{isExpanded ? (
+									<>
+										Hide Reasoning
+										<ChevronUpIcon className="size-3" />
+									</>
+								) : (
+									<>
+										Show Reasoning
+										<ChevronDownIcon className="size-3" />
+									</>
+								)}
+							</motion.span>
+						</AnimatePresence>
+					</Button>
+				</DisclosureTrigger>
+			</div>
+		</Disclosure>
+	);
 }
 
 export function Message({
-    chatId,
-    message,
-    isLoading,
-    setMessages,
-    regenerate,
-    requiresScrollPadding,
+	message,
+	isLoading,
+	setMessages,
+	regenerate,
+	requiresScrollPadding,
 }: {
-    chatId: string;
-    message: ChatMessage;
-    isLoading: boolean;
-    setMessages: UseChatHelpers<ChatMessage>['setMessages'];
-    regenerate: UseChatHelpers<ChatMessage>['regenerate'];
-    requiresScrollPadding: boolean;
+	message: ChatMessage;
+	isLoading: boolean;
+	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
+	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
+	requiresScrollPadding: boolean;
 }) {
-    const [mode, setMode] = useState<'view' | 'edit'>('view');
-    const [_, copyToClipboard] = useCopyToClipboard();
-    const [isCopied, setIsCopied] = useState(false);
+	const [mode, setMode] = useState<"view" | "edit">("view");
+	const [_, copyToClipboard] = useCopyToClipboard();
+	const [isCopied, setIsCopied] = useState(false);
 
-    useEffect(() => {
-        if (isCopied) {
-            const timer = setTimeout(() => {
-                setIsCopied(false);
-            }, 2000);
-            return () => clearTimeout(timer);
-        }
-    }, [isCopied]);
+	useEffect(() => {
+		if (isCopied) {
+			const timer = setTimeout(() => {
+				setIsCopied(false);
+			}, 2000);
+			return () => clearTimeout(timer);
+		}
+	}, [isCopied]);
 
-    const attachmentsFromMessage = message.parts.filter((part) => part.type === 'file');
+	const attachmentsFromMessage = message.parts.filter((part) => part.type === "file");
 
-    useDataStream();
+	useDataStream();
 
-    return (
-        <AnimatePresence>
-            <motion.div
-                data-testid={`message-${message.id}`}
-                className="w-full mx-auto max-w-3xl px-4"
-                initial={{ y: 5, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                data-role={message.role}
-            >
-                <div
-                    className={cn('flex gap-4 w-full', {
-                        'my-10': message.role === 'user',
-                    })}
-                >
-                    <div
-                        className={cn('flex flex-col gap-4 w-full', {
-                            'min-h-96': message.role === 'assistant' && requiresScrollPadding,
-                        })}
-                    >
-                        {attachmentsFromMessage.length > 0 && (
-                            <div
-                                data-testid={`message-attachments`}
-                                className="flex flex-row justify-end gap-2"
-                            >
-                                {attachmentsFromMessage.map((attachment) => (
-                                    <PreviewAttachment
-                                        key={attachment.url}
-                                        attachment={{
-                                            name: attachment.filename ?? 'file',
-                                            contentType: attachment.mediaType,
-                                            url: attachment.url,
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        )}
+	return (
+		<AnimatePresence>
+			<motion.div
+				animate={{ y: 0, opacity: 1 }}
+				className="mx-auto w-full max-w-3xl px-4"
+				data-role={message.role}
+				data-testid={`message-${message.id}`}
+				initial={{ y: 5, opacity: 0 }}
+			>
+				<div
+					className={cn("flex w-full gap-4", {
+						"my-10": message.role === "user",
+					})}
+				>
+					<div
+						className={cn("flex w-full flex-col gap-4", {
+							"min-h-96": message.role === "assistant" && requiresScrollPadding,
+						})}
+					>
+						{attachmentsFromMessage.length > 0 && (
+							<div className="flex flex-row justify-end gap-2" data-testid={"message-attachments"}>
+								{attachmentsFromMessage.map((attachment) => (
+									<PreviewAttachment
+										attachment={{
+											name: attachment.filename ?? "file",
+											contentType: attachment.mediaType,
+											url: attachment.url,
+										}}
+										key={attachment.url}
+									/>
+								))}
+							</div>
+						)}
 
-                        {message.parts?.map((part, index) => {
-                            const { type } = part;
-                            const key = `message-${message.id}-part-${index}`;
+						{message.parts
+							?.map((messagePart, index) =>
+								renderMessagePart(messagePart, index, {
+									message,
+									isLoading,
+									mode,
+									setMode,
+									setMessages,
+									regenerate,
+									isCopied,
+									setIsCopied,
+									copyToClipboard,
+								})
+							)
+							.filter(Boolean)}
 
-                            if (type === 'reasoning' && part.text?.trim().length > 0) {
-                                return (
-                                    <MessageReasoning
-                                        key={key}
-                                        isLoading={isLoading}
-                                        reasoning={part.text}
-                                    />
-                                );
-                            }
-                            if (type === 'text') {
-                                return (
-                                    <div key={key} className="w-full">
-                                        <AnimatePresence mode="wait" initial={false}>
-                                            {mode === 'view' ? (
-                                                <motion.div
-                                                    key="view"
-                                                    initial={{ opacity: 0.5, height: 0 }}
-                                                    animate={{ opacity: 1, height: 'auto' }}
-                                                    exit={{ opacity: 0.5, height: 0 }}
-                                                    transition={{
-                                                        duration: 0.3,
-                                                        ease: 'easeInOut',
-                                                    }}
-                                                    style={{ overflow: 'hidden' }}
-                                                >
-                                                    <div
-                                                        className={cn(
-                                                            'group/message flex flex-row gap-2 w-full items-center',
-                                                            {
-                                                                'justify-end':
-                                                                    message.role == 'user',
-                                                            }
-                                                        )}
-                                                    >
-                                                        {message.role == 'user' && (
-                                                            <TooltipProvider delayDuration={200}>
-                                                                <Tooltip>
-                                                                    <TooltipTrigger asChild>
-                                                                        <Button
-                                                                            data-testid="message-edit-button"
-                                                                            size={'icon'}
-                                                                            variant="ghost"
-                                                                            className="rounded opacity-0 group-hover/message:opacity-100 transition-all duration-200 ease-in-out"
-                                                                            onClick={() => {
-                                                                                setMode('edit');
-                                                                            }}
-                                                                        >
-                                                                            <PencilLineIcon className="size-3" />
-                                                                        </Button>
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent sideOffset={10}>
-                                                                        Edit Message
-                                                                    </TooltipContent>
-                                                                </Tooltip>
-                                                                <Tooltip>
-                                                                    <TooltipTrigger asChild>
-                                                                        <Button
-                                                                            data-testid="message-copy-button"
-                                                                            size={'icon'}
-                                                                            variant="ghost"
-                                                                            className="rounded opacity-0 group-hover/message:opacity-100 transition-all duration-200 ease-in-out"
-                                                                            onClick={async () => {
-                                                                                const textFromParts =
-                                                                                    message.parts
-                                                                                        ?.filter(
-                                                                                            (
-                                                                                                part
-                                                                                            ) =>
-                                                                                                part.type ==
-                                                                                                'text'
-                                                                                        )
-                                                                                        .map(
-                                                                                            (
-                                                                                                part
-                                                                                            ) =>
-                                                                                                part.text
-                                                                                        )
-                                                                                        .join('\n')
-                                                                                        .trim();
-
-                                                                                if (
-                                                                                    !textFromParts
-                                                                                ) {
-                                                                                    return toast.error(
-                                                                                        'There is no text to copy.'
-                                                                                    );
-                                                                                }
-
-                                                                                await copyToClipboard(
-                                                                                    textFromParts
-                                                                                );
-                                                                                setIsCopied(true);
-                                                                            }}
-                                                                        >
-                                                                            <AnimatePresence
-                                                                                mode="wait"
-                                                                                initial={false}
-                                                                            >
-                                                                                {isCopied ? (
-                                                                                    <motion.div
-                                                                                        key="check"
-                                                                                        initial={{
-                                                                                            scale: 0,
-                                                                                            opacity: 0,
-                                                                                            rotate: -180,
-                                                                                        }}
-                                                                                        animate={{
-                                                                                            scale: 1,
-                                                                                            opacity: 1,
-                                                                                            rotate: 0,
-                                                                                        }}
-                                                                                        exit={{
-                                                                                            scale: 0,
-                                                                                            opacity: 0,
-                                                                                            rotate: 180,
-                                                                                        }}
-                                                                                        transition={
-                                                                                            transitions.bouncy
-                                                                                        }
-                                                                                    >
-                                                                                        <CheckIcon className="size-3" />
-                                                                                    </motion.div>
-                                                                                ) : (
-                                                                                    <motion.div
-                                                                                        key="copy"
-                                                                                        initial={{
-                                                                                            scale: 0,
-                                                                                            opacity: 0,
-                                                                                            rotate: -180,
-                                                                                        }}
-                                                                                        animate={{
-                                                                                            scale: 1,
-                                                                                            opacity: 1,
-                                                                                            rotate: 0,
-                                                                                        }}
-                                                                                        exit={{
-                                                                                            scale: 0,
-                                                                                            opacity: 0,
-                                                                                            rotate: 180,
-                                                                                        }}
-                                                                                        transition={
-                                                                                            transitions.smooth
-                                                                                        }
-                                                                                    >
-                                                                                        <CopyIcon className="size-3" />
-                                                                                    </motion.div>
-                                                                                )}
-                                                                            </AnimatePresence>
-                                                                        </Button>
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent sideOffset={10}>
-                                                                        <p>
-                                                                            {isCopied
-                                                                                ? 'Copied!'
-                                                                                : 'Copy message'}
-                                                                        </p>
-                                                                    </TooltipContent>
-                                                                </Tooltip>
-                                                            </TooltipProvider>
-                                                        )}
-                                                        <div
-                                                            data-testid="message-content"
-                                                            className={cn(
-                                                                'flex flex-col gap-4',
-                                                                {
-                                                                    'text-primary bg-neutral-900 border px-4 py-1 overflow-auto':
-                                                                        message.role === 'user',
-                                                                },
-                                                                message.parts.filter(
-                                                                    (part) => part.type === 'file'
-                                                                ).length > 0
-                                                                    ? 'rounded-b-xl rounded-tl-xl'
-                                                                    : 'rounded-t-xl rounded-bl-xl'
-                                                            )}
-                                                        >
-                                                            <Markdown>
-                                                                {sanitizeText(part.text)}
-                                                            </Markdown>
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-                                            ) : (
-                                                <motion.div
-                                                    key="edit"
-                                                    initial={{ opacity: 0.5, height: 0 }}
-                                                    animate={{ opacity: 1, height: 'auto' }}
-                                                    exit={{ opacity: 0.5, height: 0 }}
-                                                    transition={{
-                                                        duration: 0.3,
-                                                        ease: 'easeInOut',
-                                                    }}
-                                                    style={{ overflow: 'hidden' }}
-                                                >
-                                                    <MessageEditor
-                                                        key={message.id}
-                                                        message={message}
-                                                        setMode={setMode}
-                                                        setMessages={setMessages}
-                                                        regenerate={regenerate}
-                                                    />
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
-                                );
-                            }
-
-                            if (type === 'tool-extract') {
-                                const { toolCallId, state } = part;
-
-                                if (state == 'input-available') {
-                                    const { input } = part;
-                                    return (
-                                        <ExtractTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            input={input}
-                                        />
-                                    );
-                                }
-
-                                if (state == 'output-available') {
-                                    const { output } = part;
-                                    return (
-                                        <ExtractTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            output={output?.results}
-                                        />
-                                    );
-                                }
-                            }
-
-                            if (type === 'tool-save_to_memories') {
-                                const { toolCallId, state } = part;
-
-                                if (state === 'input-available') {
-                                    const { input } = part;
-                                    return (
-                                        <SaveToMemoriesTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            input={input}
-                                        />
-                                    );
-                                }
-
-                                if (state === 'output-available') {
-                                    const { output } = part;
-                                    return (
-                                        <SaveToMemoriesTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            output={output}
-                                        />
-                                    );
-                                }
-                            }
-
-                            if (type == 'tool-web_search') {
-                                const { toolCallId, state } = part;
-
-                                if (state == 'input-available') {
-                                    const { input } = part;
-                                    return (
-                                        <WebSearchTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            input={input}
-                                        />
-                                    );
-                                }
-
-                                if (state == 'output-available') {
-                                    const { output } = part;
-                                    return (
-                                        <WebSearchTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            output={output}
-                                        />
-                                    );
-                                }
-                            }
-
-                            if (type == 'tool-knowledge_search') {
-                                const { toolCallId, state } = part;
-
-                                if (state == 'input-available') {
-                                    const { input } = part;
-                                    return (
-                                        <KnowledgeSearchTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            input={input}
-                                        />
-                                    );
-                                }
-
-                                if (state == 'output-available') {
-                                    const { output } = part;
-                                    return (
-                                        <KnowledgeSearchTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            output={output || undefined}
-                                        />
-                                    );
-                                }
-                            }
-
-                            if (type == 'tool-academic_search') {
-                                const { toolCallId, state } = part;
-
-                                if (state == 'input-available') {
-                                    const { input } = part;
-                                    return (
-                                        <AcademicSearchTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            input={input}
-                                        />
-                                    );
-                                }
-
-                                if (state == 'output-available') {
-                                    const { output } = part;
-                                    return (
-                                        <AcademicSearchTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            output={output?.results}
-                                        />
-                                    );
-                                }
-                            }
-
-                            if (type == 'tool-finance_search') {
-                                const { toolCallId, state } = part;
-
-                                if (state == 'input-available') {
-                                    const { input } = part;
-                                    return (
-                                        <FinanceSearchTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            input={input}
-                                        />
-                                    );
-                                }
-
-                                if (state == 'output-available') {
-                                    const { output } = part;
-                                    return (
-                                        <FinanceSearchTool
-                                            key={key}
-                                            toolCallId={toolCallId}
-                                            output={output || undefined}
-                                        />
-                                    );
-                                }
-                            }
-                        })}
-
-                        <MessageActions chatId={chatId} message={message} isLoading={isLoading} />
-                    </div>
-                </div>
-            </motion.div>
-        </AnimatePresence>
-    );
+						<MessageActions isLoading={isLoading} message={message} />
+					</div>
+				</div>
+			</motion.div>
+		</AnimatePresence>
+	);
 }
 
 export const PreviewMessage = memo(Message, (prevProps, nextProps) => {
-    if (!equal(prevProps.isLoading, nextProps.isLoading)) return false;
-    if (!equal(prevProps.message.id, nextProps.message.id)) return false;
-    if (!equal(prevProps.requiresScrollPadding, nextProps.requiresScrollPadding)) return false;
-    if (!equal(prevProps.message.parts, nextProps.message.parts)) return false;
+	if (!equal(prevProps.isLoading, nextProps.isLoading)) {
+		return false;
+	}
+	if (!equal(prevProps.message.id, nextProps.message.id)) {
+		return false;
+	}
+	if (!equal(prevProps.requiresScrollPadding, nextProps.requiresScrollPadding)) {
+		return false;
+	}
+	if (!equal(prevProps.message.parts, nextProps.message.parts)) {
+		return false;
+	}
 
-    return true;
+	return true;
 });

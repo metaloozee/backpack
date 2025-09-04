@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "npx ultracite check",
+    "lint:fix": "npx ultracite fix",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/lib/db/migrate.ts",
     "db:drop": "drizzle-kit drop",
@@ -109,32 +110,28 @@
     "zustand": "^5.0.5"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
+    "@biomejs/biome": "2.2.2",
     "@tailwindcss/postcss": "^4.1.4",
-    "@tanstack/eslint-plugin-query": "^5.81.2",
     "@tanstack/react-query-devtools": "^5.84.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/ws": "^8.18.1",
-    "@typescript-eslint/eslint-plugin": "^8.29.0",
     "dotenv": "^16.4.7",
     "drizzle-kit": "^0.31.4",
-    "eslint": "^9",
-    "eslint-config-next": "15.1.4",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
     "pg": "^8.13.1",
     "postcss": "^8.5.3",
-    "prettier": "^3.5.0",
     "tailwindcss": "^4.1.4",
     "tsx": "^4.19.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "ultracite": "5.3.2"
   },
   "packageManager": "pnpm@10.0.0+sha512.b8fef5494bd3fe4cbd4edabd0745df2ee5be3e4b0b8b08fa643aa3e4c6702ccc0f00d68fa8a8c9858a735a0032485a44990ed2810526c875e416f001b17df12b",
   "lint-staged": {
-    "*.{js,ts,jsx,tsx}": "eslint --cache --fix",
-    "*.{js,jsx,css,md,ts,tsx}": "prettier --write"
+    "*.{js,ts,jsx,tsx}": "npx ultracite fix",
+    "*.{js,jsx,css,md,ts,tsx}": "npx ultracite fix"
   }
 }

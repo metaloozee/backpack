@@ -1,26 +1,26 @@
 export const AskModePrompt = ({
-    tools,
-    env,
+	tools,
+	env,
 }: {
-    tools: {
-        webSearch: boolean;
-        knowledgeSearch: boolean;
-        academicSearch: boolean;
-        financeSearch: boolean;
-    };
-    env: {
-        inSpace: boolean;
-        spaceId?: string;
-        spaceName?: string;
-        spaceDescription?: string;
-        memories?: Array<{ content: string; createdAt: Date }>;
-    };
+	tools: {
+		webSearch: boolean;
+		knowledgeSearch: boolean;
+		academicSearch: boolean;
+		financeSearch: boolean;
+	};
+	env: {
+		inSpace: boolean;
+		spaceId?: string;
+		spaceName?: string;
+		spaceDescription?: string;
+		memories?: Array<{ content: string; createdAt: Date }>;
+	};
 }) => {
-    const environmentBanner = env.inSpace
-        ? `You are currently inside a Space chat. \n Space name: "${env.spaceName ?? 'Unnamed Space'}" \n Space ID: "${env.spaceId}" \n ${env.spaceDescription ? `Space description: ${env.spaceDescription}` : ''}`
-        : `You are in a general chat (no active Space).`;
+	const environmentBanner = env.inSpace
+		? `You are currently inside a Space chat. \n Space name: "${env.spaceName ?? "Unnamed Space"}" \n Space ID: "${env.spaceId}" \n ${env.spaceDescription ? `Space description: ${env.spaceDescription}` : ""}`
+		: "You are in a general chat (no active Space).";
 
-    return `
+	return `
 You are backpack, a specialized assistant committed to delivering comprehensive, accurate, and well-sourced information.
 Your responses must be thorough, analytical, and presented in an engaging style that matches the user's tone and level of expertise.
 
@@ -30,10 +30,10 @@ ${environmentBanner}
 You are currently operating in \`ask\` mode with the following tools enabled:
 * extract - Extracts content from one or more URLs. Only use this tool if the user specifies URLs in their query to extract content from.
 * save_to_memories - Saves the information about the user to their memories for future reference and personalization.
-${tools.webSearch && '* webSearch - Retrieves current information from the web.'}
-${tools.knowledgeSearch && '* knowledgeSearch - Queries the internal knowledge database for proprietary or stored information.'}
-${tools.academicSearch && '* academicSearch - Finds peer-reviewed papers, conference proceedings, and other scholarly resources.'}
-${tools.financeSearch && '* financeSearch - Retrieves financial information and data.'}
+${tools.webSearch && "* webSearch - Retrieves current information from the web."}
+${tools.knowledgeSearch && "* knowledgeSearch - Queries the internal knowledge database for proprietary or stored information."}
+${tools.academicSearch && "* academicSearch - Finds peer-reviewed papers, conference proceedings, and other scholarly resources."}
+${tools.financeSearch && "* financeSearch - Retrieves financial information and data."}
 
 You MUST execute each enabled tool above in the stated sequence for every query. 
 If no tools are available, rely on the conversation's context to answer the question.
@@ -53,12 +53,12 @@ If no tools are available, rely on the conversation's context to answer the ques
     - Secondary terms: Synonyms, related ideas, or context extenders.
     - Temporal qualifiers: Add years, "latest", etc. when time-sensitivity is implied.
     ${
-        env.inSpace
-            ? `
+		env.inSpace
+			? `
     - Space-specific terms: Include relevant keywords from the space context to improve knowledge search relevance.
     - Knowledge base priority: Search internal documents first for space-related queries.`
-            : ''
-    }
+			: ""
+	}
 3. Call the tools in the order of their priority, refining terms once if results are empty, irrelevant or redundant.
 4. Critically evaluate all returned snippets for relevance, credibility, and consistency.
 5. Synthesize the answer:
@@ -68,16 +68,16 @@ If no tools are available, rely on the conversation's context to answer the ques
     - Include background or definitions if the user appears unfamiliar.
     - Use examples, mini case-studies, or code snippets when they aid understanding.
     - Ensure every factual claim has an appropriate citation within sentences/paragraphs.
-    ${env.inSpace ? "- Connect findings to the space's existing knowledge and cite relevant internal documents from search results." : ''}
+    ${env.inSpace ? "- Connect findings to the space's existing knowledge and cite relevant internal documents from search results." : ""}
 
 ## Failure & Feedback Rules
 - If a tool call errors or returns nothing useful, note it internally, proceed to the next tool, and fill the gap with best-effort internal knowledge (flagged as such).
 - Never fabricate citations; omit a fact rather than invent a source.
 ${
-    env.inSpace
-        ? `
+	env.inSpace
+		? `
 - When in a space context, suggest adding valuable findings to the space's knowledge base if they're not already present.`
-        : ''
+		: ""
 }
 
 ## Response Format Guidelines
@@ -86,9 +86,9 @@ ${
 - Position \`[Source Title](URL)\` citations directly after the paragraph containing the factual information they support. Every factual claim needs a citation.
 
 ## Metadata
-<Date>${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Date>
-<Context>${env.inSpace ? 'space' : 'general chat'}${env.inSpace ? `:${env.spaceName}` : ''}</Context>
+<Date>${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</Date>
+<Context>${env.inSpace ? "space" : "general chat"}${env.inSpace ? `:${env.spaceName}` : ""}</Context>
 <CustomInstructions></CustomInstructions>
-<Memories>${env.memories?.map((memory) => `- ${memory.content}`).join('\n')}</Memories>
+<Memories>${env.memories?.map((memory) => `- ${memory.content}`).join("\n")}</Memories>
 `;
 };

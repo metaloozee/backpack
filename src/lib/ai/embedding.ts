@@ -1,69 +1,68 @@
-import { embedMany } from 'ai';
-import { google } from '@ai-sdk/google';
+/** biome-ignore-all lint/suspicious/noConsole: <explanation> */
+import { google } from "@ai-sdk/google";
+import { embedMany } from "ai";
 
-const generateChunks = (input: string, wordsPerChunk: number = 250): string[] => {
-    if (!input || typeof input !== 'string') {
-        return [];
-    }
-    if (wordsPerChunk <= 0) {
-        throw new Error('Words per chunk must be positive');
-    }
+const REGEX_SPLIT_WORDS = /\s+/;
 
-    const words = input.trim().split(/\s+/);
+const generateChunks = (input: string, wordsPerChunk = 250): string[] => {
+	if (!input || typeof input !== "string") {
+		return [];
+	}
+	if (wordsPerChunk <= 0) {
+		throw new Error("Words per chunk must be positive");
+	}
 
-    if (words.length === 0) {
-        return [];
-    }
+	const words = input.trim().split(REGEX_SPLIT_WORDS);
 
-    const chunks: string[] = [];
-    let currentChunk: string[] = [];
-    let wordCount = 0;
+	if (words.length === 0) {
+		return [];
+	}
 
-    for (const word of words) {
-        currentChunk.push(word);
-        wordCount++;
+	const chunks: string[] = [];
+	let currentChunk: string[] = [];
+	let wordCount = 0;
 
-        if (wordCount === wordsPerChunk) {
-            chunks.push(currentChunk.join(' '));
-            currentChunk = [];
-            wordCount = 0;
-        }
-    }
+	for (const word of words) {
+		currentChunk.push(word);
+		wordCount++;
 
-    if (currentChunk.length > 0) {
-        chunks.push(currentChunk.join(' '));
-    }
+		if (wordCount === wordsPerChunk) {
+			chunks.push(currentChunk.join(" "));
+			currentChunk = [];
+			wordCount = 0;
+		}
+	}
 
-    return chunks;
+	if (currentChunk.length > 0) {
+		chunks.push(currentChunk.join(" "));
+	}
+
+	return chunks;
 };
 
-export const generateEmbeddings = async (
-    value: string
-): Promise<Array<{ embedding: number[]; content: string }>> => {
-    const chunks = generateChunks(value);
+export const generateEmbeddings = async (value: string): Promise<Array<{ embedding: number[]; content: string }>> => {
+	const chunks = generateChunks(value);
 
-    const BATCH_SIZE = 100;
-    const totalBatches = Math.ceil(chunks.length / BATCH_SIZE);
-    const embeddingsResult: Array<{ embedding: number[]; content: string }> = [];
+	const BATCH_SIZE = 100;
+	const totalBatches = Math.ceil(chunks.length / BATCH_SIZE);
+	const embeddingsResult: Array<{ embedding: number[]; content: string }> = [];
 
-    for (let start = 0, batchIndex = 0; start < chunks.length; start += BATCH_SIZE, batchIndex++) {
-        const batch = chunks.slice(start, start + BATCH_SIZE);
+	for (let start = 0, batchIndex = 0; start < chunks.length; start += BATCH_SIZE, batchIndex++) {
+		const batch = chunks.slice(start, start + BATCH_SIZE);
 
-        console.log(
-            `🔃 Embedding batch ${batchIndex + 1}/${totalBatches} – processing ${batch.length} chunk(s)`
-        );
+		console.log(`🔃 Embedding batch ${batchIndex + 1}/${totalBatches} – processing ${batch.length} chunk(s)`);
 
-        const { embeddings } = await embedMany({
-            model: google.textEmbeddingModel('text-embedding-004'),
-            values: batch,
-        });
+		const { embeddings } = await embedMany({
+			model: google.textEmbeddingModel("text-embedding-004"),
+			values: batch,
+		});
 
-        embeddings.forEach((embedding, idx) => {
-            embeddingsResult.push({ content: batch[idx], embedding });
-        });
+		embeddings.forEach((embedding, idx) => {
+			embeddingsResult.push({ content: batch[idx], embedding });
+		});
 
-        console.log(`✅ Completed batch ${batchIndex + 1}/${totalBatches}`);
-    }
+		console.log(`✅ Completed batch ${batchIndex + 1}/${totalBatches}`);
+	}
 
-    return embeddingsResult;
+	return embeddingsResult;
 };

@@ -1,15 +1,16 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { env } from '@/lib/env.mjs';
-import ws from 'ws';
+/** biome-ignore-all lint/performance/noNamespaceImport: false positive */
 
-import * as auth from './schema/auth';
-import * as app from './schema/app';
+import { drizzle } from "drizzle-orm/neon-serverless";
+import ws from "ws";
+import { env } from "@/lib/env.mjs";
+import * as app from "./schema/app";
+import * as auth from "./schema/auth";
 
 export const db = drizzle({
-    connection: env.DATABASE_URL,
-    schema: {
-        ...auth,
-        ...app,
-    },
-    ws: ws,
+	connection: env.DATABASE_URL,
+	schema: {
+		...auth,
+		...app,
+	},
+	ws,
 });

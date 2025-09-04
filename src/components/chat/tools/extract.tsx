@@ -1,52 +1,52 @@
-'use client';
+"use client";
 
-import { PickaxeIcon } from 'lucide-react';
-import { Loader } from '@/components/ui/loader';
+import { PickaxeIcon } from "lucide-react";
+import { Loader } from "@/components/ui/loader";
 
 type ExtractResult = {
-    url: string;
-    images?: string[];
-    content: string;
+	url: string;
+	images?: string[];
+	content: string;
 };
 
-interface ExtractToolProps {
-    toolCallId: string;
-    input?: {
-        urls?: string[];
-    };
-    output?: ExtractResult[];
-}
+type ExtractToolProps = {
+	toolCallId: string;
+	input?: {
+		urls?: string[];
+	};
+	output?: ExtractResult[];
+};
 
 export function ExtractTool({ toolCallId, input, output }: ExtractToolProps) {
-    if (output) {
-        return (
-            <div className="w-full border bg-neutral-900 rounded-md px-4 py-3">
-                <div className="w-full flex flex-col gap-2">
-                    {output?.map((result: ExtractResult, index: number) => (
-                        <div key={`${toolCallId}-${index}`} className="w-full flex flex-col gap-2">
-                            <div className="w-full flex shrink-0 flex-row justify-start items-center gap-2">
-                                <PickaxeIcon className="size-3" />
-                                <span className="text-xs truncate">{result.url}</span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    }
+	if (output) {
+		return (
+			<div className="w-full rounded-md border bg-neutral-900 px-4 py-3">
+				<div className="flex w-full flex-col gap-2">
+					{output?.map((result) => (
+						<div className="flex w-full flex-col gap-2" key={`${toolCallId}-${result.url}`}>
+							<div className="flex w-full shrink-0 flex-row items-center justify-start gap-2">
+								<PickaxeIcon className="size-3" />
+								<span className="truncate text-xs">{result.url}</span>
+							</div>
+						</div>
+					))}
+				</div>
+			</div>
+		);
+	}
 
-    return (
-        <div className="w-full border bg-neutral-900 rounded-md px-4 py-3">
-            <div className="w-full flex flex-col gap-2">
-                {input?.urls?.map((url: string, index: number) => (
-                    <div key={`${toolCallId}-${index}`} className="w-full flex flex-col gap-2">
-                        <div className="w-full flex shrink-0 flex-row justify-start items-center gap-2">
-                            <Loader size="sm" />
-                            <span className="text-xs text-neutral-400 truncate">{url}</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+	return (
+		<div className="w-full rounded-md border bg-neutral-900 px-4 py-3">
+			<div className="flex w-full flex-col gap-2">
+				{input?.urls?.map((url) => (
+					<div className="flex w-full flex-col gap-2" key={`${toolCallId}-${url}`}>
+						<div className="flex w-full shrink-0 flex-row items-center justify-start gap-2">
+							<Loader size="sm" />
+							<span className="truncate text-neutral-400 text-xs">{url}</span>
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+	);
 }

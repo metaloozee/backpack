@@ -1,19 +1,21 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { useDataStream } from './data-stream-provider';
+import { useEffect, useRef } from "react";
+import { useDataStream } from "./data-stream-provider";
 
 export function DataStreamHandler() {
-    const { dataStream } = useDataStream();
+	const { dataStream } = useDataStream();
 
-    const lastProcessedIndex = useRef(-1);
+	const lastProcessedIndex = useRef(-1);
 
-    useEffect(() => {
-        if (!dataStream?.length) return;
+	useEffect(() => {
+		if (!dataStream?.length) {
+			return;
+		}
 
-        const newDeltas = dataStream.slice(lastProcessedIndex.current + 1);
-        lastProcessedIndex.current = dataStream.length - 1;
-    }, [dataStream]);
+		dataStream.slice(lastProcessedIndex.current + 1);
+		lastProcessedIndex.current = dataStream.length - 1;
+	}, [dataStream]);
 
-    return null;
+	return null;
 }

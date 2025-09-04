@@ -1,73 +1,61 @@
-import * as React from 'react';
+import type { UseChatHelpers } from "@ai-sdk/react";
 
-import { motion } from 'motion/react';
-import { Loader } from '@/components/ui/loader';
-import { UseChatHelpers } from '@ai-sdk/react';
-import { useMessages } from '@/lib/hooks/use-messages';
-import { Message as PreviewMessage } from '@/components/chat/message';
-import { ChatMessage } from '@/lib/ai/types';
+import { motion } from "motion/react";
+import { Message as PreviewMessage } from "@/components/chat/message";
+import { Loader } from "@/components/ui/loader";
+import type { ChatMessage } from "@/lib/ai/types";
+import { useMessages } from "@/lib/hooks/use-messages";
 
-interface ChatMessageProps {
-    chatId: string;
-    status: UseChatHelpers<ChatMessage>['status'];
-    messages: Array<ChatMessage>;
-    setMessages: UseChatHelpers<ChatMessage>['setMessages'];
-    regenerate: UseChatHelpers<ChatMessage>['regenerate'];
-}
+type ChatMessageProps = {
+	chatId: string;
+	status: UseChatHelpers<ChatMessage>["status"];
+	messages: ChatMessage[];
+	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
+	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
+};
 
-export function ChatMessages({
-    chatId,
-    status,
-    messages,
-    setMessages,
-    regenerate,
-}: ChatMessageProps) {
-    const {
-        containerRef: messageContainerRef,
-        endRef: messagesEndRef,
-        onViewportEnter,
-        onViewportLeave,
-        hasSentMessage,
-    } = useMessages({
-        chatId,
-        status,
-    });
+export function ChatMessages({ chatId, status, messages, setMessages, regenerate }: ChatMessageProps) {
+	const {
+		containerRef: messageContainerRef,
+		endRef: messagesEndRef,
+		onViewportEnter,
+		onViewportLeave,
+		hasSentMessage,
+	} = useMessages({
+		chatId,
+		status,
+	});
 
-    return (
-        <div
-            ref={messageContainerRef}
-            className="px-4 flex flex-col items-center w-full mt-10 mx-auto max-w-3xl"
-        >
-            {messages.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full">
-                    <p className="text-sm text-muted-foreground">
-                        No messages yet. Start a conversation!
-                    </p>
-                </div>
-            )}
+	return (
+		<div className="mx-auto mt-10 flex w-full max-w-3xl flex-col items-center px-4" ref={messageContainerRef}>
+			{messages.length === 0 && (
+				<div className="flex h-full flex-col items-center justify-center">
+					<p className="text-muted-foreground text-sm">No messages yet. Start a conversation!</p>
+				</div>
+			)}
 
-            {messages.map((message, index) => (
-                <PreviewMessage
-                    key={message.id}
-                    chatId={chatId}
-                    message={message}
-                    isLoading={status === 'streaming' && messages.length - 1 === index}
-                    setMessages={setMessages}
-                    regenerate={regenerate}
-                    requiresScrollPadding={hasSentMessage && index === messages.length - 1}
-                />
-            ))}
+			{messages.map((message, index) => (
+				<PreviewMessage
+					chatId={chatId}
+					isLoading={status === "streaming" && messages.length - 1 === index}
+					key={message.id}
+					message={message}
+					regenerate={regenerate}
+					requiresScrollPadding={hasSentMessage && index === messages.length - 1}
+					setMessages={setMessages}
+				/>
+			))}
 
-            {status === 'submitted' &&
-                messages.length > 0 &&
-                messages[messages.length - 1].role === 'user' && <Loader className="my-10" />}
+			{status === "submitted" && messages.length > 0 && messages.at(-1)?.role === "user" && (
+				<Loader className="my-10" />
+			)}
 
-            <motion.div
-                ref={messagesEndRef}
-                className="shrink-0 min-w-[24px] min-h-[24px]"
-                onViewportLeave={onViewportLeave}
-                onViewportEnter={onViewportEnter}
-            />
-        </div>
-    );
+			<motion.div
+				className="min-h-[24px] min-w-[24px] shrink-0"
+				onViewportEnter={onViewportEnter}
+				onViewportLeave={onViewportLeave}
+				ref={messagesEndRef}
+			/>
+		</div>
+	);
 }

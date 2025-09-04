@@ -1,24 +1,25 @@
-import { tavily } from '@tavily/core';
-import { env } from '@/lib/env.mjs';
-import { generateText } from 'ai';
-import { google } from '@ai-sdk/google';
+import { google } from "@ai-sdk/google";
+import { tavily } from "@tavily/core";
+import { generateText } from "ai";
+import { env } from "@/lib/env.mjs";
 
 const tvly = tavily({ apiKey: env.TAVILY_API_KEY as string });
 
 export async function extractRawText({ url }: { url: string }) {
-    const response = await tvly.extract([url], { extractDepth: 'advanced' });
-    if (!response.results)
-        return {
-            success: false,
-        };
+	const response = await tvly.extract([url], { extractDepth: "advanced" });
+	if (!response.results) {
+		return {
+			success: false,
+		};
+	}
 
-    return { success: true, result: response.results };
+	return { success: true, result: response.results };
 }
 
 export async function sanitizeData({ rawText }: { rawText: string }) {
-    const result = await generateText({
-        model: google('gemini-2.5-flash'),
-        prompt: `
+	const result = await generateText({
+		model: google("gemini-2.5-flash"),
+		prompt: `
 You are an expert Content Curator with extensive experience in digital content refinement and data preparation for AI systems. Your specialty lies in transforming raw web content into pristine, machine-learning ready text while preserving all meaningful information. You understand the delicate balance between removing noise and retaining context.
 
 Your task is to produce clean, well-structured text that meets the following criteria:
@@ -50,10 +51,10 @@ Below is the raw web content that needs to be processed according to the above s
 ${rawText}
 </context>
         `,
-    });
+	});
 
-    return {
-        success: true,
-        sanitizedText: result.text,
-    };
+	return {
+		success: true,
+		sanitizedText: result.text,
+	};
 }

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
+  "extends": ["ultracite"],
+  "files": {
+    "includes": ["!**/components/ui/**/*.tsx"]
+  },
+  "linter": {
+    "rules": {
+      "suspicious": {
+        "noArrayIndexKey": "off"
+      },
+      "style": {
+        "noMagicNumbers": "off",
+        "noNestedTernary": "warn"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "lineWidth": 120,
+    "indentWidth": 4,
+    "indentStyle": "tab",
+    "lineEnding": "lf"
+  }
+}

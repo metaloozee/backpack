@@ -1,14 +1,15 @@
-'use client';
+"use client";
 
-import { scan } from 'react-scan';
-import { JSX, useEffect } from 'react';
+import { type JSX, useEffect } from "react";
+import { scan } from "react-scan";
 
 export function ReactScan(): JSX.Element {
-    useEffect(() => {
-        scan({
-            enabled: true,
-        });
-    }, []);
+	useEffect(() => {
+		scan({
+			enabled: true,
+		});
+	}, []);
 
-    return <></>;
+	// biome-ignore lint/complexity/noUselessFragments: This is a valid JSX element
+	return <></>;
 }

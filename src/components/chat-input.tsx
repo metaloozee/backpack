@@ -1,757 +1,739 @@
-'use client';
+/** biome-ignore-all lint/suspicious/noConsole: debug logging needed for development */
+"use client";
 
-import * as React from 'react';
+import type { UseChatHelpers } from "@ai-sdk/react";
+import { useMutation } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDownIcon, CornerDownLeftIcon, MicIcon, PaperclipIcon, StopCircleIcon } from "lucide-react";
+import { usePathname } from "next/navigation";
+import React, { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { useLocalStorage } from "usehooks-ts";
+import { ModeSelector } from "@/components/mode-selector";
+import { ModelSelector } from "@/components/model-selector";
+import { Button } from "@/components/ui/button";
+import { Loader } from "@/components/ui/loader";
+import { Textarea } from "@/components/ui/textarea";
+import type { ToolsState } from "@/lib/ai/tools";
+import type { Attachment, ChatMessage } from "@/lib/ai/types";
+import { fadeVariants, layoutTransition, slideVariants, transitions } from "@/lib/animations";
+import { useScrollToBottom } from "@/lib/hooks/use-scroll-to-bottom";
+import { useTRPC } from "@/lib/trpc/trpc";
+import { cn } from "@/lib/utils";
+import { PreviewAttachment } from "./chat/preview-attachment";
+import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 
-import { motion, AnimatePresence } from 'framer-motion';
-
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-
-import { cn } from '@/lib/utils';
-import {
-    CornerDownLeftIcon,
-    StopCircleIcon,
-    PaperclipIcon,
-    MicIcon,
-    ChevronDownIcon,
-} from 'lucide-react';
-import { usePathname } from 'next/navigation';
-
-import { useLocalStorage } from 'usehooks-ts';
-import {
-    layoutTransition,
-    staggerVariants,
-    fadeVariants,
-    slideVariants,
-    transitions,
-} from '@/lib/animations';
-import { UseChatHelpers } from '@ai-sdk/react';
-import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
-import { ModelSelector } from '@/components/model-selector';
-import { ModeSelector } from '@/components/mode-selector';
-import { toast } from 'sonner';
-import { useScrollToBottom } from '@/lib/hooks/use-scroll-to-bottom';
-import { PreviewAttachment } from './chat/preview-attachment';
-import { ScrollArea, ScrollBar } from './ui/scroll-area';
-import { type ToolsState } from '@/lib/ai/tools';
-import { Loader } from '@/components/ui/loader';
-import { useMutation } from '@tanstack/react-query';
-import { useTRPC } from '@/lib/trpc/trpc';
-import { Attachment, ChatMessage } from '@/lib/ai/types';
-
-interface InputPanelProps {
-    chatId: string;
-    input: string;
-    setInput: Dispatch<SetStateAction<string>>;
-    status: UseChatHelpers<ChatMessage>['status'];
-    stop: () => void;
-    attachments: Array<Attachment>;
-    setAttachments: Dispatch<SetStateAction<Attachment[]>>;
-    messages: Array<ChatMessage>;
-    setMessages: UseChatHelpers<ChatMessage>['setMessages'];
-    sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
-    tools: ToolsState;
-    setTools: Dispatch<SetStateAction<ToolsState>>;
-    initialModel?: string;
-    initialMode?: string;
-    initialAgent?: string;
-}
+type InputPanelProps = {
+	chatId: string;
+	input: string;
+	setInput: Dispatch<SetStateAction<string>>;
+	status: UseChatHelpers<ChatMessage>["status"];
+	stop: () => void;
+	attachments: Attachment[];
+	setAttachments: Dispatch<SetStateAction<Attachment[]>>;
+	messages: ChatMessage[];
+	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
+	sendMessage: UseChatHelpers<ChatMessage>["sendMessage"];
+	tools: ToolsState;
+	setTools: Dispatch<SetStateAction<ToolsState>>;
+	initialModel?: string;
+	initialMode?: string;
+	initialAgent?: string;
+};
 
 function PureInput({
-    chatId,
-    input,
-    setInput,
-    status,
-    stop,
-    attachments,
-    setAttachments,
-    messages,
-    setMessages,
-    sendMessage,
-    tools,
-    setTools,
-    initialModel,
-    initialMode,
-    initialAgent,
+	chatId,
+	input,
+	setInput,
+	status,
+	stop,
+	attachments,
+	setAttachments,
+	messages,
+	setMessages,
+	sendMessage,
+	tools,
+	setTools,
+	initialModel,
+	initialMode,
+	initialAgent,
 }: InputPanelProps) {
-    const greeting = 'How can I help you today?';
-    const trpc = useTRPC();
+	const greeting = "How can I help you today?";
+	const trpc = useTRPC();
 
-    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-    const inputContainerRef = React.useRef<HTMLDivElement>(null);
-    const [inputContainerHeight, setInputContainerHeight] = React.useState(0);
-    const [isDragging, setIsDragging] = React.useState(false);
+	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const inputContainerRef = useRef<HTMLDivElement>(null);
+	const [inputContainerHeight, setInputContainerHeight] = useState(0);
+	const [isDragging, setIsDragging] = useState(false);
 
-    React.useEffect(() => {
-        const inputEl = inputContainerRef.current;
+	useEffect(() => {
+		const inputEl = inputContainerRef.current;
 
-        if (inputEl) {
-            const resizeObserver = new ResizeObserver(() => {
-                setInputContainerHeight(inputEl.offsetHeight);
-            });
-            resizeObserver.observe(inputEl);
-            return () => {
-                resizeObserver.unobserve(inputEl);
-            };
-        }
-    }, []);
+		if (inputEl) {
+			const resizeObserver = new ResizeObserver(() => {
+				setInputContainerHeight(inputEl.offsetHeight);
+			});
+			resizeObserver.observe(inputEl);
+			return () => {
+				resizeObserver.unobserve(inputEl);
+			};
+		}
+	}, []);
 
-    const adjustHeight = React.useCallback(() => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
-        }
-    }, []);
+	const adjustHeight = useCallback(() => {
+		if (textareaRef.current) {
+			textareaRef.current.style.height = "auto";
+			textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
+		}
+	}, []);
 
-    const resetHeight = React.useCallback(() => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = '98px';
-        }
-    }, []);
+	const resetHeight = useCallback(() => {
+		if (textareaRef.current) {
+			textareaRef.current.style.height = "auto";
+			textareaRef.current.style.height = "98px";
+		}
+	}, []);
 
-    React.useEffect(() => {
-        if (textareaRef.current) {
-            adjustHeight();
-        }
-    }, [input, adjustHeight]);
+	useEffect(() => {
+		if (textareaRef.current) {
+			adjustHeight();
+		}
+	}, [adjustHeight]);
 
-    const [localStorageInput, setLocalStorageInput] = useLocalStorage('input', '');
+	const [localStorageInput, setLocalStorageInput] = useLocalStorage("input", "");
 
-    useEffect(() => {
-        if (textareaRef.current) {
-            const domValue = textareaRef.current.value;
-            const finalValue = domValue || localStorageInput || '';
-            setInput(finalValue);
-            adjustHeight();
-        }
-    }, []);
+	useEffect(() => {
+		if (textareaRef.current) {
+			const domValue = textareaRef.current.value;
+			const finalValue = domValue || localStorageInput || "";
+			setInput(finalValue);
+			adjustHeight();
+		}
+	}, [localStorageInput, setInput, adjustHeight]);
 
-    React.useEffect(() => {
-        setLocalStorageInput(input);
-    }, [input, setLocalStorageInput]);
+	useEffect(() => {
+		setLocalStorageInput(input);
+	}, [input, setLocalStorageInput]);
 
-    const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setInput(event.target.value);
-        adjustHeight();
-    };
+	const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+		setInput(event.target.value);
+		adjustHeight();
+	};
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [uploadQueue, setUploadQueue] = useState<string[]>([]);
 
-    const submitForm = React.useCallback(() => {
-        window.history.replaceState({}, '', `/c/${chatId}`);
+	const submitForm = useCallback(() => {
+		window.history.replaceState({}, "", `/c/${chatId}`);
 
-        if (!input.trim()) return;
+		if (!input.trim()) {
+			return;
+		}
 
-        sendMessage({
-            role: 'user',
-            parts: [
-                ...attachments.map((attachment) => ({
-                    type: 'file' as const,
-                    url: attachment.url,
-                    name: attachment.name,
-                    mediaType: attachment.contentType,
-                })),
-                {
-                    type: 'text',
-                    text: input,
-                },
-            ],
-        });
+		sendMessage({
+			role: "user",
+			parts: [
+				...attachments.map((attachment) => ({
+					type: "file" as const,
+					url: attachment.url,
+					name: attachment.name,
+					mediaType: attachment.contentType,
+				})),
+				{
+					type: "text",
+					text: input,
+				},
+			],
+		});
 
-        setAttachments([]);
-        resetHeight();
-        setInput('');
-        textareaRef.current?.focus();
-    }, [
-        input,
-        setInput,
-        attachments,
-        sendMessage,
-        setAttachments,
-        setLocalStorageInput,
-        chatId,
-        tools,
-    ]);
+		setAttachments([]);
+		resetHeight();
+		setInput("");
+		textareaRef.current?.focus();
+	}, [input, setInput, attachments, sendMessage, setAttachments, chatId, resetHeight]);
 
-    const uploadFile = async (file: File) => {
-        const formData = new FormData();
-        formData.append('file', file);
+	const handleFiles = useCallback(
+		async (files: File[]) => {
+			if (!files || files.length === 0) {
+				return;
+			}
 
-        try {
-            const response = await fetch('/api/files/upload', {
-                method: 'POST',
-                body: formData,
-            });
+			const uploadSingleFile = async (file: File) => {
+				const formData = new FormData();
+				formData.append("file", file);
 
-            if (response.ok) {
-                const data = await response.json();
-                const { url, pathname, contentType } = data;
+				try {
+					const response = await fetch("/api/files/upload", {
+						method: "POST",
+						body: formData,
+					});
 
-                toast.success('File uploaded successfully!');
+					if (response.ok) {
+						const data = await response.json();
+						const { url, pathname: fileName, contentType } = data;
 
-                return {
-                    url,
-                    name: pathname,
-                    contentType: contentType,
-                };
-            }
-            const { error } = await response.json();
-            toast.error(error);
-        } catch (error) {
-            toast.error('Failed to upload file, please try again!');
-        }
-    };
+						toast.success("File uploaded successfully!");
 
-    const handleFiles = useCallback(
-        async (files: File[]) => {
-            if (!files || files.length === 0) return;
+						return {
+							url,
+							name: fileName,
+							contentType,
+						};
+					}
+					const { error } = await response.json();
+					toast.error(error);
+				} catch {
+					toast.error("Failed to upload file, please try again!");
+				}
+			};
 
-            setUploadQueue((prev) => [...prev, ...files.map((file) => file.name)]);
+			setUploadQueue((prev) => [...prev, ...files.map((file) => file.name)]);
 
-            try {
-                const uploadPromises = files.map((file) => uploadFile(file));
-                const uploadedAttachments = (await Promise.all(uploadPromises)).filter(
-                    Boolean
-                ) as Attachment[];
+			try {
+				const uploadPromises = files.map((file) => uploadSingleFile(file));
+				const uploadedAttachments = (await Promise.all(uploadPromises)).filter(Boolean) as Attachment[];
 
-                setAttachments((currentAttachments) => [
-                    ...currentAttachments,
-                    ...uploadedAttachments,
-                ]);
-            } catch (error) {
-                console.error('Error uploading files!', error);
-                toast.error('Failed to upload files, please try again!');
-            } finally {
-                setUploadQueue([]);
-            }
-        },
-        [setAttachments]
-    );
+				setAttachments((currentAttachments) => [...currentAttachments, ...uploadedAttachments]);
+			} catch (error) {
+				console.error("Error uploading files!", error);
+				toast.error("Failed to upload files, please try again!");
+			} finally {
+				setUploadQueue([]);
+			}
+		},
+		[setAttachments]
+	);
 
-    const handleFileChange = useCallback(
-        async (event: React.ChangeEvent<HTMLInputElement>) => {
-            const files = Array.from(event.target.files || []);
-            await handleFiles(files);
+	const handleFileChange = useCallback(
+		async (event: React.ChangeEvent<HTMLInputElement>) => {
+			const files = Array.from(event.target.files || []);
+			await handleFiles(files);
 
-            if (event.target) {
-                event.target.value = '';
-            }
-        },
-        [handleFiles]
-    );
+			if (event.target) {
+				event.target.value = "";
+			}
+		},
+		[handleFiles]
+	);
 
-    const handleDrop = useCallback(
-        async (event: React.DragEvent<HTMLDivElement>) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setIsDragging(false);
+	const handleDrop = useCallback(
+		async (event: React.DragEvent<HTMLDivElement>) => {
+			event.preventDefault();
+			event.stopPropagation();
+			setIsDragging(false);
 
-            const files = Array.from(event.dataTransfer.files);
-            if (files.length > 0) {
-                await handleFiles(files);
-            }
-        },
-        [handleFiles]
-    );
+			const files = Array.from(event.dataTransfer.files);
+			if (files.length > 0) {
+				await handleFiles(files);
+			}
+		},
+		[handleFiles]
+	);
 
-    const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (event.dataTransfer.items && event.dataTransfer.items.length > 0) {
-            setIsDragging(true);
-        }
-    };
+	const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+		event.preventDefault();
+		event.stopPropagation();
+		if (event.dataTransfer.items && event.dataTransfer.items.length > 0) {
+			setIsDragging(true);
+		}
+	};
 
-    const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
+	const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+		event.preventDefault();
+		event.stopPropagation();
 
-        if (event.currentTarget.contains(event.relatedTarget as Node)) {
-            return;
-        }
-        setIsDragging(false);
-    };
+		if (event.currentTarget.contains(event.relatedTarget as Node)) {
+			return;
+		}
+		setIsDragging(false);
+	};
 
-    const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
-    };
+	const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+		event.preventDefault();
+		event.stopPropagation();
+	};
 
-    const handlePaste = useCallback(
-        async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
-            const items = event.clipboardData.items;
-            const files: File[] = [];
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                if (item.kind === 'file' && item.type.startsWith('image/')) {
-                    const file = item.getAsFile();
-                    if (file) {
-                        files.push(file);
-                    }
-                }
-            }
+	const handlePaste = useCallback(
+		async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+			const items = event.clipboardData.items;
+			const files: File[] = [];
+			for (const item of items) {
+				if (item.kind === "file" && item.type.startsWith("image/")) {
+					const file = item.getAsFile();
+					if (file) {
+						files.push(file);
+					}
+				}
+			}
 
-            if (files.length > 0) {
-                event.preventDefault();
-                await handleFiles(files);
-                // toast.success(`${files.length} image(s) pasted and uploading.`);
-            }
-        },
-        [handleFiles]
-    );
+			if (files.length > 0) {
+				event.preventDefault();
+				await handleFiles(files);
+				// toast.success(`${files.length} image(s) pasted and uploading.`);
+			}
+		},
+		[handleFiles]
+	);
 
-    const pathname = usePathname();
-    const isSpaceChat = pathname.startsWith('/s/');
+	const pathname = usePathname();
+	const isSpaceChat = pathname.startsWith("/s/");
 
-    React.useEffect(() => {
-        console.log('Tools state changed in chat-input:', tools);
-    }, [tools]);
+	React.useEffect(() => {
+		console.log("Tools state changed in chat-input:", tools);
+	}, [tools]);
 
-    const isLoading = status === 'submitted' || status === 'streaming';
+	const isLoading = status === "submitted" || status === "streaming";
 
-    const { isAtBottom, scrollToBottom } = useScrollToBottom();
+	const { isAtBottom, scrollToBottom } = useScrollToBottom();
 
-    useEffect(() => {
-        if (status === 'submitted') {
-            scrollToBottom();
-        }
-    }, [status, scrollToBottom]);
+	useEffect(() => {
+		if (status === "submitted") {
+			scrollToBottom();
+		}
+	}, [status, scrollToBottom]);
 
-    const [isRecording, setIsRecording] = useState(false);
-    const [isTranscribing, setIsTranscribing] = useState(false);
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+	const [isRecording, setIsRecording] = useState(false);
+	const [isTranscribing, setIsTranscribing] = useState(false);
+	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
-    const transcribe = useMutation(trpc.chat.transcribe.mutationOptions());
+	const transcribe = useMutation(trpc.chat.transcribe.mutationOptions());
 
-    const cleanupRecorder = () => {
-        if (mediaRecorderRef.current?.stream) {
-            mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
-        }
-        mediaRecorderRef.current = null;
-        setIsRecording(false);
-    };
+	const cleanupRecorder = useCallback(() => {
+		if (mediaRecorderRef.current?.stream) {
+			for (const track of mediaRecorderRef.current.stream.getTracks()) {
+				track.stop();
+			}
+		}
+		mediaRecorderRef.current = null;
+		setIsRecording(false);
+	}, []);
 
-    const handleRecord = useCallback(async () => {
-        setIsRecording(true);
+	const handleRecord = useCallback(async () => {
+		setIsRecording(true);
 
-        if (isRecording && mediaRecorderRef.current) {
-            mediaRecorderRef.current.stop();
-            cleanupRecorder();
-        } else {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const recorder = new MediaRecorder(stream);
-                mediaRecorderRef.current = recorder;
+		if (isRecording && mediaRecorderRef.current) {
+			mediaRecorderRef.current.stop();
+			cleanupRecorder();
+		} else {
+			try {
+				const stream = await navigator.mediaDevices.getUserMedia({
+					audio: true,
+				});
+				const recorder = new MediaRecorder(stream);
+				mediaRecorderRef.current = recorder;
 
-                recorder.addEventListener('dataavailable', async (event) => {
-                    if (event.data.size > 0) {
-                        const audioBlob = event.data;
+				recorder.addEventListener("dataavailable", async (event) => {
+					if (event.data.size > 0) {
+						const audioBlob = event.data;
 
-                        try {
-                            setIsTranscribing(true);
-                            const formData = new FormData();
-                            formData.append('audio', audioBlob, 'audio.webm');
+						try {
+							setIsTranscribing(true);
+							const formData = new FormData();
+							formData.append("audio", audioBlob, "audio.webm");
 
-                            const { text } = await transcribe.mutateAsync(formData);
+							const { text } = await transcribe.mutateAsync(formData);
 
-                            setInput(text);
-                            setIsTranscribing(false);
-                            setIsRecording(false);
-                        } catch (error) {
-                            setIsTranscribing(false);
-                            toast.error('Failed to transcribe audio, please try again!');
-                        } finally {
-                            cleanupRecorder();
-                        }
-                    }
-                });
+							setInput(text);
+							setIsTranscribing(false);
+							setIsRecording(false);
+						} catch {
+							setIsTranscribing(false);
+							toast.error("Failed to transcribe audio, please try again!");
+						} finally {
+							cleanupRecorder();
+						}
+					}
+				});
 
-                recorder.addEventListener('stop', () => {
-                    stream.getTracks().forEach((track) => track.stop());
-                });
+				recorder.addEventListener("stop", () => {
+					for (const track of stream.getTracks()) {
+						track.stop();
+					}
+				});
 
-                recorder.start();
-                setIsRecording(true);
-            } catch (error) {
-                setIsRecording(false);
-                console.error('Error recording audio', error);
-                toast.error('Failed to record audio, please try again!');
-            }
-        }
-    }, [isRecording, isTranscribing, cleanupRecorder, setInput]);
+				recorder.start();
+				setIsRecording(true);
+			} catch {
+				setIsRecording(false);
+				console.error("Error recording audio");
+				toast.error("Failed to record audio, please try again!");
+			}
+		}
+	}, [isRecording, transcribe.mutateAsync, setInput, cleanupRecorder]);
 
-    return (
-        <motion.div
-            layout
-            transition={layoutTransition}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            className={cn(
-                'w-full bg-background sticky',
-                messages.length > 0
-                    ? 'bottom-0 left-0 right-0'
-                    : isSpaceChat
-                      ? 'mt-20'
-                      : 'flex flex-col items-center justify-center'
-            )}
-        >
-            <AnimatePresence>
-                {isDragging && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 z-50 bg-neutral-950/50 backdrop-blur-sm flex items-center justify-center pointer-events-none"
-                    >
-                        <div className="text-white text-2xl font-semibold">
-                            Drop files to upload
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-            <input
-                type="file"
-                className="fixed -top-4 -left-4 size-0.5 opacity-0 pointer-events-none"
-                ref={fileInputRef}
-                multiple
-                onChange={handleFileChange}
-                tabIndex={-1}
-            />
+	return (
+		<motion.div
+			className={cn(
+				"sticky w-full bg-background",
+				messages.length > 0
+					? "right-0 bottom-0 left-0"
+					: isSpaceChat
+						? "mt-20"
+						: "flex flex-col items-center justify-center"
+			)}
+			layout
+			onDragEnter={handleDragEnter}
+			onDragLeave={handleDragLeave}
+			onDragOver={handleDragOver}
+			onDrop={handleDrop}
+			transition={layoutTransition}
+		>
+			<AnimatePresence>
+				{isDragging && (
+					<motion.div
+						animate={{ opacity: 1 }}
+						className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-neutral-950/50 backdrop-blur-sm"
+						exit={{ opacity: 0 }}
+						initial={{ opacity: 0 }}
+					>
+						<div className="font-semibold text-2xl text-white">Drop files to upload</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+			<input
+				className="-top-4 -left-4 pointer-events-none fixed size-0.5 opacity-0"
+				multiple
+				onChange={handleFileChange}
+				ref={fileInputRef}
+				tabIndex={-1}
+				type="file"
+			/>
 
-            <AnimatePresence>
-                {messages.length === 0 && !isSpaceChat && (
-                    <motion.div
-                        variants={slideVariants.down}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                        className="mb-6"
-                    >
-                        <h1 className="text-3xl text-transparent bg-clip-text bg-linear-to-br from-white to-neutral-500">
-                            {greeting}
-                        </h1>
-                    </motion.div>
-                )}
-                {messages.length > 0 && !isAtBottom && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                        className="absolute left-1/2 -translate-x-1/2 bg-background/40 rounded-full backdrop-blur-md"
-                        style={{ bottom: `${inputContainerHeight + 16}px` }}
-                    >
-                        <Button
-                            data-testid="scroll-to-bottom-button"
-                            className="rounded-full !bg-transparent border"
-                            size={'sm'}
-                            variant="secondary"
-                            onClick={(event) => {
-                                event.preventDefault();
-                                scrollToBottom();
-                            }}
-                        >
-                            <p className="text-xs font-normal">Scroll to bottom</p>
-                            <ChevronDownIcon className="size-3" />
-                        </Button>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+			<AnimatePresence>
+				{messages.length === 0 && !isSpaceChat && (
+					<motion.div
+						animate="visible"
+						className="mb-6"
+						exit="exit"
+						initial="hidden"
+						variants={slideVariants.down}
+					>
+						<h1 className="bg-linear-to-br from-white to-neutral-500 bg-clip-text text-3xl text-transparent">
+							{greeting}
+						</h1>
+					</motion.div>
+				)}
+				{messages.length > 0 && !isAtBottom && (
+					<motion.div
+						animate={{ opacity: 1, y: 0 }}
+						className="-translate-x-1/2 absolute left-1/2 rounded-full bg-background/40 backdrop-blur-md"
+						exit={{ opacity: 0, y: 10 }}
+						initial={{ opacity: 0, y: 10 }}
+						style={{ bottom: `${inputContainerHeight + 16}px` }}
+						transition={{ type: "spring", stiffness: 300, damping: 20 }}
+					>
+						<Button
+							className="!bg-transparent rounded-full border"
+							data-testid="scroll-to-bottom-button"
+							onClick={(event) => {
+								event.preventDefault();
+								scrollToBottom();
+							}}
+							size={"sm"}
+							variant="secondary"
+						>
+							<p className="font-normal text-xs">Scroll to bottom</p>
+							<ChevronDownIcon className="size-3" />
+						</Button>
+					</motion.div>
+				)}
+			</AnimatePresence>
 
-            <div ref={inputContainerRef} className={cn('max-w-3xl w-full mx-auto')}>
-                {(attachments.length > 0 || uploadQueue.length > 0) && (
-                    <div className="mx-6 p-2 border-b-0 border rounded-t-md bg-neutral-900/50">
-                        <ScrollArea>
-                            <motion.div
-                                data-testid="attachments-preview"
-                                className="flex flex-row gap-2 items-end justify-start"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                                transition={{ delay: 0.2 }}
-                            >
-                                {attachments.map((attachment) => (
-                                    <PreviewAttachment
-                                        key={attachment.url}
-                                        attachment={attachment}
-                                    />
-                                ))}
-                                {uploadQueue.map((fileName) => (
-                                    <PreviewAttachment
-                                        key={fileName}
-                                        attachment={{
-                                            url: '',
-                                            name: fileName,
-                                            contentType: '',
-                                        }}
-                                        isUploading={true}
-                                    />
-                                ))}
-                            </motion.div>
-                            <ScrollBar orientation="horizontal" />
-                        </ScrollArea>
-                    </div>
-                )}
-                <div
-                    className={cn(
-                        'relative mb-2 flex flex-col w-full p-4 border rounded-lg bg-neutral-900/50 focus-within:border-neutral-700/70 hover:border-neutral-700/70 transition-all duration-200'
-                    )}
-                >
-                    <Textarea
-                        ref={textareaRef}
-                        value={input}
-                        onChange={handleInput}
-                        onPaste={handlePaste}
-                        onKeyDown={(event) => {
-                            if (
-                                event.key === 'Enter' &&
-                                !event.shiftKey &&
-                                !event.nativeEvent.isComposing
-                            ) {
-                                event.preventDefault();
+			<div className={cn("mx-auto w-full max-w-3xl")} ref={inputContainerRef}>
+				{(attachments.length > 0 || uploadQueue.length > 0) && (
+					<div className="mx-6 rounded-t-md border border-b-0 bg-neutral-900/50 p-2">
+						<ScrollArea>
+							<motion.div
+								animate={{ opacity: 1, y: 0 }}
+								className="flex flex-row items-end justify-start gap-2"
+								data-testid="attachments-preview"
+								exit={{ opacity: 0, y: 10 }}
+								initial={{ opacity: 0, y: 10 }}
+								transition={{ delay: 0.2 }}
+							>
+								{attachments.map((attachment) => (
+									<PreviewAttachment attachment={attachment} key={attachment.url} />
+								))}
+								{uploadQueue.map((fileName) => (
+									<PreviewAttachment
+										attachment={{
+											url: "",
+											name: fileName,
+											contentType: "",
+										}}
+										isUploading={true}
+										key={fileName}
+									/>
+								))}
+							</motion.div>
+							<ScrollBar orientation="horizontal" />
+						</ScrollArea>
+					</div>
+				)}
+				<div
+					className={cn(
+						"relative mb-2 flex w-full flex-col rounded-lg border bg-neutral-900/50 p-4 transition-all duration-200 focus-within:border-neutral-700/70 hover:border-neutral-700/70"
+					)}
+				>
+					<Textarea
+						autoFocus
+						className="w-full resize-none border-0 bg-transparent text-sm ring-0 placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+						onChange={handleInput}
+						onKeyDown={(event) => {
+							if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+								event.preventDefault();
 
-                                if (status !== 'ready') {
-                                    toast.error(
-                                        'Please wait for the model to finish its response!'
-                                    );
-                                } else {
-                                    submitForm();
-                                }
-                            }
-                        }}
-                        placeholder="Ask me anything..."
-                        autoFocus
-                        tabIndex={0}
-                        spellCheck={true}
-                        className="resize-none w-full bg-transparent ring-0 border-0 text-sm placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
-                    />
+								if (status !== "ready") {
+									toast.error("Please wait for the model to finish its response!");
+								} else {
+									submitForm();
+								}
+							}
+						}}
+						onPaste={handlePaste}
+						placeholder="Ask me anything..."
+						ref={textareaRef}
+						spellCheck={true}
+						tabIndex={0}
+						value={input}
+					/>
 
-                    <div className="w-full flex justify-between items-center">
-                        <ModeSelector
-                            tools={tools}
-                            setTools={setTools}
-                            initialMode={initialMode}
-                            initialAgent={initialAgent}
-                        />
+					<div className="flex w-full items-center justify-between">
+						<ModeSelector
+							initialAgent={initialAgent}
+							initialMode={initialMode}
+							setTools={setTools}
+							tools={tools}
+						/>
 
-                        <motion.div
-                            variants={fadeVariants}
-                            initial="hidden"
-                            animate="visible"
-                            transition={transitions.smooth}
-                        >
-                            <AnimatePresence>
-                                <div className="flex items-center gap-2">
-                                    <AttachmentButton fileInputRef={fileInputRef} status={status} />
+						<motion.div
+							animate="visible"
+							initial="hidden"
+							transition={transitions.smooth}
+							variants={fadeVariants}
+						>
+							<AnimatePresence>
+								<div className="flex items-center gap-2">
+									<AttachmentButton fileInputRef={fileInputRef} status={status} />
 
-                                    <motion.div variants={fadeVariants} className="flex-shrink-0">
-                                        <ModelSelector initialModel={initialModel} />
-                                    </motion.div>
+									<motion.div className="flex-shrink-0" variants={fadeVariants}>
+										<ModelSelector initialModel={initialModel} />
+									</motion.div>
 
-                                    {isLoading ? (
-                                        <StopButton stop={stop} setMessages={setMessages} />
-                                    ) : (
-                                        <SendButton
-                                            input={input}
-                                            submitForm={submitForm}
-                                            handleRecord={handleRecord}
-                                            isRecording={isRecording}
-                                            isTranscribing={isTranscribing}
-                                        />
-                                    )}
-                                </div>
-                            </AnimatePresence>
-                        </motion.div>
-                    </div>
-                </div>
-            </div>
-        </motion.div>
-    );
+									{isLoading ? (
+										<StopButton setMessages={setMessages} stop={stop} />
+									) : (
+										<SendButton
+											handleRecord={handleRecord}
+											input={input}
+											isRecording={isRecording}
+											isTranscribing={isTranscribing}
+											submitForm={submitForm}
+										/>
+									)}
+								</div>
+							</AnimatePresence>
+						</motion.div>
+					</div>
+				</div>
+			</div>
+		</motion.div>
+	);
 }
 
 const AttachmentButton = React.memo(
-    ({
-        fileInputRef,
-        status,
-    }: {
-        fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
-        status: UseChatHelpers<ChatMessage>['status'];
-    }) => (
-        <Button
-            variant={'ghost'}
-            className="flex-shrink-0"
-            onClick={(event) => {
-                event.preventDefault();
-                fileInputRef.current?.click();
-            }}
-            disabled={status !== 'ready'}
-        >
-            <PaperclipIcon className="size-3 text-muted-foreground" />
-        </Button>
-    )
+	({
+		fileInputRef,
+		status,
+	}: {
+		fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
+		status: UseChatHelpers<ChatMessage>["status"];
+	}) => (
+		<Button
+			className="flex-shrink-0"
+			disabled={status !== "ready"}
+			onClick={(event) => {
+				event.preventDefault();
+				fileInputRef.current?.click();
+			}}
+			variant={"ghost"}
+		>
+			<PaperclipIcon className="size-3 text-muted-foreground" />
+		</Button>
+	)
 );
 
-AttachmentButton.displayName = 'AttachmentButton';
+AttachmentButton.displayName = "AttachmentButton";
 
 const StopButton = React.memo(
-    ({ stop, setMessages }: { stop: () => void; setMessages: (messages: any) => void }) => (
-        <Button
-            variant={'destructive'}
-            onClick={(event) => {
-                event.preventDefault();
-                stop();
-                setMessages((messages: any) => messages);
-            }}
-        >
-            <motion.div
-                variants={slideVariants.up}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={transitions.smooth}
-            >
-                <StopCircleIcon />
-            </motion.div>
-        </Button>
-    )
+	({ stop, setMessages }: { stop: () => void; setMessages: UseChatHelpers<ChatMessage>["setMessages"] }) => (
+		<Button
+			onClick={(event) => {
+				event.preventDefault();
+				stop();
+				setMessages((messages: ChatMessage[]) => messages);
+			}}
+			variant={"destructive"}
+		>
+			<motion.div
+				animate="visible"
+				exit="exit"
+				initial="hidden"
+				transition={transitions.smooth}
+				variants={slideVariants.up}
+			>
+				<StopCircleIcon />
+			</motion.div>
+		</Button>
+	)
 );
 
-StopButton.displayName = 'StopButton';
+StopButton.displayName = "StopButton";
 
 const SendButton = React.memo(
-    ({
-        input,
-        submitForm,
-        handleRecord,
-        isRecording,
-        isTranscribing,
-    }: {
-        input: string;
-        submitForm: () => void;
-        handleRecord: () => void;
-        isRecording: boolean;
-        isTranscribing: boolean;
-    }) => (
-        <motion.div
-            variants={fadeVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            transition={transitions.smooth}
-        >
-            {input.trim().length <= 0 ? (
-                <Button
-                    className="px-4"
-                    onClick={handleRecord}
-                    disabled={isTranscribing}
-                    variant={isRecording ? 'destructive' : 'default'}
-                >
-                    <motion.div
-                        variants={slideVariants.up}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                        transition={transitions.smooth}
-                    >
-                        <AnimatePresence mode="wait">
-                            {isTranscribing ? (
-                                <motion.div
-                                    key="transcribing-icon"
-                                    initial={{ opacity: 0, y: 5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -5 }}
-                                    transition={transitions.smooth}
-                                >
-                                    <Loader variant={'secondary'} />
-                                </motion.div>
-                            ) : isRecording ? (
-                                <motion.div
-                                    key="stop-recording-icon"
-                                    initial={{ opacity: 0, y: 5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -5 }}
-                                    transition={transitions.smooth}
-                                >
-                                    <StopCircleIcon />
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="audio-icon"
-                                    initial={{ opacity: 0, y: 5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -5 }}
-                                    transition={transitions.smooth}
-                                >
-                                    <MicIcon />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </motion.div>
-                </Button>
-            ) : (
-                <Button
-                    className="px-4"
-                    onClick={(event) => {
-                        event.preventDefault();
-                        submitForm();
-                    }}
-                >
-                    <motion.div
-                        variants={slideVariants.up}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                        transition={transitions.smooth}
-                    >
-                        <AnimatePresence mode="wait">
-                            {input.trim().length > 0 ? (
-                                <motion.div
-                                    key="send-icon"
-                                    initial={{ opacity: 0, y: 5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -5 }}
-                                    transition={transitions.smooth}
-                                >
-                                    <CornerDownLeftIcon />
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="send-icon-fallback"
-                                    initial={{ opacity: 0, y: 5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -5 }}
-                                    transition={transitions.smooth}
-                                >
-                                    <CornerDownLeftIcon />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </motion.div>
-                </Button>
-            )}
-        </motion.div>
-    )
+	({
+		input,
+		submitForm,
+		handleRecord,
+		isRecording,
+		isTranscribing,
+	}: {
+		input: string;
+		submitForm: () => void;
+		handleRecord: () => void;
+		isRecording: boolean;
+		isTranscribing: boolean;
+	}) => (
+		<motion.div
+			animate="visible"
+			exit="exit"
+			initial="hidden"
+			transition={transitions.smooth}
+			variants={fadeVariants}
+		>
+			{input.trim().length <= 0 ? (
+				<Button
+					className="px-4"
+					disabled={isTranscribing}
+					onClick={handleRecord}
+					variant={isRecording ? "destructive" : "default"}
+				>
+					<motion.div
+						animate="visible"
+						exit="exit"
+						initial="hidden"
+						transition={transitions.smooth}
+						variants={slideVariants.up}
+					>
+						<AnimatePresence mode="wait">
+							{(() => {
+								if (isTranscribing) {
+									return (
+										<motion.div
+											animate={{ opacity: 1, y: 0 }}
+											exit={{ opacity: 0, y: -5 }}
+											initial={{ opacity: 0, y: 5 }}
+											key="transcribing-icon"
+											transition={transitions.smooth}
+										>
+											<Loader variant={"secondary"} />
+										</motion.div>
+									);
+								}
+								if (isRecording) {
+									return (
+										<motion.div
+											animate={{ opacity: 1, y: 0 }}
+											exit={{ opacity: 0, y: -5 }}
+											initial={{ opacity: 0, y: 5 }}
+											key="stop-recording-icon"
+											transition={transitions.smooth}
+										>
+											<StopCircleIcon />
+										</motion.div>
+									);
+								}
+								return (
+									<motion.div
+										animate={{ opacity: 1, y: 0 }}
+										exit={{ opacity: 0, y: -5 }}
+										initial={{ opacity: 0, y: 5 }}
+										key="audio-icon"
+										transition={transitions.smooth}
+									>
+										<MicIcon />
+									</motion.div>
+								);
+							})()}
+						</AnimatePresence>
+					</motion.div>
+				</Button>
+			) : (
+				<Button
+					className="px-4"
+					onClick={(event) => {
+						event.preventDefault();
+						submitForm();
+					}}
+				>
+					<motion.div
+						animate="visible"
+						exit="exit"
+						initial="hidden"
+						transition={transitions.smooth}
+						variants={slideVariants.up}
+					>
+						<AnimatePresence mode="wait">
+							{input.trim().length > 0 ? (
+								<motion.div
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -5 }}
+									initial={{ opacity: 0, y: 5 }}
+									key="send-icon"
+									transition={transitions.smooth}
+								>
+									<CornerDownLeftIcon />
+								</motion.div>
+							) : (
+								<motion.div
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -5 }}
+									initial={{ opacity: 0, y: 5 }}
+									key="send-icon-fallback"
+									transition={transitions.smooth}
+								>
+									<CornerDownLeftIcon />
+								</motion.div>
+							)}
+						</AnimatePresence>
+					</motion.div>
+				</Button>
+			)}
+		</motion.div>
+	)
 );
 
-SendButton.displayName = 'SendButton';
+SendButton.displayName = "SendButton";
 
 export const Input = React.memo(PureInput, (prevProps, nextProps) => {
-    const prevToolsStr = JSON.stringify(prevProps.tools);
-    const nextToolsStr = JSON.stringify(nextProps.tools);
+	const prevToolsStr = JSON.stringify(prevProps.tools);
+	const nextToolsStr = JSON.stringify(nextProps.tools);
 
-    if (prevProps.status !== nextProps.status) return false;
-    if (prevProps.messages.length !== nextProps.messages.length) return false;
-    if (prevProps.input !== nextProps.input) return false;
-    if (prevToolsStr !== nextToolsStr) {
-        console.log('Tools changed in memo:', prevProps.tools, '→', nextProps.tools); // Debug log
-        return false;
-    }
+	if (prevProps.status !== nextProps.status) {
+		return false;
+	}
+	if (prevProps.messages.length !== nextProps.messages.length) {
+		return false;
+	}
+	if (prevProps.input !== nextProps.input) {
+		return false;
+	}
+	if (prevToolsStr !== nextToolsStr) {
+		console.log("Tools changed in memo:", prevProps.tools, "→", nextProps.tools); // Debug log
+		return false;
+	}
 
-    return true;
+	return true;
 });
 
-Input.displayName = 'Input';
+Input.displayName = "Input";
