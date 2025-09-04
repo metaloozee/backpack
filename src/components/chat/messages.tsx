@@ -36,7 +36,6 @@ export function ChatMessages({ chatId, status, messages, setMessages, regenerate
 
 			{messages.map((message, index) => (
 				<PreviewMessage
-					chatId={chatId}
 					isLoading={status === "streaming" && messages.length - 1 === index}
 					key={message.id}
 					message={message}

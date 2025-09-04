@@ -364,7 +364,6 @@ const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<
 		const Comp = asChild ? Slot : "div";
 
 		return (
-			// @ts-expect-error
 			<Comp
 				className={cn(
 					"flex h-8 shrink-0 items-center rounded-md px-2 font-medium text-sidebar-foreground/70 text-xs outline-hidden ring-sidebar-ring transition-[margin,opa] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
@@ -385,7 +384,6 @@ const SidebarGroupAction = React.forwardRef<HTMLButtonElement, React.ComponentPr
 		const Comp = asChild ? Slot : "button";
 
 		return (
-			// @ts-expect-error
 			<Comp
 				className={cn(
 					"absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-neutral-900/50-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
@@ -405,7 +403,6 @@ SidebarGroupAction.displayName = "SidebarGroupAction";
 
 const SidebarGroupContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
 	({ className, ...props }, ref) => (
-		// @ts-expect-error
 		<div className={cn("w-full text-sm", className)} data-sidebar="group-content" ref={ref} {...props} />
 	)
 );
@@ -494,7 +491,6 @@ const SidebarMenuAction = React.forwardRef<
 	const Comp = asChild ? Slot : "button";
 
 	return (
-		// @ts-expect-error
 		<Comp
 			className={cn(
 				"absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-neutral-900/50-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
@@ -601,7 +597,6 @@ const SidebarMenuSubButton = React.forwardRef<
 	const Comp = asChild ? Slot : "a";
 
 	return (
-		// @ts-expect-error
 		<Comp
 			className={cn(
 				"-translate-x-px flex h-7 min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground outline-hidden ring-sidebar-ring hover:bg-neutral-900/50-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-neutral-900/50-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",

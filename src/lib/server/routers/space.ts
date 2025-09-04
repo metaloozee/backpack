@@ -6,7 +6,7 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { generateEmbeddings } from "@/lib/ai/embedding";
-import { extractRawText, sanitizeData } from "@/lib/ai/extractWebPage";
+import { extractRawText, sanitizeData } from "@/lib/ai/extract-web-page";
 import { db } from "@/lib/db";
 import { knowledge, knowledgeEmbeddings, spaces } from "@/lib/db/schema/app";
 import { env } from "@/lib/env.mjs";

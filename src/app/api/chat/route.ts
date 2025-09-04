@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noConsole: console.log */
 
+import { randomUUID } from "node:crypto";
 import type { AnthropicProviderOptions } from "@ai-sdk/anthropic";
 import { type GoogleGenerativeAIProviderOptions, google } from "@ai-sdk/google";
 import {
@@ -25,7 +26,7 @@ import { financeSearchTool } from "@/lib/ai/tools/finance-search";
 import { knowledgeSearchTool } from "@/lib/ai/tools/knowledge-search";
 import { saveToMemoriesTool } from "@/lib/ai/tools/save-to-memories";
 import { webSearchTool } from "@/lib/ai/tools/web-search";
-import { convertToUIMessages, generateUUID } from "@/lib/ai/utils";
+import { convertToUIMessages } from "@/lib/ai/utils";
 import { getSession } from "@/lib/auth/utils";
 import { db } from "@/lib/db";
 import { chat as dbChat, memories as dbMemories, message as dbMessage, stream as dbStream } from "@/lib/db/schema/app";
@@ -173,7 +174,7 @@ export async function POST(req: Request) {
 				],
 			});
 
-			const streamId = generateUUID();
+			const streamId = randomUUID();
 			await db.insert(dbStream).values({ id: streamId, chatId: id, createdAt: new Date() });
 
 			const stream = createUIMessageStream({
@@ -224,14 +225,14 @@ export async function POST(req: Request) {
 						activeTools,
 						tools: {
 							save_to_memories: saveToMemoriesTool({ session, dataStream }),
-							extract: extractTool({ session, dataStream }),
-							web_search: webSearchTool({ session, dataStream }),
+							extract: extractTool({ dataStream }),
+							web_search: webSearchTool({ dataStream }),
 							knowledge_search: knowledgeSearchTool({
 								session,
 								dataStream,
 								env: requestEnv,
 							}),
-							academic_search: academicSearchTool({ session, dataStream }),
+							academic_search: academicSearchTool({ dataStream }),
 							finance_search: financeSearchTool({ dataStream }),
 						},
 					});
@@ -239,7 +240,7 @@ export async function POST(req: Request) {
 					result.consumeStream();
 					dataStream.merge(result.toUIMessageStream({ sendReasoning: true }));
 				},
-				generateId: generateUUID,
+				generateId: () => randomUUID(),
 				onError: () => {
 					return "Oops, an error occurred while processing your request.";
 				},

@@ -1,7 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: any */
 "use client";
 
-import { randomUUID } from "node:crypto";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import type { Session } from "better-auth";
@@ -60,7 +59,7 @@ export function Chat({
 	const { messages, setMessages, sendMessage, status, stop, regenerate, resumeStream } = useChat<ChatMessage>({
 		id,
 		messages: initialMessages,
-		generateId: () => randomUUID(),
+		generateId: () => crypto.randomUUID(),
 		experimental_throttle: 100,
 		transport: new DefaultChatTransport({
 			api: "/api/chat",
