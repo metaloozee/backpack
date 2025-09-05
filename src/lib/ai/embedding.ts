@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/suspicious/noConsole: <explanation> */
+/** biome-ignore-all lint/suspicious/noConsole: debug logging needed for development */
 import { google } from "@ai-sdk/google";
 import { embedMany } from "ai";
 

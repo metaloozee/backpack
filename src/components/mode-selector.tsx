@@ -123,7 +123,9 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 									{(mode.value === "ask" || mode.value === "agent") && (
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
-												<button
+												{/** biome-ignore lint/a11y/useSemanticElements: we need a span to be able to use the onClick event, using button causes hydration errors */}
+												{/** biome-ignore lint/a11y/useFocusableInteractive: we need a span to be able to use the onClick event, using button causes hydration errors */}
+												<span
 													className={cn(
 														"ml-1 inline-flex items-center justify-center rounded-sm",
 														"hover:bg-neutral-900"
@@ -142,10 +144,10 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 													onPointerDown={(event) => {
 														event.stopPropagation();
 													}}
-													type="button"
+													role="button"
 												>
 													<ChevronDownIcon className="size-3" />
-												</button>
+												</span>
 											</DropdownMenuTrigger>
 											{mode.value === "ask" ? (
 												<DropdownMenuContent

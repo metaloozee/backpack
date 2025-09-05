@@ -1,6 +1,6 @@
-/** biome-ignore-all lint/performance/noImgElement: <explanation> */
-/** biome-ignore-all lint/a11y/noNoninteractiveElementInteractions: <explanation> */
-/** biome-ignore-all lint/nursery/useImageSize: <explanation> */
+/** biome-ignore-all lint/performance/noImgElement: we need to use the img element to display the image */
+/** biome-ignore-all lint/a11y/noNoninteractiveElementInteractions: we need to use the span element to display the text */
+/** biome-ignore-all lint/nursery/useImageSize: we need to use the img element to display the image */
 "use client";
 
 import { ChevronDownIcon } from "@radix-ui/react-icons";
