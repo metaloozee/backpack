@@ -2,11 +2,12 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
 import type { Session } from "better-auth";
 import { BookOpenIcon } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import DisplayChats from "@/components/chat/display-chats";
 import { ChatMessages } from "@/components/chat/messages";
@@ -19,6 +20,7 @@ import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/ai/utils";
 import type { Chat as ChatType } from "@/lib/db/schema/app";
 import { useAutoResume } from "@/lib/hooks/use-auto-resume";
+import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
 export function Chat({
@@ -55,8 +57,91 @@ export function Chat({
 	const [tools, setTools] = useState<ToolsState>(initialTools ?? getDefaultToolsState());
 
 	const { setDataStream } = useDataStream();
+	const queryClient = useQueryClient();
+	const trpc = useTRPC();
 
-	const { messages, setMessages, sendMessage, status, stop, regenerate, resumeStream } = useChat<ChatMessage>({
+	const generateTempTitle = useCallback((message: ChatMessage): string => {
+		const firstTextPart = message.parts.find((part) => part.type === "text");
+		if (firstTextPart && "text" in firstTextPart) {
+			const text = firstTextPart.text.trim();
+			return text.length > 50 ? `${text.slice(0, 50)}...` : text;
+		}
+		return "New Chat";
+	}, []);
+
+	const optimisticallyAddChat = useCallback(
+		(message: ChatMessage) => {
+			const tempTitle = generateTempTitle(message);
+			const newChat: ChatType = {
+				id,
+				userId: "",
+				spaceId: env.spaceId || null,
+				title: tempTitle,
+				createdAt: new Date(),
+			};
+
+			queryClient.setQueryData(
+				trpc.chat.getChats.infiniteQueryOptions({ limit: 20 }).queryKey,
+				(oldData: any) => {
+					if (!oldData) {
+						return {
+							pages: [{ chats: [newChat], nextCursor: undefined }],
+							pageParams: [undefined],
+						};
+					}
+
+					const updatedPages = [...oldData.pages];
+					updatedPages[0] = {
+						...updatedPages[0],
+						chats: [newChat, ...updatedPages[0].chats],
+					};
+
+					return {
+						...oldData,
+						pages: updatedPages,
+					};
+				}
+			);
+
+			if (env.spaceId) {
+				queryClient.setQueryData(
+					trpc.chat.getChats.infiniteQueryOptions({ limit: 20, spaceId: env.spaceId }).queryKey,
+					(oldData: any) => {
+						if (!oldData) {
+							return {
+								pages: [{ chats: [newChat], nextCursor: undefined }],
+								pageParams: [undefined],
+							};
+						}
+
+						const updatedPages = [...oldData.pages];
+						updatedPages[0] = {
+							...updatedPages[0],
+							chats: [newChat, ...updatedPages[0].chats],
+						};
+
+						return {
+							...oldData,
+							pages: updatedPages,
+						};
+					}
+				);
+			}
+		},
+		[id, env.spaceId, generateTempTitle, queryClient, trpc]
+	);
+
+	const [hasOptimisticallyAdded, setHasOptimisticallyAdded] = useState(false);
+
+	const {
+		messages,
+		setMessages,
+		sendMessage: originalSendMessage,
+		status,
+		stop,
+		regenerate,
+		resumeStream,
+	} = useChat<ChatMessage>({
 		id,
 		messages: initialMessages,
 		generateId: () => crypto.randomUUID(),
@@ -83,6 +168,44 @@ export function Chat({
 			toast.error("uh oh!", { description: error.message });
 		},
 	});
+
+	const sendMessage = useCallback(
+		(message: any) => {
+			const fullMessage: ChatMessage = {
+				id: message.id || crypto.randomUUID(),
+				role: message.role || "user",
+				parts: message.parts || [],
+			};
+
+			const isFirstMessage = initialMessages.length === 0 && messages.length === 0;
+
+			if (isFirstMessage) {
+				optimisticallyAddChat(fullMessage);
+				setHasOptimisticallyAdded(true);
+			}
+
+			return originalSendMessage(message);
+		},
+		[initialMessages.length, messages.length, optimisticallyAddChat, originalSendMessage]
+	);
+
+	useEffect(() => {
+		if (hasOptimisticallyAdded && messages.length > 1) {
+			const timer = setTimeout(() => {
+				queryClient.invalidateQueries({
+					queryKey: trpc.chat.getChats.infiniteQueryOptions({ limit: 20 }).queryKey,
+				});
+				if (env.spaceId) {
+					queryClient.invalidateQueries({
+						queryKey: trpc.chat.getChats.infiniteQueryOptions({ limit: 20, spaceId: env.spaceId }).queryKey,
+					});
+				}
+				setHasOptimisticallyAdded(false);
+			}, 1000);
+
+			return () => clearTimeout(timer);
+		}
+	}, [hasOptimisticallyAdded, messages.length, queryClient, trpc, env.spaceId]);
 
 	const searchParams = useSearchParams();
 	const query = searchParams.get("query");
@@ -113,11 +236,15 @@ export function Chat({
 		<div
 			className={cn(
 				"flex h-full w-full flex-col",
-				messages.length === 0
-					? isSpaceChat
-						? "items-start justify-start"
-						: "container items-center justify-center"
-					: "items-center justify-between"
+				(() => {
+					if (messages.length > 0) {
+						return "items-center justify-between";
+					}
+					if (isSpaceChat) {
+						return "items-start justify-start";
+					}
+					return "container items-center justify-center";
+				})()
 			)}
 			suppressHydrationWarning
 		>
