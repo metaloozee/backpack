@@ -2,7 +2,7 @@
 
 import { Mistral } from "@mistralai/mistralai";
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, lt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { generateEmbeddings } from "@/lib/ai/embedding";
@@ -22,6 +22,35 @@ async function fileToBase64(file: File): Promise<string> {
 }
 
 export const spaceRouter = router({
+	getSpaces: protectedProcedure
+		.input(
+			z.object({
+				limit: z.number(),
+				cursor: z.date().optional(),
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			const items = await db
+				.select()
+				.from(spaces)
+				.limit(input.limit + 1)
+				.where(
+					and(
+						eq(spaces.userId, ctx.session.user.id),
+						input.cursor ? lt(spaces.createdAt, input.cursor) : undefined
+					)
+				)
+				.orderBy(desc(spaces.createdAt));
+
+			const hasMore = items.length > input.limit;
+			const itemsToReturn = hasMore ? items.slice(0, input.limit) : items;
+			const nextCursor = hasMore ? itemsToReturn.at(-1)?.createdAt : undefined;
+
+			return {
+				spaces: itemsToReturn,
+				nextCursor,
+			};
+		}),
 	createSpace: protectedProcedure
 		.input(
 			z.object({

@@ -1,18 +1,15 @@
 "use client";
 
-import {
-	BackpackIcon,
-	LibraryIcon,
-	MessagesSquareIcon,
-	PanelLeftCloseIcon,
-	PanelLeftOpenIcon,
-	SearchIcon,
-} from "lucide-react";
+import { BackpackIcon, LibraryIcon, PanelLeftCloseIcon, PanelLeftOpenIcon, SearchIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import UserProfile from "@/components/profile";
+import { SidebarChatsList } from "@/components/sidebar/chats-list";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, useSidebar } from "@/components/ui/sidebar";
 import { fadeVariants, iconVariants, slideVariants, transitions } from "@/lib/animations";
@@ -24,7 +21,8 @@ export function AppSidebar() {
 
 	const isHome = pathname === "/";
 	const isSpaces = pathname.startsWith("/s");
-	const isChats = pathname.startsWith("/c");
+	// const isChats = pathname.startsWith("/c");
+	const [chatQuery, setChatQuery] = useState("");
 
 	const { state, open, setOpen } = useSidebar();
 
@@ -76,8 +74,8 @@ export function AppSidebar() {
 				<motion.div
 					animate="visible"
 					className={cn(
-						"flex h-full w-full flex-col items-center justify-center gap-2",
-						state === "expanded" ? "px-4" : ""
+						"flex h-full w-full flex-col gap-2",
+						state === "expanded" ? "px-4" : "items-center justify-center"
 					)}
 					initial="hidden"
 					transition={transitions.smooth}
@@ -101,7 +99,7 @@ export function AppSidebar() {
 										<motion.div initial="rest" variants={iconVariants} whileHover="hover">
 											<SearchIcon />
 										</motion.div>
-										<p className="font-light">Search</p>
+										<p className="font-light">New Chat</p>
 									</>
 								) : (
 									<motion.div initial="rest" variants={iconVariants} whileHover="hover">
@@ -141,34 +139,25 @@ export function AppSidebar() {
 						</Button>
 					</motion.div>
 
-					<motion.div
-						className={cn(state === "expanded" ? "w-full" : "")}
-						initial="rest"
-						whileHover="hover"
-						whileTap="tap"
-					>
-						<Button
-							asChild
-							className={cn(state === "expanded" ? "w-full" : "")}
-							size={state === "expanded" ? "default" : "icon"}
-							variant={isChats ? "default" : state === "expanded" ? "ghost" : "ghost"}
-						>
-							<Link href={"/c/"}>
-								{state === "expanded" ? (
-									<>
-										<motion.div initial="rest" variants={iconVariants} whileHover="hover">
-											<MessagesSquareIcon />
-										</motion.div>
-										<p className="font-light">Chats</p>
-									</>
-								) : (
-									<motion.div initial="rest" variants={iconVariants} whileHover="hover">
-										<MessagesSquareIcon />
-									</motion.div>
-								)}
-							</Link>
-						</Button>
-					</motion.div>
+					{state === "expanded" && (
+						<Input
+							className="h-8"
+							onChange={(e) => setChatQuery(e.target.value)}
+							placeholder="Search chats..."
+							value={chatQuery}
+						/>
+					)}
+
+					{state === "expanded" && (
+						<>
+							<Separator />
+							<div className="min-h-0 w-full flex-1 justify-end">
+								<ScrollArea className="h-full w-full">
+									<SidebarChatsList limit={20} query={chatQuery} showMore={true} />
+								</ScrollArea>
+							</div>
+						</>
+					)}
 				</motion.div>
 			</SidebarContent>
 			<SidebarFooter className={cn("w-full", state === "collapsed" ? "flex items-center justify-center" : "p-4")}>

@@ -3,7 +3,7 @@
 import { elevenlabs } from "@ai-sdk/elevenlabs";
 import { TRPCError } from "@trpc/server";
 import { experimental_transcribe as transcribe } from "ai";
-import { and, desc, eq, gte, lt } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, lt } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { cookies } from "next/headers";
 import { z } from "zod";
@@ -45,6 +45,23 @@ export const chatRouter = router({
 				chats: itemsToReturn,
 				nextCursor,
 			};
+		}),
+	searchChats: protectedProcedure
+		.input(
+			z.object({
+				query: z.string().min(1),
+				limit: z.number().default(10),
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			const items = await db
+				.select()
+				.from(chat)
+				.where(and(eq(chat.userId, ctx.session.user.id), ilike(chat.title, `%${input.query}%`)))
+				.orderBy(desc(chat.createdAt))
+				.limit(input.limit);
+
+			return { chats: items };
 		}),
 	saveMessages: protectedProcedure
 		.input(
