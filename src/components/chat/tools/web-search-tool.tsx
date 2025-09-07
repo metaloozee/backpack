@@ -64,7 +64,7 @@ export function WebSearchTool({ toolCallId, input, output }: WebSearchToolProps)
 			<div className="flex w-full flex-col gap-2">
 				{flattenedImages.length > 0 && (
 					<div className="mt-2">
-						<ScrollArea className="pb-2">
+						<ScrollArea className="bg-neutral-950 pb-2">
 							<div className="flex w-max flex-row gap-3">
 								{flattenedImages.slice(0, 24).map((img) => (
 									<a

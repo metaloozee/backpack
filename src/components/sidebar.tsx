@@ -1,6 +1,6 @@
 "use client";
 
-import { BackpackIcon, LibraryIcon, PanelLeftCloseIcon, PanelLeftOpenIcon, SearchIcon } from "lucide-react";
+import { BackpackIcon, LibraryIcon, MessageCirclePlusIcon, PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,7 +9,7 @@ import UserProfile from "@/components/profile";
 import { SidebarChatsList } from "@/components/sidebar/chats-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, useSidebar } from "@/components/ui/sidebar";
 import { fadeVariants, iconVariants, slideVariants, transitions } from "@/lib/animations";
@@ -91,19 +91,19 @@ export function AppSidebar() {
 							asChild
 							className={cn(state === "expanded" ? "w-full" : "")}
 							size={state === "expanded" ? "default" : "icon"}
-							variant={isHome ? "default" : state === "expanded" ? "ghost" : "ghost"}
+							variant={isHome ? "default" : "outline"}
 						>
 							<Link href={"/"}>
 								{state === "expanded" ? (
 									<>
 										<motion.div initial="rest" variants={iconVariants} whileHover="hover">
-											<SearchIcon />
+											<MessageCirclePlusIcon />
 										</motion.div>
 										<p className="font-light">New Chat</p>
 									</>
 								) : (
 									<motion.div initial="rest" variants={iconVariants} whileHover="hover">
-										<SearchIcon />
+										<MessageCirclePlusIcon />
 									</motion.div>
 								)}
 							</Link>
@@ -120,7 +120,7 @@ export function AppSidebar() {
 							asChild
 							className={cn(state === "expanded" ? "w-full" : "")}
 							size={state === "expanded" ? "default" : "icon"}
-							variant={isSpaces ? "default" : state === "expanded" ? "ghost" : "ghost"}
+							variant={isSpaces ? "default" : "outline"}
 						>
 							<Link href={"/s/"}>
 								{state === "expanded" ? (
@@ -141,7 +141,7 @@ export function AppSidebar() {
 
 					{state === "expanded" && (
 						<Input
-							className="h-8"
+							className="h-8 border-0"
 							onChange={(e) => setChatQuery(e.target.value)}
 							placeholder="Search chats..."
 							value={chatQuery}
@@ -149,14 +149,10 @@ export function AppSidebar() {
 					)}
 
 					{state === "expanded" && (
-						<>
-							<Separator />
-							<div className="min-h-0 w-full flex-1 justify-end">
-								<ScrollArea className="h-full w-full">
-									<SidebarChatsList limit={20} query={chatQuery} showMore={true} />
-								</ScrollArea>
-							</div>
-						</>
+						<ScrollArea className="h-full w-full flex-1 rounded-md bg-background">
+							<SidebarChatsList limit={20} query={chatQuery} showMore={true} />
+							<ScrollBar orientation="vertical" />
+						</ScrollArea>
 					)}
 				</motion.div>
 			</SidebarContent>

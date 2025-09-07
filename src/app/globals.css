@@ -1,12 +1,10 @@
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: plugin */
 @import "tailwindcss";
 
-/* biome-ignore lint: This is a plugin */
 @plugin "tailwindcss-animate";
 
-/* biome-ignore lint: This is a plugin */
 @custom-variant dark (&:is(.dark *));
 
-/* biome-ignore lint: This is a theme */
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
@@ -135,33 +133,37 @@
 
 @layer base {
 	* {
-		/* biome-ignore lint: This is a plugin */
 		@apply border-border outline-ring/50;
+
+		scrollbar-width: thin;
+		scrollbar-color: var(--border) transparent;
 	}
 	body {
-		/* biome-ignore lint: This is a plugin */
 		@apply bg-background text-foreground;
 	}
-	/* Firefox */
-	* {
-		scrollbar-width: thin;
-		scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+
+	html {
+		@apply scroll-smooth;
 	}
-	/* Chromium/WebKit */
-	*::-webkit-scrollbar {
-		width: var(--scrollbar-size);
-		height: var(--scrollbar-size);
+}
+
+/* Custom Scrollbar Styling  */
+::-webkit-scrollbar {
+	width: 8px;
+}
+::-webkit-scrollbar-track {
+	width: 10px;
+	margin-block: 0.25rem;
+	background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+	border-radius: 100vw;
+	background: color-mix(in oklab, var(--primary) 25%, transparent);
+	transition: background 0.15s ease-in-out;
+	&:hover {
+		background: color-mix(in oklab, var(--primary) 30%, transparent);
 	}
-	*::-webkit-scrollbar-track {
-		background: var(--scrollbar-track);
-	}
-	*::-webkit-scrollbar-thumb {
-		background-color: var(--scrollbar-thumb);
-		border-radius: 9999px;
-		border: 2px solid transparent;
-		background-clip: content-box;
-	}
-	*::-webkit-scrollbar-thumb:hover {
-		background-color: var(--scrollbar-thumb-hover);
+	&:active {
+		background: color-mix(in oklab, var(--primary) 50%, transparent);
 	}
 }
