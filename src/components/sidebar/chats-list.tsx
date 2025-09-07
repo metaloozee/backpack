@@ -1,9 +1,18 @@
 "use client";
 
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
+import { Trash2Icon, XIcon } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import {
+	ContextMenu,
+	ContextMenuContent,
+	ContextMenuItem,
+	ContextMenuSeparator,
+	ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { Loader } from "@/components/ui/loader";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
@@ -19,9 +28,12 @@ export function SidebarChatsList({
 }) {
 	const trpc = useTRPC();
 	const pathname = usePathname();
+	const router = useRouter();
 	const trimmedQuery = query.trim().toLowerCase();
 
 	const loadMoreRef = useRef<HTMLDivElement | null>(null);
+	const [confirmingChatId, setConfirmingChatId] = useState<string | null>(null);
+	const deleteMutation = useMutation(trpc.chat.deleteChat.mutationOptions());
 
 	const currentChatId = pathname.startsWith("/c/") ? pathname.split("/")[2] : null;
 
@@ -119,13 +131,71 @@ export function SidebarChatsList({
 			{chatsToShow.map((c) => {
 				const isActive = c.id === currentChatId;
 				return (
-					<Link
-						className={cn("rounded px-2 py-1 hover:bg-neutral-900", isActive && "bg-neutral-900")}
-						href={`/c/${c.id}`}
-						key={c.id}
-					>
-						{c.title}
-					</Link>
+					<ContextMenu key={c.id} onOpenChange={(open) => !open && setConfirmingChatId(null)}>
+						<ContextMenuTrigger asChild>
+							<Link
+								className={cn("rounded px-2 py-1 hover:bg-neutral-900", isActive && "bg-neutral-900")}
+								href={`/c/${c.id}`}
+							>
+								{c.title}
+							</Link>
+						</ContextMenuTrigger>
+						<ContextMenuContent>
+							{confirmingChatId === c.id ? (
+								<>
+									<ContextMenuItem
+										disabled={deleteMutation.isPending}
+										onSelect={async (e) => {
+											e.preventDefault();
+											try {
+												await deleteMutation.mutateAsync({ chatId: c.id });
+												toast.success("Chat deleted");
+												if (c.id === currentChatId) {
+													router.replace("/");
+												}
+												setConfirmingChatId(null);
+												await Promise.all([
+													infiniteQuery.refetch(),
+													showingDatabaseResults
+														? databaseSearchQuery.refetch()
+														: Promise.resolve(),
+												]);
+											} catch {
+												toast.error("Failed to delete chat");
+											}
+										}}
+									>
+										{deleteMutation.isPending ? (
+											<Loader className="size-4" />
+										) : (
+											<Trash2Icon className="size-4" />
+										)}
+										<span>Confirm delete</span>
+									</ContextMenuItem>
+									<ContextMenuSeparator />
+									<ContextMenuItem
+										onSelect={(e) => {
+											e.preventDefault();
+											setConfirmingChatId(null);
+										}}
+									>
+										<XIcon className="size-4" />
+										Cancel
+									</ContextMenuItem>
+								</>
+							) : (
+								<ContextMenuItem
+									onSelect={(e) => {
+										e.preventDefault();
+										setConfirmingChatId(c.id);
+									}}
+								>
+									<Trash2Icon className="size-4" />
+									<span>Delete…</span>
+								</ContextMenuItem>
+							)}
+						</ContextMenuContent>
+					</ContextMenu>
 				);
 			})}
 

@@ -1,10 +1,9 @@
 import { headers } from "next/headers";
-
-import { api } from "@/lib/auth/server";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db/index";
 
 export async function createTRPCContext() {
-	const res = await api.getSession({
+	const res = await auth.api.getSession({
 		headers: await headers(),
 	});
 
