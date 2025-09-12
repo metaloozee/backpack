@@ -97,9 +97,9 @@ export const models: Model[] = [
 	},
 	{
 		name: "Kimi K2",
-		id: "moonshotai/kimi-k2-instruct",
+		id: "moonshotai/kimi-k2-instruct-0905",
 		provider: "groq",
-		instance: groq("moonshotai/kimi-k2-instruct"),
+		instance: groq("moonshotai/kimi-k2-instruct-0905"),
 		properties: ["quality", "fast"],
 	},
 ];
