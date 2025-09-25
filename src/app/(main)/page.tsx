@@ -1,16 +1,15 @@
-import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import { Chat } from "@/components/chat";
-import { models } from "@/lib/ai/models";
+import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
 import { getDefaultToolsState } from "@/lib/ai/tools";
 import { getSession } from "@/lib/auth/utils";
 
 export default async function IndexPage() {
 	const session = await getSession();
 
-	const id = randomUUID();
+	const id = crypto.randomUUID();
 	const cookieStore = await cookies();
-	const selectedModel = cookieStore.get("X-Model-Id")?.value ?? models[0].id;
+	const selectedModel = cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
 
 	const toolsStateString = cookieStore.get("X-Tools-State")?.value;
 	let initialTools = getDefaultToolsState();

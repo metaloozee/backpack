@@ -35,11 +35,13 @@ function FaviconIcon({ domain }: { domain: string }) {
 			<Image
 				alt={`${domain} favicon`}
 				className="size-4"
+				height={16}
 				onError={() => setFaviconError(true)}
 				onLoad={() => setFaviconLoaded(true)}
 				sizes="16px"
 				src={faviconUrl}
 				style={{ display: faviconLoaded ? "block" : "none" }}
+				width={16}
 			/>
 		</div>
 	);

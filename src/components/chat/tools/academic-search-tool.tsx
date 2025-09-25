@@ -61,6 +61,7 @@ export function AcademicSearchTool({ toolCallId, input, output }: AcademicSearch
 															<Link
 																className="line-clamp-2 font-medium text-primary text-sm hover:underline"
 																href={paper.url}
+																rel="noopener noreferrer"
 																target="_blank"
 															>
 																{paper.title}

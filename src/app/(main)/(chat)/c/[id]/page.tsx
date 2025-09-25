@@ -2,7 +2,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Chat as PreviewChat } from "@/components/chat";
-import { models } from "@/lib/ai/models";
+import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
 import { getDefaultToolsState } from "@/lib/ai/tools";
 import { convertToUIMessages } from "@/lib/ai/utils";
 import { getSession, getUser } from "@/lib/auth/utils";
@@ -16,7 +16,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
 	const { id: chatId } = await params;
 
 	const cookieStore = await cookies();
-	const selectedModel = cookieStore.get("X-Model-Id")?.value ?? models[0].id;
+	const selectedModel = cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
 
 	const toolsStateString = cookieStore.get("X-Tools-State")?.value;
 	let initialTools = getDefaultToolsState();

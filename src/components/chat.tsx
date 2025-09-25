@@ -20,6 +20,7 @@ import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/ai/utils";
 import type { Chat as ChatType } from "@/lib/db/schema/app";
 import { useAutoResume } from "@/lib/hooks/use-auto-resume";
+import { type ChatInfiniteData, prependChatToInfiniteData } from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
@@ -82,48 +83,30 @@ export function Chat({
 
 			queryClient.setQueryData(
 				trpc.chat.getChats.infiniteQueryOptions({ limit: 20 }).queryKey,
-				(oldData: any) => {
+				(oldData: ChatInfiniteData | undefined) => {
 					if (!oldData) {
 						return {
 							pages: [{ chats: [newChat], nextCursor: undefined }],
-							pageParams: [undefined],
-						};
+							pageParams: [null],
+						} as ChatInfiniteData;
 					}
 
-					const updatedPages = [...oldData.pages];
-					updatedPages[0] = {
-						...updatedPages[0],
-						chats: [newChat, ...updatedPages[0].chats],
-					};
-
-					return {
-						...oldData,
-						pages: updatedPages,
-					};
+					return prependChatToInfiniteData(oldData, newChat) ?? oldData;
 				}
 			);
 
 			if (env.spaceId) {
 				queryClient.setQueryData(
 					trpc.chat.getChats.infiniteQueryOptions({ limit: 20, spaceId: env.spaceId }).queryKey,
-					(oldData: any) => {
+					(oldData: ChatInfiniteData | undefined) => {
 						if (!oldData) {
 							return {
 								pages: [{ chats: [newChat], nextCursor: undefined }],
-								pageParams: [undefined],
-							};
+								pageParams: [null],
+							} as ChatInfiniteData;
 						}
 
-						const updatedPages = [...oldData.pages];
-						updatedPages[0] = {
-							...updatedPages[0],
-							chats: [newChat, ...updatedPages[0].chats],
-						};
-
-						return {
-							...oldData,
-							pages: updatedPages,
-						};
+						return prependChatToInfiniteData(oldData, newChat) ?? oldData;
 					}
 				);
 			}
@@ -192,20 +175,13 @@ export function Chat({
 	useEffect(() => {
 		if (hasOptimisticallyAdded && messages.length > 1) {
 			const timer = setTimeout(() => {
-				queryClient.invalidateQueries({
-					queryKey: trpc.chat.getChats.infiniteQueryOptions({ limit: 20 }).queryKey,
-				});
-				if (env.spaceId) {
-					queryClient.invalidateQueries({
-						queryKey: trpc.chat.getChats.infiniteQueryOptions({ limit: 20, spaceId: env.spaceId }).queryKey,
-					});
-				}
+				queryClient.invalidateQueries(trpc.chat.getChats.pathFilter());
 				setHasOptimisticallyAdded(false);
 			}, 1000);
 
 			return () => clearTimeout(timer);
 		}
-	}, [hasOptimisticallyAdded, messages.length, queryClient, trpc, env.spaceId]);
+	}, [hasOptimisticallyAdded, messages.length, queryClient, trpc]);
 
 	const searchParams = useSearchParams();
 	const query = searchParams.get("query");

@@ -37,14 +37,26 @@ function Button({
 	variant,
 	size,
 	asChild = false,
-	...props
+	type,
+	...rest
 }: React.ComponentProps<"button"> &
 	VariantProps<typeof buttonVariants> & {
 		asChild?: boolean;
 	}) {
 	const Comp = asChild ? Slot : "button";
 
-	return <Comp className={cn(buttonVariants({ variant, size, className }))} data-slot="button" {...props} />;
+	// Ensure buttons inside forms don't submit by default unless explicitly set
+	const resolvedType = type ?? "button";
+
+	return (
+		<Comp
+			className={cn(buttonVariants({ variant, size, className }))}
+			data-slot="button"
+			// Only apply the type attribute when rendering a real button
+			{...(!asChild ? { type: resolvedType } : {})}
+			{...rest}
+		/>
+	);
 }
 
 export { Button, buttonVariants };

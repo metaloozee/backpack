@@ -1,7 +1,7 @@
 "use client";
 
 import { DialogTitle, DialogTrigger } from "@radix-ui/react-dialog";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { SquarePlusIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,7 @@ import { Textarea } from "../ui/textarea";
 export const Header: React.FC<{ userId: string }> = ({ userId }) => {
 	const trpc = useTRPC();
 	const router = useRouter();
+	const queryClient = useQueryClient();
 
 	const [isOpen, setIsOpen] = useState(false);
 	const [spaceTitle, setSpaceTitle] = useState("");
@@ -43,6 +44,7 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
 			});
 			setIsOpen(false);
 			router.push(`/s/${res.id}`);
+			await queryClient.invalidateQueries(trpc.space.getSpaces.pathFilter());
 			return toast.success("Successfully Created a New Space.");
 		} catch (err) {
 			toast.error("Uh oh!", { description: (err as Error).message });

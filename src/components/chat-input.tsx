@@ -361,16 +361,19 @@ function PureInput({
 		}
 	}, [isRecording, transcribe.mutateAsync, setInput, cleanupRecorder]);
 
+	const containerLayoutClass = (() => {
+		if (messages.length > 0) {
+			return "right-0 bottom-0 left-0";
+		}
+		if (isSpaceChat) {
+			return "mt-20";
+		}
+		return "flex flex-col items-center justify-center";
+	})();
+
 	return (
 		<motion.div
-			className={cn(
-				"sticky w-full bg-background",
-				messages.length > 0
-					? "right-0 bottom-0 left-0"
-					: isSpaceChat
-						? "mt-20"
-						: "flex flex-col items-center justify-center"
-			)}
+			className={cn("sticky w-full bg-background", containerLayoutClass)}
 			layout
 			onDragEnter={handleDragEnter}
 			onDragLeave={handleDragLeave}

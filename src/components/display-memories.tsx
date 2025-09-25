@@ -46,7 +46,22 @@ export function DisplayMemories() {
 	const queryClient = useQueryClient();
 
 	const { data: memories, isLoading } = useQuery(trpc.memories.getMemories.queryOptions());
-	const deleteMemoryMutation = useMutation(trpc.memories.deleteMemory.mutationOptions());
+	const deleteMemoryMutation = useMutation(
+		trpc.memories.deleteMemory.mutationOptions({
+			onSuccess: (_, variables) => {
+				queryClient.setQueryData(
+					trpc.memories.getMemories.queryKey(),
+					(oldData: Memory[] | undefined) => oldData?.filter((memory) => memory.id !== variables.id) ?? []
+				);
+				toast.success("Memory deleted successfully");
+				setDeleteDialogOpen((current) => (current === variables.id ? null : current));
+			},
+			onError: (error) => {
+				toast.error("Failed to delete memory", { description: error.message });
+				setDeleteDialogOpen(null);
+			},
+		})
+	);
 
 	const columns: ColumnDef<Memory>[] = [
 		{
@@ -75,20 +90,7 @@ export function DisplayMemories() {
 				const memory = row.original;
 
 				const handleDelete = () => {
-					deleteMemoryMutation.mutate(
-						{ id: memory.id },
-						{
-							onSuccess: () => {
-								toast.success("Memory deleted successfully");
-								setDeleteDialogOpen(null);
-								queryClient.invalidateQueries(trpc.memories.getMemories.queryOptions());
-							},
-							onError: () => {
-								toast.error("Failed to delete memory");
-								setDeleteDialogOpen(null);
-							},
-						}
-					);
+					deleteMemoryMutation.mutate({ id: memory.id });
 				};
 
 				const handleCopy = async () => {

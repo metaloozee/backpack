@@ -65,7 +65,7 @@ export function FinanceSearchTool({ toolCallId, input, output }: FinanceSearchTo
 													<Link
 														className="line-clamp-2 font-medium text-primary text-sm hover:underline"
 														href={searchResult.url}
-														rel="noopener"
+														rel="noopener noreferrer"
 														target="_blank"
 													>
 														<Image

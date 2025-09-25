@@ -3,11 +3,12 @@
 
 "use client";
 
-import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronsDownIcon, Trash2Icon } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 import { format } from "timeago.js";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,15 +31,18 @@ import {
 	transitions,
 } from "@/lib/animations";
 import type { Chat } from "@/lib/db/schema/app";
+import { type ChatInfiniteData, removeChatFromInfiniteData } from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
-function ChatCard({ chat, refetch }: { chat: Chat; refetch: () => void }) {
-	const trpc = useTRPC();
+type ChatCardProps = {
+	chat: Chat;
+	isDeleting: boolean;
+	onDelete: (chatId: string) => Promise<void>;
+};
 
+function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 	const [isOpen, setIsOpen] = useState(false);
-
-	const mutation = useMutation(trpc.chat.deleteChat.mutationOptions());
 
 	return (
 		<motion.div
@@ -115,12 +119,15 @@ function ChatCard({ chat, refetch }: { chat: Chat; refetch: () => void }) {
 									<motion.div initial="rest" whileHover="hover" whileTap="tap">
 										<Button
 											className="text-xs"
-											disabled={mutation.isPending}
+											disabled={isDeleting}
 											onClick={async (e) => {
 												e.preventDefault();
-												await mutation.mutateAsync({ chatId: chat.id });
-												refetch();
-												setIsOpen(false);
+												try {
+													await onDelete(chat.id);
+													setIsOpen(false);
+												} catch {
+													/* handled via toast */
+												}
 											}}
 											variant={"destructive"}
 										>
@@ -130,7 +137,7 @@ function ChatCard({ chat, refetch }: { chat: Chat; refetch: () => void }) {
 												initial="hidden"
 												variants={fadeVariants}
 											>
-												{mutation.isPending ? (
+												{isDeleting ? (
 													<motion.div animate="spin" initial="rest" variants={iconVariants}>
 														<Loader className="size-3 text-red-400" />
 													</motion.div>
@@ -166,6 +173,30 @@ function ChatCard({ chat, refetch }: { chat: Chat; refetch: () => void }) {
 
 export default function DisplayChats({ spaceId }: { spaceId?: string }) {
 	const trpc = useTRPC();
+	const queryClient = useQueryClient();
+	const [pendingChatId, setPendingChatId] = useState<string | null>(null);
+
+	const deleteMutation = useMutation(
+		trpc.chat.deleteChat.mutationOptions({
+			onMutate: ({ chatId }) => {
+				setPendingChatId(chatId);
+			},
+			onSuccess: async (_, variables) => {
+				const chatId = variables.chatId;
+				queryClient.setQueriesData(trpc.chat.getChats.pathFilter(), (old) =>
+					removeChatFromInfiniteData(old as ChatInfiniteData | undefined, chatId)
+				);
+				await queryClient.invalidateQueries(trpc.chat.getChats.pathFilter());
+				toast.success("Chat deleted");
+			},
+			onError: (error) => {
+				toast.error("Failed to delete chat", { description: error.message });
+			},
+			onSettled: () => {
+				setPendingChatId(null);
+			},
+		})
+	);
 
 	const query = useInfiniteQuery(
 		trpc.chat.getChats.infiniteQueryOptions(
@@ -207,7 +238,14 @@ export default function DisplayChats({ spaceId }: { spaceId?: string }) {
 	return (
 		<>
 			{chats.map((chat) => (
-				<ChatCard chat={chat} key={chat.id} refetch={query.refetch} />
+				<ChatCard
+					chat={chat}
+					isDeleting={pendingChatId === chat.id && deleteMutation.isPending}
+					key={chat.id}
+					onDelete={async (chatId) => {
+						await deleteMutation.mutateAsync({ chatId });
+					}}
+				/>
 			))}
 
 			{hasNextPage && (

@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import type { InferSelectModel } from "drizzle-orm";
 import { index, json, pgEnum, pgTable, text, timestamp, varchar, vector } from "drizzle-orm/pg-core";
 import { user } from "@/lib/db/schema/auth";
@@ -8,7 +7,7 @@ export const memories = pgTable(
 	{
 		id: text("id")
 			.primaryKey()
-			.$defaultFn(() => randomUUID()),
+			.$defaultFn(() => crypto.randomUUID()),
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, {
@@ -37,7 +36,7 @@ export const spaces = pgTable(
 	{
 		id: text("id")
 			.primaryKey()
-			.$defaultFn(() => randomUUID()),
+			.$defaultFn(() => crypto.randomUUID()),
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, {
@@ -64,7 +63,7 @@ export const knowledge = pgTable(
 	{
 		id: text("id")
 			.primaryKey()
-			.$defaultFn(() => randomUUID()),
+			.$defaultFn(() => crypto.randomUUID()),
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, {
@@ -99,7 +98,7 @@ export const knowledgeEmbeddings = pgTable(
 	{
 		id: text("id")
 			.primaryKey()
-			.$defaultFn(() => randomUUID()),
+			.$defaultFn(() => crypto.randomUUID()),
 		knowledgeId: text("knowledge_id")
 			.notNull()
 			.references(() => knowledge.id, {
@@ -125,7 +124,7 @@ export const chat = pgTable(
 	{
 		id: text("id")
 			.primaryKey()
-			.$defaultFn(() => randomUUID()),
+			.$defaultFn(() => crypto.randomUUID()),
 		title: text("title").notNull(),
 		createdAt: timestamp("created_at").notNull(),
 		userId: text("user_id")
@@ -154,7 +153,7 @@ export const message = pgTable(
 	{
 		id: text("id")
 			.primaryKey()
-			.$defaultFn(() => randomUUID()),
+			.$defaultFn(() => crypto.randomUUID()),
 		chatId: text("chat_id")
 			.notNull()
 			.references(() => chat.id, {
@@ -180,7 +179,7 @@ export const stream = pgTable(
 	{
 		id: text("id")
 			.primaryKey()
-			.$defaultFn(() => randomUUID()),
+			.$defaultFn(() => crypto.randomUUID()),
 		chatId: text("chat_id")
 			.notNull()
 			.references(() => chat.id, {

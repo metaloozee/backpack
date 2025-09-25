@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import { SettingsIcon } from "lucide-react";
 import { cookies } from "next/headers";
@@ -7,7 +6,7 @@ import { notFound } from "next/navigation";
 import { Chat } from "@/components/chat";
 import { KnowledgeDialog } from "@/components/spaces/knowledge-dialog";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { models } from "@/lib/ai/models";
+import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
 import { getDefaultToolsState } from "@/lib/ai/tools";
 import { getSession, getUser } from "@/lib/auth/utils";
 import { db } from "@/lib/db";
@@ -18,10 +17,10 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
 	const user = await getUser();
 
 	const { id: spaceId } = await params;
-	const chatId = randomUUID();
+	const chatId = crypto.randomUUID();
 
 	const cookieStore = await cookies();
-	const selectedModel = cookieStore.get("X-Model-Id")?.value ?? models[0].id;
+	const selectedModel = cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
 
 	const toolsStateString = cookieStore.get("X-Tools-State")?.value;
 	let initialTools = getDefaultToolsState();

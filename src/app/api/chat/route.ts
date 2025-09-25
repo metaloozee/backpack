@@ -1,6 +1,5 @@
 /** biome-ignore-all lint/suspicious/noConsole: console.log */
 
-import { randomUUID } from "node:crypto";
 import type { AnthropicProviderOptions } from "@ai-sdk/anthropic";
 import { type GoogleGenerativeAIProviderOptions, google } from "@ai-sdk/google";
 import {
@@ -18,6 +17,7 @@ import { cookies } from "next/headers";
 import { after } from "next/server";
 import { createResumableStreamContext, type ResumableStreamContext } from "resumable-stream";
 import { z } from "zod";
+import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
 import { getModel } from "@/lib/ai/models";
 import { AskModePrompt } from "@/lib/ai/prompts";
 import { academicSearchTool } from "@/lib/ai/tools/academic-search";
@@ -124,7 +124,7 @@ export async function POST(req: Request) {
 				throw new Error("Message and ID are required");
 			}
 
-			const modelId = cookieStore.get("X-Model-Id")?.value ?? "gemini-2.5-flash";
+			const modelId = cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
 			const model = getModel(modelId);
 
 			if (!model) {
@@ -174,7 +174,7 @@ export async function POST(req: Request) {
 				],
 			});
 
-			const streamId = randomUUID();
+			const streamId = crypto.randomUUID();
 			await db.insert(dbStream).values({ id: streamId, chatId: id, createdAt: new Date() });
 
 			const stream = createUIMessageStream({
@@ -240,7 +240,7 @@ export async function POST(req: Request) {
 					result.consumeStream();
 					dataStream.merge(result.toUIMessageStream({ sendReasoning: true }));
 				},
-				generateId: () => randomUUID(),
+				generateId: () => crypto.randomUUID(),
 				onError: () => {
 					return "Oops, an error occurred while processing your request.";
 				},

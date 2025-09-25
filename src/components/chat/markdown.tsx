@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type React from "react";
+import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
 import { memo } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -9,12 +9,49 @@ import remarkMath from "remark-math";
 import { CodeBlock } from "@/components/chat/code-block";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useCitations } from "@/lib/hooks/use-citations";
+import { cn } from "@/lib/utils";
 import { Citation } from "./citation";
 import "katex/dist/katex.min.css";
 
-// Move regex to top-level scope for performance
 const LANGUAGE_REGEX = /language-(\w+)/;
 const CITATION_REGEX = /\[(\d+)\]/g;
+
+const headingClassNames = {
+	h1: "mt-6 mb-2 font-semibold text-3xl",
+	h2: "mt-6 mb-2 font-semibold text-2xl",
+	h3: "mt-6 mb-2 font-semibold text-xl",
+	h4: "mt-6 mb-2 font-semibold text-lg",
+	h5: "mt-6 mb-2 font-semibold text-base",
+	h6: "mt-6 mb-2 font-semibold text-sm",
+} as const;
+
+const listItemClassName = "py-1" as const;
+
+type MarkdownComponentProps<T extends ElementType> = ComponentPropsWithoutRef<T> & {
+	node?: unknown;
+	children?: ReactNode;
+};
+
+const makeComponent = <T extends ElementType>(
+	Tag: T,
+	defaultProps?: Partial<ComponentPropsWithoutRef<T>>,
+	transformChildren?: (children: ReactNode) => ReactNode
+) => {
+	return ({ node: _node, children, className, ...rest }: MarkdownComponentProps<T>) => {
+		const content = transformChildren === undefined ? children : transformChildren(children);
+
+		return (
+			// @ts-expect-error Generic component props spreading is complex but works at runtime
+			<Tag
+				{...defaultProps}
+				{...rest}
+				className={cn((defaultProps as { className?: string } | undefined)?.className, className)}
+			>
+				{content}
+			</Tag>
+		);
+	};
+};
 
 const components: Partial<Components> = {
 	code: ({ node, className, children, ...props }) => {
@@ -42,13 +79,7 @@ const components: Partial<Components> = {
 			</ol>
 		);
 	},
-	li: ({ node, children, ...props }) => {
-		return (
-			<li className="py-1" {...props}>
-				{children}
-			</li>
-		);
-	},
+	li: makeComponent("li", { className: listItemClassName }),
 	ul: ({ node, children, ...props }) => {
 		return (
 			<ul className="ml-4 list-outside list-disc" {...props}>
@@ -66,53 +97,17 @@ const components: Partial<Components> = {
 	a: ({ node, children, ...props }) => {
 		return (
 			// @ts-expect-error
-			<Link className="text-blue-500 hover:underline" rel="noreferrer" target="_blank" {...props}>
+			<Link className="text-blue-500 hover:underline" rel="noopener noreferrer" target="_blank" {...props}>
 				{children}
 			</Link>
 		);
 	},
-	h1: ({ node, children, ...props }) => {
-		return (
-			<h1 className="mt-6 mb-2 font-semibold text-3xl" {...props}>
-				{children}
-			</h1>
-		);
-	},
-	h2: ({ node, children, ...props }) => {
-		return (
-			<h2 className="mt-6 mb-2 font-semibold text-2xl" {...props}>
-				{children}
-			</h2>
-		);
-	},
-	h3: ({ node, children, ...props }) => {
-		return (
-			<h3 className="mt-6 mb-2 font-semibold text-xl" {...props}>
-				{children}
-			</h3>
-		);
-	},
-	h4: ({ node, children, ...props }) => {
-		return (
-			<h4 className="mt-6 mb-2 font-semibold text-lg" {...props}>
-				{children}
-			</h4>
-		);
-	},
-	h5: ({ node, children, ...props }) => {
-		return (
-			<h5 className="mt-6 mb-2 font-semibold text-base" {...props}>
-				{children}
-			</h5>
-		);
-	},
-	h6: ({ node, children, ...props }) => {
-		return (
-			<h6 className="mt-6 mb-2 font-semibold text-sm" {...props}>
-				{children}
-			</h6>
-		);
-	},
+	h1: makeComponent("h1", { className: headingClassNames.h1 }),
+	h2: makeComponent("h2", { className: headingClassNames.h2 }),
+	h3: makeComponent("h3", { className: headingClassNames.h3 }),
+	h4: makeComponent("h4", { className: headingClassNames.h4 }),
+	h5: makeComponent("h5", { className: headingClassNames.h5 }),
+	h6: makeComponent("h6", { className: headingClassNames.h6 }),
 	blockquote: ({ node, children, ...props }) => {
 		return (
 			<blockquote
@@ -191,12 +186,12 @@ const rehypePlugins = [rehypeKatex];
 const NonMemoizedMarkdown = ({ children }: { children: string }) => {
 	const { processedContent, citations } = useCitations(children);
 
-	const renderTextWithCitations = (text: string | React.ReactNode): React.ReactNode => {
+	const renderTextWithCitations = (text: string | ReactNode): ReactNode => {
 		if (typeof text !== "string") {
 			return text;
 		}
 
-		const parts: React.ReactNode[] = [];
+		const parts: ReactNode[] = [];
 		let lastIndex = 0;
 		let match: RegExpExecArray | null;
 
@@ -228,58 +223,37 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
 		return parts.length > 1 ? parts : text;
 	};
 
+	const renderChildrenWithCitations = (nodeChildren: ReactNode): ReactNode => {
+		if (nodeChildren === null || nodeChildren === undefined || typeof nodeChildren === "boolean") {
+			return nodeChildren;
+		}
+
+		if (typeof nodeChildren === "string") {
+			return renderTextWithCitations(nodeChildren);
+		}
+
+		if (Array.isArray(nodeChildren)) {
+			return nodeChildren.map((child) => renderChildrenWithCitations(child));
+		}
+
+		return nodeChildren;
+	};
+
+	const makeCitationComponent = <T extends ElementType>(
+		Tag: T,
+		defaultProps?: Partial<ComponentPropsWithoutRef<T>>
+	) => makeComponent(Tag, defaultProps, renderChildrenWithCitations);
+
 	const citationAwareComponents: Partial<Components> = {
 		...components,
-		p: ({ node, children: pChildren, ...props }) => {
-			const processChildren = (childrenToProcess: React.ReactNode): React.ReactNode => {
-				if (Array.isArray(childrenToProcess)) {
-					return childrenToProcess.map((child) =>
-						typeof child === "string" ? renderTextWithCitations(child) : child
-					);
-				}
-				return typeof childrenToProcess === "string"
-					? renderTextWithCitations(childrenToProcess)
-					: childrenToProcess;
-			};
-
-			return <p {...props}>{processChildren(pChildren)}</p>;
-		},
-		// Also handle text in other elements
-		h1: ({ node, children: h1Children, ...props }) => (
-			<h1 className="mt-6 mb-2 font-semibold text-3xl" {...props}>
-				{typeof h1Children === "string" ? renderTextWithCitations(h1Children) : h1Children}
-			</h1>
-		),
-		h2: ({ node, children: h2Children, ...props }) => (
-			<h2 className="mt-6 mb-2 font-semibold text-2xl" {...props}>
-				{typeof h2Children === "string" ? renderTextWithCitations(h2Children) : h2Children}
-			</h2>
-		),
-		h3: ({ node, children: h3Children, ...props }) => (
-			<h3 className="mt-6 mb-2 font-semibold text-xl" {...props}>
-				{typeof h3Children === "string" ? renderTextWithCitations(h3Children) : h3Children}
-			</h3>
-		),
-		h4: ({ node, children: h4Children, ...props }) => (
-			<h4 className="mt-6 mb-2 font-semibold text-lg" {...props}>
-				{typeof h4Children === "string" ? renderTextWithCitations(h4Children) : h4Children}
-			</h4>
-		),
-		h5: ({ node, children: h5Children, ...props }) => (
-			<h5 className="mt-6 mb-2 font-semibold text-base" {...props}>
-				{typeof h5Children === "string" ? renderTextWithCitations(h5Children) : h5Children}
-			</h5>
-		),
-		h6: ({ node, children: h6Children, ...props }) => (
-			<h6 className="mt-6 mb-2 font-semibold text-sm" {...props}>
-				{typeof h6Children === "string" ? renderTextWithCitations(h6Children) : h6Children}
-			</h6>
-		),
-		li: ({ node, children: liChildren, ...props }) => (
-			<li className="py-1" {...props}>
-				{typeof liChildren === "string" ? renderTextWithCitations(liChildren) : liChildren}
-			</li>
-		),
+		p: makeCitationComponent("p"),
+		h1: makeCitationComponent("h1", { className: headingClassNames.h1 }),
+		h2: makeCitationComponent("h2", { className: headingClassNames.h2 }),
+		h3: makeCitationComponent("h3", { className: headingClassNames.h3 }),
+		h4: makeCitationComponent("h4", { className: headingClassNames.h4 }),
+		h5: makeCitationComponent("h5", { className: headingClassNames.h5 }),
+		h6: makeCitationComponent("h6", { className: headingClassNames.h6 }),
+		li: makeCitationComponent("li", { className: listItemClassName }),
 	};
 
 	return (

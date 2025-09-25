@@ -1,6 +1,6 @@
 "use client";
 
-import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2Icon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -14,6 +14,7 @@ import {
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Loader } from "@/components/ui/loader";
+import { type ChatInfiniteData, removeChatFromInfiniteData } from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +34,37 @@ export function SidebarChatsList({
 
 	const loadMoreRef = useRef<HTMLDivElement | null>(null);
 	const [confirmingChatId, setConfirmingChatId] = useState<string | null>(null);
-	const deleteMutation = useMutation(trpc.chat.deleteChat.mutationOptions());
+	const queryClient = useQueryClient();
+	const [pendingChatId, setPendingChatId] = useState<string | null>(null);
+
+	const deleteMutation = useMutation(
+		trpc.chat.deleteChat.mutationOptions({
+			onMutate: ({ chatId }) => {
+				setPendingChatId(chatId);
+			},
+			onSuccess: async (_, variables) => {
+				const chatId = variables.chatId;
+				queryClient.setQueriesData(trpc.chat.getChats.pathFilter(), (old) =>
+					removeChatFromInfiniteData(old as ChatInfiniteData | undefined, chatId)
+				);
+				await queryClient.invalidateQueries(trpc.chat.getChats.pathFilter());
+				if (trimmedQuery) {
+					await queryClient.invalidateQueries(trpc.chat.searchChats.pathFilter());
+				}
+				if (chatId === currentChatId) {
+					router.replace("/");
+				}
+				toast.success("Chat deleted");
+			},
+			onError: (error) => {
+				toast.error("Failed to delete chat", { description: error.message });
+			},
+			onSettled: () => {
+				setPendingChatId(null);
+				setConfirmingChatId(null);
+			},
+		})
+	);
 
 	const currentChatId = pathname.startsWith("/c/") ? pathname.split("/")[2] : null;
 
@@ -144,28 +175,13 @@ export function SidebarChatsList({
 							{confirmingChatId === c.id ? (
 								<>
 									<ContextMenuItem
-										disabled={deleteMutation.isPending}
-										onSelect={async (e) => {
+										disabled={pendingChatId === c.id && deleteMutation.isPending}
+										onSelect={(e) => {
 											e.preventDefault();
-											try {
-												await deleteMutation.mutateAsync({ chatId: c.id });
-												toast.success("Chat deleted");
-												if (c.id === currentChatId) {
-													router.replace("/");
-												}
-												setConfirmingChatId(null);
-												await Promise.all([
-													infiniteQuery.refetch(),
-													showingDatabaseResults
-														? databaseSearchQuery.refetch()
-														: Promise.resolve(),
-												]);
-											} catch {
-												toast.error("Failed to delete chat");
-											}
+											deleteMutation.mutate({ chatId: c.id });
 										}}
 									>
-										{deleteMutation.isPending ? (
+										{pendingChatId === c.id && deleteMutation.isPending ? (
 											<Loader className="size-4" />
 										) : (
 											<Trash2Icon className="size-4" />

@@ -5,6 +5,7 @@
 
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { GlobeIcon, SearchIcon } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Disclosure, DisclosureContent, DisclosureTrigger } from "@/components/ui/disclosure";
@@ -71,26 +72,26 @@ export function WebSearchTool({ toolCallId, input, output }: WebSearchToolProps)
 										className="group relative block h-40 w-64 overflow-hidden rounded-lg transition-all duration-200"
 										href={img.url}
 										key={img.src}
+										rel="noopener noreferrer"
 										target="_blank"
 									>
-										<img
+										<Image
 											alt={img.title}
 											className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-											loading="lazy"
-											onError={(e) => {
-												(e.currentTarget as HTMLImageElement).style.display = "none";
-											}}
+											fill
+											sizes="(max-width: 768px) 100vw, 256px"
 											src={img.src}
+											unoptimized
 										/>
 										<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 										<div className="absolute top-2 left-2 flex items-center gap-2 rounded bg-black/50 px-2 py-1 text-[10px] text-white/80 backdrop-blur">
-											<img
+											<Image
 												alt="favicon"
 												className="size-3.5 rounded"
-												onError={(ev) => {
-													(ev.currentTarget as HTMLImageElement).style.display = "none";
-												}}
+												height={16}
 												src={`https://www.google.com/s2/favicons?domain=${img.domain}&sz=16`}
+												unoptimized
+												width={16}
 											/>
 											<span className="max-w-[9rem] truncate">{img.domain}</span>
 										</div>
@@ -138,16 +139,16 @@ export function WebSearchTool({ toolCallId, input, output }: WebSearchToolProps)
 															<Link
 																className="line-clamp-2 font-medium text-primary text-sm hover:underline"
 																href={searchResult.url}
+																rel="noopener noreferrer"
 																target="_blank"
 															>
-																<img
+																<Image
 																	alt="favicon"
 																	className="mr-1.5 inline-block size-6 rounded border-3 align-middle"
-																	onError={(e) => {
-																		(e.target as HTMLImageElement).style.display =
-																			"none";
-																	}}
+																	height={16}
 																	src={`https://www.google.com/s2/favicons?domain=${new URL(searchResult.url).hostname}&sz=16`}
+																	unoptimized
+																	width={16}
 																/>
 																{searchResult.title}
 															</Link>
