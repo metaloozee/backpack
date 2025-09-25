@@ -14,7 +14,7 @@ export default function SignInPage() {
 				</div>
 
 				<h1 className="text-4xl">backpack</h1>
-				<p className="text-muted-foreground text-xs">Sign-in to access your Specialized Research Assistant.</p>
+				<p className="text-muted-foreground text-xs">Sign-in to access your Smart Chat Application.</p>
 			</div>
 			<div className="mt-5 flex w-full max-w-[20vw] flex-col gap-2">
 				<SignInButton disabled provider="google">

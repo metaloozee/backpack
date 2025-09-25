@@ -277,10 +277,6 @@ function PureInput({
 	const pathname = usePathname();
 	const isSpaceChat = pathname.startsWith("/s/");
 
-	React.useEffect(() => {
-		console.log("Tools state changed in chat-input:", tools);
-	}, [tools]);
-
 	const isLoading = status === "submitted" || status === "streaming";
 
 	const { isAtBottom, scrollToBottom } = useScrollToBottom();
@@ -360,19 +356,12 @@ function PureInput({
 		}
 	}, [isRecording, transcribe.mutateAsync, setInput, cleanupRecorder]);
 
-	const containerLayoutClass = (() => {
-		if (messages.length > 0) {
-			return "right-0 bottom-0 left-0";
-		}
-		if (isSpaceChat) {
-			return "mt-20";
-		}
-		return "flex flex-col items-center justify-center";
-	})();
-
 	return (
 		<motion.div
-			className={cn("sticky w-full bg-background", containerLayoutClass)}
+			className={cn(
+				"sticky w-full bg-background",
+				messages.length > 0 ? "right-0 bottom-0 left-0" : "flex flex-col items-center justify-center"
+			)}
 			layout
 			onDragEnter={handleDragEnter}
 			onDragLeave={handleDragLeave}
@@ -746,7 +735,7 @@ export const Input = React.memo(PureInput, (prevProps, nextProps) => {
 		return false;
 	}
 	if (prevToolsStr !== nextToolsStr) {
-		console.log("Tools changed in memo:", prevProps.tools, "→", nextProps.tools); // Debug log
+		console.log("Tools changed in memo:", prevProps.tools, "→", nextProps.tools);
 		return false;
 	}
 

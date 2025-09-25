@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import UserProfile from "@/components/profile";
 import { SidebarChatsList } from "@/components/sidebar/chats-list";
+// import { SidebarSpacesList } from "@/components/sidebar/spaces-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -21,7 +22,6 @@ export function AppSidebar() {
 
 	const isHome = pathname === "/";
 	const isSpaces = pathname.startsWith("/s");
-	// const isChats = pathname.startsWith("/c");
 	const [chatQuery, setChatQuery] = useState("");
 
 	const { state, open, setOpen } = useSidebar();
@@ -143,7 +143,7 @@ export function AppSidebar() {
 						<Input
 							className="!bg-neutral-950 h-8 border-0"
 							onChange={(e) => setChatQuery(e.target.value)}
-							placeholder="Search chats..."
+							placeholder={"Search chats..."}
 							value={chatQuery}
 						/>
 					)}

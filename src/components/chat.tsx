@@ -5,7 +5,7 @@ import { useChat } from "@ai-sdk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
 import type { Session } from "better-auth";
-import { BookOpenIcon } from "lucide-react";
+import { BookCopyIcon, SettingsIcon } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -14,7 +14,6 @@ import { ChatMessages } from "@/components/chat/messages";
 import { Input as InputPanel } from "@/components/chat-input";
 import { useDataStream } from "@/components/data-stream-provider";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { getDefaultToolsState, type ToolsState } from "@/lib/ai/tools";
 import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/ai/utils";
@@ -23,13 +22,14 @@ import { useAutoResume } from "@/lib/hooks/use-auto-resume";
 import { type ChatInfiniteData, prependChatToInfiniteData } from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
+import { useSpaceOverview } from "./chat/use-space-overview";
+import { Button } from "./ui/button";
 
 export function Chat({
 	id,
 	env,
 	initialMessages,
 	autoResume,
-	chatsData,
 	initialModel,
 	initialTools,
 	initialMode,
@@ -45,14 +45,14 @@ export function Chat({
 	initialMessages: ChatMessage[];
 	session: Session | null;
 	autoResume: boolean;
-	chatsData?: ChatType[];
 	initialModel?: string;
 	initialTools?: ToolsState;
 	initialMode?: string;
 	initialAgent?: string;
 }) {
 	const pathname = usePathname();
-	const isSpaceChat = pathname.startsWith("/s/");
+	const isSpaceChat = env.inSpace || pathname.startsWith("/s/");
+	const { data: spaceOverview, status: spaceStatus } = useSpaceOverview(env.spaceId, isSpaceChat);
 
 	const [input, setInput] = useState<string>("");
 	const [tools, setTools] = useState<ToolsState>(initialTools ?? getDefaultToolsState());
@@ -172,6 +172,11 @@ export function Chat({
 		[initialMessages.length, messages.length, optimisticallyAddChat, originalSendMessage]
 	);
 
+	const showSpaceIntro = isSpaceChat && messages.length === 0;
+	const spaceTitle = spaceOverview?.space.title ?? env.spaceName ?? "Untitled space";
+	const spaceDescription = spaceOverview?.space.description ?? env.spaceDescription;
+	const showSpaceHistory = showSpaceIntro && Boolean(env.spaceId) && (spaceOverview?.hasChats ?? false);
+
 	useEffect(() => {
 		if (hasOptimisticallyAdded && messages.length > 1) {
 			const timer = setTimeout(() => {
@@ -212,15 +217,7 @@ export function Chat({
 		<div
 			className={cn(
 				"flex h-full w-full flex-col",
-				(() => {
-					if (messages.length > 0) {
-						return "items-center justify-between";
-					}
-					if (isSpaceChat) {
-						return "items-start justify-start";
-					}
-					return "container items-center justify-center";
-				})()
+				messages.length > 0 ? "items-center justify-between" : "container items-center justify-center"
 			)}
 			suppressHydrationWarning
 		>
@@ -234,6 +231,36 @@ export function Chat({
 						status={status}
 					/>
 				</ScrollArea>
+			)}
+
+			{showSpaceIntro && (
+				<div className="mt-40 mb-10 flex w-full max-w-3xl shrink-0 flex-row items-end justify-between gap-2">
+					<div className="flex flex-col items-start justify-start gap-2">
+						{spaceStatus === "pending" ? (
+							<>
+								<div className="h-7 w-48 animate-pulse rounded bg-neutral-900" />
+								<div className="h-4 w-72 animate-pulse rounded bg-neutral-900" />
+							</>
+						) : (
+							<>
+								<h1 className="text-left font-bold text-2xl">{spaceTitle}</h1>
+								{spaceDescription ? (
+									<p className="text-left text-muted-foreground text-sm">{spaceDescription}</p>
+								) : null}
+							</>
+						)}
+					</div>
+					<div className="flex flex-row items-end justify-center gap-2">
+						<Button variant="outline">
+							<SettingsIcon className="size-4" />
+							Settings
+						</Button>
+						<Button variant="outline">
+							<BookCopyIcon className="size-4" />
+							Knowledge Base
+						</Button>
+					</div>
+				</div>
 			)}
 
 			<InputPanel
@@ -254,14 +281,9 @@ export function Chat({
 				tools={tools}
 			/>
 
-			{isSpaceChat && chatsData && chatsData.length > 0 && messages.length === 0 && (
-				<div className="my-20 flex w-full flex-col gap-2">
-					<div className="flex flex-row items-center gap-2">
-						<BookOpenIcon className="size-5" />
-						<h2 className="font-medium text-lg">Chat History</h2>
-					</div>
-					<Separator className="my-2 max-w-[25vw]" />
-					<DisplayChats spaceId={chatsData[0].spaceId ?? undefined} />
+			{showSpaceHistory && env.spaceId && (
+				<div className="my-10 flex w-full max-w-3xl flex-col gap-2">
+					<DisplayChats spaceId={env.spaceId} />
 				</div>
 			)}
 		</div>

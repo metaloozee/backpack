@@ -48,7 +48,7 @@ function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 		<motion.div
 			animate="visible"
 			className={cn(
-				"relative w-full rounded-lg border border-border/50 bg-neutral-900/50 p-4 transition-colors duration-200 hover:bg-neutral-900/70",
+				"relative w-full rounded-md bg-black px-3 py-2 transition-colors duration-200",
 				"flex items-center justify-between"
 			)}
 			exit="exit"

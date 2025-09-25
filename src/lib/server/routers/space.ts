@@ -8,7 +8,7 @@ import { z } from "zod";
 import { generateEmbeddings } from "@/lib/ai/embedding";
 import { extractRawText, sanitizeData } from "@/lib/ai/extract-web-page";
 import { db } from "@/lib/db";
-import { knowledge, knowledgeEmbeddings, spaces } from "@/lib/db/schema/app";
+import { chat, knowledge, knowledgeEmbeddings, spaces } from "@/lib/db/schema/app";
 import { env } from "@/lib/env.mjs";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 
@@ -22,6 +22,45 @@ async function fileToBase64(file: File): Promise<string> {
 }
 
 export const spaceRouter = router({
+	getSpaceOverview: protectedProcedure
+		.input(
+			z.object({
+				spaceId: z.string().uuid(),
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			const [spaceData] = await db
+				.select({
+					id: spaces.id,
+					title: spaces.spaceTitle,
+					description: spaces.spaceDescription,
+				})
+				.from(spaces)
+				.where(and(eq(spaces.id, input.spaceId), eq(spaces.userId, ctx.session.user.id)))
+				.limit(1);
+
+			if (!spaceData) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Space not found",
+				});
+			}
+
+			const [firstChat] = await db
+				.select({ id: chat.id })
+				.from(chat)
+				.where(and(eq(chat.spaceId, spaceData.id), eq(chat.userId, ctx.session.user.id)))
+				.limit(1);
+
+			return {
+				space: {
+					id: spaceData.id,
+					title: spaceData.title,
+					description: spaceData.description,
+				},
+				hasChats: Boolean(firstChat),
+			};
+		}),
 	getSpaces: protectedProcedure
 		.input(
 			z.object({

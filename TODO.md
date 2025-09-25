@@ -2,4 +2,6 @@
 - [ ] Daytona
 - [ ] Research Agent
 - [x] fix: Image Display
-- [ ] refactor: Space Page
+- [x] refactor: Space Page
+- [ ] Knowledge Base Dialog in Space
+- [ ] Space Settings
