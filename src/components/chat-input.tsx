@@ -21,7 +21,6 @@ import { useScrollToBottom } from "@/lib/hooks/use-scroll-to-bottom";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 import { PreviewAttachment } from "./chat/preview-attachment";
-import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 
 type InputPanelProps = {
 	chatId: string;
@@ -445,32 +444,37 @@ function PureInput({
 			<div className={cn("mx-auto w-full max-w-3xl")} ref={inputContainerRef}>
 				{(attachments.length > 0 || uploadQueue.length > 0) && (
 					<div className="mx-6 rounded-t-md border border-b-0 bg-neutral-900/50 p-2">
-						<ScrollArea>
-							<motion.div
-								animate={{ opacity: 1, y: 0 }}
-								className="flex flex-row items-end justify-start gap-2"
-								data-testid="attachments-preview"
-								exit={{ opacity: 0, y: 10 }}
-								initial={{ opacity: 0, y: 10 }}
-								transition={{ delay: 0.2 }}
-							>
-								{attachments.map((attachment) => (
-									<PreviewAttachment attachment={attachment} key={attachment.url} />
-								))}
-								{uploadQueue.map((fileName) => (
-									<PreviewAttachment
-										attachment={{
-											url: "",
-											name: fileName,
-											contentType: "",
-										}}
-										isUploading={true}
-										key={fileName}
-									/>
-								))}
-							</motion.div>
-							<ScrollBar orientation="horizontal" />
-						</ScrollArea>
+						<motion.div
+							animate={{ opacity: 1, y: 0 }}
+							className="flex flex-row items-end justify-start gap-2"
+							data-testid="attachments-preview"
+							exit={{ opacity: 0, y: 10 }}
+							initial={{ opacity: 0, y: 10 }}
+							transition={{ delay: 0.2 }}
+						>
+							{attachments.map((attachment, index) => (
+								<PreviewAttachment
+									attachment={attachment}
+									key={attachment.url || `${attachment.name}-${index}`}
+									onRemove={() => {
+										setAttachments((current) => current.filter((_, i) => i !== index));
+									}}
+									showName={false}
+								/>
+							))}
+							{uploadQueue.map((fileName) => (
+								<PreviewAttachment
+									attachment={{
+										url: "",
+										name: fileName,
+										contentType: "",
+									}}
+									isUploading={true}
+									key={fileName}
+									showName={true}
+								/>
+							))}
+						</motion.div>
 					</div>
 				)}
 				<div
@@ -480,7 +484,7 @@ function PureInput({
 				>
 					<Textarea
 						autoFocus
-						className="w-full resize-none border-0 bg-transparent text-sm ring-0 placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+						className="!bg-transparent w-full resize-none border-0 text-sm ring-0 placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
 						onChange={handleInput}
 						onKeyDown={(event) => {
 							if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -722,6 +726,13 @@ export const Input = React.memo(PureInput, (prevProps, nextProps) => {
 	const prevToolsStr = JSON.stringify(prevProps.tools);
 	const nextToolsStr = JSON.stringify(nextProps.tools);
 
+	// Create a lightweight signature of attachments to detect changes
+	const attachmentSignature = (attachments: Attachment[]) =>
+		attachments.map((a) => `${a.url}|${a.name}|${a.contentType}`).join(",");
+
+	const prevAttachmentsSig = attachmentSignature(prevProps.attachments);
+	const nextAttachmentsSig = attachmentSignature(nextProps.attachments);
+
 	if (prevProps.status !== nextProps.status) {
 		return false;
 	}
@@ -729,6 +740,9 @@ export const Input = React.memo(PureInput, (prevProps, nextProps) => {
 		return false;
 	}
 	if (prevProps.input !== nextProps.input) {
+		return false;
+	}
+	if (prevAttachmentsSig !== nextAttachmentsSig) {
 		return false;
 	}
 	if (prevToolsStr !== nextToolsStr) {

@@ -141,7 +141,7 @@ export function AppSidebar() {
 
 					{state === "expanded" && (
 						<Input
-							className="h-8 border-0"
+							className="!bg-neutral-950 h-8 border-0"
 							onChange={(e) => setChatQuery(e.target.value)}
 							placeholder="Search chats..."
 							value={chatQuery}

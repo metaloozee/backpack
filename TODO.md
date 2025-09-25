@@ -1,13 +1,5 @@
-- [x] fix: Authentication
-- [x] ~~Zustand for state management~~
-- [x] Image Display
 - [ ] Space Settings
-- [x] Account Settings
 - [ ] Daytona
-- [x] Memories
-- [x] Voice Input
-- [x] AI SDK 5
-- [x] fix: Resumable Streams
-- [x] fix: tool selector (cookies)
-
 - [ ] Research Agent
+- [x] fix: Image Display
+- [ ] refactor: Space Page

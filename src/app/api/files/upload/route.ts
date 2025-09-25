@@ -49,11 +49,12 @@ export async function POST(request: Request) {
 
 		const data = await put(`${session.userId}/chat/${sanitizedFileName}`, fileBuffer, {
 			access: "public",
+			addRandomSuffix: true,
 		});
 
 		return NextResponse.json(data);
-	} catch (_) {
-		return new Response(JSON.stringify({ error: "Internal server error" }), {
+	} catch (error) {
+		return new Response(JSON.stringify({ error: "Internal server error", details: error }), {
 			status: 500,
 		});
 	}

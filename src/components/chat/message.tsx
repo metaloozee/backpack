@@ -482,6 +482,7 @@ export function Message({
 											url: attachment.url,
 										}}
 										key={attachment.url}
+										showName={false}
 									/>
 								))}
 							</div>
