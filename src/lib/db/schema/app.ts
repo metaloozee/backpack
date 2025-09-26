@@ -25,8 +25,7 @@ export const memories = pgTable(
 	},
 	(table) => ({
 		embeddingIndex: index("memories_embedding_index").using("hnsw", table.embedding.op("vector_cosine_ops")),
-		userIdIdx: index("memories_user_id_idx").on(table.userId),
-		createdAtIdx: index("memories_created_at_idx").on(table.createdAt),
+		userCreatedAtIdx: index("memories_user_created_at_idx").on(table.userId, table.createdAt),
 	})
 );
 export type Memory = InferSelectModel<typeof memories>;
@@ -52,8 +51,7 @@ export const spaces = pgTable(
 		}).notNull(),
 	},
 	(table) => ({
-		userIdIdx: index("spaces_user_id_idx").on(table.userId),
-		createdAtIdx: index("spaces_created_at_idx").on(table.createdAt),
+		userCreatedAtIdx: index("spaces_user_created_at_idx").on(table.userId, table.createdAt),
 	})
 );
 
@@ -85,10 +83,8 @@ export const knowledge = pgTable(
 		}).notNull(),
 	},
 	(table) => ({
-		userIdIdx: index("knowledge_user_id_idx").on(table.userId),
-		spaceIdIdx: index("knowledge_space_id_idx").on(table.spaceId),
 		userSpaceIdx: index("knowledge_user_space_idx").on(table.userId, table.spaceId),
-		uploadedAtIdx: index("knowledge_uploaded_at_idx").on(table.uploadedAt),
+		userUploadedAtIdx: index("knowledge_user_uploaded_at_idx").on(table.userId, table.uploadedAt),
 	})
 );
 export type Knowledge = InferSelectModel<typeof knowledge>;
@@ -114,8 +110,10 @@ export const knowledgeEmbeddings = pgTable(
 	},
 	(table) => ({
 		embeddingIndex: index("embedding_index").using("hnsw", table.embedding.op("vector_cosine_ops")),
-		knowledgeIdIdx: index("knowledge_embeddings_knowledge_id_idx").on(table.knowledgeId),
-		createdAtIdx: index("knowledge_embeddings_created_at_idx").on(table.createdAt),
+		knowledgeCreatedAtIdx: index("knowledge_embeddings_knowledge_created_at_idx").on(
+			table.knowledgeId,
+			table.createdAt
+		),
 	})
 );
 
@@ -139,10 +137,7 @@ export const chat = pgTable(
 		}),
 	},
 	(table) => ({
-		userIdIdx: index("chat_user_id_idx").on(table.userId),
-		spaceIdIdx: index("chat_space_id_idx").on(table.spaceId),
 		userSpaceIdx: index("chat_user_space_idx").on(table.userId, table.spaceId),
-		createdAtIdx: index("chat_created_at_idx").on(table.createdAt),
 		userCreatedAtIdx: index("chat_user_created_at_idx").on(table.userId, table.createdAt),
 	})
 );
@@ -166,8 +161,6 @@ export const message = pgTable(
 		createdAt: timestamp("created_at").notNull(),
 	},
 	(table) => ({
-		chatIdIdx: index("message_chat_id_idx").on(table.chatId),
-		createdAtIdx: index("message_created_at_idx").on(table.createdAt),
 		chatCreatedAtIdx: index("message_chat_created_at_idx").on(table.chatId, table.createdAt),
 		roleIdx: index("message_role_idx").on(table.role),
 	})
@@ -192,8 +185,7 @@ export const stream = pgTable(
 		}).notNull(),
 	},
 	(table) => ({
-		chatIdIdx: index("stream_chat_id_idx").on(table.chatId),
-		createdAtIdx: index("stream_created_at_idx").on(table.createdAt),
+		chatCreatedAtIdx: index("stream_chat_created_at_idx").on(table.chatId, table.createdAt),
 	})
 );
 export type Stream = InferSelectModel<typeof stream>;

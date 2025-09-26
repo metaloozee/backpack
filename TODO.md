@@ -3,5 +3,5 @@
 - [ ] Research Agent
 - [x] fix: Image Display
 - [x] refactor: Space Page
-- [ ] Knowledge Base Dialog in Space
+- [x] Knowledge Base Dialog in Space
 - [ ] Space Settings

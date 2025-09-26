@@ -451,7 +451,7 @@ function PureInput({
 									showName={false}
 								/>
 							))}
-							{uploadQueue.map((fileName) => (
+							{uploadQueue.map((fileName, idx) => (
 								<PreviewAttachment
 									attachment={{
 										url: "",
@@ -459,7 +459,7 @@ function PureInput({
 										contentType: "",
 									}}
 									isUploading={true}
-									key={fileName}
+									key={`${fileName}-${idx}`}
 									showName={true}
 								/>
 							))}

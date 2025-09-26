@@ -30,11 +30,7 @@ export const spaceRouter = router({
 		)
 		.query(async ({ ctx, input }) => {
 			const [spaceData] = await db
-				.select({
-					id: spaces.id,
-					title: spaces.spaceTitle,
-					description: spaces.spaceDescription,
-				})
+				.select()
 				.from(spaces)
 				.where(and(eq(spaces.id, input.spaceId), eq(spaces.userId, ctx.session.user.id)))
 				.limit(1);
@@ -53,11 +49,7 @@ export const spaceRouter = router({
 				.limit(1);
 
 			return {
-				space: {
-					id: spaceData.id,
-					title: spaceData.title,
-					description: spaceData.description,
-				},
+				spaceData,
 				hasChats: Boolean(firstChat),
 			};
 		}),
@@ -268,5 +260,20 @@ export const spaceRouter = router({
 
 			revalidatePath(`/s/${input.spaceId}`);
 			return { success: true };
+		}),
+	getKnowledge: protectedProcedure
+		.input(
+			z.object({
+				spaceId: z.string().uuid(),
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			const knowledgeData = await db
+				.select()
+				.from(knowledge)
+				.where(and(eq(knowledge.spaceId, input.spaceId), eq(knowledge.userId, ctx.session.user.id)))
+				.orderBy(desc(knowledge.uploadedAt));
+
+			return knowledgeData;
 		}),
 });

@@ -149,12 +149,11 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
 
 	return (
 		<Dialog onOpenChange={setIsOpen} open={isOpen}>
-			<DialogTrigger className="flex w-full items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-left transition-colors hover:bg-accent">
-				<BookCopyIcon className="size-4 text-muted-foreground" />
-				<div className="flex w-full flex-col">
-					<span className="text-sm">Knowledge Base</span>
-					<span className="text-muted-foreground text-xs">{knowledgeData.length} documents</span>
-				</div>
+			<DialogTrigger asChild>
+				<Button size={"sm"} variant="outline">
+					<BookCopyIcon className="size-4" />
+					Knowledge Base
+				</Button>
 			</DialogTrigger>
 			<DialogContent className="min-w-2xl bg-neutral-950">
 				<DialogHeader>

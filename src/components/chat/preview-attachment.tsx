@@ -63,7 +63,6 @@ export const PreviewAttachment = ({
 						<span className="font-medium text-[10px] text-muted-foreground">{extension || "FILE"}</span>
 					</div>
 				)}
-
 				{isUploading && (
 					<div
 						className="absolute inset-0 grid place-items-center bg-black/20"
@@ -72,10 +71,10 @@ export const PreviewAttachment = ({
 						<Loader />
 					</div>
 				)}
-
 				{!!onRemove && !isUploading && (
 					<div className="absolute top-1 right-1 z-20">
 						<Button
+							aria-label="Remove attachment"
 							className="size-5 rounded"
 							onClick={(e) => {
 								e.preventDefault();
@@ -85,11 +84,11 @@ export const PreviewAttachment = ({
 							size="icon"
 							variant="ghost"
 						>
+							<span className="sr-only">Remove attachment</span>
 							<XIcon className="size-3" />
 						</Button>
 					</div>
 				)}
-
 				{url && !isUploading && (
 					<a className="absolute inset-0" href={url} rel="noreferrer" target="_blank">
 						<span className="sr-only">Open attachment</span>

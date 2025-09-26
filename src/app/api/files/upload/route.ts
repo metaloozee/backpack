@@ -53,9 +53,7 @@ export async function POST(request: Request) {
 		});
 
 		return NextResponse.json(data);
-	} catch (error) {
-		return new Response(JSON.stringify({ error: "Internal server error", details: error }), {
-			status: 500,
-		});
+	} catch (_) {
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

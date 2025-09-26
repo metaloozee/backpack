@@ -2,15 +2,15 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
 import type { Session } from "better-auth";
-import { BookCopyIcon, SettingsIcon } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import DisplayChats from "@/components/chat/display-chats";
 import { ChatMessages } from "@/components/chat/messages";
+import { SpaceIntro } from "@/components/chat/space-intro";
 import { Input as InputPanel } from "@/components/chat-input";
 import { useDataStream } from "@/components/data-stream-provider";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,8 +22,6 @@ import { useAutoResume } from "@/lib/hooks/use-auto-resume";
 import { type ChatInfiniteData, prependChatToInfiniteData } from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
-import { useSpaceOverview } from "./chat/use-space-overview";
-import { Button } from "./ui/button";
 
 export function Chat({
 	id,
@@ -53,9 +51,11 @@ export function Chat({
 	const pathname = usePathname();
 	const isSpaceChat = env.inSpace || pathname.startsWith("/s/");
 	const { data: spaceOverview, status: spaceStatus } = useSpaceOverview(env.spaceId, isSpaceChat);
+	const { data: knowledgeData, status: knowledgeStatus } = useKnowledgeOverview(env.spaceId);
 
 	const [input, setInput] = useState<string>("");
 	const [tools, setTools] = useState<ToolsState>(initialTools ?? getDefaultToolsState());
+	const [attachments, setAttachments] = useState<Attachment[]>([]);
 
 	const { setDataStream } = useDataStream();
 	const queryClient = useQueryClient();
@@ -172,22 +172,24 @@ export function Chat({
 		[initialMessages.length, messages.length, optimisticallyAddChat, originalSendMessage]
 	);
 
+	// Computed values
 	const showSpaceIntro = isSpaceChat && messages.length === 0;
-	const spaceTitle = spaceOverview?.space.title ?? env.spaceName ?? "Untitled space";
-	const spaceDescription = spaceOverview?.space.description ?? env.spaceDescription;
+	const spaceTitle = spaceOverview?.spaceData.spaceTitle ?? env.spaceName ?? "Untitled space";
+	const spaceDescription = spaceOverview?.spaceData.spaceDescription ?? env.spaceDescription;
 	const showSpaceHistory = showSpaceIntro && Boolean(env.spaceId) && (spaceOverview?.hasChats ?? false);
 
+	// Handle optimistic chat invalidation
 	useEffect(() => {
 		if (hasOptimisticallyAdded && messages.length > 1) {
 			const timer = setTimeout(() => {
 				queryClient.invalidateQueries(trpc.chat.getChats.pathFilter());
 				setHasOptimisticallyAdded(false);
 			}, 1000);
-
 			return () => clearTimeout(timer);
 		}
 	}, [hasOptimisticallyAdded, messages.length, queryClient, trpc]);
 
+	// Handle query parameter appending
 	const searchParams = useSearchParams();
 	const query = searchParams.get("query");
 	const [hasAppendedQuery, setHasAppendedQuery] = useState(false);
@@ -203,8 +205,6 @@ export function Chat({
 			window.history.replaceState({}, "", `/c/${id}`);
 		}
 	}, [query, sendMessage, hasAppendedQuery, id]);
-
-	const [attachments, setAttachments] = useState<Attachment[]>([]);
 
 	useAutoResume({
 		autoResume,
@@ -234,33 +234,14 @@ export function Chat({
 			)}
 
 			{showSpaceIntro && (
-				<div className="mt-40 mb-10 flex w-full max-w-3xl shrink-0 flex-row items-end justify-between gap-2">
-					<div className="flex flex-col items-start justify-start gap-2">
-						{spaceStatus === "pending" ? (
-							<>
-								<div className="h-7 w-48 animate-pulse rounded bg-neutral-900" />
-								<div className="h-4 w-72 animate-pulse rounded bg-neutral-900" />
-							</>
-						) : (
-							<>
-								<h1 className="text-left font-bold text-2xl">{spaceTitle}</h1>
-								{spaceDescription ? (
-									<p className="text-left text-muted-foreground text-sm">{spaceDescription}</p>
-								) : null}
-							</>
-						)}
-					</div>
-					<div className="flex flex-row items-end justify-center gap-2">
-						<Button variant="outline">
-							<SettingsIcon className="size-4" />
-							Settings
-						</Button>
-						<Button variant="outline">
-							<BookCopyIcon className="size-4" />
-							Knowledge Base
-						</Button>
-					</div>
-				</div>
+				<SpaceIntro
+					knowledgeData={knowledgeData}
+					knowledgeStatus={knowledgeStatus}
+					spaceDescription={spaceDescription}
+					spaceId={spaceOverview?.spaceData.id ?? env.spaceId ?? ""}
+					spaceStatus={spaceStatus}
+					spaceTitle={spaceTitle}
+				/>
 			)}
 
 			<InputPanel
@@ -288,4 +269,69 @@ export function Chat({
 			)}
 		</div>
 	);
+}
+
+const PLACEHOLDER_SPACE_ID = "00000000-0000-0000-0000-000000000000";
+
+export function useKnowledgeOverview(spaceId?: string) {
+	const trpc = useTRPC();
+
+	const query = useQuery({
+		...trpc.space.getKnowledge.queryOptions({
+			// biome-ignore lint/style/noNonNullAssertion: spaceId is guaranteed to be set if enabled is true
+			spaceId: spaceId!,
+		}),
+		enabled: !!spaceId,
+		staleTime: 30_000,
+	});
+
+	if (!spaceId) {
+		return {
+			data: undefined,
+			status: "success" as const,
+			isLoading: false,
+			isFetching: false,
+			isPending: false,
+			isSuccess: true,
+			isError: false,
+			error: null,
+			refetch: query.refetch,
+			isRefetching: false,
+			isStale: false,
+		};
+	}
+
+	return query;
+}
+
+export function useSpaceOverview(spaceId?: string, enabled = true) {
+	const trpc = useTRPC();
+	const shouldFetch = Boolean(enabled && spaceId);
+
+	const query = useQuery({
+		...trpc.space.getSpaceOverview.queryOptions({
+			// biome-ignore lint/style/noNonNullAssertion: spaceId is guaranteed to be set if enabled is true
+			spaceId: shouldFetch ? spaceId! : PLACEHOLDER_SPACE_ID,
+		}),
+		enabled: shouldFetch,
+		staleTime: 30_000,
+	});
+
+	if (!shouldFetch) {
+		return {
+			data: undefined,
+			status: "success" as const,
+			isLoading: false,
+			isFetching: false,
+			isPending: false,
+			isSuccess: true,
+			isError: false,
+			error: null,
+			refetch: query.refetch,
+			isRefetching: false,
+			isStale: false,
+		};
+	}
+
+	return query;
 }

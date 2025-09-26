@@ -36,6 +36,13 @@
       "when": 1753439257845,
       "tag": "0004_medical_rocket_racer",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1758878430180,
+      "tag": "0005_elite_tyrannus",
+      "breakpoints": true
     }
   ]
 }
