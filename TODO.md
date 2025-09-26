@@ -1,4 +1,3 @@
-- [ ] Space Settings
 - [ ] Daytona
 - [ ] Research Agent
 - [x] fix: Image Display

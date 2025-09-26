@@ -25,7 +25,7 @@ export function SpaceIntro({
 				{spaceStatus === "pending" ? (
 					<>
 						<div className="h-7 w-48 animate-pulse rounded bg-neutral-900" />
-						<div className="h-4 w-84 animate-pulse rounded bg-neutral-900" />
+						<div className="h-4 w-80 animate-pulse rounded bg-neutral-900" />
 						<div className="h-4 w-56 animate-pulse rounded bg-neutral-900" />
 					</>
 				) : (
@@ -40,7 +40,7 @@ export function SpaceIntro({
 			<div className="flex flex-row items-end justify-center gap-2">
 				<SettingsDialog spaceDescription={spaceDescription} spaceId={spaceId} spaceName={spaceTitle} />
 				{knowledgeStatus === "pending" ? (
-					<div className="h-8 w-26 animate-pulse rounded-md bg-neutral-900" />
+					<div className="h-8 w-24 animate-pulse rounded-md bg-neutral-900" />
 				) : (
 					<KnowledgeDialog knowledgeData={knowledgeData ?? []} spaceId={spaceId} />
 				)}

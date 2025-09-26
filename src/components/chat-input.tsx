@@ -435,7 +435,7 @@ function PureInput({
 					<div className="mx-6 rounded-t-md border border-b-0 bg-neutral-900/50 p-2">
 						<motion.div
 							animate={{ opacity: 1, y: 0 }}
-							className="flex flex-row items-end justify-start gap-2"
+							className="flex flex-row flex-nowrap items-end justify-start gap-2 overflow-x-auto"
 							data-testid="attachments-preview"
 							exit={{ opacity: 0, y: 10 }}
 							initial={{ opacity: 0, y: 10 }}

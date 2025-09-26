@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import UserProfile from "@/components/profile";
 import { SidebarChatsList } from "@/components/sidebar/chats-list";
-// import { SidebarSpacesList } from "@/components/sidebar/spaces-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -141,7 +140,7 @@ export function AppSidebar() {
 
 					{state === "expanded" && (
 						<Input
-							className="!bg-neutral-950 h-8 border-0"
+							className="h-8 border-0 bg-background dark:bg-neutral-950"
 							onChange={(e) => setChatQuery(e.target.value)}
 							placeholder={"Search chats..."}
 							value={chatQuery}
