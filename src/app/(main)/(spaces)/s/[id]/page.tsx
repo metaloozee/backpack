@@ -50,6 +50,7 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
 						spaceId: spaceData.id,
 						spaceName: spaceData.spaceTitle,
 						spaceDescription: spaceData.spaceDescription ?? undefined,
+						spaceCustomInstructions: spaceData.spaceCustomInstructions ?? undefined,
 					}}
 					id={chatId}
 					initialAgent={initialAgent}

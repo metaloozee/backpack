@@ -314,6 +314,7 @@ const requestBodySchema = z.object({
 		spaceId: z.string().uuid().optional(),
 		spaceName: z.string().optional(),
 		spaceDescription: z.string().optional(),
+		spaceCustomInstructions: z.string().optional(),
 	}),
 	message: z.object({
 		id: z.string().uuid(),

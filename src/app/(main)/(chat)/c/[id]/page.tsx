@@ -9,6 +9,7 @@ import { getSession, getUser } from "@/lib/auth/utils";
 import { db } from "@/lib/db";
 import { chat as DBChat, message as DBMessage, spaces as DBSpace } from "@/lib/db/schema/app";
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: false positive
 export default async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
 	const session = await getSession();
 	const user = await getUser();
@@ -61,6 +62,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
 				spaceId: spaceData ? spaceData.id : undefined,
 				spaceName: spaceData ? spaceData.spaceTitle : undefined,
 				spaceDescription: spaceData ? (spaceData.spaceDescription ?? undefined) : undefined,
+				spaceCustomInstructions: spaceData ? (spaceData.spaceCustomInstructions ?? undefined) : undefined,
 			}}
 			id={chatId}
 			initialAgent={initialAgent}

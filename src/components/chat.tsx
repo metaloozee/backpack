@@ -39,6 +39,7 @@ export function Chat({
 		spaceId?: string;
 		spaceName?: string;
 		spaceDescription?: string;
+		spaceCustomInstructions?: string;
 	};
 	initialMessages: ChatMessage[];
 	session: Session | null;
@@ -176,6 +177,7 @@ export function Chat({
 	const showSpaceIntro = isSpaceChat && messages.length === 0;
 	const spaceTitle = spaceOverview?.spaceData.spaceTitle ?? env.spaceName ?? "Untitled space";
 	const spaceDescription = spaceOverview?.spaceData.spaceDescription ?? env.spaceDescription;
+	const spaceCustomInstructions = spaceOverview?.spaceData.spaceCustomInstructions ?? env.spaceCustomInstructions;
 	const showSpaceHistory = showSpaceIntro && Boolean(env.spaceId) && (spaceOverview?.hasChats ?? false);
 
 	// Handle optimistic chat invalidation
@@ -237,7 +239,7 @@ export function Chat({
 				<SpaceIntro
 					knowledgeData={knowledgeData}
 					knowledgeStatus={knowledgeStatus}
-					spaceCustomInstructions={spaceOverview?.spaceData.spaceCustomInstructions ?? undefined}
+					spaceCustomInstructions={spaceCustomInstructions}
 					spaceDescription={spaceDescription}
 					spaceId={spaceOverview?.spaceData.id ?? env.spaceId ?? ""}
 					spaceStatus={spaceStatus}

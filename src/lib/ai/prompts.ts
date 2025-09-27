@@ -13,6 +13,7 @@ export const AskModePrompt = ({
 		spaceId?: string;
 		spaceName?: string;
 		spaceDescription?: string;
+		spaceCustomInstructions?: string;
 		memories?: Array<{ content: string; createdAt: Date }>;
 	};
 }) => {
@@ -88,7 +89,7 @@ ${
 ## Metadata
 <Date>${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</Date>
 <Context>${env.inSpace ? "space" : "general chat"}${env.inSpace ? `:${env.spaceName}` : ""}</Context>
-<CustomInstructions></CustomInstructions>
+<CustomInstructions>${env.spaceCustomInstructions ?? ""}</CustomInstructions>
 <Memories>${env.memories?.map((memory) => `- ${memory.content}`).join("\n")}</Memories>
 `;
 };
