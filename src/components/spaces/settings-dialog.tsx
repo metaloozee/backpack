@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { SettingsIcon } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -54,6 +54,22 @@ type SpacesListData = {
 export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCustomInstructions }: SettingsDialogProps) {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
+
+	const [isOpen, setIsOpen] = useState(false);
+	const [formData, setFormData] = useState({
+		title: spaceName || "",
+		description: spaceDescription || "",
+		customInstructions: spaceCustomInstructions || "",
+	});
+
+	const resetFormData = useCallback(() => {
+		setFormData({
+			title: spaceName || "",
+			description: spaceDescription || "",
+			customInstructions: spaceCustomInstructions || "",
+		});
+	}, [spaceName, spaceDescription, spaceCustomInstructions]);
+
 	const mutation = useMutation({
 		...trpc.space.updateSpace.mutationOptions(),
 		onMutate: async (variables) => {
@@ -118,6 +134,7 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 		},
 		onSuccess: () => {
 			toast.success("Space settings updated successfully");
+			resetFormData();
 			setIsOpen(false);
 		},
 		onSettled: () => {
@@ -126,20 +143,15 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 		},
 	});
 
-	const [isOpen, setIsOpen] = useState(false);
-	const [formData, setFormData] = useState({
-		title: spaceName || "",
-		description: spaceDescription || "",
-		customInstructions: spaceCustomInstructions || "",
-	});
+	useEffect(() => {
+		resetFormData();
+	}, [resetFormData]);
 
 	useEffect(() => {
-		setFormData({
-			title: spaceName || "",
-			description: spaceDescription || "",
-			customInstructions: spaceCustomInstructions || "",
-		});
-	}, [spaceName, spaceDescription, spaceCustomInstructions]);
+		if (!isOpen) {
+			resetFormData();
+		}
+	}, [isOpen, resetFormData]);
 
 	const handleInputChange = (field: string, value: string) => {
 		setFormData((prev) => ({
@@ -232,7 +244,14 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 								variants={fadeVariants}
 							>
 								<motion.div initial="rest" variants={buttonVariants} whileHover="hover" whileTap="tap">
-									<Button onClick={() => setIsOpen(false)} type="button" variant="outline">
+									<Button
+										onClick={() => {
+											resetFormData();
+											setIsOpen(false);
+										}}
+										type="button"
+										variant="outline"
+									>
 										Cancel
 									</Button>
 								</motion.div>

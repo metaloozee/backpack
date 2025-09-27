@@ -98,7 +98,7 @@ export const spaceRouter = router({
 					})
 					.returning({ id: spaces.id });
 
-				if (!space.id) {
+				if (!space) {
 					throw new TRPCError({
 						code: "INTERNAL_SERVER_ERROR",
 						message: "Failed to create space",
@@ -133,10 +133,10 @@ export const spaceRouter = router({
 				.where(and(eq(spaces.id, input.spaceId), eq(spaces.userId, ctx.session.user.id)))
 				.returning({ id: spaces.id });
 
-			if (!space.id) {
+			if (!space) {
 				throw new TRPCError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: "Failed to update space",
+					code: "NOT_FOUND",
+					message: "Space not found",
 				});
 			}
 
