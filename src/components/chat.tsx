@@ -237,6 +237,7 @@ export function Chat({
 				<SpaceIntro
 					knowledgeData={knowledgeData}
 					knowledgeStatus={knowledgeStatus}
+					spaceCustomInstructions={spaceOverview?.spaceData.spaceCustomInstructions ?? undefined}
 					spaceDescription={spaceDescription}
 					spaceId={spaceOverview?.spaceData.id ?? env.spaceId ?? ""}
 					spaceStatus={spaceStatus}

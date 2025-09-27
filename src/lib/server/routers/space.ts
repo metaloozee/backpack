@@ -2,7 +2,7 @@
 
 import { Mistral } from "@mistralai/mistralai";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { generateEmbeddings } from "@/lib/ai/embedding";
@@ -56,31 +56,18 @@ export const spaceRouter = router({
 	getSpaces: protectedProcedure
 		.input(
 			z.object({
-				limit: z.number(),
-				cursor: z.date().optional(),
+				limit: z.number().optional(),
 			})
 		)
 		.query(async ({ ctx, input }) => {
-			const items = await db
+			const userSpaces = await db
 				.select()
 				.from(spaces)
-				.limit(input.limit + 1)
-				.where(
-					and(
-						eq(spaces.userId, ctx.session.user.id),
-						input.cursor ? lt(spaces.createdAt, input.cursor) : undefined
-					)
-				)
-				.orderBy(desc(spaces.createdAt));
+				.where(eq(spaces.userId, ctx.session.user.id))
+				.orderBy(desc(spaces.createdAt))
+				.limit(input.limit ?? 100);
 
-			const hasMore = items.length > input.limit;
-			const itemsToReturn = hasMore ? items.slice(0, input.limit) : items;
-			const nextCursor = hasMore ? itemsToReturn.at(-1)?.createdAt : undefined;
-
-			return {
-				spaces: itemsToReturn,
-				nextCursor,
-			};
+			return { spaces: userSpaces };
 		}),
 	createSpace: protectedProcedure
 		.input(
@@ -125,6 +112,35 @@ export const spaceRouter = router({
 					message: "Failed to create space",
 				});
 			}
+		}),
+	updateSpace: protectedProcedure
+		.input(
+			z.object({
+				spaceId: z.string().uuid(),
+				spaceTitle: z.string().min(1).max(255).transform(sanitizeUserInput),
+				spaceDescription: z.string().max(1000).transform(sanitizeUserInput).optional(),
+				spaceCustomInstructions: z.string().max(2000).transform(sanitizeUserInput).optional(),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const [space] = await db
+				.update(spaces)
+				.set({
+					spaceTitle: input.spaceTitle,
+					spaceDescription: input.spaceDescription,
+					spaceCustomInstructions: input.spaceCustomInstructions,
+				})
+				.where(and(eq(spaces.id, input.spaceId), eq(spaces.userId, ctx.session.user.id)))
+				.returning({ id: spaces.id });
+
+			if (!space.id) {
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Failed to update space",
+				});
+			}
+
+			return { success: true, id: space.id };
 		}),
 	savePdf: protectedProcedure.input(z.instanceof(FormData)).mutation(async ({ ctx, input }) => {
 		const spaceId = input.get("spaceId") as string;

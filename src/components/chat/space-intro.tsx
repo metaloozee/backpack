@@ -6,6 +6,7 @@ type SpaceIntroProps = {
 	spaceId: string;
 	spaceTitle: string;
 	spaceDescription?: string;
+	spaceCustomInstructions?: string;
 	spaceStatus: "pending" | "error" | "success";
 	knowledgeStatus: "pending" | "error" | "success";
 	knowledgeData?: Knowledge[];
@@ -15,6 +16,7 @@ export function SpaceIntro({
 	spaceId,
 	spaceTitle,
 	spaceDescription,
+	spaceCustomInstructions,
 	spaceStatus,
 	knowledgeStatus,
 	knowledgeData = [],
@@ -38,7 +40,12 @@ export function SpaceIntro({
 				)}
 			</div>
 			<div className="flex flex-row items-end justify-center gap-2">
-				<SettingsDialog spaceDescription={spaceDescription} spaceId={spaceId} spaceName={spaceTitle} />
+				<SettingsDialog
+					spaceCustomInstructions={spaceCustomInstructions}
+					spaceDescription={spaceDescription}
+					spaceId={spaceId}
+					spaceName={spaceTitle}
+				/>
 				{knowledgeStatus === "pending" ? (
 					<div className="h-8 w-24 animate-pulse rounded-md bg-neutral-900" />
 				) : (
