@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { CheckIcon, ChevronDownIcon, TelescopeIcon } from "lucide-react";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import { toast } from "sonner";
-import { useDebouncedCallback } from "use-debounce";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -61,23 +60,45 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 	const setToolsSelectionMutation = useMutation(trpc.chat.setToolsSelection.mutationOptions());
 	const setModeSelectionMutation = useMutation(trpc.chat.setModeSelection.mutationOptions());
 
-	const updateTool = useDebouncedCallback((toolId: string, value: boolean) => {
-		setTools((prev) => {
-			const newState = {
-				...prev,
-				[toolId]: value,
-			};
+	const updateTool = (toolId: string, value: boolean) => {
+		const previousValue = tools[toolId];
 
-			setToolsSelectionMutation.mutateAsync({ tools: newState }).catch(() => {
-				toast.error("Failed to save tool selection");
-			});
+		const newState = {
+			...tools,
+			[toolId]: value,
+		};
+		setTools(newState);
 
-			return newState;
-		});
-	}, 500);
+		setToolsSelectionMutation.mutate(
+			{ tools: newState },
+			{
+				onError: () => {
+					setTools((current) => {
+						if (current[toolId] === value) {
+							return {
+								...current,
+								[toolId]: previousValue,
+							};
+						}
+						return current;
+					});
+					toast.error("Failed to save tool selection");
+				},
+			}
+		);
+	};
 
-	const handleModeChange = useDebouncedCallback(async (value: string) => {
+	const handleModeChange = (value: string) => {
 		const newMode = value as ModeType;
+
+		if (newMode === selectedMode) {
+			return;
+		}
+
+		const previousMode = selectedMode;
+		const previousAgent = selectedAgent;
+		const previousTools = { ...tools };
+
 		setSelectedMode(newMode);
 
 		if (newMode === "ask") {
@@ -85,26 +106,56 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 			const defaultState = getDefaultToolsState();
 			setTools(defaultState);
 
-			try {
-				await setModeSelectionMutation.mutateAsync({ mode: newMode });
-				await setToolsSelectionMutation.mutateAsync({ tools: defaultState });
-			} catch {
-				toast.error("Failed to save mode selection");
-			}
-		}
-
-		if (newMode === "agent") {
+			setModeSelectionMutation.mutate(
+				{ mode: newMode },
+				{
+					onError: () => {
+						setSelectedMode(previousMode);
+						setSelectedAgent(previousAgent);
+						setTools(previousTools);
+						toast.error("Failed to save mode selection");
+					},
+					onSuccess: () => {
+						setToolsSelectionMutation.mutate(
+							{ tools: defaultState },
+							{
+								onError: () => {
+									setTools(previousTools);
+									toast.error("Failed to save tool selection");
+								},
+							}
+						);
+					},
+				}
+			);
+		} else if (newMode === "agent") {
 			const clearedTools = Object.fromEntries(defaultTools.map((tool) => [tool.id, false])) as ToolsState;
 			setTools(clearedTools);
 
-			try {
-				await setModeSelectionMutation.mutateAsync({ mode: newMode });
-				await setToolsSelectionMutation.mutateAsync({ tools: clearedTools });
-			} catch {
-				toast.error("Failed to save mode selection");
-			}
+			setModeSelectionMutation.mutate(
+				{ mode: newMode },
+				{
+					onError: () => {
+						setSelectedMode(previousMode);
+						setSelectedAgent(previousAgent);
+						setTools(previousTools);
+						toast.error("Failed to save mode selection");
+					},
+					onSuccess: () => {
+						setToolsSelectionMutation.mutate(
+							{ tools: clearedTools },
+							{
+								onError: () => {
+									setTools(previousTools);
+									toast.error("Failed to save tool selection");
+								},
+							}
+						);
+					},
+				}
+			);
 		}
-	}, 500);
+	};
 
 	return (
 		<motion.div className="flex flex-row items-center justify-start gap-2" layout transition={transitions.smooth}>
@@ -201,20 +252,33 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 															<DropdownMenuItem
 																className="flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800"
 																key={agentKey}
-																onSelect={async (e) => {
+																onSelect={(e) => {
 																	e.preventDefault();
 																	const newAgent =
 																		selectedAgent === agentKey ? null : agentKey;
+																	const previousAgent = selectedAgent;
+
 																	setSelectedAgent(newAgent);
 
-																	try {
-																		await setModeSelectionMutation.mutateAsync({
+																	setModeSelectionMutation.mutate(
+																		{
 																			mode: "agent",
 																			selectedAgent: newAgent || undefined,
-																		});
-																	} catch {
-																		toast.error("Failed to save agent selection");
-																	}
+																		},
+																		{
+																			onError: () => {
+																				setSelectedAgent((current) => {
+																					if (current === newAgent) {
+																						toast.error(
+																							"Failed to save agent selection"
+																						);
+																						return previousAgent;
+																					}
+																					return current;
+																				});
+																			},
+																		}
+																	);
 																}}
 															>
 																<div className="flex items-center gap-3">

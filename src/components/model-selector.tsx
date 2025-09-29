@@ -5,7 +5,6 @@ import { BrainIcon, Check, ChevronDown, FlaskConicalIcon, RocketIcon, ShieldIcon
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useDebouncedCallback } from "use-debounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Command, CommandList } from "@/components/ui/command";
@@ -72,15 +71,25 @@ export function ModelSelector({ initialModel }: ModelSelectorProps) {
 	const trpc = useTRPC();
 	const setModelSelectionMutation = useMutation(trpc.chat.setModelSelection.mutationOptions());
 
-	const handleModelChange = useDebouncedCallback(async (modelId: string) => {
+	const handleModelChange = (modelId: string) => {
+		if (modelId === selectedModel) {
+			return;
+		}
+
+		const previousModel = selectedModel;
+
 		setSelectedModel(modelId);
 
-		try {
-			await setModelSelectionMutation.mutateAsync({ modelId });
-		} catch {
-			toast.error("Failed to save model selection");
-		}
-	}, 500);
+		setModelSelectionMutation.mutate(
+			{ modelId },
+			{
+				onError: () => {
+					setSelectedModel((curr) => (curr === modelId ? previousModel : curr));
+					toast.error("Failed to save model selection");
+				},
+			}
+		);
+	};
 
 	const selectedModelData = models.find((model) => model.id === selectedModel);
 
