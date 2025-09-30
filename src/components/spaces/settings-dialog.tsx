@@ -145,11 +145,11 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 
 	const deleteMutation = useMutation({
 		...trpc.space.deleteSpace.mutationOptions(),
-		onSuccess: () => {
+		onSuccess: async () => {
 			toast.success("Space deleted successfully");
-			queryClient.invalidateQueries(trpc.space.getSpaces.pathFilter());
 			setIsDeleteDialogOpen(false);
 			setIsOpen(false);
+			await queryClient.invalidateQueries(trpc.space.getSpaces.pathFilter());
 			router.push("/s");
 		},
 		onError: (error) => {

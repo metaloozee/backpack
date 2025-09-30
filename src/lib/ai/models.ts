@@ -61,11 +61,18 @@ export const models: Model[] = [
 		properties: ["experimental", "fast"],
 	},
 	{
-		name: "Claude Sonnet 4 Thinking",
-		id: "claude-4-sonnet-20250514:thinking",
+		name: "Claude Sonnet 4.5 Thinking",
+		id: "claude-sonnet-4-5-20250929:thinking",
 		provider: "anthropic",
-		instance: anthropic.chat("claude-4-sonnet-20250514"),
+		instance: anthropic.chat("claude-sonnet-4-5-20250929"),
 		properties: ["reasoning", "quality"],
+	},
+	{
+		name: "Claude Sonnet 4.5",
+		id: "claude-sonnet-4-5-20250929",
+		provider: "anthropic",
+		instance: anthropic.chat("claude-sonnet-4-5-20250929"),
+		properties: ["quality"],
 	},
 	{
 		name: "Claude Sonnet 4",
