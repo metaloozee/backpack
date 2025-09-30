@@ -142,6 +142,27 @@ export const spaceRouter = router({
 
 			return { success: true, id: space.id };
 		}),
+	deleteSpace: protectedProcedure
+		.input(
+			z.object({
+				spaceId: z.string().uuid(),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const [space] = await db
+				.delete(spaces)
+				.where(and(eq(spaces.id, input.spaceId), eq(spaces.userId, ctx.session.user.id)))
+				.returning({ id: spaces.id });
+
+			if (!space) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Space not found",
+				});
+			}
+
+			return { success: true, id: space.id };
+		}),
 	savePdf: protectedProcedure.input(z.instanceof(FormData)).mutation(async ({ ctx, input }) => {
 		const spaceId = input.get("spaceId") as string;
 		const file = input.get("file") as File;

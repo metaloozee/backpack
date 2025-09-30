@@ -11,7 +11,6 @@ export const auth = betterAuth({
 		github: {
 			clientId: env.GITHUB_CLIENT_ID as string,
 			clientSecret: env.GITHUB_CLIENT_SECRET as string,
-			redirectURI: `${env.BETTER_AUTH_URL}/api/auth/callback/github`,
 		},
 	},
 	session: {
