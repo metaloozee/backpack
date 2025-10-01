@@ -2,6 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { BookCopyIcon, PlusIcon } from "lucide-react";
+import { motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/ui/loader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { iconVariants } from "@/lib/animations";
 import type { Knowledge } from "@/lib/db/schema/app";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { KnowledgeTable } from "./knowledge-table";
@@ -151,7 +153,9 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
 		<Dialog onOpenChange={setIsOpen} open={isOpen}>
 			<DialogTrigger asChild>
 				<Button size={"sm"} variant="outline">
-					<BookCopyIcon className="size-4" />
+					<motion.div initial="rest" variants={iconVariants} whileHover="hover">
+						<BookCopyIcon className="size-4" />
+					</motion.div>
 					Knowledge Base
 				</Button>
 			</DialogTrigger>
