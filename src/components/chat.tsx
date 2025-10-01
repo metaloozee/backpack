@@ -219,7 +219,7 @@ export function Chat({
 		<div
 			className={cn(
 				"flex h-full w-full flex-col",
-				messages.length > 0 ? "items-center justify-between" : "container items-center justify-center"
+				messages.length > 0 ? "items-center justify-between" : "container my-10 items-center justify-center"
 			)}
 			suppressHydrationWarning
 		>
@@ -266,7 +266,7 @@ export function Chat({
 			/>
 
 			{showSpaceHistory && env.spaceId && (
-				<div className="my-10 flex w-full max-w-3xl flex-col gap-2">
+				<div className="mt-10 flex w-full max-w-3xl flex-col gap-2">
 					<DisplayChats spaceId={env.spaceId} />
 				</div>
 			)}
