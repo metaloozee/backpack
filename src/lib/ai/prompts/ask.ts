@@ -1,4 +1,4 @@
-export const AskModePrompt = ({
+export default function AskModePrompt({
 	tools,
 	env,
 }: {
@@ -16,7 +16,7 @@ export const AskModePrompt = ({
 		spaceCustomInstructions?: string;
 		memories?: Array<{ content: string; createdAt: Date }>;
 	};
-}) => {
+}) {
 	const environmentBanner = env.inSpace
 		? `You are currently inside a Space chat. \n Space name: "${env.spaceName ?? "Unnamed Space"}" \n Space ID: "${env.spaceId}" \n ${env.spaceDescription ? `Space description: ${env.spaceDescription}` : ""}`
 		: "You are in a general chat (no active Space).";
@@ -92,4 +92,4 @@ ${
 <CustomInstructions>${env.spaceCustomInstructions ?? ""}</CustomInstructions>
 <Memories>${env.memories?.map((memory) => `- ${memory.content}`).join("\n")}</Memories>
 `;
-};
+}

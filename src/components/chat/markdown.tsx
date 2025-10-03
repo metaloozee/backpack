@@ -7,6 +7,8 @@ import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { CodeBlock } from "@/components/chat/code-block";
+import { DownloadableTable } from "@/components/chat/downloadable-table";
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useCitations } from "@/lib/hooks/use-citations";
 import { cn } from "@/lib/utils";
@@ -68,9 +70,7 @@ const components: Partial<Components> = {
 		);
 	},
 	pre: ({ children }) => (
-		<div className="not-prose my-4 max-w-2xl overflow-visible whitespace-pre-wrap break-words text-sm">
-			{children}
-		</div>
+		<div className="not-prose my-4 w-full overflow-visible whitespace-pre-wrap break-words text-sm">{children}</div>
 	),
 	ol: ({ node, children, ...props }) => {
 		return (
@@ -120,34 +120,26 @@ const components: Partial<Components> = {
 	},
 	hr: ({ ...props }) => <hr className="my-6 border-neutral-200 border-t dark:border-neutral-700" {...props} />,
 	table: ({ node, children, ...props }) => {
-		return (
-			<div className="my-6 overflow-x-auto">
-				<table className="w-full border-collapse text-left" {...props}>
-					{children}
-				</table>
-			</div>
-		);
+		return <DownloadableTable {...props}>{children}</DownloadableTable>;
 	},
 	thead: ({ node, children, ...props }) => {
 		return (
-			<thead className="bg-neutral-50 dark:bg-neutral-800" {...props}>
+			<TableHeader className="dark:bg-neutral-900" {...props}>
 				{children}
-			</thead>
+			</TableHeader>
 		);
+	},
+	tbody: ({ node, children, ...props }) => {
+		return <TableBody {...props}>{children}</TableBody>;
+	},
+	tr: ({ node, children, ...props }) => {
+		return <TableRow {...props}>{children}</TableRow>;
 	},
 	th: ({ node, children, ...props }) => {
-		return (
-			<th className="border-neutral-200 border-b px-3 py-2 font-semibold dark:border-neutral-700" {...props}>
-				{children}
-			</th>
-		);
+		return <TableHead {...props}>{children}</TableHead>;
 	},
 	td: ({ node, children, ...props }) => {
-		return (
-			<td className="border-neutral-200 border-b px-3 py-2 dark:border-neutral-700" {...props}>
-				{children}
-			</td>
-		);
+		return <TableCell {...props}>{children}</TableCell>;
 	},
 	img: ({ node, alt, src, width, height, ...props }) => {
 		let imageWidth = 600;

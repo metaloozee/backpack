@@ -19,7 +19,7 @@ import { createResumableStreamContext, type ResumableStreamContext } from "resum
 import { z } from "zod";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
 import { getModel } from "@/lib/ai/models";
-import { AskModePrompt } from "@/lib/ai/prompts";
+import AskModePrompt from "@/lib/ai/prompts/ask";
 import { academicSearchTool } from "@/lib/ai/tools/academic-search";
 import { extractTool } from "@/lib/ai/tools/extract";
 import { financeSearchTool } from "@/lib/ai/tools/finance-search";

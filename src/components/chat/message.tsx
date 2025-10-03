@@ -271,10 +271,9 @@ function renderTextPart(
 							)}
 							<div
 								className={cn(
-									"flex flex-col gap-4",
+									"flex flex-col gap-4 overflow-x-auto",
 									{
-										"overflow-auto border bg-neutral-900 px-4 py-1 text-primary":
-											message.role === "user",
+										"border bg-neutral-900 px-4 py-1 text-primary": message.role === "user",
 									},
 									message.parts.filter((filePart) => filePart.type === "file").length > 0
 										? "rounded-b-xl rounded-tl-xl"

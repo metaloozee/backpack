@@ -1,10 +1,10 @@
 import "./globals.css";
 
-// import { ReactScan } from '@/components/react-scan';
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { DataStreamProvider } from "@/components/data-stream-provider";
+// import { ReactScan } from "@/components/react-scan";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import TrpcProvider from "@/lib/trpc/client";
@@ -33,6 +33,7 @@ export default function RootLayout({
 				>
 					<DataStreamProvider>
 						<ThemeProvider attribute="class" defaultTheme="system" disableTransitionOnChange enableSystem>
+							{/* <ReactScan /> */}
 							<ReactQueryDevtools initialIsOpen={false} />
 							<Toaster position="top-center" richColors />
 							{children}

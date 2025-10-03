@@ -12,6 +12,9 @@
       "style": {
         "noMagicNumbers": "off",
         "noNestedTernary": "warn"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "warn"
       }
     }
   },
