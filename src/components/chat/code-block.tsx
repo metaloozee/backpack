@@ -1,85 +1,226 @@
 "use client";
 
-import { CheckIcon, CopyIcon } from "lucide-react";
-import React from "react";
+import { CheckIcon, CopyIcon, DownloadIcon } from "lucide-react";
+import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
+import { createContext, useContext, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { toast } from "sonner";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
-const LANGUAGE_REGEX = /language-(\w+)/;
-const TRAILING_NEWLINE_REGEX = /\n$/;
+type CodeBlockContextType = {
+	code: string;
+	language: string;
+};
 
-const COPY_FEEDBACK_DURATION = 1500;
+const CodeBlockContext = createContext<CodeBlockContextType>({
+	code: "",
+	language: "text",
+});
 
-export function CodeBlock({ className, children }: { className?: string; children?: React.ReactNode }) {
-	const match = LANGUAGE_REGEX.exec(className || "");
-	const language = match?.[1] || "text";
-	const code = String(children).replace(TRAILING_NEWLINE_REGEX, "");
+export type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
+	code: string;
+	language: string;
+	showLineNumbers?: boolean;
+	children?: ReactNode;
+};
 
-	const [copied, setCopied] = React.useState(false);
+export const CodeBlock = ({
+	code,
+	language,
+	showLineNumbers = false,
+	className,
+	children,
+	...props
+}: CodeBlockProps) => (
+	<CodeBlockContext.Provider value={{ code, language }}>
+		<div
+			className={cn("relative w-full overflow-hidden rounded-md border bg-background text-foreground", className)}
+			{...props}
+		>
+			<div className="flex items-center justify-between border-b bg-muted/50 px-4 py-2">
+				<span className="font-medium text-muted-foreground text-xs uppercase tracking-wider">{language}</span>
+				{children && <div className="flex items-center gap-1">{children}</div>}
+			</div>
 
-	const handleCopy = React.useCallback(() => {
-		if (!navigator?.clipboard) {
+			<div className="relative">
+				<SyntaxHighlighter
+					className="overflow-hidden dark:hidden"
+					codeTagProps={{
+						className: "font-mono text-sm",
+					}}
+					customStyle={{
+						margin: 0,
+						padding: "1rem",
+						fontSize: "0.875rem",
+						background: "hsl(var(--background))",
+						color: "hsl(var(--foreground))",
+						overflowX: "auto",
+						overflowWrap: "break-word",
+						wordBreak: "break-all",
+					}}
+					language={language}
+					lineNumberStyle={{
+						color: "hsl(var(--muted-foreground))",
+						paddingRight: "1rem",
+						minWidth: "2.5rem",
+					}}
+					showLineNumbers={showLineNumbers}
+					style={oneLight}
+				>
+					{code}
+				</SyntaxHighlighter>
+				<SyntaxHighlighter
+					className="hidden overflow-hidden dark:block"
+					codeTagProps={{
+						className: "font-mono text-sm",
+					}}
+					customStyle={{
+						margin: 0,
+						padding: "1rem",
+						fontSize: "0.875rem",
+						background: "hsl(var(--background))",
+						color: "hsl(var(--foreground))",
+						overflowX: "auto",
+						overflowWrap: "break-word",
+						wordBreak: "break-all",
+					}}
+					language={language}
+					lineNumberStyle={{
+						color: "hsl(var(--muted-foreground))",
+						paddingRight: "1rem",
+						minWidth: "2.5rem",
+					}}
+					showLineNumbers={showLineNumbers}
+					style={oneDark}
+				>
+					{code}
+				</SyntaxHighlighter>
+			</div>
+		</div>
+	</CodeBlockContext.Provider>
+);
+
+export type CodeBlockCopyButtonProps = ComponentProps<typeof Button> & {
+	onCopy?: () => void;
+	onError?: (error: Error) => void;
+	timeout?: number;
+};
+
+export const CodeBlockCopyButton = ({
+	onCopy,
+	onError,
+	timeout = 2000,
+	children,
+	className,
+	...props
+}: CodeBlockCopyButtonProps) => {
+	const [isCopied, setIsCopied] = useState(false);
+	const { code } = useContext(CodeBlockContext);
+
+	const copyToClipboard = async () => {
+		if (typeof window === "undefined" || !navigator.clipboard.writeText) {
+			onError?.(new Error("Clipboard API not available"));
 			return;
 		}
-		navigator.clipboard
-			.writeText(code)
-			.then(() => {
-				setCopied(true);
-				toast.success("Copied to clipboard");
-				setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION);
-			})
-			.catch(() => {
-				toast.error("Failed to copy");
-			});
-	}, [code]);
+
+		try {
+			await navigator.clipboard.writeText(code);
+			setIsCopied(true);
+			onCopy?.();
+			setTimeout(() => setIsCopied(false), timeout);
+		} catch (error) {
+			onError?.(error as Error);
+		}
+	};
+
+	const Icon = isCopied ? CheckIcon : CopyIcon;
 
 	return (
-		<div className="group relative w-full max-w-2xl overflow-visible rounded-md border border-neutral-200 bg-neutral-950 text-neutral-50 dark:border-neutral-800">
-			{/* {language !== 'text' && (
-                <span className="pointer-events-none select-none rounded px-1.5 text-[10px] font-medium uppercase tracking-wider text-neutral-400/90 ring-1 ring-inset ring-neutral-700/50">
-                    {language}
-                </span>
-            )} */}
-			<SyntaxHighlighter
-				customStyle={{
-					margin: 0,
-					padding: "1rem",
-					fontSize: "0.875rem",
-					lineHeight: "1.5",
-					background: "transparent",
-					borderRadius: "0.5rem",
-					width: "100%",
-					whiteSpace: "pre-wrap",
-					wordBreak: "break-word",
-					overflowWrap: "anywhere",
-					wordWrap: "break-word",
-				}}
-				language={language}
-				style={vscDarkPlus}
-				wrapLongLines
-			>
-				{code}
-			</SyntaxHighlighter>
-
-			<TooltipProvider delayDuration={100}>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							className="absolute top-2 right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100"
-							onClick={handleCopy}
-							size="icon"
-							type="button"
-							variant="ghost"
-						>
-							{copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent side="left">{copied ? "Copied" : "Copy code"}</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
-		</div>
+		<Button
+			className={cn("size-8 shrink-0", className)}
+			onClick={copyToClipboard}
+			size="icon"
+			type="button"
+			variant="ghost"
+			{...props}
+		>
+			{children ?? <Icon className="size-3.5" />}
+		</Button>
 	);
-}
+};
+
+export type CodeBlockDownloadButtonProps = ComponentProps<typeof Button> & {
+	onDownload?: () => void;
+	onError?: (error: Error) => void;
+	filename?: string;
+};
+
+const FILE_EXTENSIONS: Record<string, string> = {
+	javascript: "js",
+	typescript: "ts",
+	python: "py",
+	java: "java",
+	cpp: "cpp",
+	c: "c",
+	csharp: "cs",
+	go: "go",
+	rust: "rs",
+	php: "php",
+	ruby: "rb",
+	swift: "swift",
+	kotlin: "kt",
+	bash: "sh",
+	shell: "sh",
+	powershell: "ps1",
+	sql: "sql",
+	json: "json",
+	yaml: "yaml",
+	xml: "xml",
+	html: "html",
+	css: "css",
+	markdown: "md",
+};
+
+export const CodeBlockDownloadButton = ({
+	onDownload,
+	onError,
+	filename,
+	children,
+	className,
+	...props
+}: CodeBlockDownloadButtonProps) => {
+	const { code, language } = useContext(CodeBlockContext);
+
+	const downloadCode = () => {
+		try {
+			const extension = FILE_EXTENSIONS[language.toLowerCase()] || "txt";
+			const finalFilename = filename || `code.${extension}`;
+			const blob = new Blob([code], { type: "text/plain" });
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+			link.download = finalFilename;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			URL.revokeObjectURL(url);
+			onDownload?.();
+		} catch (error) {
+			onError?.(error as Error);
+		}
+	};
+
+	return (
+		<Button
+			className={cn("size-8 shrink-0", className)}
+			onClick={downloadCode}
+			size="icon"
+			type="button"
+			variant="ghost"
+			{...props}
+		>
+			{children ?? <DownloadIcon className="size-3.5" />}
+		</Button>
+	);
+};

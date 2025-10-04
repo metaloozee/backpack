@@ -6,7 +6,7 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
-import { CodeBlock } from "@/components/chat/code-block";
+import { CodeBlock, CodeBlockCopyButton, CodeBlockDownloadButton } from "@/components/chat/code-block";
 import { DownloadableTable } from "@/components/chat/downloadable-table";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +17,7 @@ import "katex/dist/katex.min.css";
 
 const LANGUAGE_REGEX = /language-(\w+)/;
 const CITATION_REGEX = /\[(\d+)\]/g;
+const TRAILING_NEWLINE_REGEX = /\n$/;
 
 const headingClassNames = {
 	h1: "mt-6 mb-2 font-semibold text-3xl",
@@ -58,9 +59,17 @@ const makeComponent = <T extends ElementType>(
 const components: Partial<Components> = {
 	code: ({ node, className, children, ...props }) => {
 		const match = LANGUAGE_REGEX.exec(className || "");
-		return match ? (
-			<CodeBlock className={className}>{children}</CodeBlock>
-		) : (
+		if (match) {
+			const language = match[1] || "text";
+			const code = String(children).replace(TRAILING_NEWLINE_REGEX, "");
+			return (
+				<CodeBlock code={code} language={language}>
+					<CodeBlockDownloadButton />
+					<CodeBlockCopyButton />
+				</CodeBlock>
+			);
+		}
+		return (
 			<code
 				className="whitespace-nowrap rounded-md border border-neutral-600 bg-neutral-400 px-1.5 py-0 font-mono text-neutral-800 dark:bg-neutral-800 dark:text-neutral-100"
 				{...props}
