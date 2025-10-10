@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-table";
 import { CheckIcon, CopyIcon, TrashIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { parseAsString, useQueryState } from "nuqs";
 import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "timeago.js";
@@ -38,7 +39,7 @@ export function DisplayMemories() {
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-	const [globalFilter, setGlobalFilter] = useState("");
+	const [globalFilter, setGlobalFilter] = useQueryState("filter", parseAsString.withDefault(""));
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
 	const [copiedId, setCopiedId] = useState<string | null>(null);
 

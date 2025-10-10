@@ -5,7 +5,8 @@ import { useChat } from "@ai-sdk/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
 import type { Session } from "better-auth";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import DisplayChats from "@/components/chat/display-chats";
@@ -192,8 +193,7 @@ export function Chat({
 	}, [hasOptimisticallyAdded, messages.length, queryClient, trpc]);
 
 	// Handle query parameter appending
-	const searchParams = useSearchParams();
-	const query = searchParams.get("query");
+	const [query, setQuery] = useQueryState("query", parseAsString);
 	const [hasAppendedQuery, setHasAppendedQuery] = useState(false);
 
 	useEffect(() => {
@@ -204,9 +204,9 @@ export function Chat({
 			});
 
 			setHasAppendedQuery(true);
-			window.history.replaceState({}, "", `/c/${id}`);
+			setQuery(null);
 		}
-	}, [query, sendMessage, hasAppendedQuery, id]);
+	}, [query, sendMessage, hasAppendedQuery, setQuery]);
 
 	useAutoResume({
 		autoResume,

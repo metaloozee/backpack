@@ -3,6 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { BookCopyIcon, PlusIcon } from "lucide-react";
 import { motion } from "motion/react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,10 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
 
 	const webpageKnowledge = knowledgeData.filter((k) => k.knowledgeType === "webpage");
 	const pdfKnowledge = knowledgeData.filter((k) => k.knowledgeType === "pdf");
-	const [activeTab, setActiveTab] = useState<"webpage" | "pdf">("webpage");
+	const [activeTab, setActiveTab] = useQueryState(
+		"tab",
+		parseAsStringLiteral(["webpage", "pdf"] as const).withDefault("webpage")
+	);
 
 	const [url, setUrl] = useState("");
 	const webPageMutation = useMutation(trpc.space.saveWebPage.mutationOptions());
@@ -95,7 +99,11 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
 			};
 
 			return (
-				<form className="flex h-full w-full items-center justify-center gap-2" onSubmit={handlePdfSubmit}>
+				<form
+					className="flex h-full w-full items-center justify-center gap-2"
+					key="pdf-form"
+					onSubmit={handlePdfSubmit}
+				>
 					<Input
 						accept="application/pdf"
 						className="flex-1 focus-visible:ring-1"
@@ -125,7 +133,11 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
 
 		// WebPage Upload Form
 		return (
-			<form className="flex h-full w-full items-center justify-center gap-2" onSubmit={handleSubmit}>
+			<form
+				className="flex h-full w-full items-center justify-center gap-2"
+				key="webpage-form"
+				onSubmit={handleSubmit}
+			>
 				<Input
 					className="flex-1 focus-visible:ring-1"
 					disabled={webPageMutation.isPending}
@@ -165,8 +177,8 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
 				</DialogHeader>
 				<Tabs
 					className="w-full"
-					defaultValue="webpage"
 					onValueChange={(value) => setActiveTab(value as "webpage" | "pdf")}
+					value={activeTab}
 				>
 					<TabsList className="grid w-full grid-cols-2 bg-black">
 						<TabsTrigger value="webpage">Web Pages</TabsTrigger>

@@ -18,6 +18,82 @@ import { type ChatInfiniteData, removeChatFromInfiniteData } from "@/lib/trpc/ca
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
+const DATABASE_SEARCH_LIMIT = 50;
+const INTERSECTION_ROOT_MARGIN = "200px";
+const INTERSECTION_THRESHOLD = 0.1;
+
+type ChatItemProps = {
+	chat: {
+		id: string;
+		title: string;
+	};
+	isActive: boolean;
+	isConfirming: boolean;
+	isPending: boolean;
+	onConfirmDelete: () => void;
+	onCancelDelete: () => void;
+	onDeleteClick: () => void;
+};
+
+function ChatItem({
+	chat,
+	isActive,
+	isConfirming,
+	isPending,
+	onConfirmDelete,
+	onCancelDelete,
+	onDeleteClick,
+}: ChatItemProps) {
+	return (
+		<ContextMenu onOpenChange={(open) => !open && onCancelDelete()}>
+			<ContextMenuTrigger asChild>
+				<Link
+					className={cn("rounded px-2 py-1 hover:bg-neutral-900", isActive && "bg-neutral-900")}
+					href={`/c/${chat.id}`}
+				>
+					{chat.title}
+				</Link>
+			</ContextMenuTrigger>
+			<ContextMenuContent>
+				{isConfirming ? (
+					<>
+						<ContextMenuItem
+							disabled={isPending}
+							onSelect={(e) => {
+								e.preventDefault();
+								onConfirmDelete();
+							}}
+						>
+							{isPending ? <Loader className="size-4" /> : <Trash2Icon className="size-4" />}
+							<span>Confirm delete</span>
+						</ContextMenuItem>
+						<ContextMenuSeparator />
+						<ContextMenuItem
+							onSelect={(e) => {
+								e.preventDefault();
+								onCancelDelete();
+							}}
+						>
+							<XIcon className="size-4" />
+							Cancel
+						</ContextMenuItem>
+					</>
+				) : (
+					<ContextMenuItem
+						onSelect={(e) => {
+							e.preventDefault();
+							onDeleteClick();
+						}}
+					>
+						<Trash2Icon className="size-4" />
+						<span>Delete…</span>
+					</ContextMenuItem>
+				)}
+			</ContextMenuContent>
+		</ContextMenu>
+	);
+}
+
 export function SidebarChatsList({
 	limit = 5,
 	query = "",
@@ -42,8 +118,7 @@ export function SidebarChatsList({
 			onMutate: ({ chatId }) => {
 				setPendingChatId(chatId);
 			},
-			onSuccess: async (_, variables) => {
-				const chatId = variables.chatId;
+			onSuccess: async (_, { chatId }) => {
 				queryClient.setQueriesData(trpc.chat.getChats.pathFilter(), (old) =>
 					removeChatFromInfiniteData(old as ChatInfiniteData | undefined, chatId)
 				);
@@ -84,7 +159,7 @@ export function SidebarChatsList({
 	const shouldSearchDatabase = trimmedQuery.length > 0 && filteredLoadedChats.length === 0;
 
 	const databaseSearchQuery = useQuery({
-		...trpc.chat.searchChats.queryOptions({ query: trimmedQuery, limit: 50 }),
+		...trpc.chat.searchChats.queryOptions({ query: trimmedQuery, limit: DATABASE_SEARCH_LIMIT }),
 		enabled: shouldSearchDatabase,
 	});
 
@@ -118,8 +193,8 @@ export function SidebarChatsList({
 			},
 			{
 				root,
-				rootMargin: "200px",
-				threshold: 0.1,
+				rootMargin: INTERSECTION_ROOT_MARGIN,
+				threshold: INTERSECTION_THRESHOLD,
 			}
 		);
 
@@ -159,61 +234,18 @@ export function SidebarChatsList({
 				<p className="text-muted-foreground">{isSearching ? "No results found" : "No chats"}</p>
 			)}
 
-			{chatsToShow.map((c) => {
-				const isActive = c.id === currentChatId;
-				return (
-					<ContextMenu key={c.id} onOpenChange={(open) => !open && setConfirmingChatId(null)}>
-						<ContextMenuTrigger asChild>
-							<Link
-								className={cn("rounded px-2 py-1 hover:bg-neutral-900", isActive && "bg-neutral-900")}
-								href={`/c/${c.id}`}
-							>
-								{c.title}
-							</Link>
-						</ContextMenuTrigger>
-						<ContextMenuContent>
-							{confirmingChatId === c.id ? (
-								<>
-									<ContextMenuItem
-										disabled={pendingChatId === c.id && deleteMutation.isPending}
-										onSelect={(e) => {
-											e.preventDefault();
-											deleteMutation.mutate({ chatId: c.id });
-										}}
-									>
-										{pendingChatId === c.id && deleteMutation.isPending ? (
-											<Loader className="size-4" />
-										) : (
-											<Trash2Icon className="size-4" />
-										)}
-										<span>Confirm delete</span>
-									</ContextMenuItem>
-									<ContextMenuSeparator />
-									<ContextMenuItem
-										onSelect={(e) => {
-											e.preventDefault();
-											setConfirmingChatId(null);
-										}}
-									>
-										<XIcon className="size-4" />
-										Cancel
-									</ContextMenuItem>
-								</>
-							) : (
-								<ContextMenuItem
-									onSelect={(e) => {
-										e.preventDefault();
-										setConfirmingChatId(c.id);
-									}}
-								>
-									<Trash2Icon className="size-4" />
-									<span>Delete…</span>
-								</ContextMenuItem>
-							)}
-						</ContextMenuContent>
-					</ContextMenu>
-				);
-			})}
+			{chatsToShow.map((c) => (
+				<ChatItem
+					chat={c}
+					isActive={c.id === currentChatId}
+					isConfirming={confirmingChatId === c.id}
+					isPending={pendingChatId === c.id && deleteMutation.isPending}
+					key={c.id}
+					onCancelDelete={() => setConfirmingChatId(null)}
+					onConfirmDelete={() => deleteMutation.mutate({ chatId: c.id })}
+					onDeleteClick={() => setConfirmingChatId(c.id)}
+				/>
+			))}
 
 			{showMore && !isSearching && (
 				<div className="h-6" ref={loadMoreRef}>

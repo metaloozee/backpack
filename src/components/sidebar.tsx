@@ -4,7 +4,7 @@ import { BackpackIcon, LibraryIcon, MessageCirclePlusIcon, PanelLeftCloseIcon, P
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { parseAsString, useQueryState } from "nuqs";
 import UserProfile from "@/components/profile";
 import { SidebarChatsList } from "@/components/sidebar/chats-list";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ export function AppSidebar() {
 
 	const isHome = pathname === "/";
 	const isSpaces = pathname.startsWith("/s");
-	const [chatQuery, setChatQuery] = useState("");
+	const [chatQuery, setChatQuery] = useQueryState("chatQuery", parseAsString.withDefault(""));
 
 	const { state, open, setOpen } = useSidebar();
 

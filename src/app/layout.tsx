@@ -3,6 +3,7 @@ import "./globals.css";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { DataStreamProvider } from "@/components/data-stream-provider";
 // import { ReactScan } from "@/components/react-scan";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -31,14 +32,21 @@ export default function RootLayout({
 					className={cn("bg-background font-sans antialiased", geistSans.className)}
 					suppressHydrationWarning
 				>
-					<DataStreamProvider>
-						<ThemeProvider attribute="class" defaultTheme="system" disableTransitionOnChange enableSystem>
-							{/* <ReactScan /> */}
-							<ReactQueryDevtools initialIsOpen={false} />
-							<Toaster position="top-center" richColors />
-							{children}
-						</ThemeProvider>
-					</DataStreamProvider>
+					<NuqsAdapter>
+						<DataStreamProvider>
+							<ThemeProvider
+								attribute="class"
+								defaultTheme="system"
+								disableTransitionOnChange
+								enableSystem
+							>
+								{/* <ReactScan /> */}
+								<ReactQueryDevtools initialIsOpen={false} />
+								<Toaster position="top-center" richColors />
+								{children}
+							</ThemeProvider>
+						</DataStreamProvider>
+					</NuqsAdapter>
 				</body>
 			</html>
 		</TrpcProvider>
