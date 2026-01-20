@@ -5,10 +5,10 @@ import {
 	BrainIcon,
 	Check,
 	ChevronDown,
-	FlaskConicalIcon,
-	RocketIcon,
-	ShieldIcon,
-	SparklesIcon,
+	ImageIcon,
+	MicIcon,
+	VideoIcon,
+	WrenchIcon,
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -25,6 +25,12 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { models } from "@/lib/ai/models";
 import { useTRPC } from "@/lib/trpc/trpc";
 
@@ -51,70 +57,6 @@ const providerNames = {
 	openrouter: "OpenRouter",
 	mistral: "Mistral",
 	cerebras: "Cerebras",
-};
-
-const getProviderIcon = (provider: string) => {
-	switch (provider) {
-		case "google":
-			return (
-				<Image
-					alt="Google"
-					height={16}
-					src="/icons/gemini-color.svg"
-					width={16}
-				/>
-			);
-		case "anthropic":
-			return (
-				<Image
-					alt="Anthropic"
-					height={16}
-					src="/icons/claude-color.svg"
-					width={16}
-				/>
-			);
-		case "groq":
-			return (
-				<Image
-					alt="Groq"
-					className="invert"
-					height={16}
-					src="/icons/groq.svg"
-					width={16}
-				/>
-			);
-		case "openrouter":
-			return (
-				<Image
-					alt="OpenRouter"
-					className="invert"
-					height={16}
-					src="/icons/openrouter.svg"
-					width={16}
-				/>
-			);
-		case "openai":
-			return (
-				<Image
-					alt="OpenAI"
-					className="invert"
-					height={16}
-					src="/icons/openai.svg"
-					width={16}
-				/>
-			);
-		case "mistral":
-			return (
-				<Image
-					alt="Mistral"
-					height={16}
-					src="/icons/mistral-color.svg"
-					width={16}
-				/>
-			);
-		default:
-			return null;
-	}
 };
 
 export function ModelSelector({ initialModel }: ModelSelectorProps) {
@@ -164,8 +106,13 @@ export function ModelSelector({ initialModel }: ModelSelectorProps) {
 					variant="outline"
 				>
 					<div className="flex items-center gap-2">
-						{selectedModelData &&
-							getProviderIcon(selectedModelData.provider)}
+						<Image
+							alt={selectedModelData?.provider ?? ""}
+							className="dark:invert"
+							height={20}
+							src={`https://models.dev/logos/${selectedModelData?.provider}.svg`}
+							width={20}
+						/>
 					</div>
 					<ChevronDown className="size-3 shrink-0 opacity-50" />
 				</Button>
@@ -178,7 +125,16 @@ export function ModelSelector({ initialModel }: ModelSelectorProps) {
 								<DropdownMenuSub key={provider}>
 									<DropdownMenuSubTrigger>
 										<div className="flex items-center gap-2">
-											{getProviderIcon(provider)}
+											<Image
+												alt={
+													selectedModelData?.provider ??
+													""
+												}
+												className="dark:invert"
+												height={20}
+												src={`https://models.dev/logos/${provider}.svg`}
+												width={20}
+											/>
 											<span>
 												{
 													providerNames[
@@ -210,70 +166,114 @@ export function ModelSelector({ initialModel }: ModelSelectorProps) {
 															{model.name}
 														</span>
 													</div>
-													{model.properties && (
+													<TooltipProvider>
 														<div className="flex flex-row gap-1">
-															{model.properties.includes(
-																"reasoning"
-															) && (
-																<Badge
-																	className="px-1"
-																	variant={
-																		"secondary"
-																	}
-																>
-																	<BrainIcon className="size-3" />
-																</Badge>
+															{model.capabilities
+																.reasoning && (
+																<Tooltip>
+																	<TooltipTrigger
+																		asChild
+																	>
+																		<Badge
+																			className="px-1"
+																			variant="secondary"
+																		>
+																			<BrainIcon className="size-3" />
+																		</Badge>
+																	</TooltipTrigger>
+																	<TooltipContent>
+																		<span className="text-xs">
+																			Reasoning
+																		</span>
+																	</TooltipContent>
+																</Tooltip>
 															)}
-															{model.properties.includes(
-																"fast"
-															) && (
-																<Badge
-																	className="px-1"
-																	variant={
-																		"secondary"
-																	}
-																>
-																	<RocketIcon className="size-3" />
-																</Badge>
+															{model.capabilities
+																.toolCall && (
+																<Tooltip>
+																	<TooltipTrigger
+																		asChild
+																	>
+																		<Badge
+																			className="px-1"
+																			variant="secondary"
+																		>
+																			<WrenchIcon className="size-3" />
+																		</Badge>
+																	</TooltipTrigger>
+																	<TooltipContent>
+																		<span className="text-xs">
+																			Tool
+																			Use
+																		</span>
+																	</TooltipContent>
+																</Tooltip>
 															)}
-															{model.properties.includes(
-																"quality"
+															{model.modalities.input.includes(
+																"image"
 															) && (
-																<Badge
-																	className="px-1"
-																	variant={
-																		"secondary"
-																	}
-																>
-																	<SparklesIcon className="size-3" />
-																</Badge>
+																<Tooltip>
+																	<TooltipTrigger
+																		asChild
+																	>
+																		<Badge
+																			className="px-1"
+																			variant="secondary"
+																		>
+																			<ImageIcon className="size-3" />
+																		</Badge>
+																	</TooltipTrigger>
+																	<TooltipContent>
+																		<span className="text-xs">
+																			Vision
+																		</span>
+																	</TooltipContent>
+																</Tooltip>
 															)}
-															{model.properties.includes(
-																"experimental"
+															{model.modalities.input.includes(
+																"audio"
 															) && (
-																<Badge
-																	className="px-1"
-																	variant={
-																		"secondary"
-																	}
-																>
-																	<FlaskConicalIcon className="size-3" />
-																</Badge>
+																<Tooltip>
+																	<TooltipTrigger
+																		asChild
+																	>
+																		<Badge
+																			className="px-1"
+																			variant="secondary"
+																		>
+																			<MicIcon className="size-3" />
+																		</Badge>
+																	</TooltipTrigger>
+																	<TooltipContent>
+																		<span className="text-xs">
+																			Audio
+																		</span>
+																	</TooltipContent>
+																</Tooltip>
 															)}
-															{model.properties.includes(
-																"stealth"
+															{model.modalities.input.includes(
+																"video"
 															) && (
-																<Badge
-																	className="px-1"
-																	variant={
-																		"secondary"
-																	}
-																>
-																	<ShieldIcon className="size-3" />
-																</Badge>
+																<Tooltip>
+																	<TooltipTrigger
+																		asChild
+																	>
+																		<Badge
+																			className="px-1"
+																			variant="secondary"
+																		>
+																			<VideoIcon className="size-3" />
+																		</Badge>
+																	</TooltipTrigger>
+																	<TooltipContent>
+																		<span className="text-xs">
+																			Video
+																		</span>
+																	</TooltipContent>
+																</Tooltip>
 															)}
 														</div>
-													)}
+													</TooltipProvider>
 												</div>
 											</DropdownMenuItem>
 										))}

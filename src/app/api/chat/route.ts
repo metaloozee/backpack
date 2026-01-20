@@ -214,7 +214,7 @@ export async function POST(req: Request) {
 
 					const result = streamText({
 						model: model.instance as LanguageModel,
-						providerOptions: model.properties?.includes("reasoning")
+						providerOptions: model.capabilities.reasoning
 							? {
 									anthropic: {
 										thinking: {

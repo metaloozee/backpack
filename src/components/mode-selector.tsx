@@ -2,7 +2,12 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckIcon, ChevronDownIcon, TelescopeIcon } from "lucide-react";
+import {
+	BrainCircuitIcon,
+	CheckIcon,
+	TelescopeIcon,
+	ToolCaseIcon,
+} from "lucide-react";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -224,7 +229,7 @@ export function ModeSelector({
 								)}
 								type="button"
 							>
-								<ChevronDownIcon className="size-3" />
+								<ToolCaseIcon className="size-3.5" />
 							</button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent
@@ -275,7 +280,7 @@ export function ModeSelector({
 								)}
 								type="button"
 							>
-								<ChevronDownIcon className="size-3" />
+								<BrainCircuitIcon className="size-3.5" />
 							</button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent

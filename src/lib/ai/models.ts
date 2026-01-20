@@ -5,20 +5,25 @@ import { openai } from "@ai-sdk/openai";
 import type { OpenRouterLanguageModel } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
 
-export type ModelProperties =
-	| "reasoning"
-	| "fast"
-	| "quality"
-	| "experimental"
-	| "stealth"
-	| "lightweight";
+export type InputModality = "text" | "image" | "audio" | "video" | "pdf";
+export type OutputModality = "text" | "image" | "audio";
+
+export interface ModelCapabilities {
+	reasoning: boolean;
+	toolCall: boolean;
+	attachment: boolean;
+}
 
 export interface Model {
 	name: string;
 	id: string;
 	provider: string;
 	instance: LanguageModel | OpenRouterLanguageModel;
-	properties?: ModelProperties[];
+	modalities: {
+		input: InputModality[];
+		output: OutputModality[];
+	};
+	capabilities: ModelCapabilities;
 }
 
 const _googleSafetySettings: GoogleGenerativeAIProviderOptions["safetySettings"] =
@@ -47,74 +52,172 @@ const _googleSafetySettings: GoogleGenerativeAIProviderOptions["safetySettings"]
 
 export const models: Model[] = [
 	{
+		name: "Gemini 3 Pro Preview",
+		id: "gemini-3-pro-preview",
+		provider: "google",
+		instance: google.chat("gemini-3-pro-preview"),
+		modalities: {
+			input: ["text", "image", "video", "audio", "pdf"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
+	},
+	{
+		name: "Gemini 3 Flash Preview",
+		id: "gemini-3-flash-preview",
+		provider: "google",
+		instance: google.chat("gemini-3-flash-preview"),
+		modalities: {
+			input: ["text", "image", "video", "audio", "pdf"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
+	},
+	{
 		name: "Gemini 2.5 Pro",
 		id: "gemini-2.5-pro",
 		provider: "google",
 		instance: google.chat("gemini-2.5-pro"),
-		properties: ["reasoning", "quality", "fast"],
-	},
-	{
-		name: "Gemini 2.5 Flash Thinking",
-		id: "gemini-2.5-flash:thinking",
-		provider: "google",
-		instance: google.chat("gemini-2.5-flash"),
-		properties: ["experimental", "reasoning", "fast"],
+		modalities: {
+			input: ["text", "image", "audio", "video", "pdf"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
 	},
 	{
 		name: "Gemini 2.5 Flash",
 		id: "gemini-2.5-flash",
 		provider: "google",
 		instance: google.chat("gemini-2.5-flash"),
-		properties: ["experimental", "fast"],
+		modalities: {
+			input: ["text", "image", "audio", "video", "pdf"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
 	},
 	{
-		name: "Claude Sonnet 4.5 Thinking",
-		id: "claude-sonnet-4-5-20250929:thinking",
+		name: "Gemini 2.5 Flash Lite",
+		id: "gemini-2.5-flash-lite",
+		provider: "google",
+		instance: google.chat("gemini-2.5-flash-lite"),
+		modalities: {
+			input: ["text", "image", "audio", "video", "pdf"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
+	},
+
+	{
+		name: "Claude Opus 4.5",
+		id: "claude-opus-4-5",
 		provider: "anthropic",
-		instance: anthropic.chat("claude-sonnet-4-5-20250929"),
-		properties: ["reasoning", "quality"],
+		instance: anthropic.chat("claude-opus-4-5"),
+		modalities: {
+			input: ["text", "image", "pdf"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
 	},
 	{
 		name: "Claude Sonnet 4.5",
-		id: "claude-sonnet-4-5-20250929",
+		id: "claude-sonnet-4-5",
 		provider: "anthropic",
-		instance: anthropic.chat("claude-sonnet-4-5-20250929"),
-		properties: ["quality"],
+		instance: anthropic.chat("claude-sonnet-4-5"),
+		modalities: {
+			input: ["text", "image", "pdf"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
 	},
 	{
 		name: "Claude Sonnet 4",
-		id: "claude-4-sonnet-20250514",
+		id: "claude-sonnet-4-20250514",
 		provider: "anthropic",
-		instance: anthropic.chat("claude-4-sonnet-20250514"),
-		properties: ["quality"],
+		instance: anthropic.chat("claude-sonnet-4-20250514"),
+		modalities: {
+			input: ["text", "image", "pdf"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
 	},
 	{
-		name: "GPT 4.1",
-		id: "gpt-4.1",
+		name: "Claude Haiku 4.5",
+		id: "claude-haiku-4-5",
+		provider: "anthropic",
+		instance: anthropic.chat("claude-haiku-4-5"),
+		modalities: {
+			input: ["text", "image", "pdf"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
+	},
+
+	{
+		name: "GPT-5.2",
+		id: "gpt-5.2",
 		provider: "openai",
-		instance: openai.responses("gpt-4.1"),
-		properties: ["fast"],
+		instance: openai.responses("gpt-5.2"),
+		modalities: {
+			input: ["text", "image"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
 	},
 	{
-		name: "GPT 5",
-		id: "gpt-5-2025-08-07",
+		name: "GPT-5.2 Codex",
+		id: "gpt-5.2-codex",
 		provider: "openai",
-		instance: openai.responses("gpt-5-2025-08-07"),
-		properties: ["quality"],
+		instance: openai.responses("gpt-5.2-codex"),
+		modalities: {
+			input: ["text", "image"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
 	},
 	{
-		name: "GPT 5-mini",
-		id: "gpt-5-mini-2025-08-07",
+		name: "GPT-5",
+		id: "gpt-5",
 		provider: "openai",
-		instance: openai.responses("gpt-5-mini-2025-08-07"),
-		properties: ["quality", "fast"],
+		instance: openai.responses("gpt-5"),
+		modalities: {
+			input: ["text", "image"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
 	},
+	{
+		name: "GPT-5 Mini",
+		id: "gpt-5-mini",
+		provider: "openai",
+		instance: openai.responses("gpt-5-mini"),
+		modalities: {
+			input: ["text", "image"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
+	},
+	{
+		name: "o4-mini",
+		id: "o4-mini",
+		provider: "openai",
+		instance: openai.responses("o4-mini"),
+		modalities: {
+			input: ["text", "image"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
+	},
+
 	{
 		name: "Kimi K2",
 		id: "moonshotai/kimi-k2-instruct-0905",
 		provider: "groq",
 		instance: groq("moonshotai/kimi-k2-instruct-0905"),
-		properties: ["quality", "fast"],
+		modalities: {
+			input: ["text"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: false, toolCall: true, attachment: false },
 	},
 ];
 
