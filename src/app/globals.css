@@ -167,3 +167,9 @@
 		background: color-mix(in oklab, var(--primary) 50%, transparent);
 	}
 }
+
+/* Performance: defer rendering of off-screen message items */
+.message-item {
+	content-visibility: auto;
+	contain-intrinsic-size: 0 100px;
+}

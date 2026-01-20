@@ -125,7 +125,7 @@ export function AppSidebar() {
 							size={state === "expanded" ? "default" : "icon"}
 							variant={isHome ? "default" : "outline"}
 						>
-							<Link href={"/"}>
+							<Link aria-label="New Chat" href={"/"}>
 								{state === "expanded" ? (
 									<>
 										<motion.div
@@ -162,7 +162,7 @@ export function AppSidebar() {
 							size={state === "expanded" ? "default" : "icon"}
 							variant={isSpaces ? "default" : "outline"}
 						>
-							<Link href={"/s/"}>
+							<Link aria-label="Spaces" href={"/s/"}>
 								{state === "expanded" ? (
 									<>
 										<motion.div
@@ -189,9 +189,10 @@ export function AppSidebar() {
 
 					{state === "expanded" && (
 						<Input
+							autoComplete="off"
 							className="h-8 border-0 bg-background dark:bg-neutral-950"
 							onChange={(e) => setChatQuery(e.target.value)}
-							placeholder={"Search chats..."}
+							placeholder="Search chats..."
 							value={chatQuery}
 						/>
 					)}
@@ -223,6 +224,11 @@ export function AppSidebar() {
 					whileTap="tap"
 				>
 					<Button
+						aria-label={
+							state === "expanded"
+								? "Close sidebar"
+								: "Open sidebar"
+						}
 						className="w-full"
 						onClick={() => setOpen(!open)}
 						size={state === "collapsed" ? "icon" : "default"}

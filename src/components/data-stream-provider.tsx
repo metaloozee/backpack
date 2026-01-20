@@ -5,6 +5,12 @@ import type React from "react";
 import { createContext, useContext, useMemo, useState } from "react";
 import type { CustomUIDataTypes } from "@/lib/ai/types";
 
+// Disable AI SDK warnings in production
+// See: https://ai-sdk.dev/docs/ai-sdk-ui/error-handling#turning-off-warnings
+if (process.env.NODE_ENV === "production") {
+	globalThis.AI_SDK_LOG_WARNINGS = false;
+}
+
 interface DataStreamContextValue {
 	dataStream: DataUIPart<CustomUIDataTypes>[];
 	setDataStream: React.Dispatch<

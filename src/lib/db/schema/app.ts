@@ -1,9 +1,11 @@
 import type { InferSelectModel } from "drizzle-orm";
 import {
+	boolean,
 	index,
 	json,
 	pgEnum,
 	pgTable,
+	primaryKey,
 	text,
 	timestamp,
 	varchar,
@@ -230,3 +232,26 @@ export const stream = pgTable(
 	})
 );
 export type Stream = InferSelectModel<typeof stream>;
+
+export const vote = pgTable(
+	"vote",
+	{
+		chatId: text("chat_id")
+			.notNull()
+			.references(() => chat.id, {
+				onDelete: "cascade",
+				onUpdate: "cascade",
+			}),
+		messageId: text("message_id")
+			.notNull()
+			.references(() => message.id, {
+				onDelete: "cascade",
+				onUpdate: "cascade",
+			}),
+		isUpvoted: boolean("is_upvoted").notNull(),
+	},
+	(table) => ({
+		pk: primaryKey({ columns: [table.chatId, table.messageId] }),
+	})
+);
+export type Vote = InferSelectModel<typeof vote>;

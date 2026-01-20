@@ -585,7 +585,7 @@ export function Message({
 		<AnimatePresence>
 			<motion.div
 				animate={{ y: 0, opacity: 1 }}
-				className="mx-auto w-full max-w-3xl px-4"
+				className="message-item mx-auto w-full max-w-3xl px-4"
 				data-role={message.role}
 				data-testid={`message-${message.id}`}
 				initial={{ y: 5, opacity: 0 }}
@@ -649,9 +649,11 @@ export function Message({
 }
 
 export const PreviewMessage = memo(Message, (prevProps, nextProps) => {
-	if (!equal(prevProps.isLoading, nextProps.isLoading)) {
+	// During loading/streaming, always re-render to show updates
+	if (prevProps.isLoading || nextProps.isLoading) {
 		return false;
 	}
+
 	if (!equal(prevProps.message.id, nextProps.message.id)) {
 		return false;
 	}

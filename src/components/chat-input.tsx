@@ -3,6 +3,7 @@
 
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
+import equal from "fast-deep-equal";
 import { AnimatePresence, motion } from "framer-motion";
 import {
 	ChevronDownIcon,
@@ -625,6 +626,7 @@ const AttachmentButton = React.memo(
 		status: UseChatHelpers<ChatMessage>["status"];
 	}) => (
 		<Button
+			aria-label="Attach file"
 			className="flex-shrink-0"
 			disabled={status !== "ready"}
 			onClick={(event) => {
@@ -649,6 +651,7 @@ const StopButton = React.memo(
 		setMessages: UseChatHelpers<ChatMessage>["setMessages"];
 	}) => (
 		<Button
+			aria-label="Stop generating"
 			onClick={(event) => {
 				event.preventDefault();
 				stop();
@@ -694,6 +697,15 @@ const SendButton = React.memo(
 		>
 			{input.trim().length <= 0 ? (
 				<Button
+					aria-label={(() => {
+						if (isTranscribing) {
+							return "Transcribing...";
+						}
+						if (isRecording) {
+							return "Stop recording";
+						}
+						return "Start voice recording";
+					})()}
 					className="px-4"
 					disabled={isTranscribing}
 					onClick={handleRecord}
@@ -751,6 +763,7 @@ const SendButton = React.memo(
 				</Button>
 			) : (
 				<Button
+					aria-label="Send message"
 					className="px-4"
 					onClick={(event) => {
 						event.preventDefault();
@@ -797,35 +810,22 @@ const SendButton = React.memo(
 SendButton.displayName = "SendButton";
 
 export const Input = React.memo(PureInput, (prevProps, nextProps) => {
-	const prevToolsStr = JSON.stringify(prevProps.tools);
-	const nextToolsStr = JSON.stringify(nextProps.tools);
-
-	// Create a lightweight signature of attachments to detect changes
-	const attachmentSignature = (attachments: Attachment[]) =>
-		attachments.map((a) => `${a.url}|${a.name}|${a.contentType}`).join(",");
-
-	const prevAttachmentsSig = attachmentSignature(prevProps.attachments);
-	const nextAttachmentsSig = attachmentSignature(nextProps.attachments);
-
+	// Primitive comparisons first (fastest)
 	if (prevProps.status !== nextProps.status) {
-		return false;
-	}
-	if (prevProps.messages.length !== nextProps.messages.length) {
 		return false;
 	}
 	if (prevProps.input !== nextProps.input) {
 		return false;
 	}
-	if (prevAttachmentsSig !== nextAttachmentsSig) {
+	if (prevProps.messages.length !== nextProps.messages.length) {
 		return false;
 	}
-	if (prevToolsStr !== nextToolsStr) {
-		console.log(
-			"Tools changed in memo:",
-			prevProps.tools,
-			"→",
-			nextProps.tools
-		);
+
+	// Deep equality checks using fast-deep-equal
+	if (!equal(prevProps.tools, nextProps.tools)) {
+		return false;
+	}
+	if (!equal(prevProps.attachments, nextProps.attachments)) {
 		return false;
 	}
 

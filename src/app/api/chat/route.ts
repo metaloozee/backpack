@@ -5,8 +5,8 @@ import { type GoogleGenerativeAIProviderOptions, google } from "@ai-sdk/google";
 import {
 	convertToModelMessages,
 	createUIMessageStream,
+	createUIMessageStreamResponse,
 	generateObject,
-	JsonToSseTransformStream,
 	type LanguageModel,
 	smoothStream,
 	stepCountIs,
@@ -144,13 +144,31 @@ export async function POST(req: Request) {
 				throw new Error("Invalid model selected");
 			}
 
-			const [chat] = await db
-				.select()
-				.from(dbChat)
-				.where(
-					and(eq(dbChat.id, id), eq(dbChat.userId, session.userId))
-				)
-				.limit(1);
+			// Parallelize independent database queries for better performance
+			const [chatResult, previousMessages, userMemories] =
+				await Promise.all([
+					db
+						.select()
+						.from(dbChat)
+						.where(
+							and(
+								eq(dbChat.id, id),
+								eq(dbChat.userId, session.userId)
+							)
+						)
+						.limit(1),
+					db.select().from(dbMessage).where(eq(dbMessage.chatId, id)),
+					db
+						.select({
+							content: dbMemories.content,
+							createdAt: dbMemories.createdAt,
+						})
+						.from(dbMemories)
+						.where(eq(dbMemories.userId, session.userId))
+						.orderBy(desc(dbMemories.createdAt)),
+				]);
+
+			const [chat] = chatResult;
 
 			if (!chat) {
 				const title = await createChatTitle(message);
@@ -164,20 +182,6 @@ export async function POST(req: Request) {
 					title,
 				});
 			}
-
-			const previousMessages = await db
-				.select()
-				.from(dbMessage)
-				.where(eq(dbMessage.chatId, id));
-
-			const userMemories = await db
-				.select({
-					content: dbMemories.content,
-					createdAt: dbMemories.createdAt,
-				})
-				.from(dbMemories)
-				.where(eq(dbMemories.userId, session.userId))
-				.orderBy(desc(dbMemories.createdAt));
 
 			const uiMessages = [
 				...convertToUIMessages(previousMessages),
@@ -203,7 +207,7 @@ export async function POST(req: Request) {
 				.values({ id: streamId, chatId: id, createdAt: new Date() });
 
 			const stream = createUIMessageStream({
-				execute: ({ writer: dataStream }) => {
+				execute: async ({ writer: dataStream }) => {
 					const activeTools = buildActiveTools(toolsState);
 
 					console.log(activeTools);
@@ -221,12 +225,11 @@ export async function POST(req: Request) {
 									google: {
 										thinkingConfig: {
 											thinkingBudget: 2048,
-											includeThoughts: true,
 										},
 									} satisfies GoogleGenerativeAIProviderOptions,
 								}
 							: {},
-						messages: convertToModelMessages(uiMessages),
+						messages: await convertToModelMessages(uiMessages),
 						system: AskModePrompt({
 							tools: {
 								webSearch: toolsState.webSearch ?? false,
@@ -291,17 +294,25 @@ export async function POST(req: Request) {
 				},
 			});
 
-			const streamContext = getStreamContext();
-			if (streamContext) {
-				return new Response(
-					await streamContext.resumableStream(streamId, () =>
-						stream.pipeThrough(new JsonToSseTransformStream())
-					)
-				);
-			}
-			return new Response(
-				stream.pipeThrough(new JsonToSseTransformStream())
-			);
+			// Currently disabled
+			// const streamContext = getStreamContext();
+			// if (streamContext) {
+			// 	return createUIMessageStreamResponse({
+			// 		stream,
+			// 		headers: {
+			// 			"Cache-Control": "no-cache, no-transform",
+			// 			"X-Accel-Buffering": "no",
+			// 		},
+			// 	});
+			// }
+
+			return createUIMessageStreamResponse({
+				stream,
+				headers: {
+					"Cache-Control": "no-cache, no-transform",
+					"X-Accel-Buffering": "no",
+				},
+			});
 		} catch (error) {
 			console.error(error);
 			return new Response(

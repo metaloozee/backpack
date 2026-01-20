@@ -32,7 +32,7 @@ export interface MorphingDialogContextType {
 	isOpen: boolean;
 	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	uniqueId: string;
-	triggerRef: React.RefObject<HTMLDivElement>;
+	triggerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const MorphingDialogContext =
@@ -195,7 +195,10 @@ function MorphingDialogContent({
 			if (focusableElements && focusableElements.length > 0) {
 				setFirstFocusableElement(focusableElements[0] as HTMLElement);
 				setLastFocusableElement(
-					focusableElements.at(-1) as HTMLElement
+					// biome-ignore lint/style/useAtIndex: NodeListOf doesn't support .at()
+					focusableElements[
+						focusableElements.length - 1
+					] as HTMLElement
 				);
 				(focusableElements[0] as HTMLElement).focus();
 			}

@@ -27,16 +27,18 @@ type AcademicSearchToolType = InferUITool<
 >;
 type FinanceSearchToolType = InferUITool<ReturnType<typeof financeSearchTool>>;
 
-export interface ChatTools {
+// biome-ignore lint/style/useConsistentTypeDefinitions: Using type alias instead of interface to avoid implicit index signature which breaks UITools constraint
+export type ChatTools = {
 	save_to_memories: SaveToMemoriesToolType;
 	extract: ExtractToolType;
 	web_search: WebSearchToolType;
 	knowledge_search: KnowledgeSearchToolType;
 	academic_search: AcademicSearchToolType;
 	finance_search: FinanceSearchToolType;
-}
+};
 
 export interface CustomUIDataTypes {
+	[key: string]: unknown; // Required by UIDataTypes constraint
 	textDelta: string;
 	imageDelta: string;
 	sheetDelta: string;

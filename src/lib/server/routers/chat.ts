@@ -8,7 +8,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { chat, type Message, message } from "@/lib/db/schema/app";
+import { chat, type Message, message, vote } from "@/lib/db/schema/app";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 
 export const chatRouter = router({
@@ -274,5 +274,91 @@ export const chatRouter = router({
 					message: "Failed to transcribe audio",
 				});
 			}
+		}),
+	voteMessage: protectedProcedure
+		.input(
+			z.object({
+				chatId: z.string().uuid(),
+				messageId: z.string().uuid(),
+				type: z.enum(["up", "down"]),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			// Verify the chat belongs to the user
+			const [chatRecord] = await db
+				.select()
+				.from(chat)
+				.where(
+					and(
+						eq(chat.id, input.chatId),
+						eq(chat.userId, ctx.session.user.id)
+					)
+				)
+				.limit(1);
+
+			if (!chatRecord) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Chat not found",
+				});
+			}
+
+			// Check if vote already exists
+			const [existingVote] = await db
+				.select()
+				.from(vote)
+				.where(eq(vote.messageId, input.messageId))
+				.limit(1);
+
+			if (existingVote) {
+				// Update existing vote
+				return await db
+					.update(vote)
+					.set({ isUpvoted: input.type === "up" })
+					.where(
+						and(
+							eq(vote.messageId, input.messageId),
+							eq(vote.chatId, input.chatId)
+						)
+					);
+			}
+
+			// Insert new vote
+			return await db.insert(vote).values({
+				chatId: input.chatId,
+				messageId: input.messageId,
+				isUpvoted: input.type === "up",
+			});
+		}),
+	getVotesByChatId: protectedProcedure
+		.input(
+			z.object({
+				chatId: z.string().uuid(),
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			// Verify the chat belongs to the user
+			const [chatRecord] = await db
+				.select()
+				.from(chat)
+				.where(
+					and(
+						eq(chat.id, input.chatId),
+						eq(chat.userId, ctx.session.user.id)
+					)
+				)
+				.limit(1);
+
+			if (!chatRecord) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Chat not found",
+				});
+			}
+
+			return await db
+				.select()
+				.from(vote)
+				.where(eq(vote.chatId, input.chatId));
 		}),
 });

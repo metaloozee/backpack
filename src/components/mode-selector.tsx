@@ -193,6 +193,7 @@ export function ModeSelector({
 		>
 			<motion.div
 				animate="visible"
+				className="flex items-center"
 				initial="hidden"
 				transition={transitions.smooth}
 				variants={slideVariants.up}
@@ -206,216 +207,157 @@ export function ModeSelector({
 								key={mode.value}
 								value={mode.value}
 							>
-								<div className="inline-flex items-center gap-1">
-									<span>{mode.label}</span>
-									{(mode.value === "ask" ||
-										mode.value === "agent") && (
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												{/** biome-ignore lint/a11y/useSemanticElements: we need a span to be able to use the onClick event, using button causes hydration errors */}
-												{/** biome-ignore lint/a11y/useFocusableInteractive: we need a span to be able to use the onClick event, using button causes hydration errors */}
-												<span
-													className={cn(
-														"ml-1 inline-flex items-center justify-center rounded-sm",
-														"hover:bg-neutral-900"
-													)}
-													onClick={(event) => {
-														event.stopPropagation();
-													}}
-													onKeyDown={(event) => {
-														if (
-															event.key ===
-																"Enter" ||
-															event.key === " "
-														) {
-															event.stopPropagation();
-														}
-													}}
-													onMouseDown={(event) => {
-														event.stopPropagation();
-													}}
-													onPointerDown={(event) => {
-														event.stopPropagation();
-													}}
-													role="button"
-												>
-													<ChevronDownIcon className="size-3" />
-												</span>
-											</DropdownMenuTrigger>
-											{mode.value === "ask" ? (
-												<DropdownMenuContent
-													align="start"
-													className="w-xs border-neutral-800 bg-neutral-950"
-												>
-													{defaultTools.map(
-														(tool) => {
-															const IconComponent =
-																tool.icon;
-															const isChecked =
-																tools[tool.id];
-															return (
-																<DropdownMenuItem
-																	className="flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800"
-																	key={
-																		tool.id
-																	}
-																	onClick={(
-																		e
-																	) =>
-																		e.preventDefault()
-																	}
-																>
-																	<div className="flex items-center gap-3">
-																		<IconComponent className="size-4 text-muted-foreground" />
-																		<div className="flex flex-col">
-																			<span className="font-medium text-sm">
-																				{
-																					tool.name
-																				}
-																			</span>
-																			<span className="text-muted-foreground text-xs">
-																				{
-																					tool.description
-																				}
-																			</span>
-																		</div>
-																	</div>
-																	<Switch
-																		checked={
-																			isChecked
-																		}
-																		key={`tool-switch-${tool.id}-${isChecked}`}
-																		onCheckedChange={(
-																			checked
-																		) => {
-																			updateTool(
-																				tool.id,
-																				checked
-																			);
-																		}}
-																	/>
-																</DropdownMenuItem>
-															);
-														}
-													)}
-												</DropdownMenuContent>
-											) : (
-												<DropdownMenuContent
-													align="start"
-													className="w-xs border-neutral-800 bg-neutral-950"
-												>
-													{Object.entries(
-														modeTypes.find(
-															(m) =>
-																m.value ===
-																"agent"
-														)?.agents || {}
-													).map(
-														([
-															agentKey,
-															enabled,
-														]) => {
-															if (!enabled) {
-																return null;
-															}
-															const isSelected =
-																selectedAgent ===
-																agentKey;
-															return (
-																<DropdownMenuItem
-																	className="flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800"
-																	key={
-																		agentKey
-																	}
-																	onSelect={(
-																		e
-																	) => {
-																		e.preventDefault();
-																		const newAgent =
-																			selectedAgent ===
-																			agentKey
-																				? null
-																				: agentKey;
-																		const previousAgent =
-																			selectedAgent;
-
-																		setSelectedAgent(
-																			newAgent
-																		);
-
-																		setModeSelectionMutation.mutate(
-																			{
-																				mode: "agent",
-																				selectedAgent:
-																					newAgent ||
-																					undefined,
-																			},
-																			{
-																				onError:
-																					() => {
-																						setSelectedAgent(
-																							(
-																								current
-																							) => {
-																								if (
-																									current ===
-																									newAgent
-																								) {
-																									toast.error(
-																										"Failed to save agent selection"
-																									);
-																									return previousAgent;
-																								}
-																								return current;
-																							}
-																						);
-																					},
-																			}
-																		);
-																	}}
-																>
-																	<div className="flex items-center gap-3">
-																		<TelescopeIcon className="size-4 text-muted-foreground" />
-																		<div className="flex flex-col">
-																			<span className="font-medium text-sm">
-																				{agentKey
-																					.charAt(
-																						0
-																					)
-																					.toUpperCase() +
-																					agentKey.slice(
-																						1
-																					)}
-																			</span>
-																			<span className="text-muted-foreground text-xs">
-																				{agentKey
-																					.charAt(
-																						0
-																					)
-																					.toUpperCase() +
-																					agentKey.slice(
-																						1
-																					)}{" "}
-																				agent
-																			</span>
-																		</div>
-																	</div>
-																	{isSelected && (
-																		<CheckIcon className="size-4 text-primary" />
-																	)}
-																</DropdownMenuItem>
-															);
-														}
-													)}
-												</DropdownMenuContent>
-											)}
-										</DropdownMenu>
-									)}
-								</div>
+								{mode.label}
 							</TabsTrigger>
 						))}
 					</TabsList>
 				</Tabs>
+				{/* Dropdown for current mode options - placed outside tabs to avoid nested buttons */}
+				{selectedMode === "ask" && (
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<button
+								aria-label="Ask mode options"
+								className={cn(
+									"ml-1 inline-flex items-center justify-center rounded-sm border-0 bg-transparent p-1",
+									"hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+								)}
+								type="button"
+							>
+								<ChevronDownIcon className="size-3" />
+							</button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							align="start"
+							className="w-xs border-neutral-800 bg-neutral-950"
+						>
+							{defaultTools.map((tool) => {
+								const IconComponent = tool.icon;
+								const isChecked = tools[tool.id];
+								return (
+									<DropdownMenuItem
+										className="flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800"
+										key={tool.id}
+										onClick={(e) => e.preventDefault()}
+									>
+										<div className="flex items-center gap-3">
+											<IconComponent className="size-4 text-muted-foreground" />
+											<div className="flex flex-col">
+												<span className="font-medium text-sm">
+													{tool.name}
+												</span>
+												<span className="text-muted-foreground text-xs">
+													{tool.description}
+												</span>
+											</div>
+										</div>
+										<Switch
+											checked={isChecked}
+											key={`tool-switch-${tool.id}-${isChecked}`}
+											onCheckedChange={(checked) => {
+												updateTool(tool.id, checked);
+											}}
+										/>
+									</DropdownMenuItem>
+								);
+							})}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				)}
+				{selectedMode === "agent" && (
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<button
+								aria-label="Agent mode options"
+								className={cn(
+									"ml-1 inline-flex items-center justify-center rounded-sm border-0 bg-transparent p-1",
+									"hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+								)}
+								type="button"
+							>
+								<ChevronDownIcon className="size-3" />
+							</button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							align="start"
+							className="w-xs border-neutral-800 bg-neutral-950"
+						>
+							{Object.entries(
+								modeTypes.find((m) => m.value === "agent")
+									?.agents || {}
+							).map(([agentKey, enabled]) => {
+								if (!enabled) {
+									return null;
+								}
+								const isSelected = selectedAgent === agentKey;
+								return (
+									<DropdownMenuItem
+										className="flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800"
+										key={agentKey}
+										onSelect={(e) => {
+											e.preventDefault();
+											const newAgent =
+												selectedAgent === agentKey
+													? null
+													: agentKey;
+											const previousAgent = selectedAgent;
+
+											setSelectedAgent(newAgent);
+
+											setModeSelectionMutation.mutate(
+												{
+													mode: "agent",
+													selectedAgent:
+														newAgent || undefined,
+												},
+												{
+													onError: () => {
+														setSelectedAgent(
+															(current) => {
+																if (
+																	current ===
+																	newAgent
+																) {
+																	toast.error(
+																		"Failed to save agent selection"
+																	);
+																	return previousAgent;
+																}
+																return current;
+															}
+														);
+													},
+												}
+											);
+										}}
+									>
+										<div className="flex items-center gap-3">
+											<TelescopeIcon className="size-4 text-muted-foreground" />
+											<div className="flex flex-col">
+												<span className="font-medium text-sm">
+													{agentKey
+														.charAt(0)
+														.toUpperCase() +
+														agentKey.slice(1)}
+												</span>
+												<span className="text-muted-foreground text-xs">
+													{agentKey
+														.charAt(0)
+														.toUpperCase() +
+														agentKey.slice(1)}{" "}
+													agent
+												</span>
+											</div>
+										</div>
+										{isSelected && (
+											<CheckIcon className="size-4 text-primary" />
+										)}
+									</DropdownMenuItem>
+								);
+							})}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				)}
 			</motion.div>
 			<div className="relative flex w-[200px] gap-2">
 				<AnimatePresence initial={false}>

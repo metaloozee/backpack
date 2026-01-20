@@ -1,6 +1,7 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
-
+import equal from "fast-deep-equal";
 import { motion } from "motion/react";
+import { memo } from "react";
 import { Message as PreviewMessage } from "@/components/chat/message";
 import { Loader } from "@/components/ui/loader";
 import type { ChatMessage } from "@/lib/ai/types";
@@ -14,7 +15,7 @@ interface ChatMessageProps {
 	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
 }
 
-export function ChatMessages({
+function PureChatMessages({
 	chatId,
 	status,
 	messages,
@@ -75,3 +76,28 @@ export function ChatMessages({
 		</div>
 	);
 }
+
+export const ChatMessages = memo(PureChatMessages, (prevProps, nextProps) => {
+	// During streaming, always re-render to show updates
+	if (prevProps.status === "streaming" || nextProps.status === "streaming") {
+		return false;
+	}
+
+	// Primitive comparisons first (fastest)
+	if (prevProps.status !== nextProps.status) {
+		return false;
+	}
+	if (prevProps.chatId !== nextProps.chatId) {
+		return false;
+	}
+	if (prevProps.messages.length !== nextProps.messages.length) {
+		return false;
+	}
+
+	// Deep equality check for messages
+	if (!equal(prevProps.messages, nextProps.messages)) {
+		return false;
+	}
+
+	return true;
+});

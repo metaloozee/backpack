@@ -74,7 +74,7 @@ function Loader({
 			className={cn(loaderVariants({ size, variant, speed }), className)}
 			data-testid={testId}
 			transition={{
-				...speedConfig[speed],
+				...speedConfig[speed ?? "default"],
 				repeat: Number.POSITIVE_INFINITY,
 				ease: "linear",
 			}}

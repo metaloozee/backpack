@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
 	experimental: {
 		useCache: true,
 		reactCompiler: true,
+		optimizePackageImports: ["lucide-react", "@radix-ui/react-icons"],
 	},
 };
 
