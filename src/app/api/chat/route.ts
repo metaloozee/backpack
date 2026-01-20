@@ -2,6 +2,7 @@
 
 import type { AnthropicProviderOptions } from "@ai-sdk/anthropic";
 import { type GoogleGenerativeAIProviderOptions, google } from "@ai-sdk/google";
+import type { OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
 import {
 	convertToModelMessages,
 	createUIMessageStream,
@@ -212,23 +213,37 @@ export async function POST(req: Request) {
 
 					console.log(activeTools);
 
+					// Build provider-specific reasoning options based on model
+					const isGemini3 = model.id.startsWith("gemini-3");
+					const googleThinkingConfig = isGemini3
+						? {
+								thinkingLevel: "high" as const,
+								includeThoughts: true,
+							}
+						: { thinkingBudget: 8192, includeThoughts: true };
+
+					const reasoningProviderOptions = model.capabilities
+						.reasoning
+						? {
+								anthropic: {
+									thinking: {
+										type: "enabled",
+										budgetTokens: 10_000,
+									},
+								} satisfies AnthropicProviderOptions,
+								google: {
+									thinkingConfig: googleThinkingConfig,
+								} as GoogleGenerativeAIProviderOptions,
+								openai: {
+									reasoningEffort: "medium",
+									reasoningSummary: "detailed",
+								} satisfies OpenAIResponsesProviderOptions,
+							}
+						: undefined;
+
 					const result = streamText({
 						model: model.instance as LanguageModel,
-						providerOptions: model.capabilities.reasoning
-							? {
-									anthropic: {
-										thinking: {
-											type: "enabled",
-											budgetTokens: 2048,
-										},
-									} satisfies AnthropicProviderOptions,
-									google: {
-										thinkingConfig: {
-											thinkingBudget: 2048,
-										},
-									} satisfies GoogleGenerativeAIProviderOptions,
-								}
-							: {},
+						providerOptions: reasoningProviderOptions,
 						messages: await convertToModelMessages(uiMessages),
 						system: AskModePrompt({
 							tools: {
@@ -272,6 +287,7 @@ export async function POST(req: Request) {
 					});
 
 					result.consumeStream();
+
 					dataStream.merge(
 						result.toUIMessageStream({ sendReasoning: true })
 					);
