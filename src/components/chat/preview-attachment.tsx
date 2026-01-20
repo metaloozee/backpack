@@ -2,7 +2,12 @@ import { XIcon } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { Attachment } from "@/lib/ai/types";
 
 const imageNameRegex = /\.(png|jpe?g|gif|webp|bmp|svg)$/i;
@@ -60,7 +65,9 @@ export const PreviewAttachment = ({
 					/>
 				) : (
 					<div className="flex size-full items-center justify-center">
-						<span className="font-medium text-[10px] text-muted-foreground">{extension || "FILE"}</span>
+						<span className="font-medium text-[10px] text-muted-foreground">
+							{extension || "FILE"}
+						</span>
 					</div>
 				)}
 				{isUploading && (
@@ -90,7 +97,12 @@ export const PreviewAttachment = ({
 					</div>
 				)}
 				{url && !isUploading && (
-					<a className="absolute inset-0" href={url} rel="noreferrer" target="_blank">
+					<a
+						className="absolute inset-0"
+						href={url}
+						rel="noreferrer"
+						target="_blank"
+					>
 						<span className="sr-only">Open attachment</span>
 					</a>
 				)}

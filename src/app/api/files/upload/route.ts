@@ -15,9 +15,13 @@ const FileSchema = z.object({
 		.refine((file) => file.size <= MAX_FILE_SIZE_MB * BYTES_PER_MB, {
 			message: "File size should be less than 5MB.",
 		})
-		.refine((file) => ["image/jpeg", "image/png", "image/jpg"].includes(file.type), {
-			message: "Only JPEG and PNG images are allowed.",
-		}),
+		.refine(
+			(file) =>
+				["image/jpeg", "image/png", "image/jpg"].includes(file.type),
+			{
+				message: "Only JPEG and PNG images are allowed.",
+			}
+		),
 });
 
 export async function POST(request: Request) {
@@ -40,20 +44,29 @@ export async function POST(request: Request) {
 
 		const validatedFile = FileSchema.safeParse({ file });
 		if (!validatedFile.success) {
-			const errorMessage = validatedFile.error.issues.map((issue) => issue.message).join(", ");
+			const errorMessage = validatedFile.error.issues
+				.map((issue) => issue.message)
+				.join(", ");
 			throw new Error(errorMessage);
 		}
 
 		const sanitizedFileName = sanitizeFileName(file.name);
 		const fileBuffer = await file.arrayBuffer();
 
-		const data = await put(`${session.userId}/chat/${sanitizedFileName}`, fileBuffer, {
-			access: "public",
-			addRandomSuffix: true,
-		});
+		const data = await put(
+			`${session.userId}/chat/${sanitizedFileName}`,
+			fileBuffer,
+			{
+				access: "public",
+				addRandomSuffix: true,
+			}
+		);
 
 		return NextResponse.json(data);
 	} catch (_) {
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 }
+		);
 	}
 }

@@ -14,23 +14,29 @@ export const messageMetadataSchema = z.object({
 
 export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 
-type SaveToMemoriesToolType = InferUITool<ReturnType<typeof saveToMemoriesTool>>;
+type SaveToMemoriesToolType = InferUITool<
+	ReturnType<typeof saveToMemoriesTool>
+>;
 type ExtractToolType = InferUITool<ReturnType<typeof extractTool>>;
 type WebSearchToolType = InferUITool<ReturnType<typeof webSearchTool>>;
-type KnowledgeSearchToolType = InferUITool<ReturnType<typeof knowledgeSearchTool>>;
-type AcademicSearchToolType = InferUITool<ReturnType<typeof academicSearchTool>>;
+type KnowledgeSearchToolType = InferUITool<
+	ReturnType<typeof knowledgeSearchTool>
+>;
+type AcademicSearchToolType = InferUITool<
+	ReturnType<typeof academicSearchTool>
+>;
 type FinanceSearchToolType = InferUITool<ReturnType<typeof financeSearchTool>>;
 
-export type ChatTools = {
+export interface ChatTools {
 	save_to_memories: SaveToMemoriesToolType;
 	extract: ExtractToolType;
 	web_search: WebSearchToolType;
 	knowledge_search: KnowledgeSearchToolType;
 	academic_search: AcademicSearchToolType;
 	finance_search: FinanceSearchToolType;
-};
+}
 
-export type CustomUIDataTypes = {
+export interface CustomUIDataTypes {
 	textDelta: string;
 	imageDelta: string;
 	sheetDelta: string;
@@ -40,11 +46,15 @@ export type CustomUIDataTypes = {
 	title: string;
 	clear: null;
 	finish: null;
-};
+}
 
-export type ChatMessage = UIMessage<MessageMetadata, CustomUIDataTypes, ChatTools>;
-export type Attachment = {
+export type ChatMessage = UIMessage<
+	MessageMetadata,
+	CustomUIDataTypes,
+	ChatTools
+>;
+export interface Attachment {
 	name: string;
 	url: string;
 	contentType: string;
-};
+}

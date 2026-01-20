@@ -40,17 +40,26 @@ const generateChunks = (input: string, wordsPerChunk = 250): string[] => {
 	return chunks;
 };
 
-export const generateEmbeddings = async (value: string): Promise<Array<{ embedding: number[]; content: string }>> => {
+export const generateEmbeddings = async (
+	value: string
+): Promise<Array<{ embedding: number[]; content: string }>> => {
 	const chunks = generateChunks(value);
 
 	const BATCH_SIZE = 100;
 	const totalBatches = Math.ceil(chunks.length / BATCH_SIZE);
-	const embeddingsResult: Array<{ embedding: number[]; content: string }> = [];
+	const embeddingsResult: Array<{ embedding: number[]; content: string }> =
+		[];
 
-	for (let start = 0, batchIndex = 0; start < chunks.length; start += BATCH_SIZE, batchIndex++) {
+	for (
+		let start = 0, batchIndex = 0;
+		start < chunks.length;
+		start += BATCH_SIZE, batchIndex++
+	) {
 		const batch = chunks.slice(start, start + BATCH_SIZE);
 
-		console.log(`🔃 Embedding batch ${batchIndex + 1}/${totalBatches} – processing ${batch.length} chunk(s)`);
+		console.log(
+			`🔃 Embedding batch ${batchIndex + 1}/${totalBatches} – processing ${batch.length} chunk(s)`
+		);
 
 		const { embeddings } = await embedMany({
 			model: google.textEmbeddingModel("text-embedding-004"),

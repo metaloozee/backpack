@@ -60,9 +60,17 @@ export function sanitizeUrl(url: string): string {
 	}
 }
 
-export const sanitizedTextSchema = z.string().min(1).max(MAX_CHARACTERS).transform(sanitizeUserInput);
+export const sanitizedTextSchema = z
+	.string()
+	.min(1)
+	.max(MAX_CHARACTERS)
+	.transform(sanitizeUserInput);
 
-export const sanitizedFileNameSchema = z.string().min(1).max(MAX_FILENAME_LENGTH).transform(sanitizeFileName);
+export const sanitizedFileNameSchema = z
+	.string()
+	.min(1)
+	.max(MAX_FILENAME_LENGTH)
+	.transform(sanitizeFileName);
 
 export const sanitizedUrlSchema = z
 	.string()

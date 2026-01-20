@@ -6,9 +6,14 @@ import { env } from "@/lib/env.mjs";
 
 const tvly = tavily({ apiKey: env.TAVILY_API_KEY });
 
-export const financeSearchTool = ({ dataStream }: { dataStream: UIMessageStreamWriter }) =>
+export const financeSearchTool = ({
+	dataStream,
+}: {
+	dataStream: UIMessageStreamWriter;
+}) =>
 	tool({
-		description: "Performs a search over financial news outlets for a particular topic.",
+		description:
+			"Performs a search over financial news outlets for a particular topic.",
 		inputSchema: z.object({
 			search_queries: z.array(z.string()).max(2),
 		}),
@@ -20,7 +25,7 @@ export const financeSearchTool = ({ dataStream }: { dataStream: UIMessageStreamW
 				input: JSON.stringify({ search_queries: queries }),
 			});
 
-			type SearchGroup = {
+			interface SearchGroup {
 				query: string;
 				results: {
 					url: string;
@@ -29,27 +34,31 @@ export const financeSearchTool = ({ dataStream }: { dataStream: UIMessageStreamW
 					raw_content: string | undefined;
 					published_date: string | null;
 				}[];
-			};
+			}
 
-			const searchPromises: Promise<SearchGroup>[] = queries.map(async (query) => {
-				const res = await tvly.search(query, {
-					maxResults: 5,
-					searchDepth: "advanced",
-					includeAnswer: true,
-					topic: "finance",
-				});
+			const searchPromises: Promise<SearchGroup>[] = queries.map(
+				async (query) => {
+					const res = await tvly.search(query, {
+						maxResults: 5,
+						searchDepth: "advanced",
+						includeAnswer: true,
+						topic: "finance",
+					});
 
-				return {
-					query,
-					results: deduplicateByDomainAndUrl(res.results).map((obj) => ({
-						url: obj.url,
-						title: obj.title,
-						content: obj.content,
-						raw_content: obj.rawContent || "",
-						published_date: obj.publishedDate,
-					})),
-				};
-			});
+					return {
+						query,
+						results: deduplicateByDomainAndUrl(res.results).map(
+							(obj) => ({
+								url: obj.url,
+								title: obj.title,
+								content: obj.content,
+								raw_content: obj.rawContent || "",
+								published_date: obj.publishedDate,
+							})
+						),
+					};
+				}
+			);
 
 			const searchResults = await Promise.all(searchPromises);
 

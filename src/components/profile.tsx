@@ -12,16 +12,21 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { buttonVariants, fadeVariants, iconVariants, slideVariants, transitions } from "@/lib/animations";
+import {
+	buttonVariants,
+	fadeVariants,
+	iconVariants,
+	slideVariants,
+	transitions,
+} from "@/lib/animations";
 import { authClient } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 import { AvatarFallback, AvatarImage } from "./ui/avatar";
 
-type UserProfileProps = {
+interface UserProfileProps {
 	state: "expanded" | "collapsed";
-};
+}
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Function is complex
 export default function UserProfile({ state }: UserProfileProps) {
 	const { data: session, isPending } = authClient.useSession();
 	const router = useRouter();
@@ -46,7 +51,9 @@ export default function UserProfile({ state }: UserProfileProps) {
 				animate="visible"
 				className={cn(
 					"flex items-center gap-2",
-					state === "collapsed" ? "justify-center" : "w-full justify-start"
+					state === "collapsed"
+						? "justify-center"
+						: "w-full justify-start"
 				)}
 				initial="hidden"
 				variants={fadeVariants}
@@ -84,7 +91,11 @@ export default function UserProfile({ state }: UserProfileProps) {
 					size={state === "collapsed" ? "icon" : "default"}
 					variant="outline"
 				>
-					<motion.div initial="rest" variants={iconVariants} whileHover="hover">
+					<motion.div
+						initial="rest"
+						variants={iconVariants}
+						whileHover="hover"
+					>
 						<UserIcon className="size-4" />
 					</motion.div>
 					<AnimatePresence>
@@ -113,7 +124,9 @@ export default function UserProfile({ state }: UserProfileProps) {
 					animate="visible"
 					className={cn(
 						"flex cursor-pointer items-center gap-2 rounded-md p-1 transition-colors hover:bg-accent hover:text-accent-foreground",
-						state === "collapsed" ? "justify-center" : "w-full justify-start"
+						state === "collapsed"
+							? "justify-center"
+							: "w-full justify-start"
 					)}
 					initial="hidden"
 					variants={fadeVariants}
@@ -131,7 +144,10 @@ export default function UserProfile({ state }: UserProfileProps) {
 							whileHover="hover"
 						>
 							<Avatar>
-								<AvatarImage className="rounded-sm" src={session.user?.image || ""} />
+								<AvatarImage
+									className="rounded-sm"
+									src={session.user?.image || ""}
+								/>
 								<AvatarFallback>
 									<UserIcon className="size-4 text-primary" />
 								</AvatarFallback>
@@ -159,16 +175,35 @@ export default function UserProfile({ state }: UserProfileProps) {
 					</motion.div>
 				</motion.div>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end" className="w-48" side="right" sideOffset={10}>
-				<DropdownMenuItem asChild className="cursor-pointer" onClick={handleAccountSettings}>
-					<Button className="w-full justify-start p-0" variant="ghost">
+			<DropdownMenuContent
+				align="end"
+				className="w-48"
+				side="right"
+				sideOffset={10}
+			>
+				<DropdownMenuItem
+					asChild
+					className="cursor-pointer"
+					onClick={handleAccountSettings}
+				>
+					<Button
+						className="w-full justify-start p-0"
+						variant="ghost"
+					>
 						<SettingsIcon className="size-4" />
 						Account Settings
 					</Button>
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem asChild className="cursor-pointer" onClick={handleSignOut}>
-					<Button className="w-full justify-start p-0" variant="ghost">
+				<DropdownMenuItem
+					asChild
+					className="cursor-pointer"
+					onClick={handleSignOut}
+				>
+					<Button
+						className="w-full justify-start p-0"
+						variant="ghost"
+					>
 						<LogOutIcon className="size-4" />
 						Sign Out
 					</Button>

@@ -29,9 +29,13 @@ export const chatRouter = router({
 					and(
 						and(
 							eq(chat.userId, ctx.session.user.id),
-							input.spaceId ? eq(chat.spaceId, input.spaceId) : undefined
+							input.spaceId
+								? eq(chat.spaceId, input.spaceId)
+								: undefined
 						),
-						input.cursor ? lt(chat.createdAt, input.cursor) : undefined
+						input.cursor
+							? lt(chat.createdAt, input.cursor)
+							: undefined
 					)
 				)
 				.orderBy(desc(chat.createdAt));
@@ -39,7 +43,9 @@ export const chatRouter = router({
 			const hasMore = items.length > input.limit;
 			const itemsToReturn = hasMore ? items.slice(0, input.limit) : items;
 
-			const nextCursor = hasMore ? itemsToReturn.at(-1)?.createdAt : undefined;
+			const nextCursor = hasMore
+				? itemsToReturn.at(-1)?.createdAt
+				: undefined;
 
 			return {
 				chats: itemsToReturn,
@@ -57,7 +63,12 @@ export const chatRouter = router({
 			const items = await db
 				.select()
 				.from(chat)
-				.where(and(eq(chat.userId, ctx.session.user.id), ilike(chat.title, `%${input.query}%`)))
+				.where(
+					and(
+						eq(chat.userId, ctx.session.user.id),
+						ilike(chat.title, `%${input.query}%`)
+					)
+				)
 				.orderBy(desc(chat.createdAt))
 				.limit(input.limit);
 
@@ -80,7 +91,9 @@ export const chatRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			const messageInsertSchema = createInsertSchema(message);
-			const parsedMessages = input.messages.map((message: Message) => messageInsertSchema.parse(message));
+			const parsedMessages = input.messages.map((message: Message) =>
+				messageInsertSchema.parse(message)
+			);
 			return await db.insert(message).values(parsedMessages);
 		}),
 	saveChat: protectedProcedure
@@ -108,7 +121,14 @@ export const chatRouter = router({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			return await db.delete(chat).where(and(eq(chat.id, input.chatId), eq(chat.userId, ctx.session.user.id)));
+			return await db
+				.delete(chat)
+				.where(
+					and(
+						eq(chat.id, input.chatId),
+						eq(chat.userId, ctx.session.user.id)
+					)
+				);
 		}),
 	deleteTrailingMessages: protectedProcedure
 		.input(
@@ -126,7 +146,12 @@ export const chatRouter = router({
 				})
 				.from(message)
 				.innerJoin(chat, eq(message.chatId, chat.id))
-				.where(and(eq(chat.userId, ctx.session.user.id), eq(message.id, input.messageId)))
+				.where(
+					and(
+						eq(chat.userId, ctx.session.user.id),
+						eq(message.id, input.messageId)
+					)
+				)
 				.limit(1);
 
 			if (!currentMessage) {
@@ -139,7 +164,10 @@ export const chatRouter = router({
 			return await db
 				.delete(message)
 				.where(
-					and(eq(message.chatId, currentMessage.chatId), gte(message.createdAt, currentMessage.createdAt))
+					and(
+						eq(message.chatId, currentMessage.chatId),
+						gte(message.createdAt, currentMessage.createdAt)
+					)
 				);
 		}),
 	setModelSelection: protectedProcedure
@@ -208,41 +236,43 @@ export const chatRouter = router({
 				selectedAgent: input.selectedAgent,
 			};
 		}),
-	transcribe: protectedProcedure.input(z.instanceof(FormData)).mutation(async ({ input }) => {
-		const audioFile = (await input.get("audio")) as File;
-		if (!audioFile) {
-			throw new TRPCError({
-				code: "BAD_REQUEST",
-				message: "No audio file provided",
-			});
-		}
+	transcribe: protectedProcedure
+		.input(z.instanceof(FormData))
+		.mutation(async ({ input }) => {
+			const audioFile = (await input.get("audio")) as File;
+			if (!audioFile) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "No audio file provided",
+				});
+			}
 
-		const buffer = Buffer.from(await audioFile.arrayBuffer());
+			const buffer = Buffer.from(await audioFile.arrayBuffer());
 
-		try {
-			const transcript = await transcribe({
-				// model: deepgram.transcription('nova-2'),
-				model: elevenlabs.transcription("scribe_v1"),
-				audio: buffer,
-			});
+			try {
+				const transcript = await transcribe({
+					// model: deepgram.transcription('nova-2'),
+					model: elevenlabs.transcription("scribe_v1"),
+					audio: buffer,
+				});
 
-			if (!transcript) {
+				if (!transcript) {
+					throw new TRPCError({
+						code: "INTERNAL_SERVER_ERROR",
+						message: "Failed to transcribe audio",
+					});
+				}
+
+				return {
+					text: transcript.text,
+					language: transcript.language,
+				};
+			} catch (error) {
+				console.error("Failed to transcribe audio", error);
 				throw new TRPCError({
 					code: "INTERNAL_SERVER_ERROR",
 					message: "Failed to transcribe audio",
 				});
 			}
-
-			return {
-				text: transcript.text,
-				language: transcript.language,
-			};
-		} catch (error) {
-			console.error("Failed to transcribe audio", error);
-			throw new TRPCError({
-				code: "INTERNAL_SERVER_ERROR",
-				message: "Failed to transcribe audio",
-			});
-		}
-	}),
+		}),
 });

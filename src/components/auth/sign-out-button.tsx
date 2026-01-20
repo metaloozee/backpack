@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
 import { authClient } from "@/lib/auth/client";
 
-type SignOutButtonProps = Omit<ComponentPropsWithoutRef<typeof Button>, "onClick"> & {
+type SignOutButtonProps = Omit<
+	ComponentPropsWithoutRef<typeof Button>,
+	"onClick"
+> & {
 	children?: ReactNode;
 };
 

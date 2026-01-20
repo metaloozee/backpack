@@ -2,7 +2,12 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangleIcon, ChevronDownIcon, SettingsIcon, Trash2Icon } from "lucide-react";
+import {
+	AlertTriangleIcon,
+	ChevronDownIcon,
+	SettingsIcon,
+	Trash2Icon,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -17,7 +22,11 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Disclosure, DisclosureContent, DisclosureTrigger } from "@/components/ui/disclosure";
+import {
+	Disclosure,
+	DisclosureContent,
+	DisclosureTrigger,
+} from "@/components/ui/disclosure";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -32,14 +41,14 @@ import {
 } from "@/lib/animations";
 import { useTRPC } from "@/lib/trpc/trpc";
 
-type SettingsDialogProps = {
+interface SettingsDialogProps {
 	spaceId: string;
 	spaceName?: string;
 	spaceDescription?: string;
 	spaceCustomInstructions?: string;
-};
+}
 
-type SpaceOverviewData = {
+interface SpaceOverviewData {
 	spaceData: {
 		id: string;
 		spaceTitle: string;
@@ -49,9 +58,9 @@ type SpaceOverviewData = {
 		createdAt: Date;
 	};
 	hasChats: boolean;
-};
+}
 
-type SpacesListData = {
+interface SpacesListData {
 	spaces: Array<{
 		id: string;
 		spaceTitle: string;
@@ -60,9 +69,14 @@ type SpacesListData = {
 		userId: string;
 		createdAt: Date;
 	}>;
-};
+}
 
-export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCustomInstructions }: SettingsDialogProps) {
+export function SettingsDialog({
+	spaceId,
+	spaceName,
+	spaceDescription,
+	spaceCustomInstructions,
+}: SettingsDialogProps) {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 	const router = useRouter();
@@ -73,28 +87,38 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 	const updateMutation = useMutation({
 		...trpc.space.updateSpace.mutationOptions(),
 		onMutate: async (variables) => {
-			await queryClient.cancelQueries(trpc.space.getSpaceOverview.pathFilter());
+			await queryClient.cancelQueries(
+				trpc.space.getSpaceOverview.pathFilter()
+			);
 			await queryClient.cancelQueries(trpc.space.getSpaces.pathFilter());
 
-			const previousSpaceOverview = queryClient.getQueryData<SpaceOverviewData>(
-				trpc.space.getSpaceOverview.queryKey({ spaceId })
+			const previousSpaceOverview =
+				queryClient.getQueryData<SpaceOverviewData>(
+					trpc.space.getSpaceOverview.queryKey({ spaceId })
+				);
+			const previousSpaces = queryClient.getQueriesData<SpacesListData>(
+				trpc.space.getSpaces.pathFilter()
 			);
-			const previousSpaces = queryClient.getQueriesData<SpacesListData>(trpc.space.getSpaces.pathFilter());
 
-			queryClient.setQueryData<SpaceOverviewData>(trpc.space.getSpaceOverview.queryKey({ spaceId }), (old) => {
-				if (!old?.spaceData) {
-					return old;
+			queryClient.setQueryData<SpaceOverviewData>(
+				trpc.space.getSpaceOverview.queryKey({ spaceId }),
+				(old) => {
+					if (!old?.spaceData) {
+						return old;
+					}
+					return {
+						...old,
+						spaceData: {
+							...old.spaceData,
+							spaceTitle: variables.spaceTitle,
+							spaceDescription:
+								variables.spaceDescription || null,
+							spaceCustomInstructions:
+								variables.spaceCustomInstructions || null,
+						},
+					};
 				}
-				return {
-					...old,
-					spaceData: {
-						...old.spaceData,
-						spaceTitle: variables.spaceTitle,
-						spaceDescription: variables.spaceDescription || null,
-						spaceCustomInstructions: variables.spaceCustomInstructions || null,
-					},
-				};
-			});
+			);
 
 			for (const [queryKey] of previousSpaces) {
 				queryClient.setQueryData<SpacesListData>(queryKey, (old) => {
@@ -107,8 +131,11 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 								? {
 										...space,
 										spaceTitle: variables.spaceTitle,
-										spaceDescription: variables.spaceDescription || null,
-										spaceCustomInstructions: variables.spaceCustomInstructions || null,
+										spaceDescription:
+											variables.spaceDescription || null,
+										spaceCustomInstructions:
+											variables.spaceCustomInstructions ||
+											null,
 									}
 								: space
 						),
@@ -138,7 +165,9 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 			setIsOpen(false);
 		},
 		onSettled: () => {
-			queryClient.invalidateQueries(trpc.space.getSpaceOverview.pathFilter());
+			queryClient.invalidateQueries(
+				trpc.space.getSpaceOverview.pathFilter()
+			);
 			queryClient.invalidateQueries(trpc.space.getSpaces.pathFilter());
 		},
 	});
@@ -149,7 +178,9 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 			toast.success("Space deleted successfully");
 			setIsDeleteDialogOpen(false);
 			setIsOpen(false);
-			await queryClient.invalidateQueries(trpc.space.getSpaces.pathFilter());
+			await queryClient.invalidateQueries(
+				trpc.space.getSpaces.pathFilter()
+			);
 			router.push("/s");
 		},
 		onError: (error) => {
@@ -184,7 +215,11 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 			<Dialog onOpenChange={setIsOpen} open={isOpen}>
 				<DialogTrigger asChild>
 					<Button size={"sm"} variant="outline">
-						<motion.div initial="rest" variants={iconVariants} whileHover="hover">
+						<motion.div
+							initial="rest"
+							variants={iconVariants}
+							whileHover="hover"
+						>
 							<SettingsIcon className="size-4" />
 						</motion.div>
 						Settings
@@ -199,7 +234,11 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 						variants={modalVariants}
 					>
 						<DialogHeader>
-							<motion.div animate="visible" initial="hidden" variants={fadeVariants}>
+							<motion.div
+								animate="visible"
+								initial="hidden"
+								variants={fadeVariants}
+							>
 								<DialogTitle>Space Settings</DialogTitle>
 							</motion.div>
 						</DialogHeader>
@@ -216,29 +255,46 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 								animate="visible"
 								className="space-y-4"
 								initial="hidden"
-								transition={staggerVariants.container.visible.transition}
+								transition={
+									staggerVariants.container.visible.transition
+								}
 								variants={staggerVariants.container}
 							>
 								<form.Field
 									name="title"
 									validators={{
 										onChange: ({ value }) =>
-											!value || value.trim().length === 0 ? "Space title is required" : "",
+											!value || value.trim().length === 0
+												? "Space title is required"
+												: "",
 									}}
 								>
 									{(field) => (
-										<motion.div className="space-y-2" variants={staggerVariants.item}>
-											<Label htmlFor={field.name}>Space Title</Label>
+										<motion.div
+											className="space-y-2"
+											variants={staggerVariants.item}
+										>
+											<Label htmlFor={field.name}>
+												Space Title
+											</Label>
 											<Input
 												id={field.name}
 												name={field.name}
 												onBlur={field.handleBlur}
-												onChange={(e) => field.handleChange(e.target.value)}
+												onChange={(e) =>
+													field.handleChange(
+														e.target.value
+													)
+												}
 												placeholder="Enter space title"
 												value={field.state.value}
 											/>
-											{field.state.meta.isTouched && field.state.meta.errors.length > 0 ? (
-												<p className="text-red-500 text-sm">{field.state.meta.errors[0]}</p>
+											{field.state.meta.isTouched &&
+											field.state.meta.errors.length >
+												0 ? (
+												<p className="text-red-500 text-sm">
+													{field.state.meta.errors[0]}
+												</p>
 											) : null}
 										</motion.div>
 									)}
@@ -246,14 +302,23 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 
 								<form.Field name="description">
 									{(field) => (
-										<motion.div className="space-y-2" variants={staggerVariants.item}>
-											<Label htmlFor={field.name}>Description</Label>
+										<motion.div
+											className="space-y-2"
+											variants={staggerVariants.item}
+										>
+											<Label htmlFor={field.name}>
+												Description
+											</Label>
 											<Textarea
 												className="min-h-8"
 												id={field.name}
 												name={field.name}
 												onBlur={field.handleBlur}
-												onChange={(e) => field.handleChange(e.target.value)}
+												onChange={(e) =>
+													field.handleChange(
+														e.target.value
+													)
+												}
 												placeholder="Enter space description"
 												value={field.state.value}
 											/>
@@ -263,14 +328,23 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 
 								<form.Field name="customInstructions">
 									{(field) => (
-										<motion.div className="space-y-2" variants={staggerVariants.item}>
-											<Label htmlFor={field.name}>Custom Instructions</Label>
+										<motion.div
+											className="space-y-2"
+											variants={staggerVariants.item}
+										>
+											<Label htmlFor={field.name}>
+												Custom Instructions
+											</Label>
 											<Textarea
 												className="min-h-32"
 												id={field.name}
 												name={field.name}
 												onBlur={field.handleBlur}
-												onChange={(e) => field.handleChange(e.target.value)}
+												onChange={(e) =>
+													field.handleChange(
+														e.target.value
+													)
+												}
 												placeholder="Enter custom instructions for this space"
 												value={field.state.value}
 											/>
@@ -290,14 +364,21 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 										<div className="flex items-center gap-3">
 											<AlertTriangleIcon className="size-5 text-red-500" />
 											<div>
-												<h3 className="font-semibold text-red-500 text-sm">Danger Zone</h3>
+												<h3 className="font-semibold text-red-500 text-sm">
+													Danger Zone
+												</h3>
 												<p className="text-neutral-400 text-xs">
-													Irreversible and destructive actions
+													Irreversible and destructive
+													actions
 												</p>
 											</div>
 										</div>
 										<motion.div
-											animate={{ rotate: isDangerSectionOpen ? 180 : 0 }}
+											animate={{
+												rotate: isDangerSectionOpen
+													? 180
+													: 0,
+											}}
 											transition={transitions.smooth}
 										>
 											<ChevronDownIcon className="size-5 text-neutral-400" />
@@ -307,15 +388,26 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 								<DisclosureContent>
 									<div className="space-y-3 rounded-lg border border-red-900/30 bg-red-950/10 p-4">
 										<div className="space-y-2">
-											<h4 className="font-medium text-neutral-200 text-sm">Delete Space</h4>
+											<h4 className="font-medium text-neutral-200 text-sm">
+												Delete Space
+											</h4>
 											<p className="text-neutral-400 text-xs">
-												Once you delete a space, there is no going back. This will permanently
-												delete all chats, messages, and data associated with this space.
+												Once you delete a space, there
+												is no going back. This will
+												permanently delete all chats,
+												messages, and data associated
+												with this space.
 											</p>
 										</div>
-										<motion.div initial="rest" whileHover="hover" whileTap="tap">
+										<motion.div
+											initial="rest"
+											whileHover="hover"
+											whileTap="tap"
+										>
 											<Button
-												onClick={() => setIsDeleteDialogOpen(true)}
+												onClick={() =>
+													setIsDeleteDialogOpen(true)
+												}
 												type="button"
 												variant="destructive"
 											>
@@ -327,13 +419,21 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 								</DisclosureContent>
 							</Disclosure>
 							<DialogFooter className="w-full">
-								<form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+								<form.Subscribe
+									selector={(state) => [
+										state.canSubmit,
+										state.isSubmitting,
+									]}
+								>
 									{([canSubmit, isSubmitting]) => (
 										<motion.div
 											animate="visible"
 											className="flex w-full justify-end gap-2"
 											initial="hidden"
-											transition={{ delay: 0.3, ...transitions.smooth }}
+											transition={{
+												delay: 0.3,
+												...transitions.smooth,
+											}}
 											variants={fadeVariants}
 										>
 											<motion.div
@@ -360,11 +460,16 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 												whileTap="tap"
 											>
 												<Button
-													disabled={!canSubmit || isSubmitting || updateMutation.isPending}
+													disabled={
+														!canSubmit ||
+														isSubmitting ||
+														updateMutation.isPending
+													}
 													type="submit"
 													variant="secondary"
 												>
-													{isSubmitting || updateMutation.isPending
+													{isSubmitting ||
+													updateMutation.isPending
 														? "Saving..."
 														: "Save Settings"}
 												</Button>
@@ -378,9 +483,17 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 				</DialogContent>
 			</Dialog>
 
-			<Dialog onOpenChange={setIsDeleteDialogOpen} open={isDeleteDialogOpen}>
+			<Dialog
+				onOpenChange={setIsDeleteDialogOpen}
+				open={isDeleteDialogOpen}
+			>
 				<DialogContent className="bg-neutral-950">
-					<motion.div animate="visible" exit="exit" initial="hidden" variants={modalVariants}>
+					<motion.div
+						animate="visible"
+						exit="exit"
+						initial="hidden"
+						variants={modalVariants}
+					>
 						<DialogHeader className="space-y-5">
 							<motion.div
 								animate="visible"
@@ -389,34 +502,51 @@ export function SettingsDialog({ spaceId, spaceName, spaceDescription, spaceCust
 								variants={staggerVariants.container}
 							>
 								<motion.div variants={staggerVariants.item}>
-									<DialogTitle>Are you absolutely sure?</DialogTitle>
+									<DialogTitle>
+										Are you absolutely sure?
+									</DialogTitle>
 								</motion.div>
 
 								<motion.div variants={staggerVariants.item}>
 									<DialogDescription className="text-sm">
-										This action cannot be undone. All chats, messages, and data associated with this
+										This action cannot be undone. All chats,
+										messages, and data associated with this
 										space will be permanently deleted.
 									</DialogDescription>
 								</motion.div>
 							</motion.div>
 
 							<div className="flex w-full flex-row-reverse gap-2">
-								<motion.div initial="rest" whileHover="hover" whileTap="tap">
+								<motion.div
+									initial="rest"
+									whileHover="hover"
+									whileTap="tap"
+								>
 									<Button
 										className="text-xs"
 										disabled={deleteMutation.isPending}
-										onClick={() => deleteMutation.mutate({ spaceId })}
+										onClick={() =>
+											deleteMutation.mutate({ spaceId })
+										}
 										type="button"
 										variant="destructive"
 									>
-										{deleteMutation.isPending ? "deleting..." : "delete space"}
+										{deleteMutation.isPending
+											? "deleting..."
+											: "delete space"}
 									</Button>
 								</motion.div>
-								<motion.div initial="rest" whileHover="hover" whileTap="tap">
+								<motion.div
+									initial="rest"
+									whileHover="hover"
+									whileTap="tap"
+								>
 									<Button
 										className="text-xs"
 										disabled={deleteMutation.isPending}
-										onClick={() => setIsDeleteDialogOpen(false)}
+										onClick={() =>
+											setIsDeleteDialogOpen(false)
+										}
 										type="button"
 										variant="link"
 									>

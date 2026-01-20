@@ -1,6 +1,11 @@
 "use client";
 
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	useInfiniteQuery,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
 import { Trash2Icon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -14,7 +19,10 @@ import {
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Loader } from "@/components/ui/loader";
-import { type ChatInfiniteData, removeChatFromInfiniteData } from "@/lib/trpc/cache-utils";
+import {
+	type ChatInfiniteData,
+	removeChatFromInfiniteData,
+} from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +30,7 @@ const DATABASE_SEARCH_LIMIT = 50;
 const INTERSECTION_ROOT_MARGIN = "200px";
 const INTERSECTION_THRESHOLD = 0.1;
 
-type ChatItemProps = {
+interface ChatItemProps {
 	chat: {
 		id: string;
 		title: string;
@@ -33,7 +41,7 @@ type ChatItemProps = {
 	onConfirmDelete: () => void;
 	onCancelDelete: () => void;
 	onDeleteClick: () => void;
-};
+}
 
 function ChatItem({
 	chat,
@@ -48,7 +56,10 @@ function ChatItem({
 		<ContextMenu onOpenChange={(open) => !open && onCancelDelete()}>
 			<ContextMenuTrigger asChild>
 				<Link
-					className={cn("rounded px-2 py-1 hover:bg-neutral-900", isActive && "bg-neutral-900")}
+					className={cn(
+						"rounded px-2 py-1 hover:bg-neutral-900",
+						isActive && "bg-neutral-900"
+					)}
 					href={`/c/${chat.id}`}
 				>
 					{chat.title}
@@ -64,7 +75,11 @@ function ChatItem({
 								onConfirmDelete();
 							}}
 						>
-							{isPending ? <Loader className="size-4" /> : <Trash2Icon className="size-4" />}
+							{isPending ? (
+								<Loader className="size-4" />
+							) : (
+								<Trash2Icon className="size-4" />
+							)}
 							<span>Confirm delete</span>
 						</ContextMenuItem>
 						<ContextMenuSeparator />
@@ -109,7 +124,9 @@ export function SidebarChatsList({
 	const trimmedQuery = query.trim().toLowerCase();
 
 	const loadMoreRef = useRef<HTMLDivElement | null>(null);
-	const [confirmingChatId, setConfirmingChatId] = useState<string | null>(null);
+	const [confirmingChatId, setConfirmingChatId] = useState<string | null>(
+		null
+	);
 	const queryClient = useQueryClient();
 	const [pendingChatId, setPendingChatId] = useState<string | null>(null);
 
@@ -119,12 +136,21 @@ export function SidebarChatsList({
 				setPendingChatId(chatId);
 			},
 			onSuccess: async (_, { chatId }) => {
-				queryClient.setQueriesData(trpc.chat.getChats.pathFilter(), (old) =>
-					removeChatFromInfiniteData(old as ChatInfiniteData | undefined, chatId)
+				queryClient.setQueriesData(
+					trpc.chat.getChats.pathFilter(),
+					(old) =>
+						removeChatFromInfiniteData(
+							old as ChatInfiniteData | undefined,
+							chatId
+						)
 				);
-				await queryClient.invalidateQueries(trpc.chat.getChats.pathFilter());
+				await queryClient.invalidateQueries(
+					trpc.chat.getChats.pathFilter()
+				);
 				if (trimmedQuery) {
-					await queryClient.invalidateQueries(trpc.chat.searchChats.pathFilter());
+					await queryClient.invalidateQueries(
+						trpc.chat.searchChats.pathFilter()
+					);
 				}
 				if (chatId === currentChatId) {
 					router.replace("/");
@@ -132,7 +158,9 @@ export function SidebarChatsList({
 				toast.success("Chat deleted");
 			},
 			onError: (error) => {
-				toast.error("Failed to delete chat", { description: error.message });
+				toast.error("Failed to delete chat", {
+					description: error.message,
+				});
 			},
 			onSettled: () => {
 				setPendingChatId(null);
@@ -141,10 +169,15 @@ export function SidebarChatsList({
 		})
 	);
 
-	const currentChatId = pathname.startsWith("/c/") ? pathname.split("/")[2] : null;
+	const currentChatId = pathname.startsWith("/c/")
+		? pathname.split("/")[2]
+		: null;
 
 	const infiniteQuery = useInfiniteQuery({
-		...trpc.chat.getChats.infiniteQueryOptions({ limit }, { getNextPageParam: (lastPage) => lastPage.nextCursor }),
+		...trpc.chat.getChats.infiniteQueryOptions(
+			{ limit },
+			{ getNextPageParam: (lastPage) => lastPage.nextCursor }
+		),
 	});
 
 	const loadedChats = infiniteQuery.data?.pages.flatMap((p) => p.chats) ?? [];
@@ -153,18 +186,25 @@ export function SidebarChatsList({
 		if (!trimmedQuery) {
 			return loadedChats;
 		}
-		return loadedChats.filter((chat) => chat.title.toLowerCase().includes(trimmedQuery));
+		return loadedChats.filter((chat) =>
+			chat.title.toLowerCase().includes(trimmedQuery)
+		);
 	}, [loadedChats, trimmedQuery]);
 
-	const shouldSearchDatabase = trimmedQuery.length > 0 && filteredLoadedChats.length === 0;
+	const shouldSearchDatabase =
+		trimmedQuery.length > 0 && filteredLoadedChats.length === 0;
 
 	const databaseSearchQuery = useQuery({
-		...trpc.chat.searchChats.queryOptions({ query: trimmedQuery, limit: DATABASE_SEARCH_LIMIT }),
+		...trpc.chat.searchChats.queryOptions({
+			query: trimmedQuery,
+			limit: DATABASE_SEARCH_LIMIT,
+		}),
 		enabled: shouldSearchDatabase,
 	});
 
 	const isSearching = trimmedQuery.length > 0;
-	const showingDatabaseResults = shouldSearchDatabase && databaseSearchQuery.data;
+	const showingDatabaseResults =
+		shouldSearchDatabase && databaseSearchQuery.data;
 
 	useEffect(() => {
 		if (!showMore) {
@@ -182,12 +222,18 @@ export function SidebarChatsList({
 			return;
 		}
 
-		const root = sentinel.closest('[data-slot="scroll-area-viewport"]') as Element | null;
+		const root = sentinel.closest(
+			'[data-slot="scroll-area-viewport"]'
+		) as Element | null;
 
 		const observer = new IntersectionObserver(
 			(entries) => {
 				const entry = entries[0];
-				if (entry.isIntersecting && infiniteQuery.hasNextPage && !infiniteQuery.isFetchingNextPage) {
+				if (
+					entry.isIntersecting &&
+					infiniteQuery.hasNextPage &&
+					!infiniteQuery.isFetchingNextPage
+				) {
 					infiniteQuery.fetchNextPage();
 				}
 			},
@@ -218,7 +264,9 @@ export function SidebarChatsList({
 
 	let chatsToShow = loadedChats;
 	if (isSearching) {
-		chatsToShow = showingDatabaseResults ? (databaseSearchQuery.data?.chats ?? []) : filteredLoadedChats;
+		chatsToShow = showingDatabaseResults
+			? (databaseSearchQuery.data?.chats ?? [])
+			: filteredLoadedChats;
 	}
 
 	return (
@@ -231,7 +279,9 @@ export function SidebarChatsList({
 			)}
 
 			{chatsToShow.length === 0 && !databaseSearchQuery.isFetching && (
-				<p className="text-muted-foreground">{isSearching ? "No results found" : "No chats"}</p>
+				<p className="text-muted-foreground">
+					{isSearching ? "No results found" : "No chats"}
+				</p>
 			)}
 
 			{chatsToShow.map((c) => (
@@ -239,10 +289,14 @@ export function SidebarChatsList({
 					chat={c}
 					isActive={c.id === currentChatId}
 					isConfirming={confirmingChatId === c.id}
-					isPending={pendingChatId === c.id && deleteMutation.isPending}
+					isPending={
+						pendingChatId === c.id && deleteMutation.isPending
+					}
 					key={c.id}
 					onCancelDelete={() => setConfirmingChatId(null)}
-					onConfirmDelete={() => deleteMutation.mutate({ chatId: c.id })}
+					onConfirmDelete={() =>
+						deleteMutation.mutate({ chatId: c.id })
+					}
 					onDeleteClick={() => setConfirmingChatId(c.id)}
 				/>
 			))}

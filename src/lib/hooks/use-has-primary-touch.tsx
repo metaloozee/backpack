@@ -12,7 +12,8 @@ export function useTouchPrimary() {
 		const { signal } = controller;
 
 		const handleTouch = () => {
-			const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+			const hasTouch =
+				"ontouchstart" in window || navigator.maxTouchPoints > 0;
 			const prefersTouch = window.matchMedia("(pointer: coarse)").matches;
 			setIsTouchPrimary(hasTouch && prefersTouch);
 		};

@@ -1,16 +1,32 @@
 /** biome-ignore-all lint/style/noMagicNumbers: magic numbers */
 import type { UIMessage } from "ai";
 import equal from "fast-deep-equal";
-import { CheckIcon, CopyIcon, ThumbsDownIcon, ThumbsUpIcon } from "lucide-react";
+import {
+	CheckIcon,
+	CopyIcon,
+	ThumbsDownIcon,
+	ThumbsUpIcon,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { memo, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useCopyToClipboard } from "usehooks-ts";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { transitions } from "@/lib/animations";
 
-export function PureMessageActions({ message, isLoading }: { message: UIMessage; isLoading: boolean }) {
+export function PureMessageActions({
+	message,
+	isLoading,
+}: {
+	message: UIMessage;
+	isLoading: boolean;
+}) {
 	const [_, copyToClipboard] = useCopyToClipboard();
 	const [isCopied, setIsCopied] = useState(false);
 	const [isThumbsUp, setIsThumbsUp] = useState(false);
@@ -55,7 +71,11 @@ export function PureMessageActions({ message, isLoading }: { message: UIMessage;
 			<div className="flex w-full flex-row flex-wrap gap-1">
 				<Tooltip>
 					<TooltipTrigger asChild>
-						<motion.div initial="rest" whileHover="hover" whileTap="tap">
+						<motion.div
+							initial="rest"
+							whileHover="hover"
+							whileTap="tap"
+						>
 							<Button
 								className="text-xs"
 								onClick={async () => {
@@ -66,7 +86,9 @@ export function PureMessageActions({ message, isLoading }: { message: UIMessage;
 										.trim();
 
 									if (!textFromParts) {
-										return toast.error("There is no text to copy.");
+										return toast.error(
+											"There is no text to copy."
+										);
 									}
 
 									await copyToClipboard(textFromParts);
@@ -78,9 +100,21 @@ export function PureMessageActions({ message, isLoading }: { message: UIMessage;
 								<AnimatePresence initial={false} mode="wait">
 									{isCopied ? (
 										<motion.div
-											animate={{ scale: 1, opacity: 1, rotate: 0 }}
-											exit={{ scale: 0, opacity: 0, rotate: 180 }}
-											initial={{ scale: 0, opacity: 0, rotate: -180 }}
+											animate={{
+												scale: 1,
+												opacity: 1,
+												rotate: 0,
+											}}
+											exit={{
+												scale: 0,
+												opacity: 0,
+												rotate: 180,
+											}}
+											initial={{
+												scale: 0,
+												opacity: 0,
+												rotate: -180,
+											}}
 											key="check"
 											transition={transitions.bouncy}
 										>
@@ -88,9 +122,21 @@ export function PureMessageActions({ message, isLoading }: { message: UIMessage;
 										</motion.div>
 									) : (
 										<motion.div
-											animate={{ scale: 1, opacity: 1, rotate: 0 }}
-											exit={{ scale: 0, opacity: 0, rotate: 180 }}
-											initial={{ scale: 0, opacity: 0, rotate: -180 }}
+											animate={{
+												scale: 1,
+												opacity: 1,
+												rotate: 0,
+											}}
+											exit={{
+												scale: 0,
+												opacity: 0,
+												rotate: 180,
+											}}
+											initial={{
+												scale: 0,
+												opacity: 0,
+												rotate: -180,
+											}}
 											key="copy"
 											transition={transitions.smooth}
 										>
@@ -108,7 +154,11 @@ export function PureMessageActions({ message, isLoading }: { message: UIMessage;
 
 				<Tooltip>
 					<TooltipTrigger asChild>
-						<motion.div initial="rest" whileHover="hover" whileTap="tap">
+						<motion.div
+							initial="rest"
+							whileHover="hover"
+							whileTap="tap"
+						>
 							<Button
 								className="text-xs"
 								onClick={() => {
@@ -120,9 +170,21 @@ export function PureMessageActions({ message, isLoading }: { message: UIMessage;
 								<AnimatePresence initial={false} mode="wait">
 									{isThumbsUp ? (
 										<motion.div
-											animate={{ scale: 1, opacity: 1, rotate: 0 }}
-											exit={{ scale: 0, opacity: 0, rotate: 180 }}
-											initial={{ scale: 0, opacity: 0, rotate: -180 }}
+											animate={{
+												scale: 1,
+												opacity: 1,
+												rotate: 0,
+											}}
+											exit={{
+												scale: 0,
+												opacity: 0,
+												rotate: 180,
+											}}
+											initial={{
+												scale: 0,
+												opacity: 0,
+												rotate: -180,
+											}}
 											key="thumbs-up-active"
 											transition={transitions.bouncy}
 										>
@@ -130,9 +192,21 @@ export function PureMessageActions({ message, isLoading }: { message: UIMessage;
 										</motion.div>
 									) : (
 										<motion.div
-											animate={{ scale: 1, opacity: 1, rotate: 0 }}
-											exit={{ scale: 0, opacity: 0, rotate: 180 }}
-											initial={{ scale: 0, opacity: 0, rotate: -180 }}
+											animate={{
+												scale: 1,
+												opacity: 1,
+												rotate: 0,
+											}}
+											exit={{
+												scale: 0,
+												opacity: 0,
+												rotate: 180,
+											}}
+											initial={{
+												scale: 0,
+												opacity: 0,
+												rotate: -180,
+											}}
 											key="thumbs-up"
 											transition={transitions.smooth}
 										>
@@ -150,7 +224,11 @@ export function PureMessageActions({ message, isLoading }: { message: UIMessage;
 
 				<Tooltip>
 					<TooltipTrigger asChild>
-						<motion.div initial="rest" whileHover="hover" whileTap="tap">
+						<motion.div
+							initial="rest"
+							whileHover="hover"
+							whileTap="tap"
+						>
 							<Button
 								className="text-xs"
 								onClick={() => {
@@ -162,9 +240,21 @@ export function PureMessageActions({ message, isLoading }: { message: UIMessage;
 								<AnimatePresence initial={false} mode="wait">
 									{isThumbsDown ? (
 										<motion.div
-											animate={{ scale: 1, opacity: 1, rotate: 0 }}
-											exit={{ scale: 0, opacity: 0, rotate: 180 }}
-											initial={{ scale: 0, opacity: 0, rotate: -180 }}
+											animate={{
+												scale: 1,
+												opacity: 1,
+												rotate: 0,
+											}}
+											exit={{
+												scale: 0,
+												opacity: 0,
+												rotate: 180,
+											}}
+											initial={{
+												scale: 0,
+												opacity: 0,
+												rotate: -180,
+											}}
 											key="thumbs-down-active"
 											transition={transitions.bouncy}
 										>
@@ -172,9 +262,21 @@ export function PureMessageActions({ message, isLoading }: { message: UIMessage;
 										</motion.div>
 									) : (
 										<motion.div
-											animate={{ scale: 1, opacity: 1, rotate: 0 }}
-											exit={{ scale: 0, opacity: 0, rotate: 180 }}
-											initial={{ scale: 0, opacity: 0, rotate: -180 }}
+											animate={{
+												scale: 1,
+												opacity: 1,
+												rotate: 0,
+											}}
+											exit={{
+												scale: 0,
+												opacity: 0,
+												rotate: 180,
+											}}
+											initial={{
+												scale: 0,
+												opacity: 0,
+												rotate: -180,
+											}}
 											key="thumbs-down"
 											transition={transitions.smooth}
 										>
@@ -194,9 +296,12 @@ export function PureMessageActions({ message, isLoading }: { message: UIMessage;
 	);
 }
 
-export const MessageActions = memo(PureMessageActions, (prevProps, nextProps) => {
-	if (!equal(prevProps.isLoading, nextProps.isLoading)) {
-		return false;
+export const MessageActions = memo(
+	PureMessageActions,
+	(prevProps, nextProps) => {
+		if (!equal(prevProps.isLoading, nextProps.isLoading)) {
+			return false;
+		}
+		return true;
 	}
-	return true;
-});
+);

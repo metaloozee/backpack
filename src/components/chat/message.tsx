@@ -2,7 +2,13 @@
 
 import type { UseChatHelpers } from "@ai-sdk/react";
 import equal from "fast-deep-equal";
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon, CopyIcon, PencilLineIcon } from "lucide-react";
+import {
+	CheckIcon,
+	ChevronDownIcon,
+	ChevronUpIcon,
+	CopyIcon,
+	PencilLineIcon,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { memo, type ReactNode, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -24,13 +30,18 @@ import { sanitizeText } from "@/lib/ai/utils";
 import { transitions } from "@/lib/animations";
 import { cn } from "@/lib/utils";
 import { useDataStream } from "../data-stream-provider";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "../ui/tooltip";
 import { MessageEditor } from "./message-editor";
 
-type MessageReasoningProps = {
+interface MessageReasoningProps {
 	isLoading: boolean;
 	reasoning: string;
-};
+}
 
 // Helper function to render extract tool parts
 // biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
@@ -44,7 +55,13 @@ function renderExtractTool(part: any, key: string): ReactNode {
 
 	if (state === "output-available") {
 		const { output } = part;
-		return <ExtractTool key={key} output={output?.results} toolCallId={toolCallId} />;
+		return (
+			<ExtractTool
+				key={key}
+				output={output?.results}
+				toolCallId={toolCallId}
+			/>
+		);
 	}
 
 	return null;
@@ -57,12 +74,24 @@ function renderSaveToMemoriesTool(part: any, key: string): ReactNode {
 
 	if (state === "input-available") {
 		const { input } = part;
-		return <SaveToMemoriesTool input={input} key={key} toolCallId={toolCallId} />;
+		return (
+			<SaveToMemoriesTool
+				input={input}
+				key={key}
+				toolCallId={toolCallId}
+			/>
+		);
 	}
 
 	if (state === "output-available") {
 		const { output } = part;
-		return <SaveToMemoriesTool key={key} output={output} toolCallId={toolCallId} />;
+		return (
+			<SaveToMemoriesTool
+				key={key}
+				output={output}
+				toolCallId={toolCallId}
+			/>
+		);
 	}
 
 	return null;
@@ -74,12 +103,16 @@ function renderWebSearchTool(part: any, key: string): ReactNode {
 
 	if (state === "input-available") {
 		const { input } = part;
-		return <WebSearchTool input={input} key={key} toolCallId={toolCallId} />;
+		return (
+			<WebSearchTool input={input} key={key} toolCallId={toolCallId} />
+		);
 	}
 
 	if (state === "output-available") {
 		const { output } = part;
-		return <WebSearchTool key={key} output={output} toolCallId={toolCallId} />;
+		return (
+			<WebSearchTool key={key} output={output} toolCallId={toolCallId} />
+		);
 	}
 
 	return null;
@@ -91,12 +124,24 @@ function renderKnowledgeSearchTool(part: any, key: string): ReactNode {
 
 	if (state === "input-available") {
 		const { input } = part;
-		return <KnowledgeSearchTool input={input} key={key} toolCallId={toolCallId} />;
+		return (
+			<KnowledgeSearchTool
+				input={input}
+				key={key}
+				toolCallId={toolCallId}
+			/>
+		);
 	}
 
 	if (state === "output-available") {
 		const { output } = part;
-		return <KnowledgeSearchTool key={key} output={output || undefined} toolCallId={toolCallId} />;
+		return (
+			<KnowledgeSearchTool
+				key={key}
+				output={output || undefined}
+				toolCallId={toolCallId}
+			/>
+		);
 	}
 
 	return null;
@@ -109,12 +154,24 @@ function renderAcademicSearchTool(part: any, key: string): ReactNode {
 
 	if (state === "input-available") {
 		const { input } = part;
-		return <AcademicSearchTool input={input} key={key} toolCallId={toolCallId} />;
+		return (
+			<AcademicSearchTool
+				input={input}
+				key={key}
+				toolCallId={toolCallId}
+			/>
+		);
 	}
 
 	if (state === "output-available") {
 		const { output } = part;
-		return <AcademicSearchTool key={key} output={output?.results} toolCallId={toolCallId} />;
+		return (
+			<AcademicSearchTool
+				key={key}
+				output={output?.results}
+				toolCallId={toolCallId}
+			/>
+		);
 	}
 
 	return null;
@@ -127,12 +184,24 @@ function renderFinanceSearchTool(part: any, key: string): ReactNode {
 
 	if (state === "input-available") {
 		const { input } = part;
-		return <FinanceSearchTool input={input} key={key} toolCallId={toolCallId} />;
+		return (
+			<FinanceSearchTool
+				input={input}
+				key={key}
+				toolCallId={toolCallId}
+			/>
+		);
 	}
 
 	if (state === "output-available") {
 		const { output } = part;
-		return <FinanceSearchTool key={key} output={output || undefined} toolCallId={toolCallId} />;
+		return (
+			<FinanceSearchTool
+				key={key}
+				output={output || undefined}
+				toolCallId={toolCallId}
+			/>
+		);
 	}
 
 	return null;
@@ -153,7 +222,16 @@ function renderTextPart(
 		copyToClipboard: ReturnType<typeof useCopyToClipboard>[1];
 	}
 ): ReactNode {
-	const { message, mode, setMode, setMessages, regenerate, isCopied, setIsCopied, copyToClipboard } = props;
+	const {
+		message,
+		mode,
+		setMode,
+		setMessages,
+		regenerate,
+		isCopied,
+		setIsCopied,
+		copyToClipboard,
+	} = props;
 	return (
 		<div className="w-full" key={key}>
 			<AnimatePresence initial={false} mode="wait">
@@ -170,9 +248,12 @@ function renderTextPart(
 						}}
 					>
 						<div
-							className={cn("group/message flex w-full flex-row items-center gap-2", {
-								"justify-end": message.role === "user",
-							})}
+							className={cn(
+								"group/message flex w-full flex-row items-center gap-2",
+								{
+									"justify-end": message.role === "user",
+								}
+							)}
 						>
 							{message.role === "user" && (
 								<TooltipProvider delayDuration={200}>
@@ -190,7 +271,9 @@ function renderTextPart(
 												<PencilLineIcon className="size-3" />
 											</Button>
 										</TooltipTrigger>
-										<TooltipContent sideOffset={10}>Edit Message</TooltipContent>
+										<TooltipContent sideOffset={10}>
+											Edit Message
+										</TooltipContent>
 									</Tooltip>
 									<Tooltip>
 										<TooltipTrigger asChild>
@@ -198,23 +281,38 @@ function renderTextPart(
 												className="rounded opacity-0 transition-all duration-200 ease-in-out group-hover/message:opacity-100"
 												data-testid="message-copy-button"
 												onClick={async () => {
-													const textFromParts = message.parts
-														?.filter((textPart) => textPart.type === "text")
-														.map((textPart) => textPart.text)
-														.join("\n")
-														.trim();
+													const textFromParts =
+														message.parts
+															?.filter(
+																(textPart) =>
+																	textPart.type ===
+																	"text"
+															)
+															.map(
+																(textPart) =>
+																	textPart.text
+															)
+															.join("\n")
+															.trim();
 
 													if (!textFromParts) {
-														return toast.error("There is no text to copy.");
+														return toast.error(
+															"There is no text to copy."
+														);
 													}
 
-													await copyToClipboard(textFromParts);
+													await copyToClipboard(
+														textFromParts
+													);
 													setIsCopied(true);
 												}}
 												size={"icon"}
 												variant="ghost"
 											>
-												<AnimatePresence initial={false} mode="wait">
+												<AnimatePresence
+													initial={false}
+													mode="wait"
+												>
 													{isCopied ? (
 														<motion.div
 															animate={{
@@ -233,7 +331,9 @@ function renderTextPart(
 																rotate: -180,
 															}}
 															key="check"
-															transition={transitions.bouncy}
+															transition={
+																transitions.bouncy
+															}
 														>
 															<CheckIcon className="size-3" />
 														</motion.div>
@@ -255,7 +355,9 @@ function renderTextPart(
 																rotate: -180,
 															}}
 															key="copy"
-															transition={transitions.smooth}
+															transition={
+																transitions.smooth
+															}
 														>
 															<CopyIcon className="size-3" />
 														</motion.div>
@@ -264,7 +366,11 @@ function renderTextPart(
 											</Button>
 										</TooltipTrigger>
 										<TooltipContent sideOffset={10}>
-											<p>{isCopied ? "Copied!" : "Copy message"}</p>
+											<p>
+												{isCopied
+													? "Copied!"
+													: "Copy message"}
+											</p>
 										</TooltipContent>
 									</Tooltip>
 								</TooltipProvider>
@@ -273,15 +379,20 @@ function renderTextPart(
 								className={cn(
 									"flex flex-col gap-4 overflow-x-auto",
 									{
-										"border bg-neutral-900 px-4 py-1 text-primary": message.role === "user",
+										"border bg-neutral-900 px-4 py-1 text-primary":
+											message.role === "user",
 									},
-									message.parts.filter((filePart) => filePart.type === "file").length > 0
+									message.parts.filter(
+										(filePart) => filePart.type === "file"
+									).length > 0
 										? "rounded-b-xl rounded-tl-xl"
 										: "rounded-t-xl rounded-bl-xl"
 								)}
 								data-testid="message-content"
 							>
-								<Markdown>{sanitizeText(messagePart.text)}</Markdown>
+								<Markdown>
+									{sanitizeText(messagePart.text)}
+								</Markdown>
 							</div>
 						</div>
 					</motion.div>
@@ -332,7 +443,13 @@ function renderMessagePart(
 	const key = `message-${message.id}-part-${index}`;
 
 	if (type === "reasoning" && messagePart.text?.trim().length > 0) {
-		return <MessageReasoning isLoading={isLoading} key={key} reasoning={messagePart.text} />;
+		return (
+			<MessageReasoning
+				isLoading={isLoading}
+				key={key}
+				reasoning={messagePart.text}
+			/>
+		);
 	}
 
 	if (type === "text") {
@@ -366,11 +483,18 @@ function renderMessagePart(
 	return null;
 }
 
-export function MessageReasoning({ isLoading, reasoning }: MessageReasoningProps) {
+export function MessageReasoning({
+	isLoading,
+	reasoning,
+}: MessageReasoningProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 
 	return (
-		<Disclosure className="relative rounded-lg text-sm" onOpenChange={setIsExpanded} open={isExpanded}>
+		<Disclosure
+			className="relative rounded-lg text-sm"
+			onOpenChange={setIsExpanded}
+			open={isExpanded}
+		>
 			<motion.div
 				animate={{
 					height: isExpanded ? "auto" : 96,
@@ -397,7 +521,10 @@ export function MessageReasoning({ isLoading, reasoning }: MessageReasoningProps
 								animate={{ y: 0, opacity: 1 }}
 								className="flex items-center gap-2"
 								exit={{ y: isExpanded ? -15 : 15, opacity: 0 }}
-								initial={{ y: isExpanded ? 15 : -15, opacity: 0 }}
+								initial={{
+									y: isExpanded ? 15 : -15,
+									opacity: 0,
+								}}
 								key={isExpanded ? "expanded" : "collapsed"}
 								transition={{ duration: 0.15 }}
 							>
@@ -448,7 +575,9 @@ export function Message({
 		}
 	}, [isCopied]);
 
-	const attachmentsFromMessage = message.parts.filter((part) => part.type === "file");
+	const attachmentsFromMessage = message.parts.filter(
+		(part) => part.type === "file"
+	);
 
 	useDataStream();
 
@@ -468,11 +597,16 @@ export function Message({
 				>
 					<div
 						className={cn("flex w-full flex-col gap-4", {
-							"min-h-96": message.role === "assistant" && requiresScrollPadding,
+							"min-h-96":
+								message.role === "assistant" &&
+								requiresScrollPadding,
 						})}
 					>
 						{attachmentsFromMessage.length > 0 && (
-							<div className="flex flex-row justify-end gap-2" data-testid={"message-attachments"}>
+							<div
+								className="flex flex-row justify-end gap-2"
+								data-testid={"message-attachments"}
+							>
 								{attachmentsFromMessage.map((attachment) => (
 									<PreviewAttachment
 										attachment={{
@@ -503,7 +637,10 @@ export function Message({
 							)
 							.filter(Boolean)}
 
-						<MessageActions isLoading={isLoading} message={message} />
+						<MessageActions
+							isLoading={isLoading}
+							message={message}
+						/>
 					</div>
 				</div>
 			</motion.div>
@@ -518,7 +655,9 @@ export const PreviewMessage = memo(Message, (prevProps, nextProps) => {
 	if (!equal(prevProps.message.id, nextProps.message.id)) {
 		return false;
 	}
-	if (!equal(prevProps.requiresScrollPadding, nextProps.requiresScrollPadding)) {
+	if (
+		!equal(prevProps.requiresScrollPadding, nextProps.requiresScrollPadding)
+	) {
 		return false;
 	}
 	if (!equal(prevProps.message.parts, nextProps.message.parts)) {

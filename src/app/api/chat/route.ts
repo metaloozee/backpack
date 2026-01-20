@@ -15,7 +15,10 @@ import {
 import { and, desc, eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { after } from "next/server";
-import { createResumableStreamContext, type ResumableStreamContext } from "resumable-stream";
+import {
+	createResumableStreamContext,
+	type ResumableStreamContext,
+} from "resumable-stream";
 import { z } from "zod";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
 import { getModel } from "@/lib/ai/models";
@@ -29,19 +32,24 @@ import { webSearchTool } from "@/lib/ai/tools/web-search";
 import { convertToUIMessages } from "@/lib/ai/utils";
 import { getSession } from "@/lib/auth/utils";
 import { db } from "@/lib/db";
-import { chat as dbChat, memories as dbMemories, message as dbMessage, stream as dbStream } from "@/lib/db/schema/app";
+import {
+	chat as dbChat,
+	memories as dbMemories,
+	message as dbMessage,
+	stream as dbStream,
+} from "@/lib/db/schema/app";
 import { caller } from "@/lib/trpc/server";
 
 export const maxDuration = 60;
 
 let globalStreamContext: ResumableStreamContext | null = null;
 
-type ToolsState = {
+interface ToolsState {
 	webSearch?: boolean;
 	knowledgeSearch?: boolean;
 	academicSearch?: boolean;
 	financeSearch?: boolean;
-};
+}
 
 const parseToolsState = (toolsStateString: string | undefined): ToolsState => {
 	if (!toolsStateString) {
@@ -55,7 +63,11 @@ const parseToolsState = (toolsStateString: string | undefined): ToolsState => {
 	}
 };
 
-const createChatTitle = async (message: { id: string; role: string; parts: unknown[] }) => {
+const createChatTitle = async (message: {
+	id: string;
+	role: string;
+	parts: unknown[];
+}) => {
 	const { object } = await generateObject({
 		model: google("gemini-2.5-flash-lite"),
 		schema: z.object({
@@ -124,7 +136,8 @@ export async function POST(req: Request) {
 				throw new Error("Message and ID are required");
 			}
 
-			const modelId = cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
+			const modelId =
+				cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
 			const model = getModel(modelId);
 
 			if (!model) {
@@ -134,7 +147,9 @@ export async function POST(req: Request) {
 			const [chat] = await db
 				.select()
 				.from(dbChat)
-				.where(and(eq(dbChat.id, id), eq(dbChat.userId, session.userId)))
+				.where(
+					and(eq(dbChat.id, id), eq(dbChat.userId, session.userId))
+				)
 				.limit(1);
 
 			if (!chat) {
@@ -143,12 +158,17 @@ export async function POST(req: Request) {
 				await caller.chat.saveChat({
 					id,
 					userId: session.userId,
-					spaceId: requestEnv.inSpace ? requestEnv.spaceId : undefined,
+					spaceId: requestEnv.inSpace
+						? requestEnv.spaceId
+						: undefined,
 					title,
 				});
 			}
 
-			const previousMessages = await db.select().from(dbMessage).where(eq(dbMessage.chatId, id));
+			const previousMessages = await db
+				.select()
+				.from(dbMessage)
+				.where(eq(dbMessage.chatId, id));
 
 			const userMemories = await db
 				.select({
@@ -159,7 +179,10 @@ export async function POST(req: Request) {
 				.where(eq(dbMemories.userId, session.userId))
 				.orderBy(desc(dbMemories.createdAt));
 
-			const uiMessages = [...convertToUIMessages(previousMessages), message];
+			const uiMessages = [
+				...convertToUIMessages(previousMessages),
+				message,
+			];
 
 			await caller.chat.saveMessages({
 				messages: [
@@ -175,7 +198,9 @@ export async function POST(req: Request) {
 			});
 
 			const streamId = crypto.randomUUID();
-			await db.insert(dbStream).values({ id: streamId, chatId: id, createdAt: new Date() });
+			await db
+				.insert(dbStream)
+				.values({ id: streamId, chatId: id, createdAt: new Date() });
 
 			const stream = createUIMessageStream({
 				execute: ({ writer: dataStream }) => {
@@ -205,9 +230,12 @@ export async function POST(req: Request) {
 						system: AskModePrompt({
 							tools: {
 								webSearch: toolsState.webSearch ?? false,
-								knowledgeSearch: toolsState.knowledgeSearch ?? false,
-								academicSearch: toolsState.academicSearch ?? false,
-								financeSearch: toolsState.financeSearch ?? false,
+								knowledgeSearch:
+									toolsState.knowledgeSearch ?? false,
+								academicSearch:
+									toolsState.academicSearch ?? false,
+								financeSearch:
+									toolsState.financeSearch ?? false,
 							},
 							env: {
 								...requestEnv,
@@ -224,7 +252,10 @@ export async function POST(req: Request) {
 						},
 						activeTools,
 						tools: {
-							save_to_memories: saveToMemoriesTool({ session, dataStream }),
+							save_to_memories: saveToMemoriesTool({
+								session,
+								dataStream,
+							}),
 							extract: extractTool({ dataStream }),
 							web_search: webSearchTool({ dataStream }),
 							knowledge_search: knowledgeSearchTool({
@@ -238,7 +269,9 @@ export async function POST(req: Request) {
 					});
 
 					result.consumeStream();
-					dataStream.merge(result.toUIMessageStream({ sendReasoning: true }));
+					dataStream.merge(
+						result.toUIMessageStream({ sendReasoning: true })
+					);
 				},
 				generateId: () => crypto.randomUUID(),
 				onError: () => {
@@ -266,18 +299,26 @@ export async function POST(req: Request) {
 					)
 				);
 			}
-			return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
+			return new Response(
+				stream.pipeThrough(new JsonToSseTransformStream())
+			);
 		} catch (error) {
 			console.error(error);
-			return new Response(JSON.stringify({ code: "INTERNAL_SERVER_ERROR", cause: error }), {
-				status: 500,
-			});
+			return new Response(
+				JSON.stringify({ code: "INTERNAL_SERVER_ERROR", cause: error }),
+				{
+					status: 500,
+				}
+			);
 		}
 	} catch (error) {
 		console.error(error);
-		return new Response(JSON.stringify({ code: "INTERNAL_SERVER_ERROR", cause: error }), {
-			status: 500,
-		});
+		return new Response(
+			JSON.stringify({ code: "INTERNAL_SERVER_ERROR", cause: error }),
+			{
+				status: 500,
+			}
+		);
 	}
 }
 

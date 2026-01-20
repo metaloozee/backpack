@@ -9,7 +9,8 @@ export default async function IndexPage() {
 
 	const id = crypto.randomUUID();
 	const cookieStore = await cookies();
-	const selectedModel = cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
+	const selectedModel =
+		cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
 
 	const toolsStateString = cookieStore.get("X-Tools-State")?.value;
 	let initialTools = getDefaultToolsState();

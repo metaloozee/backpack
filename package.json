@@ -112,7 +112,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.2",
+    "@biomejs/biome": "2.3.11",
     "@tailwindcss/postcss": "^4.1.13",
     "@tanstack/react-query-devtools": "^5.87.3",
     "@types/node": "^20.19.13",
@@ -123,15 +123,18 @@
     "dotenv": "^16.6.1",
     "drizzle-kit": "^0.31.4",
     "husky": "^9.1.7",
-    "lint-staged": "^16.1.6",
+    "lint-staged": "^16.2.7",
     "pg": "^8.16.3",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.13",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
-    "ultracite": "5.3.1"
+    "ultracite": "7.0.11"
   },
   "lint-staged": {
-    "*.{js,jsx,css,md,ts,tsx}": "npx ultracite fix"
+    "*.{js,jsx,css,md,ts,tsx}": "npx ultracite fix",
+    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
+      "bun x ultracite fix"
+    ]
   }
 }

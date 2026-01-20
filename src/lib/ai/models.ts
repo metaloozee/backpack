@@ -5,38 +5,45 @@ import { openai } from "@ai-sdk/openai";
 import type { OpenRouterLanguageModel } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
 
-export type ModelProperties = "reasoning" | "fast" | "quality" | "experimental" | "stealth" | "lightweight";
+export type ModelProperties =
+	| "reasoning"
+	| "fast"
+	| "quality"
+	| "experimental"
+	| "stealth"
+	| "lightweight";
 
-export type Model = {
+export interface Model {
 	name: string;
 	id: string;
 	provider: string;
 	instance: LanguageModel | OpenRouterLanguageModel;
 	properties?: ModelProperties[];
-};
+}
 
-const _googleSafetySettings: GoogleGenerativeAIProviderOptions["safetySettings"] = [
-	{
-		category: "HARM_CATEGORY_HATE_SPEECH",
-		threshold: "BLOCK_NONE",
-	},
-	{
-		category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-		threshold: "BLOCK_NONE",
-	},
-	{
-		category: "HARM_CATEGORY_HARASSMENT",
-		threshold: "BLOCK_NONE",
-	},
-	{
-		category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-		threshold: "BLOCK_NONE",
-	},
-	{
-		category: "HARM_CATEGORY_CIVIC_INTEGRITY",
-		threshold: "BLOCK_NONE",
-	},
-];
+const _googleSafetySettings: GoogleGenerativeAIProviderOptions["safetySettings"] =
+	[
+		{
+			category: "HARM_CATEGORY_HATE_SPEECH",
+			threshold: "BLOCK_NONE",
+		},
+		{
+			category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+			threshold: "BLOCK_NONE",
+		},
+		{
+			category: "HARM_CATEGORY_HARASSMENT",
+			threshold: "BLOCK_NONE",
+		},
+		{
+			category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+			threshold: "BLOCK_NONE",
+		},
+		{
+			category: "HARM_CATEGORY_CIVIC_INTEGRITY",
+			threshold: "BLOCK_NONE",
+		},
+	];
 
 export const models: Model[] = [
 	{

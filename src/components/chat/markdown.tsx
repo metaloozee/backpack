@@ -6,9 +6,19 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
-import { CodeBlock, CodeBlockCopyButton, CodeBlockDownloadButton } from "@/components/chat/code-block";
+import {
+	CodeBlock,
+	CodeBlockCopyButton,
+	CodeBlockDownloadButton,
+} from "@/components/chat/code-block";
 import { DownloadableTable } from "@/components/chat/downloadable-table";
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useCitations } from "@/lib/hooks/use-citations";
 import { cn } from "@/lib/utils";
@@ -30,25 +40,38 @@ const headingClassNames = {
 
 const listItemClassName = "py-1" as const;
 
-type MarkdownComponentProps<T extends ElementType> = ComponentPropsWithoutRef<T> & {
-	node?: unknown;
-	children?: ReactNode;
-};
+type MarkdownComponentProps<T extends ElementType> =
+	ComponentPropsWithoutRef<T> & {
+		node?: unknown;
+		children?: ReactNode;
+	};
 
 const makeComponent = <T extends ElementType>(
 	Tag: T,
 	defaultProps?: Partial<ComponentPropsWithoutRef<T>>,
 	transformChildren?: (children: ReactNode) => ReactNode
 ) => {
-	return ({ node: _node, children, className, ...rest }: MarkdownComponentProps<T>) => {
-		const content = transformChildren === undefined ? children : transformChildren(children);
+	return ({
+		node: _node,
+		children,
+		className,
+		...rest
+	}: MarkdownComponentProps<T>) => {
+		const content =
+			transformChildren === undefined
+				? children
+				: transformChildren(children);
 
 		return (
 			// @ts-expect-error Generic component props spreading is complex but works at runtime
 			<Tag
 				{...defaultProps}
 				{...rest}
-				className={cn((defaultProps as { className?: string } | undefined)?.className, className)}
+				className={cn(
+					(defaultProps as { className?: string } | undefined)
+						?.className,
+					className
+				)}
 			>
 				{content}
 			</Tag>
@@ -79,7 +102,9 @@ const components: Partial<Components> = {
 		);
 	},
 	pre: ({ children }) => (
-		<div className="not-prose my-4 w-full overflow-visible whitespace-pre-wrap break-words text-sm">{children}</div>
+		<div className="not-prose my-4 w-full overflow-visible whitespace-pre-wrap break-words text-sm">
+			{children}
+		</div>
 	),
 	ol: ({ node, children, ...props }) => {
 		return (
@@ -106,7 +131,12 @@ const components: Partial<Components> = {
 	a: ({ node, children, ...props }) => {
 		return (
 			// @ts-expect-error
-			<Link className="text-blue-500 hover:underline" rel="noopener noreferrer" target="_blank" {...props}>
+			<Link
+				className="text-blue-500 hover:underline"
+				rel="noopener noreferrer"
+				target="_blank"
+				{...props}
+			>
 				{children}
 			</Link>
 		);
@@ -127,7 +157,12 @@ const components: Partial<Components> = {
 			</blockquote>
 		);
 	},
-	hr: ({ ...props }) => <hr className="my-6 border-neutral-200 border-t dark:border-neutral-700" {...props} />,
+	hr: ({ ...props }) => (
+		<hr
+			className="my-6 border-neutral-200 border-t dark:border-neutral-700"
+			{...props}
+		/>
+	),
 	table: ({ node, children, ...props }) => {
 		return <DownloadableTable {...props}>{children}</DownloadableTable>;
 	},
@@ -208,7 +243,12 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
 			const citation = citations.find((c) => c.id === citationId);
 
 			if (citation) {
-				parts.push(<Citation citation={citation} key={`citation-${citation.id}-${match.index}`} />);
+				parts.push(
+					<Citation
+						citation={citation}
+						key={`citation-${citation.id}-${match.index}`}
+					/>
+				);
 			} else {
 				parts.push(match[0]);
 			}
@@ -224,8 +264,14 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
 		return parts.length > 1 ? parts : text;
 	};
 
-	const renderChildrenWithCitations = (nodeChildren: ReactNode): ReactNode => {
-		if (nodeChildren === null || nodeChildren === undefined || typeof nodeChildren === "boolean") {
+	const renderChildrenWithCitations = (
+		nodeChildren: ReactNode
+	): ReactNode => {
+		if (
+			nodeChildren === null ||
+			nodeChildren === undefined ||
+			typeof nodeChildren === "boolean"
+		) {
 			return nodeChildren;
 		}
 
@@ -234,7 +280,9 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
 		}
 
 		if (Array.isArray(nodeChildren)) {
-			return nodeChildren.map((child) => renderChildrenWithCitations(child));
+			return nodeChildren.map((child) =>
+				renderChildrenWithCitations(child)
+			);
 		}
 
 		return nodeChildren;
@@ -274,4 +322,7 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
 	);
 };
 
-export const Markdown = memo(NonMemoizedMarkdown, (prevProps, nextProps) => prevProps.children === nextProps.children);
+export const Markdown = memo(
+	NonMemoizedMarkdown,
+	(prevProps, nextProps) => prevProps.children === nextProps.children
+);

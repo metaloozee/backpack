@@ -1,9 +1,14 @@
 import { tool, type UIMessageStreamWriter } from "ai";
 import { z } from "zod";
 
-export const academicSearchTool = ({ dataStream }: { dataStream: UIMessageStreamWriter }) =>
+export const academicSearchTool = ({
+	dataStream,
+}: {
+	dataStream: UIMessageStreamWriter;
+}) =>
 	tool({
-		description: "Performs a search for various academic papers and researches",
+		description:
+			"Performs a search for various academic papers and researches",
 		inputSchema: z.object({
 			academic_search_queries: z.array(z.string()).max(5),
 		}),

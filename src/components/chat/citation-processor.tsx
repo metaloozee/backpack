@@ -4,9 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useCitations } from "@/lib/hooks/use-citations";
 import { Citation } from "./citation";
 
-type CitationProcessorProps = {
+interface CitationProcessorProps {
 	content: string;
-};
+}
 
 export function CitationProcessor({ content }: CitationProcessorProps) {
 	const { processedContent, citations } = useCitations(content);
@@ -27,7 +27,12 @@ export function CitationProcessor({ content }: CitationProcessorProps) {
 			const citation = citations.find((c) => c.id === citationId);
 
 			if (citation) {
-				parts.push(<Citation citation={citation} key={`citation-${citation.id}-${match.index}`} />);
+				parts.push(
+					<Citation
+						citation={citation}
+						key={`citation-${citation.id}-${match.index}`}
+					/>
+				);
 			} else {
 				parts.push(match[0]);
 			}

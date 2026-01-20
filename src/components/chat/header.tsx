@@ -15,7 +15,12 @@ export function Header() {
 		>
 			<h1 className="text-3xl">My Chats</h1>
 
-			<Button asChild className="text-xs" size={"sm"} variant={"secondary"}>
+			<Button
+				asChild
+				className="text-xs"
+				size={"sm"}
+				variant={"secondary"}
+			>
 				<Link href="/">
 					<SquarePlusIcon /> New Chat
 				</Link>

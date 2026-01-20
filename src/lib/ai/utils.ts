@@ -11,7 +11,11 @@ export function getMostRecentUserMessage(messages: UIMessage[]) {
 	return userMessages.at(-1);
 }
 
-export function getTrailingMessageId({ messages }: { messages: ResponseMessage[] }): string | null {
+export function getTrailingMessageId({
+	messages,
+}: {
+	messages: ResponseMessage[];
+}): string | null {
 	const trailingMessage = messages.at(-1);
 
 	if (!trailingMessage) {
@@ -53,7 +57,10 @@ export const fetcher = async (url: string) => {
 	return response.json();
 };
 
-export async function fetchWithErrorHandlers(input: RequestInfo | URL, init?: RequestInit) {
+export async function fetchWithErrorHandlers(
+	input: RequestInfo | URL,
+	init?: RequestInit
+) {
 	try {
 		const response = await fetch(input, init);
 

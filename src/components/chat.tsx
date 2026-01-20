@@ -20,7 +20,10 @@ import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/ai/utils";
 import type { Chat as ChatType } from "@/lib/db/schema/app";
 import { useAutoResume } from "@/lib/hooks/use-auto-resume";
-import { type ChatInfiniteData, prependChatToInfiniteData } from "@/lib/trpc/cache-utils";
+import {
+	type ChatInfiniteData,
+	prependChatToInfiniteData,
+} from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
@@ -52,11 +55,17 @@ export function Chat({
 }) {
 	const pathname = usePathname();
 	const isSpaceChat = env.inSpace || pathname.startsWith("/s/");
-	const { data: spaceOverview, status: spaceStatus } = useSpaceOverview(env.spaceId, isSpaceChat);
-	const { data: knowledgeData, status: knowledgeStatus } = useKnowledgeOverview(env.spaceId);
+	const { data: spaceOverview, status: spaceStatus } = useSpaceOverview(
+		env.spaceId,
+		isSpaceChat
+	);
+	const { data: knowledgeData, status: knowledgeStatus } =
+		useKnowledgeOverview(env.spaceId);
 
 	const [input, setInput] = useState<string>("");
-	const [tools, setTools] = useState<ToolsState>(initialTools ?? getDefaultToolsState());
+	const [tools, setTools] = useState<ToolsState>(
+		initialTools ?? getDefaultToolsState()
+	);
 	const [attachments, setAttachments] = useState<Attachment[]>([]);
 
 	const { setDataStream } = useDataStream();
@@ -64,7 +73,9 @@ export function Chat({
 	const trpc = useTRPC();
 
 	const generateTempTitle = useCallback((message: ChatMessage): string => {
-		const firstTextPart = message.parts.find((part) => part.type === "text");
+		const firstTextPart = message.parts.find(
+			(part) => part.type === "text"
+		);
 		if (firstTextPart && "text" in firstTextPart) {
 			const text = firstTextPart.text.trim();
 			return text.length > 50 ? `${text.slice(0, 50)}...` : text;
@@ -88,27 +99,39 @@ export function Chat({
 				(oldData: ChatInfiniteData | undefined) => {
 					if (!oldData) {
 						return {
-							pages: [{ chats: [newChat], nextCursor: undefined }],
+							pages: [
+								{ chats: [newChat], nextCursor: undefined },
+							],
 							pageParams: [null],
 						} as ChatInfiniteData;
 					}
 
-					return prependChatToInfiniteData(oldData, newChat) ?? oldData;
+					return (
+						prependChatToInfiniteData(oldData, newChat) ?? oldData
+					);
 				}
 			);
 
 			if (env.spaceId) {
 				queryClient.setQueryData(
-					trpc.chat.getChats.infiniteQueryOptions({ limit: 20, spaceId: env.spaceId }).queryKey,
+					trpc.chat.getChats.infiniteQueryOptions({
+						limit: 20,
+						spaceId: env.spaceId,
+					}).queryKey,
 					(oldData: ChatInfiniteData | undefined) => {
 						if (!oldData) {
 							return {
-								pages: [{ chats: [newChat], nextCursor: undefined }],
+								pages: [
+									{ chats: [newChat], nextCursor: undefined },
+								],
 								pageParams: [null],
 							} as ChatInfiniteData;
 						}
 
-						return prependChatToInfiniteData(oldData, newChat) ?? oldData;
+						return (
+							prependChatToInfiniteData(oldData, newChat) ??
+							oldData
+						);
 					}
 				);
 			}
@@ -134,8 +157,15 @@ export function Chat({
 		transport: new DefaultChatTransport({
 			api: "/api/chat",
 			fetch: fetchWithErrorHandlers,
-			// biome-ignore lint/nursery/noShadow: false positive
-			prepareSendMessagesRequest({ messages, id, body }: { messages: ChatMessage[]; id: string; body: any }) {
+			prepareSendMessagesRequest({
+				messages,
+				id,
+				body,
+			}: {
+				messages: ChatMessage[];
+				id: string;
+				body: any;
+			}) {
 				return {
 					body: {
 						id,
@@ -147,7 +177,11 @@ export function Chat({
 			},
 		}),
 		onData: (dataPart) => {
-			setDataStream((ds) => (ds ? [...ds, dataPart as unknown as any] : [dataPart as unknown as any]));
+			setDataStream((ds) =>
+				ds
+					? [...ds, dataPart as unknown as any]
+					: [dataPart as unknown as any]
+			);
 		},
 		onError: (error) => {
 			toast.error("uh oh!", { description: error.message });
@@ -162,7 +196,8 @@ export function Chat({
 				parts: message.parts || [],
 			};
 
-			const isFirstMessage = initialMessages.length === 0 && messages.length === 0;
+			const isFirstMessage =
+				initialMessages.length === 0 && messages.length === 0;
 
 			if (isFirstMessage) {
 				optimisticallyAddChat(fullMessage);
@@ -171,15 +206,29 @@ export function Chat({
 
 			return originalSendMessage(message);
 		},
-		[initialMessages.length, messages.length, optimisticallyAddChat, originalSendMessage]
+		[
+			initialMessages.length,
+			messages.length,
+			optimisticallyAddChat,
+			originalSendMessage,
+		]
 	);
 
 	// Computed values
 	const showSpaceIntro = isSpaceChat && messages.length === 0;
-	const spaceTitle = spaceOverview?.spaceData.spaceTitle ?? env.spaceName ?? "Untitled space";
-	const spaceDescription = spaceOverview?.spaceData.spaceDescription ?? env.spaceDescription;
-	const spaceCustomInstructions = spaceOverview?.spaceData.spaceCustomInstructions ?? env.spaceCustomInstructions;
-	const showSpaceHistory = showSpaceIntro && Boolean(env.spaceId) && (spaceOverview?.hasChats ?? false);
+	const spaceTitle =
+		spaceOverview?.spaceData.spaceTitle ??
+		env.spaceName ??
+		"Untitled space";
+	const spaceDescription =
+		spaceOverview?.spaceData.spaceDescription ?? env.spaceDescription;
+	const spaceCustomInstructions =
+		spaceOverview?.spaceData.spaceCustomInstructions ??
+		env.spaceCustomInstructions;
+	const showSpaceHistory =
+		showSpaceIntro &&
+		Boolean(env.spaceId) &&
+		(spaceOverview?.hasChats ?? false);
 
 	// Handle optimistic chat invalidation
 	useEffect(() => {
@@ -219,7 +268,9 @@ export function Chat({
 		<div
 			className={cn(
 				"flex h-full w-full flex-col",
-				messages.length > 0 ? "items-center justify-between" : "container my-10 items-center justify-center"
+				messages.length > 0
+					? "items-center justify-between"
+					: "container my-10 items-center justify-center"
 			)}
 			suppressHydrationWarning
 		>

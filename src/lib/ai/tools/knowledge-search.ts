@@ -16,11 +16,15 @@ export const knowledgeSearchTool = ({
 	env: { inSpace: boolean; spaceId?: string };
 }) =>
 	tool({
-		description: "Performs an Internal Semantic Search on User Uploaded Documents.",
+		description:
+			"Performs an Internal Semantic Search on User Uploaded Documents.",
 		inputSchema: z.object({
 			knowledge_search_keywords: z.array(z.string()).max(5),
 		}),
-		execute: async ({ knowledge_search_keywords: keywords }, { toolCallId }) => {
+		execute: async (
+			{ knowledge_search_keywords: keywords },
+			{ toolCallId }
+		) => {
 			dataStream.write({
 				type: "tool-input-available",
 				toolCallId,
@@ -33,33 +37,40 @@ export const knowledgeSearchTool = ({
 				values: keywords,
 			});
 
-			const Promises = embeddings.map(async (embedding, index: number) => {
-				const similarity = sql<number>`1 - (${cosineDistance(knowledgeEmbeddings.embedding, embedding)})`;
+			const Promises = embeddings.map(
+				async (embedding, index: number) => {
+					const similarity = sql<number>`1 - (${cosineDistance(knowledgeEmbeddings.embedding, embedding)})`;
 
-				const contexts = await db
-					.select({
-						content: knowledgeEmbeddings.content,
-						knowledgeName: knowledge.knowledgeName,
-						knowledgeType: knowledge.knowledgeType,
-						similarity,
-					})
-					.from(knowledgeEmbeddings)
-					.innerJoin(knowledge, eq(knowledgeEmbeddings.knowledgeId, knowledge.id))
-					.where(
-						and(
-							eq(knowledge.userId, session.userId),
-							env.inSpace ? eq(knowledge.spaceId, env.spaceId || "") : sql`true`,
-							gt(similarity, 0.5)
+					const contexts = await db
+						.select({
+							content: knowledgeEmbeddings.content,
+							knowledgeName: knowledge.knowledgeName,
+							knowledgeType: knowledge.knowledgeType,
+							similarity,
+						})
+						.from(knowledgeEmbeddings)
+						.innerJoin(
+							knowledge,
+							eq(knowledgeEmbeddings.knowledgeId, knowledge.id)
 						)
-					)
-					.orderBy(desc(similarity))
-					.limit(10);
+						.where(
+							and(
+								eq(knowledge.userId, session.userId),
+								env.inSpace
+									? eq(knowledge.spaceId, env.spaceId || "")
+									: sql`true`,
+								gt(similarity, 0.5)
+							)
+						)
+						.orderBy(desc(similarity))
+						.limit(10);
 
-				return {
-					keyword: keywords[index],
-					contexts,
-				};
-			});
+					return {
+						keyword: keywords[index],
+						contexts,
+					};
+				}
+			);
 
 			const results = await Promise.all(Promises);
 

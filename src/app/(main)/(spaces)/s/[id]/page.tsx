@@ -9,7 +9,11 @@ import { getSession, getUser } from "@/lib/auth/utils";
 import { db } from "@/lib/db";
 import { spaces } from "@/lib/db/schema/app";
 
-export default async function SpacePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function SpacePage({
+	params,
+}: {
+	params: Promise<{ id: string }>;
+}) {
 	const session = await getSession();
 	const user = await getUser();
 
@@ -17,7 +21,8 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
 	const chatId = crypto.randomUUID();
 
 	const cookieStore = await cookies();
-	const selectedModel = cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
+	const selectedModel =
+		cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
 
 	const toolsStateString = cookieStore.get("X-Tools-State")?.value;
 	let initialTools = getDefaultToolsState();
@@ -49,7 +54,8 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
 					spaceId: spaceData.id,
 					spaceName: spaceData.spaceTitle,
 					spaceDescription: spaceData.spaceDescription ?? undefined,
-					spaceCustomInstructions: spaceData.spaceCustomInstructions ?? undefined,
+					spaceCustomInstructions:
+						spaceData.spaceCustomInstructions ?? undefined,
 				}}
 				id={chatId}
 				initialAgent={initialAgent}

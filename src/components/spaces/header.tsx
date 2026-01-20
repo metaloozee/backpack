@@ -37,12 +37,15 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
 					userId,
 					spaceTitle: value.spaceTitle,
 					spaceDescription: value.spaceDescription || undefined,
-					spaceCustomInstructions: value.customInstructions || undefined,
+					spaceCustomInstructions:
+						value.customInstructions || undefined,
 				});
 				setIsOpen(false);
 				form.reset();
 				router.push(`/s/${res.id}`);
-				await queryClient.invalidateQueries(trpc.space.getSpaces.pathFilter());
+				await queryClient.invalidateQueries(
+					trpc.space.getSpaces.pathFilter()
+				);
 				toast.success("Successfully Created a New Space.");
 			} catch (err) {
 				toast.error("Uh oh!", { description: (err as Error).message });
@@ -66,13 +69,19 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
 			<h1 className="text-3xl">My Spaces</h1>
 			<Dialog onOpenChange={setIsOpen} open={isOpen}>
 				<DialogTrigger asChild>
-					<Button className="text-xs" size={"sm"} variant={"secondary"}>
+					<Button
+						className="text-xs"
+						size={"sm"}
+						variant={"secondary"}
+					>
 						<SquarePlusIcon /> New Space
 					</Button>
 				</DialogTrigger>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle className="text-xl">Create a New Space</DialogTitle>
+						<DialogTitle className="text-xl">
+							Create a New Space
+						</DialogTitle>
 					</DialogHeader>
 					<Separator />
 					<AnimatePresence>
@@ -91,7 +100,9 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
 								name="spaceTitle"
 								validators={{
 									onChange: ({ value }) =>
-										!value || value.trim().length === 0 ? "Space title is required" : "",
+										!value || value.trim().length === 0
+											? "Space title is required"
+											: "",
 								}}
 							>
 								{(field) => (
@@ -101,18 +112,27 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
 										initial={{ opacity: 0, y: 20 }}
 										transition={{ delay: 0.1 }}
 									>
-										<Label className="text-muted-foreground text-xs">Title</Label>
+										<Label className="text-muted-foreground text-xs">
+											Title
+										</Label>
 										<Input
 											disabled={mutation.isPending}
 											id={field.name}
 											name={field.name}
 											onBlur={field.handleBlur}
-											onChange={(e) => field.handleChange(e.target.value)}
+											onChange={(e) =>
+												field.handleChange(
+													e.target.value
+												)
+											}
 											placeholder="Enter space name"
 											value={field.state.value}
 										/>
-										{field.state.meta.isTouched && field.state.meta.errors.length > 0 ? (
-											<p className="text-red-500 text-sm">{field.state.meta.errors[0]}</p>
+										{field.state.meta.isTouched &&
+										field.state.meta.errors.length > 0 ? (
+											<p className="text-red-500 text-sm">
+												{field.state.meta.errors[0]}
+											</p>
 										) : null}
 									</motion.div>
 								)}
@@ -126,13 +146,19 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
 										initial={{ opacity: 0, y: 20 }}
 										transition={{ delay: 0.1 }}
 									>
-										<Label className="text-muted-foreground text-xs">Description (optional)</Label>
+										<Label className="text-muted-foreground text-xs">
+											Description (optional)
+										</Label>
 										<Textarea
 											disabled={mutation.isPending}
 											id={field.name}
 											name={field.name}
 											onBlur={field.handleBlur}
-											onChange={(e) => field.handleChange(e.target.value)}
+											onChange={(e) =>
+												field.handleChange(
+													e.target.value
+												)
+											}
 											placeholder="Political and Economical state of the World..."
 											value={field.state.value}
 										/>
@@ -156,7 +182,11 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
 											id={field.name}
 											name={field.name}
 											onBlur={field.handleBlur}
-											onChange={(e) => field.handleChange(e.target.value)}
+											onChange={(e) =>
+												field.handleChange(
+													e.target.value
+												)
+											}
 											placeholder="Explain like you're tutoring an eight year old..."
 											value={field.state.value}
 										/>
@@ -164,7 +194,12 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
 								)}
 							</form.Field>
 
-							<form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+							<form.Subscribe
+								selector={(state) => [
+									state.canSubmit,
+									state.isSubmitting,
+								]}
+							>
 								{([canSubmit, isSubmitting]) => (
 									<motion.div
 										animate={{ opacity: 1, y: 0 }}
@@ -174,10 +209,19 @@ export const Header: React.FC<{ userId: string }> = ({ userId }) => {
 									>
 										<Button
 											className="text-xs"
-											disabled={!canSubmit || isSubmitting || mutation.isPending}
+											disabled={
+												!canSubmit ||
+												isSubmitting ||
+												mutation.isPending
+											}
 											type="submit"
 										>
-											{isSubmitting || mutation.isPending ? <Loader /> : "Create Space"}
+											{isSubmitting ||
+											mutation.isPending ? (
+												<Loader />
+											) : (
+												"Create Space"
+											)}
 										</Button>
 									</motion.div>
 								)}

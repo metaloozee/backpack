@@ -31,34 +31,57 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/ui/loader";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import type { Memory } from "@/lib/db/schema/app";
 import { useTRPC } from "@/lib/trpc/trpc";
 
 export function DisplayMemories() {
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-	const [globalFilter, setGlobalFilter] = useQueryState("filter", parseAsString.withDefault(""));
-	const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
+	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+		{}
+	);
+	const [globalFilter, setGlobalFilter] = useQueryState(
+		"filter",
+		parseAsString.withDefault("")
+	);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(
+		null
+	);
 	const [copiedId, setCopiedId] = useState<string | null>(null);
 
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 
-	const { data: memories, isLoading } = useQuery(trpc.memories.getMemories.queryOptions());
+	const { data: memories, isLoading } = useQuery(
+		trpc.memories.getMemories.queryOptions()
+	);
 	const deleteMemoryMutation = useMutation(
 		trpc.memories.deleteMemory.mutationOptions({
 			onSuccess: (_, variables) => {
 				queryClient.setQueryData(
 					trpc.memories.getMemories.queryKey(),
-					(oldData: Memory[] | undefined) => oldData?.filter((memory) => memory.id !== variables.id) ?? []
+					(oldData: Memory[] | undefined) =>
+						oldData?.filter(
+							(memory) => memory.id !== variables.id
+						) ?? []
 				);
 				toast.success("Memory deleted successfully");
-				setDeleteDialogOpen((current) => (current === variables.id ? null : current));
+				setDeleteDialogOpen((current) =>
+					current === variables.id ? null : current
+				);
 			},
 			onError: (error) => {
-				toast.error("Failed to delete memory", { description: error.message });
+				toast.error("Failed to delete memory", {
+					description: error.message,
+				});
 				setDeleteDialogOpen(null);
 			},
 		})
@@ -71,7 +94,9 @@ export function DisplayMemories() {
 				return <p className="text-xs">CONTENT</p>;
 			},
 			cell: ({ row }) => (
-				<div className="max-w-[400px] whitespace-pre-line break-words">{row.getValue("content")}</div>
+				<div className="max-w-[400px] whitespace-pre-line break-words">
+					{row.getValue("content")}
+				</div>
 			),
 			enableGlobalFilter: true,
 		},
@@ -81,7 +106,11 @@ export function DisplayMemories() {
 				return <p className="text-xs">CREATED AT</p>;
 			},
 			cell: ({ row }) => (
-				<div className="capitalize">{row.original.createdAt ? format(row.original.createdAt) : "Never"}</div>
+				<div className="capitalize">
+					{row.original.createdAt
+						? format(row.original.createdAt)
+						: "Never"}
+				</div>
 			),
 		},
 		{
@@ -107,25 +136,61 @@ export function DisplayMemories() {
 
 				return (
 					<div className="flex w-full justify-end space-x-2">
-						<Button className="h-8" onClick={handleCopy} size="sm" variant="outline">
+						<Button
+							className="h-8"
+							onClick={handleCopy}
+							size="sm"
+							variant="outline"
+						>
 							<AnimatePresence initial={false} mode="wait">
 								{copiedId === memory.id ? (
 									<motion.div
-										animate={{ scale: 1, opacity: 1, rotate: 0 }}
-										exit={{ scale: 0, opacity: 0, rotate: 180 }}
-										initial={{ scale: 0, opacity: 0, rotate: -180 }}
+										animate={{
+											scale: 1,
+											opacity: 1,
+											rotate: 0,
+										}}
+										exit={{
+											scale: 0,
+											opacity: 0,
+											rotate: 180,
+										}}
+										initial={{
+											scale: 0,
+											opacity: 0,
+											rotate: -180,
+										}}
 										key="check"
-										transition={{ type: "spring", stiffness: 500, damping: 30 }}
+										transition={{
+											type: "spring",
+											stiffness: 500,
+											damping: 30,
+										}}
 									>
 										<CheckIcon className="size-3" />
 									</motion.div>
 								) : (
 									<motion.div
-										animate={{ scale: 1, opacity: 1, rotate: 0 }}
-										exit={{ scale: 0, opacity: 0, rotate: 180 }}
-										initial={{ scale: 0, opacity: 0, rotate: -180 }}
+										animate={{
+											scale: 1,
+											opacity: 1,
+											rotate: 0,
+										}}
+										exit={{
+											scale: 0,
+											opacity: 0,
+											rotate: 180,
+										}}
+										initial={{
+											scale: 0,
+											opacity: 0,
+											rotate: -180,
+										}}
 										key="copy"
-										transition={{ type: "tween", duration: 0.2 }}
+										transition={{
+											type: "tween",
+											duration: 0.2,
+										}}
 									>
 										<CopyIcon className="size-3" />
 									</motion.div>
@@ -134,11 +199,17 @@ export function DisplayMemories() {
 						</Button>
 
 						<Dialog
-							onOpenChange={(open) => setDeleteDialogOpen(open ? memory.id : null)}
+							onOpenChange={(open) =>
+								setDeleteDialogOpen(open ? memory.id : null)
+							}
 							open={deleteDialogOpen === memory.id}
 						>
 							<DialogTrigger asChild>
-								<Button className="h-8" size="sm" variant="destructive">
+								<Button
+									className="h-8"
+									size="sm"
+									variant="destructive"
+								>
 									<TrashIcon className="size-3" />
 								</Button>
 							</DialogTrigger>
@@ -146,19 +217,29 @@ export function DisplayMemories() {
 								<DialogHeader>
 									<DialogTitle>Delete Memory</DialogTitle>
 									<DialogDescription>
-										Are you sure you want to delete this memory? This action cannot be undone.
+										Are you sure you want to delete this
+										memory? This action cannot be undone.
 									</DialogDescription>
 								</DialogHeader>
 								<DialogFooter>
-									<Button onClick={() => setDeleteDialogOpen(null)} variant="outline">
+									<Button
+										onClick={() =>
+											setDeleteDialogOpen(null)
+										}
+										variant="outline"
+									>
 										Cancel
 									</Button>
 									<Button
-										disabled={deleteMemoryMutation.isPending}
+										disabled={
+											deleteMemoryMutation.isPending
+										}
 										onClick={handleDelete}
 										variant="destructive"
 									>
-										{deleteMemoryMutation.isPending ? "Deleting..." : "Delete"}
+										{deleteMemoryMutation.isPending
+											? "Deleting..."
+											: "Delete"}
 									</Button>
 								</DialogFooter>
 							</DialogContent>
@@ -213,7 +294,11 @@ export function DisplayMemories() {
 										<TableHead key={header.id}>
 											{header.isPlaceholder
 												? null
-												: flexRender(header.column.columnDef.header, header.getContext())}
+												: flexRender(
+														header.column.columnDef
+															.header,
+														header.getContext()
+													)}
 										</TableHead>
 									);
 								})}
@@ -223,17 +308,28 @@ export function DisplayMemories() {
 					<TableBody>
 						{table.getRowModel().rows?.length ? (
 							table.getRowModel().rows.map((row) => (
-								<TableRow data-state={row.getIsSelected() && "selected"} key={row.id}>
+								<TableRow
+									data-state={
+										row.getIsSelected() && "selected"
+									}
+									key={row.id}
+								>
 									{row.getVisibleCells().map((cell) => (
 										<TableCell key={cell.id}>
-											{flexRender(cell.column.columnDef.cell, cell.getContext())}
+											{flexRender(
+												cell.column.columnDef.cell,
+												cell.getContext()
+											)}
 										</TableCell>
 									))}
 								</TableRow>
 							))
 						) : (
 							<TableRow>
-								<TableCell className="h-24 text-center" colSpan={columns.length}>
+								<TableCell
+									className="h-24 text-center"
+									colSpan={columns.length}
+								>
 									No memories found.
 								</TableCell>
 							</TableRow>

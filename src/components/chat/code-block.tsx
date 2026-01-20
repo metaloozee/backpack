@@ -4,14 +4,17 @@ import { CheckIcon, CopyIcon, DownloadIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 import { createContext, useContext, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
+import {
+	oneDark,
+	oneLight,
+} from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type CodeBlockContextType = {
+interface CodeBlockContextType {
 	code: string;
 	language: string;
-};
+}
 
 const CodeBlockContext = createContext<CodeBlockContextType>({
 	code: "",
@@ -35,12 +38,19 @@ export const CodeBlock = ({
 }: CodeBlockProps) => (
 	<CodeBlockContext.Provider value={{ code, language }}>
 		<div
-			className={cn("relative w-full overflow-hidden rounded-md border bg-background text-foreground", className)}
+			className={cn(
+				"relative w-full overflow-hidden rounded-md border bg-background text-foreground",
+				className
+			)}
 			{...props}
 		>
 			<div className="flex items-center justify-between border-b bg-muted/50 px-4 py-2">
-				<span className="font-medium text-muted-foreground text-xs uppercase tracking-wider">{language}</span>
-				{children && <div className="flex items-center gap-1">{children}</div>}
+				<span className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+					{language}
+				</span>
+				{children && (
+					<div className="flex items-center gap-1">{children}</div>
+				)}
 			</div>
 
 			<div className="relative">

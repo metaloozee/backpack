@@ -32,7 +32,9 @@ export default async function AccountPage() {
 								{user.name}
 							</p>
 							<p className="text-xs">{user.email}</p>
-							<p className="text-muted-foreground text-xs">joined {format(user.createdAt)}</p>
+							<p className="text-muted-foreground text-xs">
+								joined {format(user.createdAt)}
+							</p>
 						</div>
 					</div>
 				</div>
@@ -47,12 +49,22 @@ export default async function AccountPage() {
 
 			<div className="flex w-full flex-row items-center justify-between rounded-lg border border-red-900 bg-red-950/50">
 				<div className="flex w-full flex-col gap-2 p-4">
-					<h3 className="font-semibold text-base text-red-200">Danger Zone</h3>
+					<h3 className="font-semibold text-base text-red-200">
+						Danger Zone
+					</h3>
 					<p className="text-red-300 text-xs">
-						Deleting your account will permanently remove all your data, memories, and files. <br />
-						<span className="font-semibold">This action cannot be undone.</span>
+						Deleting your account will permanently remove all your
+						data, memories, and files. <br />
+						<span className="font-semibold">
+							This action cannot be undone.
+						</span>
 					</p>
-					<Button className="mt-2 w-fit" disabled size="sm" variant="destructive">
+					<Button
+						className="mt-2 w-fit"
+						disabled
+						size="sm"
+						variant="destructive"
+					>
 						Delete My Account
 					</Button>
 				</div>

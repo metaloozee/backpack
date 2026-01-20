@@ -1,33 +1,41 @@
 /** biome-ignore-all lint/performance/noImgElement: we need to use the img element to display the image */
 /** biome-ignore-all lint/a11y/noNoninteractiveElementInteractions: we need to use the span element to display the text */
-/** biome-ignore-all lint/nursery/useImageSize: we need to use the img element to display the image */
 "use client";
 
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { GlobeIcon, SearchIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Disclosure, DisclosureContent, DisclosureTrigger } from "@/components/ui/disclosure";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+	Disclosure,
+	DisclosureContent,
+	DisclosureTrigger,
+} from "@/components/ui/disclosure";
 import { Loader } from "@/components/ui/loader";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
-type SearchResult = {
+interface SearchResult {
 	title: string;
 	url: string;
 	content: string;
-};
+}
 
-type SearchGroup = {
+interface SearchGroup {
 	query: string;
 	results: SearchResult[];
 	images?: {
 		url: string;
 		description: string;
 	}[];
-};
+}
 
-type WebSearchToolProps = {
+interface WebSearchToolProps {
 	toolCallId: string;
 	input?: {
 		web_search_queries?: string[];
@@ -35,9 +43,13 @@ type WebSearchToolProps = {
 	output?: {
 		searches?: SearchGroup[];
 	};
-};
+}
 
-export function WebSearchTool({ toolCallId, input, output }: WebSearchToolProps) {
+export function WebSearchTool({
+	toolCallId,
+	input,
+	output,
+}: WebSearchToolProps) {
 	const flattenedImages: {
 		src: string;
 		title: string;
@@ -52,7 +64,10 @@ export function WebSearchTool({ toolCallId, input, output }: WebSearchToolProps)
 						.map((img) => {
 							const src = img.url;
 							const url = img.url;
-							const domain = new URL(img.url).hostname.replace("www.", "");
+							const domain = new URL(img.url).hostname.replace(
+								"www.",
+								""
+							);
 							const title = img.description || domain;
 							return [src, { src, title, url, domain }];
 						})
@@ -93,7 +108,9 @@ export function WebSearchTool({ toolCallId, input, output }: WebSearchToolProps)
 												unoptimized
 												width={16}
 											/>
-											<span className="max-w-[9rem] truncate">{img.domain}</span>
+											<span className="max-w-[9rem] truncate">
+												{img.domain}
+											</span>
 										</div>
 										<div className="absolute right-2 bottom-2 left-2 line-clamp-2 text-[11px] text-white/95 leading-tight">
 											{img.title}
@@ -107,7 +124,10 @@ export function WebSearchTool({ toolCallId, input, output }: WebSearchToolProps)
 				)}
 
 				<Accordion className="w-full">
-					<AccordionItem className="rounded-md border bg-neutral-900 px-4" value={toolCallId}>
+					<AccordionItem
+						className="rounded-md border bg-neutral-900 px-4"
+						value={toolCallId}
+					>
 						<AccordionTrigger className="flex h-10 w-full items-center justify-between gap-2 text-xs">
 							<span className="flex items-center gap-2 truncate">
 								<GlobeIcon className="size-3" />
@@ -116,54 +136,72 @@ export function WebSearchTool({ toolCallId, input, output }: WebSearchToolProps)
 							<ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
 						</AccordionTrigger>
 						<AccordionContent className="space-y-1">
-							{output?.searches?.map((searchGroup: SearchGroup, index: number) => (
-								<Disclosure className="flex w-full flex-col gap-2" key={`${toolCallId}-${index}`}>
-									<DisclosureTrigger className="w-full">
-										<div className="flex w-full flex-row justify-between">
-											<span className="flex items-center gap-2 truncate text-neutral-400 text-xs">
-												<SearchIcon className="size-3" />
-												{searchGroup.query}
-											</span>
-										</div>
-									</DisclosureTrigger>
-
-									<DisclosureContent>
-										<ScrollArea className="px-3 pb-3">
-											<div className="flex w-max flex-row gap-2">
-												{searchGroup.results.map(
-													(searchResult: SearchResult, resIdx: number) => (
-														<div
-															className="w-64 shrink-0 rounded-lg bg-neutral-950 p-3 shadow-sm transition-shadow duration-200 hover:shadow-md"
-															key={`${searchGroup.query}-${resIdx}`}
-														>
-															<Link
-																className="line-clamp-2 font-medium text-primary text-sm hover:underline"
-																href={searchResult.url}
-																rel="noopener noreferrer"
-																target="_blank"
-															>
-																<Image
-																	alt="favicon"
-																	className="mr-1.5 inline-block size-6 rounded border-3 align-middle"
-																	height={16}
-																	src={`https://www.google.com/s2/favicons?domain=${new URL(searchResult.url).hostname}&sz=16`}
-																	unoptimized
-																	width={16}
-																/>
-																{searchResult.title}
-															</Link>
-															<p className="mt-2 line-clamp-4 text-muted-foreground text-xs">
-																{searchResult.content}
-															</p>
-														</div>
-													)
-												)}
+							{output?.searches?.map(
+								(searchGroup: SearchGroup) => (
+									<Disclosure
+										className="flex w-full flex-col gap-2"
+										key={`${toolCallId}-${searchGroup.query}`}
+									>
+										<DisclosureTrigger className="w-full">
+											<div className="flex w-full flex-row justify-between">
+												<span className="flex items-center gap-2 truncate text-neutral-400 text-xs">
+													<SearchIcon className="size-3" />
+													{searchGroup.query}
+												</span>
 											</div>
-											<ScrollBar orientation="horizontal" />
-										</ScrollArea>
-									</DisclosureContent>
-								</Disclosure>
-							))}
+										</DisclosureTrigger>
+
+										<DisclosureContent>
+											<ScrollArea className="px-3 pb-3">
+												<div className="flex w-max flex-row gap-2">
+													{searchGroup.results.map(
+														(
+															searchResult: SearchResult,
+															resIdx: number
+														) => (
+															<div
+																className="w-64 shrink-0 rounded-lg bg-neutral-950 p-3 shadow-sm transition-shadow duration-200 hover:shadow-md"
+																key={`${searchGroup.query}-${resIdx}`}
+															>
+																<Link
+																	className="line-clamp-2 font-medium text-primary text-sm hover:underline"
+																	href={
+																		searchResult.url
+																	}
+																	rel="noopener noreferrer"
+																	target="_blank"
+																>
+																	<Image
+																		alt="favicon"
+																		className="mr-1.5 inline-block size-6 rounded border-3 align-middle"
+																		height={
+																			16
+																		}
+																		src={`https://www.google.com/s2/favicons?domain=${new URL(searchResult.url).hostname}&sz=16`}
+																		unoptimized
+																		width={
+																			16
+																		}
+																	/>
+																	{
+																		searchResult.title
+																	}
+																</Link>
+																<p className="mt-2 line-clamp-4 text-muted-foreground text-xs">
+																	{
+																		searchResult.content
+																	}
+																</p>
+															</div>
+														)
+													)}
+												</div>
+												<ScrollBar orientation="horizontal" />
+											</ScrollArea>
+										</DisclosureContent>
+									</Disclosure>
+								)
+							)}
 						</AccordionContent>
 					</AccordionItem>
 				</Accordion>
@@ -173,7 +211,10 @@ export function WebSearchTool({ toolCallId, input, output }: WebSearchToolProps)
 
 	return (
 		<Accordion className="w-full">
-			<AccordionItem className="rounded-md border bg-neutral-900 px-4" value={toolCallId}>
+			<AccordionItem
+				className="rounded-md border bg-neutral-900 px-4"
+				value={toolCallId}
+			>
 				<AccordionTrigger className="flex h-10 w-full items-center justify-between gap-2 text-xs">
 					<span className="flex items-center gap-2 truncate">
 						<Loader size="sm" />
@@ -182,8 +223,11 @@ export function WebSearchTool({ toolCallId, input, output }: WebSearchToolProps)
 					<ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
 				</AccordionTrigger>
 				<AccordionContent className="space-y-1">
-					{input?.web_search_queries?.map((query: string, index: number) => (
-						<Disclosure className="flex w-full flex-col gap-2" key={`${toolCallId}-${index}`}>
+					{input?.web_search_queries?.map((query: string) => (
+						<Disclosure
+							className="flex w-full flex-col gap-2"
+							key={`${toolCallId}-${query}`}
+						>
 							<DisclosureTrigger className="w-full">
 								<div className="flex w-full flex-row justify-between">
 									<span className="flex items-center gap-2 truncate text-neutral-400 text-xs">

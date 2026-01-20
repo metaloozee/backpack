@@ -2,7 +2,14 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { createTRPCClient, httpBatchLink, httpLink, isNonJsonSerializable, loggerLink, splitLink } from "@trpc/client";
+import {
+	createTRPCClient,
+	httpBatchLink,
+	httpLink,
+	isNonJsonSerializable,
+	loggerLink,
+	splitLink,
+} from "@trpc/client";
 import type React from "react";
 import { useState } from "react";
 import SuperJSON from "superjson";
@@ -28,7 +35,11 @@ function getQueryClient() {
 	return browserQueryClient;
 }
 
-export default function TrpcProvider({ children }: { children: React.ReactNode }) {
+export default function TrpcProvider({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
 	const queryClient = getQueryClient();
 	const [trpcClient] = useState(() =>
 		createTRPCClient<AppRouter>({

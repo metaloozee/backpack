@@ -7,17 +7,25 @@ import { getDefaultToolsState } from "@/lib/ai/tools";
 import { convertToUIMessages } from "@/lib/ai/utils";
 import { getSession, getUser } from "@/lib/auth/utils";
 import { db } from "@/lib/db";
-import { chat as DBChat, message as DBMessage, spaces as DBSpace } from "@/lib/db/schema/app";
+import {
+	chat as DBChat,
+	message as DBMessage,
+	spaces as DBSpace,
+} from "@/lib/db/schema/app";
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: false positive
-export default async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ChatPage({
+	params,
+}: {
+	params: Promise<{ id: string }>;
+}) {
 	const session = await getSession();
 	const user = await getUser();
 
 	const { id: chatId } = await params;
 
 	const cookieStore = await cookies();
-	const selectedModel = cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
+	const selectedModel =
+		cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
 
 	const toolsStateString = cookieStore.get("X-Tools-State")?.value;
 	let initialTools = getDefaultToolsState();
@@ -44,7 +52,12 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
 		? await db
 				.select()
 				.from(DBSpace)
-				.where(and(eq(DBSpace.id, chatData.spaceId ?? ""), eq(DBSpace.userId, user?.id ?? "")))
+				.where(
+					and(
+						eq(DBSpace.id, chatData.spaceId ?? ""),
+						eq(DBSpace.userId, user?.id ?? "")
+					)
+				)
 				.limit(1)
 		: [undefined];
 
@@ -61,8 +74,12 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
 				inSpace: !!spaceData,
 				spaceId: spaceData ? spaceData.id : undefined,
 				spaceName: spaceData ? spaceData.spaceTitle : undefined,
-				spaceDescription: spaceData ? (spaceData.spaceDescription ?? undefined) : undefined,
-				spaceCustomInstructions: spaceData ? (spaceData.spaceCustomInstructions ?? undefined) : undefined,
+				spaceDescription: spaceData
+					? (spaceData.spaceDescription ?? undefined)
+					: undefined,
+				spaceCustomInstructions: spaceData
+					? (spaceData.spaceCustomInstructions ?? undefined)
+					: undefined,
 			}}
 			id={chatId}
 			initialAgent={initialAgent}

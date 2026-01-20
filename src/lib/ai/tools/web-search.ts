@@ -11,7 +11,9 @@ export const extractDomain = (url: string): string => {
 	return url.match(urlPattern)?.[1] || url;
 };
 
-export const deduplicateByDomainAndUrl = <T extends { url: string }>(items: T[]): T[] => {
+export const deduplicateByDomainAndUrl = <T extends { url: string }>(
+	items: T[]
+): T[] => {
 	const seenDomains = new Set<string>();
 	const seenUrls = new Set<string>();
 
@@ -29,7 +31,11 @@ export const deduplicateByDomainAndUrl = <T extends { url: string }>(items: T[])
 	});
 };
 
-export const webSearchTool = ({ dataStream }: { dataStream: UIMessageStreamWriter }) =>
+export const webSearchTool = ({
+	dataStream,
+}: {
+	dataStream: UIMessageStreamWriter;
+}) =>
 	tool({
 		description: "Performs a search over the internet for current data.",
 		inputSchema: z.object({
@@ -43,7 +49,7 @@ export const webSearchTool = ({ dataStream }: { dataStream: UIMessageStreamWrite
 				input: JSON.stringify({ web_search_queries: queries }),
 			});
 
-			type SearchGroup = {
+			interface SearchGroup {
 				query: string;
 				results: {
 					url: string;
@@ -56,31 +62,35 @@ export const webSearchTool = ({ dataStream }: { dataStream: UIMessageStreamWrite
 					url: string;
 					description: string;
 				}[];
-			};
+			}
 
-			const searchPromises: Promise<SearchGroup>[] = queries.map(async (query: string) => {
-				const res = await tvly.search(query, {
-					maxResults: 5,
-					searchDepth: "advanced",
-					includeAnswer: true,
-					includeImages: true,
-				});
+			const searchPromises: Promise<SearchGroup>[] = queries.map(
+				async (query: string) => {
+					const res = await tvly.search(query, {
+						maxResults: 5,
+						searchDepth: "advanced",
+						includeAnswer: true,
+						includeImages: true,
+					});
 
-				return {
-					query,
-					results: deduplicateByDomainAndUrl(res.results).map((obj) => ({
-						url: obj.url,
-						title: obj.title,
-						content: obj.content,
-						raw_content: obj.rawContent,
-						published_date: obj.publishedDate,
-					})),
-					images: res.images.map((img) => ({
-						url: img.url || "",
-						description: img.description || "",
-					})),
-				};
-			});
+					return {
+						query,
+						results: deduplicateByDomainAndUrl(res.results).map(
+							(obj) => ({
+								url: obj.url,
+								title: obj.title,
+								content: obj.content,
+								raw_content: obj.rawContent,
+								published_date: obj.publishedDate,
+							})
+						),
+						images: res.images.map((img) => ({
+							url: img.url || "",
+							description: img.description || "",
+						})),
+					};
+				}
+			);
 
 			const searchResults = await Promise.all(searchPromises);
 

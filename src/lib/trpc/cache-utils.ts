@@ -1,10 +1,10 @@
 import type { InfiniteData } from "@tanstack/react-query";
 import type { Chat as ChatType } from "@/lib/db/schema/app";
 
-export type ChatListPage = {
+export interface ChatListPage {
 	chats: ChatType[];
 	nextCursor: Date | undefined;
-};
+}
 
 export type ChatInfiniteData = InfiniteData<ChatListPage, Date | null>;
 
@@ -53,13 +53,19 @@ export function prependChatToInfiniteData(
 			return page;
 		}
 
-		const existingIndex = page.chats.findIndex((existingChat) => existingChat.id === chat.id);
+		const existingIndex = page.chats.findIndex(
+			(existingChat) => existingChat.id === chat.id
+		);
 		if (existingIndex === 0) {
 			return page;
 		}
 
 		const remainingChats =
-			existingIndex === -1 ? page.chats : page.chats.filter((existingChat) => existingChat.id !== chat.id);
+			existingIndex === -1
+				? page.chats
+				: page.chats.filter(
+						(existingChat) => existingChat.id !== chat.id
+					);
 		const chats = [chat, ...remainingChats];
 		shouldUpdate = true;
 

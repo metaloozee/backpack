@@ -6,7 +6,13 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { memories as dbMemories } from "@/lib/db/schema/app";
 
-export const saveToMemoriesTool = ({ session, dataStream }: { session: Session; dataStream: UIMessageStreamWriter }) =>
+export const saveToMemoriesTool = ({
+	session,
+	dataStream,
+}: {
+	session: Session;
+	dataStream: UIMessageStreamWriter;
+}) =>
 	tool({
 		description: "Save the information about the user to their memories.",
 		inputSchema: z.object({

@@ -3,29 +3,44 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
 import { CornerDownLeftIcon, XIcon } from "lucide-react";
-import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from "react";
+import {
+	type Dispatch,
+	type SetStateAction,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { ChatMessage } from "@/lib/ai/types";
 import { useTRPC } from "@/lib/trpc/trpc";
 
-export type MessageEditorProps = {
+export interface MessageEditorProps {
 	message: ChatMessage;
 	setMode: Dispatch<SetStateAction<"edit" | "view">>;
 	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
 	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
-};
+}
 
-export function MessageEditor({ message, setMode, setMessages, regenerate }: MessageEditorProps) {
+export function MessageEditor({
+	message,
+	setMode,
+	setMessages,
+	regenerate,
+}: MessageEditorProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [draftContent, setDraftContent] = useState(
-		message.parts.map((part) => (part.type === "text" ? part.text : "")).join("")
+		message.parts
+			.map((part) => (part.type === "text" ? part.text : ""))
+			.join("")
 	);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	const trpc = useTRPC();
-	const mutation = useMutation(trpc.chat.deleteTrailingMessages.mutationOptions());
+	const mutation = useMutation(
+		trpc.chat.deleteTrailingMessages.mutationOptions()
+	);
 
 	useEffect(() => {
 		if (textareaRef.current) {
@@ -83,7 +98,11 @@ export function MessageEditor({ message, setMode, setMessages, regenerate }: Mes
 	};
 
 	const handleCancel = () => {
-		setDraftContent(message.parts.map((part) => (part.type === "text" ? part.text : "")).join(""));
+		setDraftContent(
+			message.parts
+				.map((part) => (part.type === "text" ? part.text : ""))
+				.join("")
+		);
 		setMode("view");
 	};
 
@@ -124,7 +143,11 @@ export function MessageEditor({ message, setMode, setMessages, regenerate }: Mes
 							isSubmitting ||
 							!draftContent.trim() ||
 							draftContent.trim() ===
-								message.parts.map((part) => (part.type === "text" ? part.text : "")).join("")
+								message.parts
+									.map((part) =>
+										part.type === "text" ? part.text : ""
+									)
+									.join("")
 						}
 						onClick={handleSave}
 						size="sm"

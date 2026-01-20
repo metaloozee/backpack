@@ -5,12 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
 import { authClient } from "@/lib/auth/client";
 
-type SignInButtonProps = Omit<ComponentPropsWithoutRef<typeof Button>, "onClick"> & {
+type SignInButtonProps = Omit<
+	ComponentPropsWithoutRef<typeof Button>,
+	"onClick"
+> & {
 	provider: "google" | "github";
 	children: ReactNode;
 };
 
-export function SignInButton({ provider, children, ...props }: SignInButtonProps) {
+export function SignInButton({
+	provider,
+	children,
+	...props
+}: SignInButtonProps) {
 	const [isLoading, setIsLoading] = useState(false);
 
 	const handleSignIn = async () => {
@@ -32,7 +39,9 @@ export function SignInButton({ provider, children, ...props }: SignInButtonProps
 					<Loader size="md" />
 				</div>
 			)}
-			<div className={`flex items-center gap-2 transition-opacity ${isLoading ? "opacity-0" : "opacity-100"}`}>
+			<div
+				className={`flex items-center gap-2 transition-opacity ${isLoading ? "opacity-0" : "opacity-100"}`}
+			>
 				{children}
 			</div>
 		</Button>

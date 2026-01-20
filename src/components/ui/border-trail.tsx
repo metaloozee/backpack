@@ -2,15 +2,21 @@
 import { motion, type Transition } from "motion/react";
 import { cn } from "@/lib/utils";
 
-export type BorderTrailProps = {
+export interface BorderTrailProps {
 	className?: string;
 	size?: number;
 	transition?: Transition;
 	onAnimationComplete?: () => void;
 	style?: React.CSSProperties;
-};
+}
 
-export function BorderTrail({ className, size = 60, transition, onAnimationComplete, style }: BorderTrailProps) {
+export function BorderTrail({
+	className,
+	size = 60,
+	transition,
+	onAnimationComplete,
+	style,
+}: BorderTrailProps) {
 	const defaultTransition: Transition = {
 		repeat: Number.POSITIVE_INFINITY,
 		duration: 5,
@@ -23,7 +29,10 @@ export function BorderTrail({ className, size = 60, transition, onAnimationCompl
 				animate={{
 					offsetDistance: ["0%", "100%"],
 				}}
-				className={cn("absolute aspect-square bg-neutral-500", className)}
+				className={cn(
+					"absolute aspect-square bg-neutral-500",
+					className
+				)}
 				onAnimationComplete={onAnimationComplete}
 				style={{
 					width: size,

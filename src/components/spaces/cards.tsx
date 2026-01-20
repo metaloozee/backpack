@@ -6,14 +6,14 @@ import Link from "next/link";
 import { format } from "timeago.js";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-type Space = {
+interface Space {
 	id: string;
 	userId: string;
 	spaceTitle: string;
 	spaceDescription?: string | null;
 	spaceCustomInstructions?: string | null;
 	createdAt: Date;
-};
+}
 
 export function Cards({ spaces }: { spaces: Space[] }) {
 	const containerVariants = {
@@ -56,7 +56,9 @@ export function Cards({ spaces }: { spaces: Space[] }) {
 							</CardHeader>
 							<CardFooter className="flex flex-row flex-wrap justify-between gap-2 text-muted-foreground text-xs">
 								{space.spaceDescription && (
-									<p className="w-[18vw] truncate">{space.spaceDescription}</p>
+									<p className="w-[18vw] truncate">
+										{space.spaceDescription}
+									</p>
 								)}
 								{format(space.createdAt)}
 							</CardFooter>

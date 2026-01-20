@@ -5,14 +5,19 @@ import { useEffect } from "react";
 import { useDataStream } from "@/components/data-stream-provider";
 import type { ChatMessage } from "@/lib/ai/types";
 
-export type UseAutoResumeParams = {
+export interface UseAutoResumeParams {
 	autoResume: boolean;
 	initialMessages: ChatMessage[];
 	resumeStream: UseChatHelpers<ChatMessage>["resumeStream"];
 	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
-};
+}
 
-export function useAutoResume({ autoResume, initialMessages, resumeStream, setMessages }: UseAutoResumeParams) {
+export function useAutoResume({
+	autoResume,
+	initialMessages,
+	resumeStream,
+	setMessages,
+}: UseAutoResumeParams) {
 	const { dataStream } = useDataStream();
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: false positive

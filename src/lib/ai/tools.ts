@@ -1,16 +1,22 @@
-import { BookCopyIcon, GlobeIcon, GraduationCapIcon, LandmarkIcon, type LucideIcon } from "lucide-react";
+import {
+	BookCopyIcon,
+	GlobeIcon,
+	GraduationCapIcon,
+	LandmarkIcon,
+	type LucideIcon,
+} from "lucide-react";
 
-export type Tool = {
+export interface Tool {
 	id: string;
 	name: string;
 	description: string;
 	icon: LucideIcon;
 	enabled: boolean;
-};
+}
 
-export type ToolsState = {
+export interface ToolsState {
 	[key: string]: boolean;
-};
+}
 
 export const defaultTools: Tool[] = [
 	{

@@ -1,9 +1,11 @@
-/** biome-ignore-all lint/style/noMagicNumbers: magic numbers */
-/** biome-ignore-all lint/suspicious/noArrayIndexKey: array index key */
-
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: Skeleton loading states have static, non-reordering items */
 "use client";
 
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+	useInfiniteQuery,
+	useMutation,
+	useQueryClient,
+} from "@tanstack/react-query";
 import { ChevronsDownIcon, Trash2Icon } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
@@ -31,15 +33,18 @@ import {
 	transitions,
 } from "@/lib/animations";
 import type { Chat } from "@/lib/db/schema/app";
-import { type ChatInfiniteData, removeChatFromInfiniteData } from "@/lib/trpc/cache-utils";
+import {
+	type ChatInfiniteData,
+	removeChatFromInfiniteData,
+} from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
-type ChatCardProps = {
+interface ChatCardProps {
 	chat: Chat;
 	isDeleting: boolean;
 	onDelete: (chatId: string) => Promise<void>;
-};
+}
 
 function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 	const [isOpen, setIsOpen] = useState(false);
@@ -60,7 +65,11 @@ function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 			whileHover={{ scale: 1.01 }}
 			whileTap={{ scale: 0.99 }}
 		>
-			<Link aria-label={`Open chat ${chat.title}`} className="absolute inset-0" href={`/c/${chat.id}`}>
+			<Link
+				aria-label={`Open chat ${chat.title}`}
+				className="absolute inset-0"
+				href={`/c/${chat.id}`}
+			>
 				<span className="sr-only">Open chat {chat.title}</span>
 			</Link>
 
@@ -72,7 +81,9 @@ function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 			>
 				<p className="max-w-md truncate">{chat.title}</p>
 
-				<p className="max-w-md truncate text-muted-foreground text-xs">Created {format(chat.createdAt)}</p>
+				<p className="max-w-md truncate text-muted-foreground text-xs">
+					Created {format(chat.createdAt)}
+				</p>
 			</motion.div>
 
 			<Dialog onOpenChange={setIsOpen} open={isOpen}>
@@ -84,13 +95,22 @@ function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 						whileHover="hover"
 						whileTap="tap"
 					>
-						<Button className="pointer-events-auto relative z-10" size={"icon"} variant={"ghost"}>
+						<Button
+							className="pointer-events-auto relative z-10"
+							size={"icon"}
+							variant={"ghost"}
+						>
 							<Trash2Icon className="size-3 text-muted-foreground" />
 						</Button>
 					</motion.div>
 				</DialogTrigger>
 				<DialogContent>
-					<motion.div animate="visible" exit="exit" initial="hidden" variants={modalVariants}>
+					<motion.div
+						animate="visible"
+						exit="exit"
+						initial="hidden"
+						variants={modalVariants}
+					>
 						<DialogHeader className="space-y-5">
 							<motion.div
 								animate="visible"
@@ -99,11 +119,14 @@ function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 								variants={staggerVariants.container}
 							>
 								<motion.div variants={staggerVariants.item}>
-									<DialogTitle>Are you absolutely sure?</DialogTitle>
+									<DialogTitle>
+										Are you absolutely sure?
+									</DialogTitle>
 								</motion.div>
 								<motion.div variants={staggerVariants.item}>
 									<DialogDescription className="text-sm">
-										This action cannot be undone. This will permanently delete your chat and remove
+										This action cannot be undone. This will
+										permanently delete your chat and remove
 										your data from our servers.
 									</DialogDescription>
 								</motion.div>
@@ -116,7 +139,11 @@ function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 								variants={staggerVariants.container}
 							>
 								<motion.div variants={staggerVariants.item}>
-									<motion.div initial="rest" whileHover="hover" whileTap="tap">
+									<motion.div
+										initial="rest"
+										whileHover="hover"
+										whileTap="tap"
+									>
 										<Button
 											className="text-xs"
 											disabled={isDeleting}
@@ -138,7 +165,11 @@ function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 												variants={fadeVariants}
 											>
 												{isDeleting ? (
-													<motion.div animate="spin" initial="rest" variants={iconVariants}>
+													<motion.div
+														animate="spin"
+														initial="rest"
+														variants={iconVariants}
+													>
 														<Loader className="size-3 text-red-400" />
 													</motion.div>
 												) : (
@@ -149,8 +180,16 @@ function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 									</motion.div>
 								</motion.div>
 								<motion.div variants={staggerVariants.item}>
-									<motion.div initial="rest" whileHover="hover" whileTap="tap">
-										<Button className="text-xs" onClick={() => setIsOpen(!isOpen)} variant={"link"}>
+									<motion.div
+										initial="rest"
+										whileHover="hover"
+										whileTap="tap"
+									>
+										<Button
+											className="text-xs"
+											onClick={() => setIsOpen(!isOpen)}
+											variant={"link"}
+										>
 											<motion.div
 												animate="visible"
 												className="flex w-full items-center justify-center gap-2"
@@ -183,14 +222,23 @@ export default function DisplayChats({ spaceId }: { spaceId?: string }) {
 			},
 			onSuccess: async (_, variables) => {
 				const chatId = variables.chatId;
-				queryClient.setQueriesData(trpc.chat.getChats.pathFilter(), (old) =>
-					removeChatFromInfiniteData(old as ChatInfiniteData | undefined, chatId)
+				queryClient.setQueriesData(
+					trpc.chat.getChats.pathFilter(),
+					(old) =>
+						removeChatFromInfiniteData(
+							old as ChatInfiniteData | undefined,
+							chatId
+						)
 				);
-				await queryClient.invalidateQueries(trpc.chat.getChats.pathFilter());
+				await queryClient.invalidateQueries(
+					trpc.chat.getChats.pathFilter()
+				);
 				toast.success("Chat deleted");
 			},
 			onError: (error) => {
-				toast.error("Failed to delete chat", { description: error.message });
+				toast.error("Failed to delete chat", {
+					description: error.message,
+				});
 			},
 			onSettled: () => {
 				setPendingChatId(null);
@@ -209,7 +257,8 @@ export default function DisplayChats({ spaceId }: { spaceId?: string }) {
 			}
 		)
 	);
-	const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = query;
+	const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
+		query;
 
 	const chats = data?.pages.flatMap((page) => page.chats) ?? [];
 
@@ -221,7 +270,7 @@ export default function DisplayChats({ spaceId }: { spaceId?: string }) {
 						animate="visible"
 						className="relative flex w-full items-center justify-between rounded-lg border border-border/50 bg-neutral-900/50 p-4"
 						initial="hidden"
-						key={index}
+						key={`skeleton-${index}`}
 						variants={messageVariants}
 					>
 						<div className="flex w-full flex-col items-start justify-start gap-2">
@@ -240,7 +289,9 @@ export default function DisplayChats({ spaceId }: { spaceId?: string }) {
 			{chats.map((chat) => (
 				<ChatCard
 					chat={chat}
-					isDeleting={pendingChatId === chat.id && deleteMutation.isPending}
+					isDeleting={
+						pendingChatId === chat.id && deleteMutation.isPending
+					}
 					key={chat.id}
 					onDelete={async (chatId) => {
 						await deleteMutation.mutateAsync({ chatId });
@@ -249,7 +300,10 @@ export default function DisplayChats({ spaceId }: { spaceId?: string }) {
 			))}
 
 			{hasNextPage && (
-				<motion.div className="flex w-full items-center justify-center" variants={buttonVariants}>
+				<motion.div
+					className="flex w-full items-center justify-center"
+					variants={buttonVariants}
+				>
 					<Button
 						className="text-muted-foreground text-sm hover:cursor-pointer"
 						onClick={() => fetchNextPage()}

@@ -12,12 +12,16 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { Citation as CitationType } from "@/lib/hooks/use-citations";
 
-type CitationProps = {
+interface CitationProps {
 	citation: CitationType;
-};
+}
 
 function FaviconIcon({ domain }: { domain: string }) {
 	const [faviconError, setFaviconError] = useState(false);
@@ -26,12 +30,16 @@ function FaviconIcon({ domain }: { domain: string }) {
 	const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
 
 	if (faviconError) {
-		return <NotebookTabsIcon className="mt-0.5 size-4 flex-shrink-0 fill-current" />;
+		return (
+			<NotebookTabsIcon className="mt-0.5 size-4 flex-shrink-0 fill-current" />
+		);
 	}
 
 	return (
 		<div className="relative mt-0.5 size-4 flex-shrink-0">
-			{!faviconLoaded && <NotebookTabsIcon className="size-4 fill-current" />}
+			{!faviconLoaded && (
+				<NotebookTabsIcon className="size-4 fill-current" />
+			)}
 			<Image
 				alt={`${domain} favicon`}
 				className="size-4"
@@ -73,7 +81,11 @@ function isPdfDocument(urlLower: string, titleLower: string): boolean {
 }
 
 function isWordDocument(urlLower: string, titleLower: string): boolean {
-	return urlLower.includes(".doc") || urlLower.includes(".docx") || titleLower.includes("word");
+	return (
+		urlLower.includes(".doc") ||
+		urlLower.includes(".docx") ||
+		titleLower.includes("word")
+	);
 }
 
 function isSpreadsheetDocument(urlLower: string, titleLower: string): boolean {
@@ -123,34 +135,50 @@ function DocumentIcon({ url, title }: { url: string; title: string }) {
 	const titleLower = title.toLowerCase();
 
 	if (isPdfDocument(urlLower, titleLower)) {
-		return <FileIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-red-500" />;
+		return (
+			<FileIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-red-500" />
+		);
 	}
 
 	if (isWordDocument(urlLower, titleLower)) {
-		return <FileTextIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-blue-600" />;
+		return (
+			<FileTextIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-blue-600" />
+		);
 	}
 
 	if (isSpreadsheetDocument(urlLower, titleLower)) {
-		return <FileSpreadsheetIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-green-600" />;
+		return (
+			<FileSpreadsheetIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-green-600" />
+		);
 	}
 
 	if (isPresentationDocument(urlLower, titleLower)) {
-		return <PresentationIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-orange-600" />;
+		return (
+			<PresentationIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-orange-600" />
+		);
 	}
 
 	if (isImageDocument(urlLower, titleLower)) {
-		return <ImageIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-purple-600" />;
+		return (
+			<ImageIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-purple-600" />
+		);
 	}
 
 	if (isVideoDocument(urlLower, titleLower)) {
-		return <VideoIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-red-600" />;
+		return (
+			<VideoIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-red-600" />
+		);
 	}
 
 	if (isKnowledgeBaseDocument(url, titleLower)) {
-		return <BookOpenIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-emerald-600" />;
+		return (
+			<BookOpenIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-emerald-600" />
+		);
 	}
 
-	return <FileIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-gray-500" />;
+	return (
+		<FileIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-gray-500" />
+	);
 }
 
 export function Citation({ citation }: CitationProps) {
@@ -173,7 +201,9 @@ export function Citation({ citation }: CitationProps) {
 		}
 	})();
 
-	const isWebUrl = citation.url.startsWith("http://") || citation.url.startsWith("https://");
+	const isWebUrl =
+		citation.url.startsWith("http://") ||
+		citation.url.startsWith("https://");
 	const urlLower = citation.url.toLowerCase();
 	const titleLower = citation.title.toLowerCase();
 
@@ -228,17 +258,29 @@ export function Citation({ citation }: CitationProps) {
 					{citation.id}
 				</button>
 			</TooltipTrigger>
-			<TooltipContent className="max-w-xs space-y-2 border bg-background p-3" sideOffset={10}>
+			<TooltipContent
+				className="max-w-xs space-y-2 border bg-background p-3"
+				sideOffset={10}
+			>
 				<div className="flex items-start gap-2 text-primary">
 					{isDocument ? (
-						<DocumentIcon title={citation.title} url={citation.url} />
+						<DocumentIcon
+							title={citation.title}
+							url={citation.url}
+						/>
 					) : (
 						<FaviconIcon domain={domain} />
 					)}
 					<div className="space-y-1">
-						<p className="font-medium text-sm leading-tight">{citation.title}</p>
+						<p className="font-medium text-sm leading-tight">
+							{citation.title}
+						</p>
 						<p className="text-xs">{domain}</p>
-						{citation.content && <p className="line-clamp-3 text-xs">{citation.content}</p>}
+						{citation.content && (
+							<p className="line-clamp-3 text-xs">
+								{citation.content}
+							</p>
+						)}
 					</div>
 				</div>
 			</TooltipContent>

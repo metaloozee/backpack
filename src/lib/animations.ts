@@ -402,7 +402,9 @@ export const loadingVariants = {
 };
 
 // Helper function to create consistent page transitions
-export const createPageTransition = (direction: "up" | "down" | "left" | "right" = "up") => ({
+export const createPageTransition = (
+	direction: "up" | "down" | "left" | "right" = "up"
+) => ({
 	initial: slideVariants[direction].hidden,
 	animate: slideVariants[direction].visible,
 	exit: slideVariants[direction].exit,

@@ -9,12 +9,14 @@ const buttonVariants = cva(
 	{
 		variants: {
 			variant: {
-				default: "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+				default:
+					"bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
 				destructive:
 					"relative overflow-hidden border border-destructive/40 bg-destructive/60 text-destructive-foreground shadow-xs backdrop-blur-[2px] hover:bg-destructive/75 focus-visible:ring-destructive/30 dark:border-destructive/50 dark:bg-destructive/30 dark:text-destructive-foreground",
 				outline:
 					"border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
-				secondary: "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+				secondary:
+					"bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
 				ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
 				link: "text-primary underline-offset-4 hover:underline",
 			},
@@ -53,7 +55,7 @@ function Button({
 			className={cn(buttonVariants({ variant, size, className }))}
 			data-slot="button"
 			// Only apply the type attribute when rendering a real button
-			{...(!asChild ? { type: resolvedType } : {})}
+			{...(asChild ? {} : { type: resolvedType })}
 			{...rest}
 		/>
 	);

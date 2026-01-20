@@ -1,7 +1,15 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { BrainIcon, Check, ChevronDown, FlaskConicalIcon, RocketIcon, ShieldIcon, SparklesIcon } from "lucide-react";
+import {
+	BrainIcon,
+	Check,
+	ChevronDown,
+	FlaskConicalIcon,
+	RocketIcon,
+	ShieldIcon,
+	SparklesIcon,
+} from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -20,9 +28,9 @@ import {
 import { models } from "@/lib/ai/models";
 import { useTRPC } from "@/lib/trpc/trpc";
 
-type ModelSelectorProps = {
+interface ModelSelectorProps {
 	initialModel?: string;
-};
+}
 
 const groupedModels = models.reduce(
 	(acc, model) => {
@@ -48,28 +56,77 @@ const providerNames = {
 const getProviderIcon = (provider: string) => {
 	switch (provider) {
 		case "google":
-			return <Image alt="Google" height={16} src="/icons/gemini-color.svg" width={16} />;
+			return (
+				<Image
+					alt="Google"
+					height={16}
+					src="/icons/gemini-color.svg"
+					width={16}
+				/>
+			);
 		case "anthropic":
-			return <Image alt="Anthropic" height={16} src="/icons/claude-color.svg" width={16} />;
+			return (
+				<Image
+					alt="Anthropic"
+					height={16}
+					src="/icons/claude-color.svg"
+					width={16}
+				/>
+			);
 		case "groq":
-			return <Image alt="Groq" className="invert" height={16} src="/icons/groq.svg" width={16} />;
+			return (
+				<Image
+					alt="Groq"
+					className="invert"
+					height={16}
+					src="/icons/groq.svg"
+					width={16}
+				/>
+			);
 		case "openrouter":
-			return <Image alt="OpenRouter" className="invert" height={16} src="/icons/openrouter.svg" width={16} />;
+			return (
+				<Image
+					alt="OpenRouter"
+					className="invert"
+					height={16}
+					src="/icons/openrouter.svg"
+					width={16}
+				/>
+			);
 		case "openai":
-			return <Image alt="OpenAI" className="invert" height={16} src="/icons/openai.svg" width={16} />;
+			return (
+				<Image
+					alt="OpenAI"
+					className="invert"
+					height={16}
+					src="/icons/openai.svg"
+					width={16}
+				/>
+			);
 		case "mistral":
-			return <Image alt="Mistral" height={16} src="/icons/mistral-color.svg" width={16} />;
+			return (
+				<Image
+					alt="Mistral"
+					height={16}
+					src="/icons/mistral-color.svg"
+					width={16}
+				/>
+			);
 		default:
 			return null;
 	}
 };
 
 export function ModelSelector({ initialModel }: ModelSelectorProps) {
-	const [selectedModel, setSelectedModel] = useState(initialModel ?? models[0].id);
+	const [selectedModel, setSelectedModel] = useState(
+		initialModel ?? models[0].id
+	);
 	const [open] = useState(false);
 
 	const trpc = useTRPC();
-	const setModelSelectionMutation = useMutation(trpc.chat.setModelSelection.mutationOptions());
+	const setModelSelectionMutation = useMutation(
+		trpc.chat.setModelSelection.mutationOptions()
+	);
 
 	const handleModelChange = (modelId: string) => {
 		if (modelId === selectedModel) {
@@ -84,14 +141,18 @@ export function ModelSelector({ initialModel }: ModelSelectorProps) {
 			{ modelId },
 			{
 				onError: () => {
-					setSelectedModel((curr) => (curr === modelId ? previousModel : curr));
+					setSelectedModel((curr) =>
+						curr === modelId ? previousModel : curr
+					);
 					toast.error("Failed to save model selection");
 				},
 			}
 		);
 	};
 
-	const selectedModelData = models.find((model) => model.id === selectedModel);
+	const selectedModelData = models.find(
+		(model) => model.id === selectedModel
+	);
 
 	return (
 		<DropdownMenu>
@@ -103,7 +164,8 @@ export function ModelSelector({ initialModel }: ModelSelectorProps) {
 					variant="outline"
 				>
 					<div className="flex items-center gap-2">
-						{selectedModelData && getProviderIcon(selectedModelData.provider)}
+						{selectedModelData &&
+							getProviderIcon(selectedModelData.provider)}
 					</div>
 					<ChevronDown className="size-3 shrink-0 opacity-50" />
 				</Button>
@@ -111,61 +173,114 @@ export function ModelSelector({ initialModel }: ModelSelectorProps) {
 			<DropdownMenuContent className="w-[150px] p-1">
 				<Command>
 					<CommandList>
-						{Object.entries(groupedModels).map(([provider, providerModels]) => (
-							<DropdownMenuSub key={provider}>
-								<DropdownMenuSubTrigger>
-									<div className="flex items-center gap-2">
-										{getProviderIcon(provider)}
-										<span>{providerNames[provider as keyof typeof providerNames]}</span>
-									</div>
-								</DropdownMenuSubTrigger>
-								<DropdownMenuSubContent className="w-auto p-1" sideOffset={10}>
-									{providerModels.map((model) => (
-										<DropdownMenuItem
-											className="cursor-pointer"
-											key={model.id}
-											onSelect={() => handleModelChange(model.id)}
-										>
-											<div className="flex w-full items-center justify-between gap-5">
-												<div className="flex items-center gap-2">
-													{model.id === selectedModel && <Check className="size-3" />}
-													<span>{model.name}</span>
-												</div>
-												{model.properties && (
-													<div className="flex flex-row gap-1">
-														{model.properties.includes("reasoning") && (
-															<Badge className="px-1" variant={"secondary"}>
-																<BrainIcon className="size-3" />
-															</Badge>
+						{Object.entries(groupedModels).map(
+							([provider, providerModels]) => (
+								<DropdownMenuSub key={provider}>
+									<DropdownMenuSubTrigger>
+										<div className="flex items-center gap-2">
+											{getProviderIcon(provider)}
+											<span>
+												{
+													providerNames[
+														provider as keyof typeof providerNames
+													]
+												}
+											</span>
+										</div>
+									</DropdownMenuSubTrigger>
+									<DropdownMenuSubContent
+										className="w-auto p-1"
+										sideOffset={10}
+									>
+										{providerModels.map((model) => (
+											<DropdownMenuItem
+												className="cursor-pointer"
+												key={model.id}
+												onSelect={() =>
+													handleModelChange(model.id)
+												}
+											>
+												<div className="flex w-full items-center justify-between gap-5">
+													<div className="flex items-center gap-2">
+														{model.id ===
+															selectedModel && (
+															<Check className="size-3" />
 														)}
-														{model.properties.includes("fast") && (
-															<Badge className="px-1" variant={"secondary"}>
-																<RocketIcon className="size-3" />
-															</Badge>
-														)}
-														{model.properties.includes("quality") && (
-															<Badge className="px-1" variant={"secondary"}>
-																<SparklesIcon className="size-3" />
-															</Badge>
-														)}
-														{model.properties.includes("experimental") && (
-															<Badge className="px-1" variant={"secondary"}>
-																<FlaskConicalIcon className="size-3" />
-															</Badge>
-														)}
-														{model.properties.includes("stealth") && (
-															<Badge className="px-1" variant={"secondary"}>
-																<ShieldIcon className="size-3" />
-															</Badge>
-														)}
+														<span>
+															{model.name}
+														</span>
 													</div>
-												)}
-											</div>
-										</DropdownMenuItem>
-									))}
-								</DropdownMenuSubContent>
-							</DropdownMenuSub>
-						))}
+													{model.properties && (
+														<div className="flex flex-row gap-1">
+															{model.properties.includes(
+																"reasoning"
+															) && (
+																<Badge
+																	className="px-1"
+																	variant={
+																		"secondary"
+																	}
+																>
+																	<BrainIcon className="size-3" />
+																</Badge>
+															)}
+															{model.properties.includes(
+																"fast"
+															) && (
+																<Badge
+																	className="px-1"
+																	variant={
+																		"secondary"
+																	}
+																>
+																	<RocketIcon className="size-3" />
+																</Badge>
+															)}
+															{model.properties.includes(
+																"quality"
+															) && (
+																<Badge
+																	className="px-1"
+																	variant={
+																		"secondary"
+																	}
+																>
+																	<SparklesIcon className="size-3" />
+																</Badge>
+															)}
+															{model.properties.includes(
+																"experimental"
+															) && (
+																<Badge
+																	className="px-1"
+																	variant={
+																		"secondary"
+																	}
+																>
+																	<FlaskConicalIcon className="size-3" />
+																</Badge>
+															)}
+															{model.properties.includes(
+																"stealth"
+															) && (
+																<Badge
+																	className="px-1"
+																	variant={
+																		"secondary"
+																	}
+																>
+																	<ShieldIcon className="size-3" />
+																</Badge>
+															)}
+														</div>
+													)}
+												</div>
+											</DropdownMenuItem>
+										))}
+									</DropdownMenuSubContent>
+								</DropdownMenuSub>
+							)
+						)}
 					</CommandList>
 				</Command>
 			</DropdownMenuContent>

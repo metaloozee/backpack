@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/performance/noNamespaceImport: Required for Radix UI primitives (shadcn/ui pattern) */
 "use client";
 
 import * as PopoverPrimitive from "@radix-ui/react-popover";

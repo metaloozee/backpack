@@ -4,9 +4,9 @@ import { ExternalLinkIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import type { Citation as CitationType } from "@/lib/hooks/use-citations";
 
-type ReferencesProps = {
+interface ReferencesProps {
 	citations: CitationType[];
-};
+}
 
 export function References({ citations }: ReferencesProps) {
 	if (citations.length === 0) {
@@ -16,11 +16,18 @@ export function References({ citations }: ReferencesProps) {
 	return (
 		<div className="mt-6 pt-4">
 			<Separator className="mb-4" />
-			<h4 className="mb-3 font-medium text-muted-foreground text-sm">References</h4>
+			<h4 className="mb-3 font-medium text-muted-foreground text-sm">
+				References
+			</h4>
 			<div className="space-y-2">
 				{citations.map((citation) => (
-					<div className="flex items-start gap-2 text-xs" key={citation.id}>
-						<span className="w-6 flex-shrink-0 text-muted-foreground">[{citation.id}]</span>
+					<div
+						className="flex items-start gap-2 text-xs"
+						key={citation.id}
+					>
+						<span className="w-6 flex-shrink-0 text-muted-foreground">
+							[{citation.id}]
+						</span>
 						<div className="flex-1">
 							<a
 								className="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"

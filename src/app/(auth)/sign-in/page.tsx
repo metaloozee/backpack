@@ -14,11 +14,17 @@ export default function SignInPage() {
 				</div>
 
 				<h1 className="text-4xl">backpack</h1>
-				<p className="text-muted-foreground text-xs">Sign-in to access your Smart Chat Application.</p>
+				<p className="text-muted-foreground text-xs">
+					Sign-in to access your Smart Chat Application.
+				</p>
 			</div>
 			<div className="mt-5 flex w-full max-w-[20vw] flex-col gap-2">
 				<SignInButton disabled provider="google">
-					<Image alt="Login with Google" className="size-5 invert" src={Google} />
+					<Image
+						alt="Login with Google"
+						className="size-5 invert"
+						src={Google}
+					/>
 					Continue with Google
 				</SignInButton>
 				<SignInButton provider="github">
@@ -28,7 +34,8 @@ export default function SignInPage() {
 			</div>
 			<Separator className="max-w-[10vw]" />
 			<p className="text-muted-foreground text-xs">
-				By continuing, you agree to backpack&apos;s Terms of Service and Privacy Policy.
+				By continuing, you agree to backpack&apos;s Terms of Service and
+				Privacy Policy.
 			</p>
 		</main>
 	);

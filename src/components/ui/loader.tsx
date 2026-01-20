@@ -2,7 +2,6 @@
 
 import { cva, type VariantProps } from "class-variance-authority";
 import { motion } from "motion/react";
-import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const loaderVariants = cva("rounded-full border-2 will-change-transform", {
@@ -57,8 +56,17 @@ interface LoaderProps extends VariantProps<typeof loaderVariants> {
 	"data-testid"?: string;
 }
 
-function Loader({ className, size, variant, speed = "default", show = true, "data-testid": testId }: LoaderProps) {
-	if (!show) return null;
+function Loader({
+	className,
+	size,
+	variant,
+	speed = "default",
+	show = true,
+	"data-testid": testId,
+}: LoaderProps) {
+	if (!show) {
+		return null;
+	}
 
 	return (
 		<motion.div
@@ -66,7 +74,7 @@ function Loader({ className, size, variant, speed = "default", show = true, "dat
 			className={cn(loaderVariants({ size, variant, speed }), className)}
 			data-testid={testId}
 			transition={{
-				...speedConfig[speed!],
+				...speedConfig[speed],
 				repeat: Number.POSITIVE_INFINITY,
 				ease: "linear",
 			}}

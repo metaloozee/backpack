@@ -1,16 +1,16 @@
 import { useMemo } from "react";
 
-export type Citation = {
+export interface Citation {
 	id: number;
 	title: string;
 	url: string;
 	content?: string;
-};
+}
 
-export type CitationResult = {
+export interface CitationResult {
 	processedContent: string;
 	citations: Citation[];
-};
+}
 
 export function useCitations(content: string): CitationResult {
 	return useMemo(() => {
@@ -19,22 +19,25 @@ export function useCitations(content: string): CitationResult {
 
 		const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
 
-		const processedContent = content.replace(linkRegex, (_match, title, url) => {
-			let existingCitation = citations.find((c) => c.url === url);
+		const processedContent = content.replace(
+			linkRegex,
+			(_match, title, url) => {
+				let existingCitation = citations.find((c) => c.url === url);
 
-			if (!existingCitation) {
-				citationCounter++;
-				existingCitation = {
-					id: citationCounter,
-					title: title.trim(),
-					url: url.trim(),
-					content: "",
-				};
-				citations.push(existingCitation);
+				if (!existingCitation) {
+					citationCounter++;
+					existingCitation = {
+						id: citationCounter,
+						title: title.trim(),
+						url: url.trim(),
+						content: "",
+					};
+					citations.push(existingCitation);
+				}
+
+				return `[${existingCitation.id}]`;
 			}
-
-			return `[${existingCitation.id}]`;
-		});
+		);
 
 		return {
 			processedContent,

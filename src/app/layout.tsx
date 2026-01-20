@@ -29,7 +29,10 @@ export default function RootLayout({
 		<TrpcProvider>
 			<html lang="en" suppressHydrationWarning>
 				<body
-					className={cn("bg-background font-sans antialiased", geistSans.className)}
+					className={cn(
+						"bg-background font-sans antialiased",
+						geistSans.className
+					)}
 					suppressHydrationWarning
 				>
 					<NuqsAdapter>

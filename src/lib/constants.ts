@@ -1,0 +1,16 @@
+export const SECONDS_PER_MINUTE = 60;
+
+export const BYTES_PER_KILOBYTE = 1024;
+export const KILOBYTES_PER_MEGABYTE = 1024;
+export const BYTES_PER_MB = BYTES_PER_KILOBYTE * KILOBYTES_PER_MEGABYTE;
+
+export const MAX_FILE_SIZE_MB = 5;
+
+export const REASONING_BUDGET_TOKENS = 2048;
+export const MAX_TOOL_STEPS = 10;
+export const STREAM_DELAY_MS = 10;
+
+export const MAX_TITLE_LENGTH = 100;
+export const MAX_QUERY_LENGTH = 2000;
+
+export const REQUEST_TIMEOUT_SECONDS = 60;

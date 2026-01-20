@@ -4,12 +4,20 @@ import { and, asc, eq } from "drizzle-orm";
 import type { ChatMessage } from "@/lib/ai/types";
 import { getSession } from "@/lib/auth/utils";
 import { db } from "@/lib/db";
-import { type Chat, chat as DBChat, message as DBMessage, stream as DBStream } from "@/lib/db/schema/app";
+import {
+	type Chat,
+	chat as DBChat,
+	message as DBMessage,
+	stream as DBStream,
+} from "@/lib/db/schema/app";
 import { getStreamContext } from "../../route";
 
 const SECONDS_PER_MINUTE = 60;
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+	_: Request,
+	{ params }: { params: Promise<{ id: string }> }
+) {
 	const { id: chatId } = await params;
 
 	const streamContext = getStreamContext();
@@ -20,16 +28,25 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 	}
 
 	if (!chatId) {
-		return new Response(JSON.stringify({ code: "BAD_REQUEST", cause: "chatId is required" }), {
-			status: 400,
-		});
+		return new Response(
+			JSON.stringify({
+				code: "BAD_REQUEST",
+				cause: "chatId is required",
+			}),
+			{
+				status: 400,
+			}
+		);
 	}
 
 	const session = await getSession();
 	if (!session) {
-		return new Response(JSON.stringify({ code: "UNAUTHORIZED", cause: "Unauthorized" }), {
-			status: 401,
-		});
+		return new Response(
+			JSON.stringify({ code: "UNAUTHORIZED", cause: "Unauthorized" }),
+			{
+				status: 401,
+			}
+		);
 	}
 
 	let chat: Chat;
@@ -38,13 +55,18 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 		const chats = await db
 			.select()
 			.from(DBChat)
-			.where(and(eq(DBChat.id, chatId), eq(DBChat.userId, session.userId)))
+			.where(
+				and(eq(DBChat.id, chatId), eq(DBChat.userId, session.userId))
+			)
 			.limit(1);
 
 		if (chats.length === 0) {
-			return new Response(JSON.stringify({ code: "NOT_FOUND", cause: "Chat not found" }), {
-				status: 404,
-			});
+			return new Response(
+				JSON.stringify({ code: "NOT_FOUND", cause: "Chat not found" }),
+				{
+					status: 404,
+				}
+			);
 		}
 
 		chat = chats[0];
@@ -59,9 +81,12 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 	}
 
 	if (!chat) {
-		return new Response(JSON.stringify({ code: "NOT_FOUND", cause: "Chat not found" }), {
-			status: 404,
-		});
+		return new Response(
+			JSON.stringify({ code: "NOT_FOUND", cause: "Chat not found" }),
+			{
+				status: 404,
+			}
+		);
 	}
 
 	const streamIdsResult = await db
@@ -73,16 +98,22 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 	const streamIds = streamIdsResult.map(({ id }) => id);
 
 	if (streamIds.length === 0) {
-		return new Response(JSON.stringify({ code: "NOT_FOUND", cause: "Stream not found" }), {
-			status: 404,
-		});
+		return new Response(
+			JSON.stringify({ code: "NOT_FOUND", cause: "Stream not found" }),
+			{
+				status: 404,
+			}
+		);
 	}
 
 	const recentStreamId = streamIds.at(-1);
 	if (!recentStreamId) {
-		return new Response(JSON.stringify({ code: "NOT_FOUND", cause: "Stream not found" }), {
-			status: 404,
-		});
+		return new Response(
+			JSON.stringify({ code: "NOT_FOUND", cause: "Stream not found" }),
+			{
+				status: 404,
+			}
+		);
 	}
 
 	const emptyDataStream = createUIMessageStream<ChatMessage>({
@@ -104,9 +135,15 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 
 		const mostRecentMessage = messages.at(-1);
 		if (!mostRecentMessage) {
-			return new Response(JSON.stringify({ code: "NOT_FOUND", cause: "Message not found" }), {
-				status: 404,
-			});
+			return new Response(
+				JSON.stringify({
+					code: "NOT_FOUND",
+					cause: "Message not found",
+				}),
+				{
+					status: 404,
+				}
+			);
 		}
 
 		if (mostRecentMessage.role !== "assistant") {
@@ -114,7 +151,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 		}
 
 		const messageCreatedAt = new Date(mostRecentMessage.createdAt);
-		if (differenceInSeconds(resumeRequestedAt, messageCreatedAt) > SECONDS_PER_MINUTE) {
+		if (
+			differenceInSeconds(resumeRequestedAt, messageCreatedAt) >
+			SECONDS_PER_MINUTE
+		) {
 			return new Response(emptyDataStream, { status: 200 });
 		}
 
@@ -128,9 +168,12 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 			},
 		});
 
-		return new Response(restoredStream.pipeThrough(new JsonToSseTransformStream()), {
-			status: 200,
-		});
+		return new Response(
+			restoredStream.pipeThrough(new JsonToSseTransformStream()),
+			{
+				status: 200,
+			}
+		);
 	}
 
 	return new Response(stream, { status: 200 });

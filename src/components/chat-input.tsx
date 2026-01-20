@@ -4,9 +4,22 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDownIcon, CornerDownLeftIcon, MicIcon, PaperclipIcon, StopCircleIcon } from "lucide-react";
+import {
+	ChevronDownIcon,
+	CornerDownLeftIcon,
+	MicIcon,
+	PaperclipIcon,
+	StopCircleIcon,
+} from "lucide-react";
 import { usePathname } from "next/navigation";
-import React, { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from "react";
+import React, {
+	type Dispatch,
+	type SetStateAction,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { toast } from "sonner";
 import { useLocalStorage } from "usehooks-ts";
 import { ModeSelector } from "@/components/mode-selector";
@@ -16,13 +29,18 @@ import { Loader } from "@/components/ui/loader";
 import { Textarea } from "@/components/ui/textarea";
 import type { ToolsState } from "@/lib/ai/tools";
 import type { Attachment, ChatMessage } from "@/lib/ai/types";
-import { fadeVariants, layoutTransition, slideVariants, transitions } from "@/lib/animations";
+import {
+	fadeVariants,
+	layoutTransition,
+	slideVariants,
+	transitions,
+} from "@/lib/animations";
 import { useScrollToBottom } from "@/lib/hooks/use-scroll-to-bottom";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 import { PreviewAttachment } from "./chat/preview-attachment";
 
-type InputPanelProps = {
+interface InputPanelProps {
 	chatId: string;
 	input: string;
 	setInput: Dispatch<SetStateAction<string>>;
@@ -38,7 +56,7 @@ type InputPanelProps = {
 	initialModel?: string;
 	initialMode?: string;
 	initialAgent?: string;
-};
+}
 
 function PureInput({
 	chatId,
@@ -99,7 +117,10 @@ function PureInput({
 		}
 	}, [adjustHeight]);
 
-	const [localStorageInput, setLocalStorageInput] = useLocalStorage("input", "");
+	const [localStorageInput, setLocalStorageInput] = useLocalStorage(
+		"input",
+		""
+	);
 
 	useEffect(() => {
 		if (textareaRef.current) {
@@ -149,7 +170,15 @@ function PureInput({
 		resetHeight();
 		setInput("");
 		textareaRef.current?.focus();
-	}, [input, setInput, attachments, sendMessage, setAttachments, chatId, resetHeight]);
+	}, [
+		input,
+		setInput,
+		attachments,
+		sendMessage,
+		setAttachments,
+		chatId,
+		resetHeight,
+	]);
 
 	const handleFiles = useCallback(
 		async (files: File[]) => {
@@ -186,13 +215,23 @@ function PureInput({
 				}
 			};
 
-			setUploadQueue((prev) => [...prev, ...files.map((file) => file.name)]);
+			setUploadQueue((prev) => [
+				...prev,
+				...files.map((file) => file.name),
+			]);
 
 			try {
-				const uploadPromises = files.map((file) => uploadSingleFile(file));
-				const uploadedAttachments = (await Promise.all(uploadPromises)).filter(Boolean) as Attachment[];
+				const uploadPromises = files.map((file) =>
+					uploadSingleFile(file)
+				);
+				const uploadedAttachments = (
+					await Promise.all(uploadPromises)
+				).filter(Boolean) as Attachment[];
 
-				setAttachments((currentAttachments) => [...currentAttachments, ...uploadedAttachments]);
+				setAttachments((currentAttachments) => [
+					...currentAttachments,
+					...uploadedAttachments,
+				]);
 			} catch (error) {
 				console.error("Error uploading files!", error);
 				toast.error("Failed to upload files, please try again!");
@@ -326,14 +365,17 @@ function PureInput({
 							const formData = new FormData();
 							formData.append("audio", audioBlob, "audio.webm");
 
-							const { text } = await transcribe.mutateAsync(formData);
+							const { text } =
+								await transcribe.mutateAsync(formData);
 
 							setInput(text);
 							setIsTranscribing(false);
 							setIsRecording(false);
 						} catch {
 							setIsTranscribing(false);
-							toast.error("Failed to transcribe audio, please try again!");
+							toast.error(
+								"Failed to transcribe audio, please try again!"
+							);
 						} finally {
 							cleanupRecorder();
 						}
@@ -360,7 +402,9 @@ function PureInput({
 		<motion.div
 			className={cn(
 				"sticky w-full bg-background",
-				messages.length > 0 ? "right-0 bottom-0 left-0" : "flex flex-col items-center justify-center"
+				messages.length > 0
+					? "right-0 bottom-0 left-0"
+					: "flex flex-col items-center justify-center"
 			)}
 			layout
 			onDragEnter={handleDragEnter}
@@ -377,12 +421,14 @@ function PureInput({
 						exit={{ opacity: 0 }}
 						initial={{ opacity: 0 }}
 					>
-						<div className="font-semibold text-2xl text-white">Drop files to upload</div>
+						<div className="font-semibold text-2xl text-white">
+							Drop files to upload
+						</div>
 					</motion.div>
 				)}
 			</AnimatePresence>
 			<input
-				className="-top-4 -left-4 pointer-events-none fixed size-0.5 opacity-0"
+				className="pointer-events-none fixed -top-4 -left-4 size-0.5 opacity-0"
 				multiple
 				onChange={handleFileChange}
 				ref={fileInputRef}
@@ -407,11 +453,15 @@ function PureInput({
 				{messages.length > 0 && !isAtBottom && (
 					<motion.div
 						animate={{ opacity: 1, y: 0 }}
-						className="-translate-x-1/2 absolute left-1/2 rounded-full bg-background/40 backdrop-blur-md"
+						className="absolute left-1/2 -translate-x-1/2 rounded-full bg-background/40 backdrop-blur-md"
 						exit={{ opacity: 0, y: 10 }}
 						initial={{ opacity: 0, y: 10 }}
 						style={{ bottom: `${inputContainerHeight + 16}px` }}
-						transition={{ type: "spring", stiffness: 300, damping: 20 }}
+						transition={{
+							type: "spring",
+							stiffness: 300,
+							damping: 20,
+						}}
 					>
 						<Button
 							className="!bg-transparent rounded-full border"
@@ -423,14 +473,19 @@ function PureInput({
 							size={"sm"}
 							variant="secondary"
 						>
-							<p className="font-normal text-xs">Scroll to bottom</p>
+							<p className="font-normal text-xs">
+								Scroll to bottom
+							</p>
 							<ChevronDownIcon className="size-3" />
 						</Button>
 					</motion.div>
 				)}
 			</AnimatePresence>
 
-			<div className={cn("mx-auto w-full max-w-3xl")} ref={inputContainerRef}>
+			<div
+				className={cn("mx-auto w-full max-w-3xl")}
+				ref={inputContainerRef}
+			>
 				{(attachments.length > 0 || uploadQueue.length > 0) && (
 					<div className="mx-6 rounded-t-md border border-b-0 bg-neutral-900/50 p-2">
 						<motion.div
@@ -444,14 +499,21 @@ function PureInput({
 							{attachments.map((attachment, index) => (
 								<PreviewAttachment
 									attachment={attachment}
-									key={attachment.url || `${attachment.name}-${index}`}
+									key={
+										attachment.url ||
+										`${attachment.name}-${index}`
+									}
 									onRemove={() => {
-										setAttachments((current) => current.filter((_, i) => i !== index));
+										setAttachments((current) =>
+											current.filter(
+												(_, i) => i !== index
+											)
+										);
 									}}
 									showName={false}
 								/>
 							))}
-							{uploadQueue.map((fileName, idx) => (
+							{uploadQueue.map((fileName) => (
 								<PreviewAttachment
 									attachment={{
 										url: "",
@@ -459,7 +521,7 @@ function PureInput({
 										contentType: "",
 									}}
 									isUploading={true}
-									key={`${fileName}-${idx}`}
+									key={`upload-${fileName}`}
 									showName={true}
 								/>
 							))}
@@ -476,11 +538,17 @@ function PureInput({
 						className="!bg-transparent w-full resize-none border-0 text-sm ring-0 placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
 						onChange={handleInput}
 						onKeyDown={(event) => {
-							if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+							if (
+								event.key === "Enter" &&
+								!event.shiftKey &&
+								!event.nativeEvent.isComposing
+							) {
 								event.preventDefault();
 
 								if (status !== "ready") {
-									toast.error("Please wait for the model to finish its response!");
+									toast.error(
+										"Please wait for the model to finish its response!"
+									);
 								} else {
 									submitForm();
 								}
@@ -510,14 +578,25 @@ function PureInput({
 						>
 							<AnimatePresence>
 								<div className="flex items-center gap-2">
-									<AttachmentButton fileInputRef={fileInputRef} status={status} />
+									<AttachmentButton
+										fileInputRef={fileInputRef}
+										status={status}
+									/>
 
-									<motion.div className="flex-shrink-0" variants={fadeVariants}>
-										<ModelSelector initialModel={initialModel} />
+									<motion.div
+										className="flex-shrink-0"
+										variants={fadeVariants}
+									>
+										<ModelSelector
+											initialModel={initialModel}
+										/>
 									</motion.div>
 
 									{isLoading ? (
-										<StopButton setMessages={setMessages} stop={stop} />
+										<StopButton
+											setMessages={setMessages}
+											stop={stop}
+										/>
 									) : (
 										<SendButton
 											handleRecord={handleRecord}
@@ -562,7 +641,13 @@ const AttachmentButton = React.memo(
 AttachmentButton.displayName = "AttachmentButton";
 
 const StopButton = React.memo(
-	({ stop, setMessages }: { stop: () => void; setMessages: UseChatHelpers<ChatMessage>["setMessages"] }) => (
+	({
+		stop,
+		setMessages,
+	}: {
+		stop: () => void;
+		setMessages: UseChatHelpers<ChatMessage>["setMessages"];
+	}) => (
 		<Button
 			onClick={(event) => {
 				event.preventDefault();
@@ -735,7 +820,12 @@ export const Input = React.memo(PureInput, (prevProps, nextProps) => {
 		return false;
 	}
 	if (prevToolsStr !== nextToolsStr) {
-		console.log("Tools changed in memo:", prevProps.tools, "→", nextProps.tools);
+		console.log(
+			"Tools changed in memo:",
+			prevProps.tools,
+			"→",
+			nextProps.tools
+		);
 		return false;
 	}
 

@@ -5,15 +5,20 @@ import { env } from "@/lib/env.mjs";
 
 const tvly = tavily({ apiKey: env.TAVILY_API_KEY });
 
-type ExtractResult = {
+interface ExtractResult {
 	url: string;
 	images: string[] | undefined;
 	content: string;
-};
+}
 
-export const extractTool = ({ dataStream }: { dataStream: UIMessageStreamWriter }) =>
+export const extractTool = ({
+	dataStream,
+}: {
+	dataStream: UIMessageStreamWriter;
+}) =>
 	tool({
-		description: "Extract web page content from one or more specified URLs.",
+		description:
+			"Extract web page content from one or more specified URLs.",
 		inputSchema: z.object({
 			urls: z.array(z.string()),
 		}),

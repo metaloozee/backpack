@@ -2,7 +2,7 @@ import { KnowledgeDialog } from "@/components/spaces/knowledge-dialog";
 import { SettingsDialog } from "@/components/spaces/settings-dialog";
 import type { Knowledge } from "@/lib/db/schema/app";
 
-type SpaceIntroProps = {
+interface SpaceIntroProps {
 	spaceId: string;
 	spaceTitle: string;
 	spaceDescription?: string;
@@ -10,7 +10,7 @@ type SpaceIntroProps = {
 	spaceStatus: "pending" | "error" | "success";
 	knowledgeStatus: "pending" | "error" | "success";
 	knowledgeData?: Knowledge[];
-};
+}
 
 export function SpaceIntro({
 	spaceId,
@@ -32,9 +32,13 @@ export function SpaceIntro({
 					</>
 				) : (
 					<>
-						<h1 className="text-left font-bold text-2xl">{spaceTitle}</h1>
+						<h1 className="text-left font-bold text-2xl">
+							{spaceTitle}
+						</h1>
 						{spaceDescription ? (
-							<p className="text-left text-muted-foreground text-xs">{spaceDescription}</p>
+							<p className="text-left text-muted-foreground text-xs">
+								{spaceDescription}
+							</p>
 						) : null}
 					</>
 				)}
@@ -49,7 +53,10 @@ export function SpaceIntro({
 				{knowledgeStatus === "pending" ? (
 					<div className="h-8 w-24 animate-pulse rounded-md bg-neutral-900" />
 				) : (
-					<KnowledgeDialog knowledgeData={knowledgeData ?? []} spaceId={spaceId} />
+					<KnowledgeDialog
+						knowledgeData={knowledgeData ?? []}
+						spaceId={spaceId}
+					/>
 				)}
 			</div>
 		</div>

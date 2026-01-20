@@ -13,8 +13,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { defaultTools, getDefaultToolsState, type ToolsState } from "@/lib/ai/tools";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+	defaultTools,
+	getDefaultToolsState,
+	type ToolsState,
+} from "@/lib/ai/tools";
 import { slideVariants, transitions } from "@/lib/animations";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
@@ -45,20 +54,33 @@ const modeTypes = [
 
 type ModeType = (typeof modeTypes)[number]["value"];
 
-type ModeSelectorProps = {
+interface ModeSelectorProps {
 	tools: ToolsState;
 	setTools: Dispatch<SetStateAction<ToolsState>>;
 	initialMode?: string;
 	initialAgent?: string;
-};
+}
 
-export function ModeSelector({ tools, setTools, initialMode, initialAgent }: ModeSelectorProps) {
-	const [selectedMode, setSelectedMode] = useState<ModeType>((initialMode as ModeType) ?? "ask");
-	const [selectedAgent, setSelectedAgent] = useState<string | null>(initialAgent ?? null);
+export function ModeSelector({
+	tools,
+	setTools,
+	initialMode,
+	initialAgent,
+}: ModeSelectorProps) {
+	const [selectedMode, setSelectedMode] = useState<ModeType>(
+		(initialMode as ModeType) ?? "ask"
+	);
+	const [selectedAgent, setSelectedAgent] = useState<string | null>(
+		initialAgent ?? null
+	);
 
 	const trpc = useTRPC();
-	const setToolsSelectionMutation = useMutation(trpc.chat.setToolsSelection.mutationOptions());
-	const setModeSelectionMutation = useMutation(trpc.chat.setModeSelection.mutationOptions());
+	const setToolsSelectionMutation = useMutation(
+		trpc.chat.setToolsSelection.mutationOptions()
+	);
+	const setModeSelectionMutation = useMutation(
+		trpc.chat.setModeSelection.mutationOptions()
+	);
 
 	const updateTool = (toolId: string, value: boolean) => {
 		const previousValue = tools[toolId];
@@ -121,7 +143,9 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 							{
 								onError: () => {
 									setTools(previousTools);
-									toast.error("Failed to save tool selection");
+									toast.error(
+										"Failed to save tool selection"
+									);
 								},
 							}
 						);
@@ -129,7 +153,9 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 				}
 			);
 		} else if (newMode === "agent") {
-			const clearedTools = Object.fromEntries(defaultTools.map((tool) => [tool.id, false])) as ToolsState;
+			const clearedTools = Object.fromEntries(
+				defaultTools.map((tool) => [tool.id, false])
+			) as ToolsState;
 			setTools(clearedTools);
 
 			setModeSelectionMutation.mutate(
@@ -147,7 +173,9 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 							{
 								onError: () => {
 									setTools(previousTools);
-									toast.error("Failed to save tool selection");
+									toast.error(
+										"Failed to save tool selection"
+									);
 								},
 							}
 						);
@@ -158,8 +186,17 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 	};
 
 	return (
-		<motion.div className="flex flex-row items-center justify-start gap-2" layout transition={transitions.smooth}>
-			<motion.div animate="visible" initial="hidden" transition={transitions.smooth} variants={slideVariants.up}>
+		<motion.div
+			className="flex flex-row items-center justify-start gap-2"
+			layout
+			transition={transitions.smooth}
+		>
+			<motion.div
+				animate="visible"
+				initial="hidden"
+				transition={transitions.smooth}
+				variants={slideVariants.up}
+			>
 				<Tabs onValueChange={handleModeChange} value={selectedMode}>
 					<TabsList className="bg-neutral-950">
 						{modeTypes.map((mode) => (
@@ -171,7 +208,8 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 							>
 								<div className="inline-flex items-center gap-1">
 									<span>{mode.label}</span>
-									{(mode.value === "ask" || mode.value === "agent") && (
+									{(mode.value === "ask" ||
+										mode.value === "agent") && (
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
 												{/** biome-ignore lint/a11y/useSemanticElements: we need a span to be able to use the onClick event, using button causes hydration errors */}
@@ -185,7 +223,11 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 														event.stopPropagation();
 													}}
 													onKeyDown={(event) => {
-														if (event.key === "Enter" || event.key === " ") {
+														if (
+															event.key ===
+																"Enter" ||
+															event.key === " "
+														) {
 															event.stopPropagation();
 														}
 													}}
@@ -205,36 +247,57 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 													align="start"
 													className="w-xs border-neutral-800 bg-neutral-950"
 												>
-													{defaultTools.map((tool) => {
-														const IconComponent = tool.icon;
-														const isChecked = tools[tool.id];
-														return (
-															<DropdownMenuItem
-																className="flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800"
-																key={tool.id}
-																onClick={(e) => e.preventDefault()}
-															>
-																<div className="flex items-center gap-3">
-																	<IconComponent className="size-4 text-muted-foreground" />
-																	<div className="flex flex-col">
-																		<span className="font-medium text-sm">
-																			{tool.name}
-																		</span>
-																		<span className="text-muted-foreground text-xs">
-																			{tool.description}
-																		</span>
+													{defaultTools.map(
+														(tool) => {
+															const IconComponent =
+																tool.icon;
+															const isChecked =
+																tools[tool.id];
+															return (
+																<DropdownMenuItem
+																	className="flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800"
+																	key={
+																		tool.id
+																	}
+																	onClick={(
+																		e
+																	) =>
+																		e.preventDefault()
+																	}
+																>
+																	<div className="flex items-center gap-3">
+																		<IconComponent className="size-4 text-muted-foreground" />
+																		<div className="flex flex-col">
+																			<span className="font-medium text-sm">
+																				{
+																					tool.name
+																				}
+																			</span>
+																			<span className="text-muted-foreground text-xs">
+																				{
+																					tool.description
+																				}
+																			</span>
+																		</div>
 																	</div>
-																</div>
-																<Switch
-																	checked={isChecked}
-																	key={`tool-switch-${tool.id}-${isChecked}`}
-																	onCheckedChange={(checked) => {
-																		updateTool(tool.id, checked);
-																	}}
-																/>
-															</DropdownMenuItem>
-														);
-													})}
+																	<Switch
+																		checked={
+																			isChecked
+																		}
+																		key={`tool-switch-${tool.id}-${isChecked}`}
+																		onCheckedChange={(
+																			checked
+																		) => {
+																			updateTool(
+																				tool.id,
+																				checked
+																			);
+																		}}
+																	/>
+																</DropdownMenuItem>
+															);
+														}
+													)}
 												</DropdownMenuContent>
 											) : (
 												<DropdownMenuContent
@@ -242,65 +305,108 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 													className="w-xs border-neutral-800 bg-neutral-950"
 												>
 													{Object.entries(
-														modeTypes.find((m) => m.value === "agent")?.agents || {}
-													).map(([agentKey, enabled]) => {
-														if (!enabled) {
-															return null;
-														}
-														const isSelected = selectedAgent === agentKey;
-														return (
-															<DropdownMenuItem
-																className="flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800"
-																key={agentKey}
-																onSelect={(e) => {
-																	e.preventDefault();
-																	const newAgent =
-																		selectedAgent === agentKey ? null : agentKey;
-																	const previousAgent = selectedAgent;
+														modeTypes.find(
+															(m) =>
+																m.value ===
+																"agent"
+														)?.agents || {}
+													).map(
+														([
+															agentKey,
+															enabled,
+														]) => {
+															if (!enabled) {
+																return null;
+															}
+															const isSelected =
+																selectedAgent ===
+																agentKey;
+															return (
+																<DropdownMenuItem
+																	className="flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800"
+																	key={
+																		agentKey
+																	}
+																	onSelect={(
+																		e
+																	) => {
+																		e.preventDefault();
+																		const newAgent =
+																			selectedAgent ===
+																			agentKey
+																				? null
+																				: agentKey;
+																		const previousAgent =
+																			selectedAgent;
 
-																	setSelectedAgent(newAgent);
+																		setSelectedAgent(
+																			newAgent
+																		);
 
-																	setModeSelectionMutation.mutate(
-																		{
-																			mode: "agent",
-																			selectedAgent: newAgent || undefined,
-																		},
-																		{
-																			onError: () => {
-																				setSelectedAgent((current) => {
-																					if (current === newAgent) {
-																						toast.error(
-																							"Failed to save agent selection"
-																						);
-																						return previousAgent;
-																					}
-																					return current;
-																				});
+																		setModeSelectionMutation.mutate(
+																			{
+																				mode: "agent",
+																				selectedAgent:
+																					newAgent ||
+																					undefined,
 																			},
-																		}
-																	);
-																}}
-															>
-																<div className="flex items-center gap-3">
-																	<TelescopeIcon className="size-4 text-muted-foreground" />
-																	<div className="flex flex-col">
-																		<span className="font-medium text-sm">
-																			{agentKey.charAt(0).toUpperCase() +
-																				agentKey.slice(1)}
-																		</span>
-																		<span className="text-muted-foreground text-xs">
-																			{agentKey.charAt(0).toUpperCase() +
-																				agentKey.slice(1)}{" "}
-																			agent
-																		</span>
+																			{
+																				onError:
+																					() => {
+																						setSelectedAgent(
+																							(
+																								current
+																							) => {
+																								if (
+																									current ===
+																									newAgent
+																								) {
+																									toast.error(
+																										"Failed to save agent selection"
+																									);
+																									return previousAgent;
+																								}
+																								return current;
+																							}
+																						);
+																					},
+																			}
+																		);
+																	}}
+																>
+																	<div className="flex items-center gap-3">
+																		<TelescopeIcon className="size-4 text-muted-foreground" />
+																		<div className="flex flex-col">
+																			<span className="font-medium text-sm">
+																				{agentKey
+																					.charAt(
+																						0
+																					)
+																					.toUpperCase() +
+																					agentKey.slice(
+																						1
+																					)}
+																			</span>
+																			<span className="text-muted-foreground text-xs">
+																				{agentKey
+																					.charAt(
+																						0
+																					)
+																					.toUpperCase() +
+																					agentKey.slice(
+																						1
+																					)}{" "}
+																				agent
+																			</span>
+																		</div>
 																	</div>
-																</div>
-																{isSelected && (
-																	<CheckIcon className="size-4 text-primary" />
-																)}
-															</DropdownMenuItem>
-														);
-													})}
+																	{isSelected && (
+																		<CheckIcon className="size-4 text-primary" />
+																	)}
+																</DropdownMenuItem>
+															);
+														}
+													)}
 												</DropdownMenuContent>
 											)}
 										</DropdownMenu>
@@ -322,7 +428,11 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 									<motion.div
 										animate={{ opacity: 1, scale: 1, y: 0 }}
 										exit={{ opacity: 0, scale: 0.9, y: -2 }}
-										initial={{ opacity: 0, scale: 0.9, y: 2 }}
+										initial={{
+											opacity: 0,
+											scale: 0.9,
+											y: 2,
+										}}
 										key={`selected-tool-${t.id}-${tools[t.id]}`}
 										layout
 										transition={transitions.smooth}
@@ -335,7 +445,9 @@ export function ModeSelector({ tools, setTools, initialMode, initialAgent }: Mod
 													</div>
 												</TooltipTrigger>
 												<TooltipContent>
-													<span className="text-xs">{t.name}</span>
+													<span className="text-xs">
+														{t.name}
+													</span>
 												</TooltipContent>
 											</Tooltip>
 										</TooltipProvider>

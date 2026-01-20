@@ -7,7 +7,14 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/ui/loader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,15 +23,20 @@ import type { Knowledge } from "@/lib/db/schema/app";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { KnowledgeTable } from "./knowledge-table";
 
-type KnowledgeDialogProps = {
+interface KnowledgeDialogProps {
 	spaceId: string;
 	knowledgeData: Knowledge[];
-};
+}
 
-export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps) {
+export function KnowledgeDialog({
+	spaceId,
+	knowledgeData,
+}: KnowledgeDialogProps) {
 	const trpc = useTRPC();
 
-	const webpageKnowledge = knowledgeData.filter((k) => k.knowledgeType === "webpage");
+	const webpageKnowledge = knowledgeData.filter(
+		(k) => k.knowledgeType === "webpage"
+	);
 	const pdfKnowledge = knowledgeData.filter((k) => k.knowledgeType === "pdf");
 	const [activeTab, setActiveTab] = useQueryState(
 		"tab",
@@ -32,7 +44,9 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
 	);
 
 	const [url, setUrl] = useState("");
-	const webPageMutation = useMutation(trpc.space.saveWebPage.mutationOptions());
+	const webPageMutation = useMutation(
+		trpc.space.saveWebPage.mutationOptions()
+	);
 
 	const [pdfFiles, setPdfFiles] = useState<File[]>([]);
 	const [isUploadingPdf, setIsUploadingPdf] = useState(false);
@@ -117,7 +131,11 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
 						required
 						type="file"
 					/>
-					<Button disabled={isUploadingPdf} type="submit" variant={"secondary"}>
+					<Button
+						disabled={isUploadingPdf}
+						type="submit"
+						variant={"secondary"}
+					>
 						{isUploadingPdf ? (
 							<Loader />
 						) : (
@@ -147,7 +165,11 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
 					type="url"
 					value={url}
 				/>
-				<Button disabled={webPageMutation.isPending} type="submit" variant={"secondary"}>
+				<Button
+					disabled={webPageMutation.isPending}
+					type="submit"
+					variant={"secondary"}
+				>
 					{webPageMutation.isPending ? (
 						<Loader />
 					) : (
@@ -165,7 +187,11 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
 		<Dialog onOpenChange={setIsOpen} open={isOpen}>
 			<DialogTrigger asChild>
 				<Button size={"sm"} variant="outline">
-					<motion.div initial="rest" variants={iconVariants} whileHover="hover">
+					<motion.div
+						initial="rest"
+						variants={iconVariants}
+						whileHover="hover"
+					>
 						<BookCopyIcon className="size-4" />
 					</motion.div>
 					Knowledge Base
@@ -177,7 +203,9 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
 				</DialogHeader>
 				<Tabs
 					className="w-full"
-					onValueChange={(value) => setActiveTab(value as "webpage" | "pdf")}
+					onValueChange={(value) =>
+						setActiveTab(value as "webpage" | "pdf")
+					}
 					value={activeTab}
 				>
 					<TabsList className="grid w-full grid-cols-2 bg-black">
@@ -186,11 +214,15 @@ export function KnowledgeDialog({ spaceId, knowledgeData }: KnowledgeDialogProps
 					</TabsList>
 					<TabsContent className="space-y-6" value="webpage">
 						<KnowledgeTable knowledgeData={webpageKnowledge} />
-						<DialogFooter className="w-full">{renderUploadForm()}</DialogFooter>
+						<DialogFooter className="w-full">
+							{renderUploadForm()}
+						</DialogFooter>
 					</TabsContent>
 					<TabsContent className="space-y-6" value="pdf">
 						<KnowledgeTable knowledgeData={pdfKnowledge} />
-						<DialogFooter className="w-full">{renderUploadForm()}</DialogFooter>
+						<DialogFooter className="w-full">
+							{renderUploadForm()}
+						</DialogFooter>
 					</TabsContent>
 				</Tabs>
 			</DialogContent>

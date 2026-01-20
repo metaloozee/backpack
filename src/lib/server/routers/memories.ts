@@ -21,7 +21,12 @@ export const memoriesRouter = router({
 		.mutation(async ({ ctx, input }) => {
 			return await db
 				.delete(memories)
-				.where(and(eq(memories.id, input.id), eq(memories.userId, ctx.session.user.id)));
+				.where(
+					and(
+						eq(memories.id, input.id),
+						eq(memories.userId, ctx.session.user.id)
+					)
+				);
 		}),
 	deleteSelectedMemories: protectedProcedure
 		.input(
@@ -36,9 +41,16 @@ export const memoriesRouter = router({
 
 			return await db
 				.delete(memories)
-				.where(and(eq(memories.userId, ctx.session.user.id), inArray(memories.id, input.ids)));
+				.where(
+					and(
+						eq(memories.userId, ctx.session.user.id),
+						inArray(memories.id, input.ids)
+					)
+				);
 		}),
 	deleteAllMemories: protectedProcedure.mutation(async ({ ctx }) => {
-		return await db.delete(memories).where(eq(memories.userId, ctx.session.user.id));
+		return await db
+			.delete(memories)
+			.where(eq(memories.userId, ctx.session.user.id));
 	}),
 });
