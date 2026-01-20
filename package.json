@@ -80,12 +80,12 @@
     "lucide-react": "^0.475.0",
     "motion": "^12.23.12",
     "nanoid": "^5.1.5",
-    "next": "^15.5.2",
+    "next": "16.1.4",
     "next-themes": "^0.4.6",
     "nuqs": "^2.7.1",
     "postgres": "^3.4.7",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-hook-form": "^7.62.0",
     "react-markdown": "^9.1.0",
     "react-scan": "^0.4.3",
@@ -116,8 +116,8 @@
     "@tailwindcss/postcss": "^4.1.13",
     "@tanstack/react-query-devtools": "^5.87.3",
     "@types/node": "^20.19.13",
-    "@types/react": "^19.1.12",
-    "@types/react-dom": "^19.1.9",
+    "@types/react": "19.2.8",
+    "@types/react-dom": "19.2.3",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/ws": "^8.18.1",
     "dotenv": "^16.6.1",
@@ -136,5 +136,9 @@
     "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
       "bun x ultracite fix"
     ]
+  },
+  "overrides": {
+    "@types/react": "19.2.8",
+    "@types/react-dom": "19.2.3"
   }
 }
