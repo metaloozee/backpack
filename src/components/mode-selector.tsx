@@ -2,14 +2,10 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-	BrainCircuitIcon,
-	CheckIcon,
-	TelescopeIcon,
-	ToolCaseIcon,
-} from "lucide-react";
+import { CheckIcon, Settings2Icon, TelescopeIcon } from "lucide-react";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -31,7 +27,6 @@ import {
 } from "@/lib/ai/tools";
 import { slideVariants, transitions } from "@/lib/animations";
 import { useTRPC } from "@/lib/trpc/trpc";
-import { cn } from "@/lib/utils";
 
 const modeTypes = [
 	{
@@ -49,7 +44,7 @@ const modeTypes = [
 	{
 		value: "agent",
 		label: "Agent",
-		description: "Specialized for academic research",
+		description: "Specialized sets of agents for agentic workflows",
 		agents: {
 			research: true,
 		},
@@ -220,18 +215,25 @@ export function ModeSelector({
 				{/* Dropdown for current mode options - placed outside tabs to avoid nested buttons */}
 				{selectedMode === "ask" && (
 					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<button
-								aria-label="Ask mode options"
-								className={cn(
-									"ml-1 inline-flex items-center justify-center rounded-sm border-0 bg-transparent p-1",
-									"hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-								)}
-								type="button"
-							>
-								<ToolCaseIcon className="size-3.5" />
-							</button>
-						</DropdownMenuTrigger>
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<DropdownMenuTrigger asChild>
+										<Button
+											aria-label="Ask mode options"
+											className="ml-1 h-7 w-7 rounded-sm border-0 bg-transparent p-0 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+											size="icon"
+											variant="ghost"
+										>
+											<Settings2Icon className="size-3.5" />
+										</Button>
+									</DropdownMenuTrigger>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>Configure Tools</p>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
 						<DropdownMenuContent
 							align="start"
 							className="w-xs border-neutral-800 bg-neutral-950"
@@ -271,18 +273,25 @@ export function ModeSelector({
 				)}
 				{selectedMode === "agent" && (
 					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<button
-								aria-label="Agent mode options"
-								className={cn(
-									"ml-1 inline-flex items-center justify-center rounded-sm border-0 bg-transparent p-1",
-									"hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-								)}
-								type="button"
-							>
-								<BrainCircuitIcon className="size-3.5" />
-							</button>
-						</DropdownMenuTrigger>
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<DropdownMenuTrigger asChild>
+										<Button
+											aria-label="Research mode options"
+											className="ml-1 h-7 w-7 rounded-sm border-0 bg-transparent p-0 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+											size="icon"
+											variant="ghost"
+										>
+											<Settings2Icon className="size-3.5" />
+										</Button>
+									</DropdownMenuTrigger>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>Select Agent</p>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
 						<DropdownMenuContent
 							align="start"
 							className="w-xs border-neutral-800 bg-neutral-950"
