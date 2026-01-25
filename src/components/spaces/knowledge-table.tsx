@@ -9,7 +9,12 @@ import {
 	getPaginationRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import { ExternalLinkIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+	ExternalLinkIcon,
+	PencilIcon,
+	RefreshCwIcon,
+	Trash2Icon,
+} from "lucide-react";
 import Link from "next/link";
 import { parseAsString, useQueryState } from "nuqs";
 import { toast } from "sonner";
@@ -455,6 +460,9 @@ export function KnowledgeTable({
 	knowledgeData: Knowledge[];
 	spaceId: string;
 }) {
+	const trpc = useTRPC();
+	const queryClient = useQueryClient();
+
 	const [renameId, setRenameId] = useQueryState(
 		"renameKnowledgeId",
 		parseAsString.withDefault("")
@@ -470,6 +478,19 @@ export function KnowledgeTable({
 	const isRenameOpen = Boolean(renameKnowledge);
 	const isDeleteOpen = Boolean(deleteKnowledge);
 
+	const retryMutation = useMutation({
+		...trpc.space.retryKnowledge.mutationOptions(),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries(
+				trpc.space.getKnowledge.pathFilter()
+			);
+			toast.success("Knowledge retry queued");
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to retry knowledge");
+		},
+	});
+
 	const columns: ColumnDef<Knowledge>[] = [
 		...baseColumns,
 		{
@@ -483,8 +504,27 @@ export function KnowledgeTable({
 						? knowledge.knowledgeName
 						: null);
 				const hasLink = Boolean(linkUrl);
+				const canRetry = knowledge.status === "failed";
 				return (
 					<div className="flex w-full items-center justify-end gap-2">
+						{canRetry ? (
+							<Button
+								aria-label={`Retry ${knowledge.knowledgeName}`}
+								className="h-8 w-8 rounded-lg border border-neutral-800/70 bg-neutral-900/40 text-neutral-200 shadow-sm transition hover:border-neutral-700 hover:bg-neutral-900/80"
+								disabled={retryMutation.isPending}
+								onClick={() => {
+									retryMutation.mutate({
+										spaceId,
+										knowledgeId: knowledge.id,
+									});
+								}}
+								size="icon"
+								type="button"
+								variant="ghost"
+							>
+								<RefreshCwIcon className="size-4" />
+							</Button>
+						) : null}
 						<Button
 							aria-label={`Open ${knowledge.knowledgeName}`}
 							className="h-8 w-8 rounded-lg border border-neutral-800/70 bg-neutral-900/40 text-neutral-200 shadow-sm transition hover:border-neutral-700 hover:bg-neutral-900/80"

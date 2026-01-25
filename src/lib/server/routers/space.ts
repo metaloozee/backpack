@@ -4,9 +4,8 @@ import { TRPCError } from "@trpc/server";
 import { del, put } from "@vercel/blob";
 import { and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { start } from "workflow/api";
 import { z } from "zod";
-import { generateEmbeddings } from "@/lib/ai/embedding";
-import { extractRawText, sanitizeData } from "@/lib/ai/extract-web-page";
 import { db } from "@/lib/db";
 import {
 	chat,
@@ -15,8 +14,8 @@ import {
 	spaces,
 } from "@/lib/db/schema/app";
 import { protectedProcedure, router } from "@/lib/server/trpc";
-
 import { sanitizeFileName, sanitizeUserInput } from "@/lib/utils/sanitization";
+import { processKnowledgeWorkflow } from "@/workflows/knowledge-process";
 
 const MAX_PDF_SIZE_MB = 25;
 const BYTES_PER_KILOBYTE = 1024;
@@ -212,8 +211,34 @@ export const spaceRouter = router({
 	savePdf: protectedProcedure
 		.input(z.instanceof(FormData))
 		.mutation(async ({ ctx, input }) => {
-			const spaceId = input.get("spaceId") as string;
-			const file = input.get("file") as File;
+			const spaceId = input.get("spaceId") as string | null;
+			const file = input.get("file") as File | null;
+
+			const parsedSpaceId = z.string().uuid().safeParse(spaceId);
+			if (!parsedSpaceId.success) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Invalid space id",
+				});
+			}
+
+			const [spaceExists] = await db
+				.select({ id: spaces.id })
+				.from(spaces)
+				.where(
+					and(
+						eq(spaces.id, parsedSpaceId.data),
+						eq(spaces.userId, ctx.session.user.id)
+					)
+				)
+				.limit(1);
+
+			if (!spaceExists) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Space not found",
+				});
+			}
 
 			if (!file) {
 				throw new TRPCError({
@@ -247,11 +272,11 @@ export const spaceRouter = router({
 				}
 			);
 
-			const [_knowledgeData] = await db
+			const [knowledgeData] = await db
 				.insert(knowledge)
 				.values({
 					userId: ctx.session.user.id,
-					spaceId,
+					spaceId: parsedSpaceId.data,
 					knowledgeType: "pdf" as const,
 					knowledgeName: file.name,
 					sourceUrl: blob.url,
@@ -260,7 +285,21 @@ export const spaceRouter = router({
 				})
 				.returning({ id: knowledge.id });
 
-			revalidatePath(`/s/${spaceId}`);
+			if (!knowledgeData) {
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Failed to save knowledge",
+				});
+			}
+
+			await start(processKnowledgeWorkflow, [
+				{
+					knowledgeId: knowledgeData.id,
+					userId: ctx.session.user.id,
+				},
+			]);
+
+			revalidatePath(`/s/${parsedSpaceId.data}`);
 			return { success: true };
 		}),
 	saveWebPage: protectedProcedure
@@ -289,40 +328,6 @@ export const spaceRouter = router({
 				});
 			}
 
-			console.log("🔃 extracting raw text");
-
-			const { success, result } = await extractRawText({
-				url: input.url,
-			});
-			if (!(success && result)) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Failed to extract content from URL",
-				});
-			}
-
-			console.log("🔃 sanitizing extracted content");
-			const { success: sanitizedSuccess, sanitizedText } =
-				await sanitizeData({
-					rawText: result[0].rawContent,
-				});
-			if (!(sanitizedSuccess && sanitizedText)) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Failed to sanitize extracted content",
-				});
-			}
-
-			console.log("🔃 generating embeddings");
-			const embeddings = await generateEmbeddings(sanitizedText);
-			if (!embeddings || embeddings.length === 0) {
-				throw new TRPCError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: "Failed to generate embeddings",
-				});
-			}
-
-			console.log("🔃 saving knowledge");
 			const [knowledgeData] = await db
 				.insert(knowledge)
 				.values({
@@ -330,24 +335,25 @@ export const spaceRouter = router({
 					spaceId: input.spaceId,
 					knowledgeType: "webpage" as const,
 					knowledgeName: input.url,
-					knowledgeSummary:
-						sanitizedText.slice(0, 500) +
-						(sanitizedText.length > 500 ? "..." : ""),
-					status: "ready",
-					processedAt: new Date(),
+					sourceUrl: input.url,
+					status: "pending",
 					uploadedAt: new Date(),
 				})
 				.returning({ id: knowledge.id });
 
-			console.log("🔃 saving embeddings");
-			await db.insert(knowledgeEmbeddings).values(
-				embeddings.map((embedding) => ({
+			if (!knowledgeData) {
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Failed to save knowledge",
+				});
+			}
+
+			await start(processKnowledgeWorkflow, [
+				{
 					knowledgeId: knowledgeData.id,
-					createdAt: new Date(),
-					content: embedding.content,
-					embedding: embedding.embedding,
-				}))
-			);
+					userId: ctx.session.user.id,
+				},
+			]);
 
 			revalidatePath(`/s/${input.spaceId}`);
 			return { success: true };
@@ -371,6 +377,68 @@ export const spaceRouter = router({
 				.orderBy(desc(knowledge.uploadedAt));
 
 			return knowledgeData;
+		}),
+	retryKnowledge: protectedProcedure
+		.input(
+			z.object({
+				spaceId: z.string().uuid(),
+				knowledgeId: z.string().uuid(),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const [knowledgeRecord] = await db
+				.select({
+					id: knowledge.id,
+					status: knowledge.status,
+				})
+				.from(knowledge)
+				.where(
+					and(
+						eq(knowledge.id, input.knowledgeId),
+						eq(knowledge.spaceId, input.spaceId),
+						eq(knowledge.userId, ctx.session.user.id)
+					)
+				)
+				.limit(1);
+
+			if (!knowledgeRecord) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Knowledge not found",
+				});
+			}
+
+			if (knowledgeRecord.status !== "failed") {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Knowledge is not in a failed state",
+				});
+			}
+
+			await db
+				.update(knowledge)
+				.set({
+					status: "pending",
+					errorMessage: null,
+					processedAt: null,
+					lastProcessingAt: null,
+				})
+				.where(
+					and(
+						eq(knowledge.id, input.knowledgeId),
+						eq(knowledge.userId, ctx.session.user.id)
+					)
+				);
+
+			await start(processKnowledgeWorkflow, [
+				{
+					knowledgeId: input.knowledgeId,
+					userId: ctx.session.user.id,
+				},
+			]);
+
+			revalidatePath(`/s/${input.spaceId}`);
+			return { success: true };
 		}),
 	renameKnowledge: protectedProcedure
 		.input(

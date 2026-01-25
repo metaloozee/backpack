@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BookCopyIcon, PlusIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,78 +69,75 @@ export function KnowledgeDialog({
 	const MAX_PDF_SIZE_BYTES =
 		MAX_PDF_SIZE_MB * BYTES_PER_KILOBYTE * KILOBYTES_PER_MEGABYTE;
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
+	const handleSubmit = useCallback(
+		async (e: React.FormEvent) => {
+			e.preventDefault();
 
-		if (!url) {
-			return toast.error("URL is required");
-		}
+			if (!url) {
+				return toast.error("URL is required");
+			}
 
-		try {
-			await webPageMutation.mutateAsync({
-				spaceId,
-				url,
-			});
+			try {
+				await webPageMutation.mutateAsync({
+					spaceId,
+					url,
+				});
 
-			setIsOpen(false);
-			setUrl("");
-			return toast.success("Successfully added into the knowledge.");
-		} catch (err) {
-			toast.error("uh Oh!", { description: (err as Error).message });
-		}
-	};
-
-	const renderUploadForm = () => {
-		// PDF Upload Form
-		if (activeTab === "pdf") {
-			const handlePdfSubmit = async (e: React.FormEvent) => {
-				e.preventDefault();
-
-				if (pdfFiles.length === 0) {
-					return toast.error("Please select at least one PDF");
-				}
-
-				const oversizedFiles = pdfFiles.filter(
-					(file) => file.size > MAX_PDF_SIZE_BYTES
-				);
-				if (oversizedFiles.length > 0) {
-					return toast.error(
-						`PDFs must be under ${MAX_PDF_SIZE_MB}MB`,
-						{
-							description: oversizedFiles
-								.map((file) => file.name)
-								.join(", "),
-						}
-					);
-				}
-
-				setIsUploadingPdf(true);
-
-				/*
-				 * Here, I am sequentially uploading each PDF file for its processing.
-				 * TODO: Move heavy PDF processing to a real background job queue using Upstash QStash.
-				 */
-
-				for (const file of pdfFiles) {
-					const formData = new FormData();
-					formData.append("spaceId", spaceId);
-					formData.append("file", file);
-
-					try {
-						await pdfMutation.mutateAsync(formData);
-						toast.success(`${file.name} queued for processing`);
-					} catch (err) {
-						toast.error(`Failed to queue ${file.name}`, {
-							description: (err as Error).message,
-						});
-					}
-				}
-
-				setIsUploadingPdf(false);
-				setPdfFiles([]);
 				setIsOpen(false);
-			};
+				setUrl("");
+				return toast.success("Queued for processing.");
+			} catch (err) {
+				toast.error("uh Oh!", { description: (err as Error).message });
+			}
+		},
+		[spaceId, url, webPageMutation]
+	);
 
+	const handlePdfSubmit = useCallback(
+		async (e: React.FormEvent) => {
+			e.preventDefault();
+
+			if (pdfFiles.length === 0) {
+				return toast.error("Please select at least one PDF");
+			}
+
+			const oversizedFiles = pdfFiles.filter(
+				(file) => file.size > MAX_PDF_SIZE_BYTES
+			);
+			if (oversizedFiles.length > 0) {
+				return toast.error(`PDFs must be under ${MAX_PDF_SIZE_MB}MB`, {
+					description: oversizedFiles
+						.map((file) => file.name)
+						.join(", "),
+				});
+			}
+
+			setIsUploadingPdf(true);
+
+			for (const file of pdfFiles) {
+				const formData = new FormData();
+				formData.append("spaceId", spaceId);
+				formData.append("file", file);
+
+				try {
+					await pdfMutation.mutateAsync(formData);
+					toast.success(`${file.name} queued for processing`);
+				} catch (err) {
+					toast.error(`Failed to queue ${file.name}`, {
+						description: (err as Error).message,
+					});
+				}
+			}
+
+			setIsUploadingPdf(false);
+			setPdfFiles([]);
+			setIsOpen(false);
+		},
+		[MAX_PDF_SIZE_BYTES, pdfFiles, pdfMutation, spaceId]
+	);
+
+	const uploadForm = useMemo(() => {
+		if (activeTab === "pdf") {
 			return (
 				<form
 					className="flex h-full w-full items-center justify-center gap-2"
@@ -178,7 +175,6 @@ export function KnowledgeDialog({
 			);
 		}
 
-		// WebPage Upload Form
 		return (
 			<form
 				className="flex h-full w-full items-center justify-center gap-2"
@@ -210,7 +206,14 @@ export function KnowledgeDialog({
 				</Button>
 			</form>
 		);
-	};
+	}, [
+		activeTab,
+		handlePdfSubmit,
+		handleSubmit,
+		isUploadingPdf,
+		url,
+		webPageMutation.isPending,
+	]);
 
 	return (
 		<Dialog onOpenChange={setIsOpen} open={isOpen}>
@@ -252,7 +255,7 @@ export function KnowledgeDialog({
 							/>
 						</ScrollArea>
 						<DialogFooter className="w-full">
-							{renderUploadForm()}
+							{uploadForm}
 						</DialogFooter>
 					</TabsContent>
 					<TabsContent
@@ -266,7 +269,7 @@ export function KnowledgeDialog({
 							/>
 						</ScrollArea>
 						<DialogFooter className="w-full">
-							{renderUploadForm()}
+							{uploadForm}
 						</DialogFooter>
 					</TabsContent>
 				</Tabs>
