@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BookCopyIcon, PlusIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
@@ -34,6 +34,7 @@ export function KnowledgeDialog({
 	knowledgeData,
 }: KnowledgeDialogProps) {
 	const trpc = useTRPC();
+	const queryClient = useQueryClient();
 
 	const webpageKnowledge = knowledgeData.filter(
 		(k) => k.knowledgeType === "webpage"
@@ -51,7 +52,14 @@ export function KnowledgeDialog({
 
 	const [pdfFiles, setPdfFiles] = useState<File[]>([]);
 	const [isUploadingPdf, setIsUploadingPdf] = useState(false);
-	const pdfMutation = useMutation(trpc.space.savePdf.mutationOptions());
+	const pdfMutation = useMutation({
+		...trpc.space.savePdf.mutationOptions(),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries(
+				trpc.space.getKnowledge.pathFilter()
+			);
+		},
+	});
 
 	const [isOpen, setIsOpen] = useState(false);
 

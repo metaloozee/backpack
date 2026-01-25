@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1751706226029,
-      "tag": "0000_mixed_toxin",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1751707131715,
-      "tag": "0001_windy_madelyne_pryor",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1752585907991,
-      "tag": "0002_sparkling_shaman",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1753437931874,
-      "tag": "0003_magenta_iron_monger",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1753439257845,
-      "tag": "0004_medical_rocket_racer",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1758878430180,
-      "tag": "0005_elite_tyrannus",
+      "when": 1769362132732,
+      "tag": "0000_mysterious_blue_marvel",
       "breakpoints": true
     }
   ]

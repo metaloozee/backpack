@@ -2,6 +2,7 @@ import type { InferSelectModel } from "drizzle-orm";
 import {
 	boolean,
 	index,
+	integer,
 	json,
 	pgEnum,
 	pgTable,
@@ -79,6 +80,12 @@ export const KnowledgeTypeEnum = pgEnum("knowledge_type_enum", [
 	"webpage",
 	"pdf",
 ]);
+export const KnowledgeStatusEnum = pgEnum("knowledge_status_enum", [
+	"pending",
+	"processing",
+	"ready",
+	"failed",
+]);
 export const knowledge = pgTable(
 	"knowledge",
 	{
@@ -100,6 +107,18 @@ export const knowledge = pgTable(
 		knowledgeType: KnowledgeTypeEnum("knowledge_type").notNull(),
 		knowledgeName: text("knowledge_name").notNull(),
 		knowledgeSummary: text("knowledge_summary"),
+		sourceUrl: text("source_url"),
+		status: KnowledgeStatusEnum("status").notNull().default("pending"),
+		errorMessage: text("error_message"),
+		processingAttempts: integer("processing_attempts").notNull().default(0),
+		lastProcessingAt: timestamp("last_processing_at", {
+			withTimezone: true,
+			mode: "date",
+		}),
+		processedAt: timestamp("processed_at", {
+			withTimezone: true,
+			mode: "date",
+		}),
 		uploadedAt: timestamp("uploaded_at", {
 			withTimezone: true,
 			mode: "date",

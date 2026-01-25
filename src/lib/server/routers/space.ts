@@ -14,7 +14,6 @@ import {
 	knowledgeEmbeddings,
 	spaces,
 } from "@/lib/db/schema/app";
-import { enqueueKnowledgeProcessing } from "@/lib/qstash";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 
 import { sanitizeFileName, sanitizeUserInput } from "@/lib/utils/sanitization";
@@ -248,7 +247,7 @@ export const spaceRouter = router({
 				}
 			);
 
-			const [knowledgeData] = await db
+			const [_knowledgeData] = await db
 				.insert(knowledge)
 				.values({
 					userId: ctx.session.user.id,
@@ -260,13 +259,6 @@ export const spaceRouter = router({
 					uploadedAt: new Date(),
 				})
 				.returning({ id: knowledge.id });
-
-			await enqueueKnowledgeProcessing({
-				jobType: "pdf",
-				knowledgeId: knowledgeData.id,
-				spaceId,
-				userId: ctx.session.user.id,
-			});
 
 			revalidatePath(`/s/${spaceId}`);
 			return { success: true };

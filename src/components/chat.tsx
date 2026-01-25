@@ -18,7 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { getDefaultToolsState, type ToolsState } from "@/lib/ai/tools";
 import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/ai/utils";
-import type { Chat as ChatType } from "@/lib/db/schema/app";
+import type { Chat as ChatType, Knowledge } from "@/lib/db/schema/app";
 import { useAutoResume } from "@/lib/hooks/use-auto-resume";
 import {
 	type ChatInfiniteData,
@@ -337,6 +337,15 @@ export function useKnowledgeOverview(spaceId?: string) {
 		}),
 		enabled: !!spaceId,
 		staleTime: 30_000,
+		refetchInterval: (queryState) => {
+			const data = queryState.state.data as Knowledge[] | undefined;
+			const hasInProgress = data?.some(
+				(item) =>
+					item.status === "pending" || item.status === "processing"
+			);
+			return hasInProgress ? 5000 : false;
+		},
+		refetchIntervalInBackground: true,
 	});
 
 	if (!spaceId) {

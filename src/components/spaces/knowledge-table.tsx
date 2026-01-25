@@ -1,5 +1,4 @@
 "use client";
-"use client";
 
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,7 +9,7 @@ import {
 	getPaginationRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
-import { PencilIcon, Trash2Icon } from "lucide-react";
+import { ExternalLinkIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import Link from "next/link";
 import { parseAsString, useQueryState } from "nuqs";
 import { toast } from "sonner";
@@ -69,7 +68,7 @@ const baseColumns: ColumnDef<Knowledge>[] = [
 		accessorKey: "status",
 		header: "Status",
 		cell: ({ row }) => {
-			const status = row.original.status;
+			const status = row.original.status ?? "pending";
 			const errorMessage = row.original.errorMessage;
 			const statusLabelMap = {
 				pending: "Pending",
@@ -85,8 +84,9 @@ const baseColumns: ColumnDef<Knowledge>[] = [
 				failed: "bg-rose-500/10 text-rose-300",
 			} as const;
 
-			const statusLabel = statusLabelMap[status];
-			const statusClass = statusClassMap[status];
+			const statusLabel = statusLabelMap[status] ?? "Pending";
+			const statusClass =
+				statusClassMap[status] ?? "bg-amber-500/10 text-amber-300";
 
 			return (
 				<span
@@ -477,8 +477,34 @@ export function KnowledgeTable({
 			header: "Actions",
 			cell: ({ row }) => {
 				const knowledge = row.original;
+				const linkUrl =
+					knowledge.sourceUrl ??
+					(knowledge.knowledgeType === "webpage"
+						? knowledge.knowledgeName
+						: null);
+				const hasLink = Boolean(linkUrl);
 				return (
 					<div className="flex w-full items-center justify-end gap-2">
+						<Button
+							aria-label={`Open ${knowledge.knowledgeName}`}
+							className="h-8 w-8 rounded-lg border border-neutral-800/70 bg-neutral-900/40 text-neutral-200 shadow-sm transition hover:border-neutral-700 hover:bg-neutral-900/80"
+							disabled={!hasLink}
+							onClick={() => {
+								if (!linkUrl) {
+									return;
+								}
+								window.open(
+									linkUrl,
+									"_blank",
+									"noopener,noreferrer"
+								);
+							}}
+							size="icon"
+							type="button"
+							variant="ghost"
+						>
+							<ExternalLinkIcon className="size-4" />
+						</Button>
 						<Button
 							aria-label={`Rename ${knowledge.knowledgeName}`}
 							className="h-8 w-8 rounded-lg border border-neutral-800/70 bg-neutral-900/40 text-neutral-200 shadow-sm transition hover:border-neutral-700 hover:bg-neutral-900/80"
