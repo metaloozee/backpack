@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/suspicious/noConsole: console.log */
 
-import { Mistral } from "@mistralai/mistralai";
 import { TRPCError } from "@trpc/server";
+import { del, put } from "@vercel/blob";
 import { and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -14,17 +14,15 @@ import {
 	knowledgeEmbeddings,
 	spaces,
 } from "@/lib/db/schema/app";
-import { env } from "@/lib/env.mjs";
+import { enqueueKnowledgeProcessing } from "@/lib/qstash";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 
-import { sanitizeUserInput } from "@/lib/utils/sanitization";
+import { sanitizeFileName, sanitizeUserInput } from "@/lib/utils/sanitization";
 
-const mistral = new Mistral({ apiKey: env.MISTRAL_API_KEY });
-
-async function fileToBase64(file: File): Promise<string> {
-	const arrayBuffer = await file.arrayBuffer();
-	return Buffer.from(arrayBuffer).toString("base64");
-}
+const MAX_PDF_SIZE_MB = 25;
+const BYTES_PER_KILOBYTE = 1024;
+const KILOBYTES_PER_MEGABYTE = 1024;
+const BYTES_PER_MB = BYTES_PER_KILOBYTE * KILOBYTES_PER_MEGABYTE;
 
 export const spaceRouter = router({
 	getSpaceOverview: protectedProcedure
@@ -218,38 +216,38 @@ export const spaceRouter = router({
 			const spaceId = input.get("spaceId") as string;
 			const file = input.get("file") as File;
 
-			console.log("🔃 converting file to base64");
-			const base64Pdf = (await fileToBase64(file)) as string;
-
-			console.log("🔃 ocr processing");
-			const ocrResponse = await mistral.ocr.process({
-				model: "mistral-ocr-latest",
-				document: {
-					type: "document_url",
-					documentUrl: `data:application/pdf;base64,${base64Pdf}`,
-				},
-			});
-
-			if (ocrResponse.pages.length === 0) {
+			if (!file) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
-					message: "Failed to process PDF",
+					message: "No file uploaded",
 				});
 			}
 
-			console.log("🔃 generating embeddings");
-			const pdfText = ocrResponse.pages
-				.map((page) => page.markdown)
-				.join("\n");
-			const embeddings = await generateEmbeddings(pdfText);
-			if (!embeddings || embeddings.length === 0) {
+			if (file.type !== "application/pdf") {
 				throw new TRPCError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: "Failed to generate embeddings",
+					code: "BAD_REQUEST",
+					message: "Only PDF files are allowed",
 				});
 			}
 
-			console.log("🔃 saving knowledge");
+			if (file.size > MAX_PDF_SIZE_MB * BYTES_PER_MB) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: `PDF size should be less than ${MAX_PDF_SIZE_MB}MB`,
+				});
+			}
+
+			const fileBuffer = await file.arrayBuffer();
+			const sanitizedFileName = sanitizeFileName(file.name);
+			const blob = await put(
+				`${ctx.session.user.id}/knowledge/${sanitizedFileName}`,
+				fileBuffer,
+				{
+					access: "public",
+					addRandomSuffix: true,
+				}
+			);
+
 			const [knowledgeData] = await db
 				.insert(knowledge)
 				.values({
@@ -257,19 +255,18 @@ export const spaceRouter = router({
 					spaceId,
 					knowledgeType: "pdf" as const,
 					knowledgeName: file.name,
+					sourceUrl: blob.url,
+					status: "pending",
 					uploadedAt: new Date(),
 				})
 				.returning({ id: knowledge.id });
 
-			console.log("🔃 saving embeddings");
-			await db.insert(knowledgeEmbeddings).values(
-				embeddings.map((embedding) => ({
-					knowledgeId: knowledgeData.id,
-					createdAt: new Date(),
-					content: embedding.content,
-					embedding: embedding.embedding,
-				}))
-			);
+			await enqueueKnowledgeProcessing({
+				jobType: "pdf",
+				knowledgeId: knowledgeData.id,
+				spaceId,
+				userId: ctx.session.user.id,
+			});
 
 			revalidatePath(`/s/${spaceId}`);
 			return { success: true };
@@ -344,6 +341,8 @@ export const spaceRouter = router({
 					knowledgeSummary:
 						sanitizedText.slice(0, 500) +
 						(sanitizedText.length > 500 ? "..." : ""),
+					status: "ready",
+					processedAt: new Date(),
 					uploadedAt: new Date(),
 				})
 				.returning({ id: knowledge.id });
@@ -380,5 +379,103 @@ export const spaceRouter = router({
 				.orderBy(desc(knowledge.uploadedAt));
 
 			return knowledgeData;
+		}),
+	renameKnowledge: protectedProcedure
+		.input(
+			z.object({
+				spaceId: z.string().uuid(),
+				knowledgeId: z.string().uuid(),
+				knowledgeName: z
+					.string()
+					.min(1)
+					.max(255)
+					.transform(sanitizeUserInput),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const [updatedKnowledge] = await db
+				.update(knowledge)
+				.set({ knowledgeName: input.knowledgeName })
+				.where(
+					and(
+						eq(knowledge.id, input.knowledgeId),
+						eq(knowledge.spaceId, input.spaceId),
+						eq(knowledge.userId, ctx.session.user.id)
+					)
+				)
+				.returning({ id: knowledge.id });
+
+			if (!updatedKnowledge) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Knowledge not found",
+				});
+			}
+
+			revalidatePath(`/s/${input.spaceId}`);
+			return { success: true };
+		}),
+	deleteKnowledge: protectedProcedure
+		.input(
+			z.object({
+				spaceId: z.string().uuid(),
+				knowledgeId: z.string().uuid(),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const [knowledgeRecord] = await db
+				.select({
+					id: knowledge.id,
+					knowledgeType: knowledge.knowledgeType,
+					sourceUrl: knowledge.sourceUrl,
+				})
+				.from(knowledge)
+				.where(
+					and(
+						eq(knowledge.id, input.knowledgeId),
+						eq(knowledge.spaceId, input.spaceId),
+						eq(knowledge.userId, ctx.session.user.id)
+					)
+				)
+				.limit(1);
+
+			if (!knowledgeRecord) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Knowledge not found",
+				});
+			}
+
+			if (
+				knowledgeRecord.knowledgeType === "pdf" &&
+				knowledgeRecord.sourceUrl
+			) {
+				await del(knowledgeRecord.sourceUrl);
+			}
+
+			await db
+				.delete(knowledgeEmbeddings)
+				.where(eq(knowledgeEmbeddings.knowledgeId, knowledgeRecord.id));
+
+			const [deletedKnowledge] = await db
+				.delete(knowledge)
+				.where(
+					and(
+						eq(knowledge.id, input.knowledgeId),
+						eq(knowledge.spaceId, input.spaceId),
+						eq(knowledge.userId, ctx.session.user.id)
+					)
+				)
+				.returning({ id: knowledge.id });
+
+			if (!deletedKnowledge) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Knowledge not found",
+				});
+			}
+
+			revalidatePath(`/s/${input.spaceId}`);
+			return { success: true };
 		}),
 });

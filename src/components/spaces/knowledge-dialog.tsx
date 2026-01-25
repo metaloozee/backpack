@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/ui/loader";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { iconVariants } from "@/lib/animations";
 import type { Knowledge } from "@/lib/db/schema/app";
@@ -54,6 +55,12 @@ export function KnowledgeDialog({
 
 	const [isOpen, setIsOpen] = useState(false);
 
+	const MAX_PDF_SIZE_MB = 25;
+	const BYTES_PER_KILOBYTE = 1024;
+	const KILOBYTES_PER_MEGABYTE = 1024;
+	const MAX_PDF_SIZE_BYTES =
+		MAX_PDF_SIZE_MB * BYTES_PER_KILOBYTE * KILOBYTES_PER_MEGABYTE;
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
@@ -85,6 +92,20 @@ export function KnowledgeDialog({
 					return toast.error("Please select at least one PDF");
 				}
 
+				const oversizedFiles = pdfFiles.filter(
+					(file) => file.size > MAX_PDF_SIZE_BYTES
+				);
+				if (oversizedFiles.length > 0) {
+					return toast.error(
+						`PDFs must be under ${MAX_PDF_SIZE_MB}MB`,
+						{
+							description: oversizedFiles
+								.map((file) => file.name)
+								.join(", "),
+						}
+					);
+				}
+
 				setIsUploadingPdf(true);
 
 				/*
@@ -99,9 +120,9 @@ export function KnowledgeDialog({
 
 					try {
 						await pdfMutation.mutateAsync(formData);
-						toast.success(`${file.name} processed`);
+						toast.success(`${file.name} queued for processing`);
 					} catch (err) {
-						toast.error(`Failed to process ${file.name}`, {
+						toast.error(`Failed to queue ${file.name}`, {
 							description: (err as Error).message,
 						});
 					}
@@ -197,12 +218,12 @@ export function KnowledgeDialog({
 					Knowledge Base
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="min-w-2xl bg-neutral-950">
+			<DialogContent className="flex h-[min(85vh,56rem)] w-full max-w-[min(96vw,72rem)] flex-col bg-neutral-950 sm:max-w-[min(96vw,72rem)]">
 				<DialogHeader>
 					<DialogTitle>Knowledge Base</DialogTitle>
 				</DialogHeader>
 				<Tabs
-					className="w-full"
+					className="flex w-full flex-1 flex-col"
 					onValueChange={(value) =>
 						setActiveTab(value as "webpage" | "pdf")
 					}
@@ -212,14 +233,30 @@ export function KnowledgeDialog({
 						<TabsTrigger value="webpage">Web Pages</TabsTrigger>
 						<TabsTrigger value="pdf">PDF Documents</TabsTrigger>
 					</TabsList>
-					<TabsContent className="space-y-6" value="webpage">
-						<KnowledgeTable knowledgeData={webpageKnowledge} />
+					<TabsContent
+						className="flex flex-1 flex-col space-y-6 overflow-hidden"
+						value="webpage"
+					>
+						<ScrollArea className="min-h-0 flex-1 pr-2">
+							<KnowledgeTable
+								knowledgeData={webpageKnowledge}
+								spaceId={spaceId}
+							/>
+						</ScrollArea>
 						<DialogFooter className="w-full">
 							{renderUploadForm()}
 						</DialogFooter>
 					</TabsContent>
-					<TabsContent className="space-y-6" value="pdf">
-						<KnowledgeTable knowledgeData={pdfKnowledge} />
+					<TabsContent
+						className="flex flex-1 flex-col space-y-6 overflow-hidden"
+						value="pdf"
+					>
+						<ScrollArea className="min-h-0 flex-1 pr-2">
+							<KnowledgeTable
+								knowledgeData={pdfKnowledge}
+								spaceId={spaceId}
+							/>
+						</ScrollArea>
 						<DialogFooter className="w-full">
 							{renderUploadForm()}
 						</DialogFooter>
