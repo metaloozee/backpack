@@ -64,6 +64,8 @@ const parseToolsState = (toolsStateString: string | undefined): ToolsState => {
 	}
 };
 
+const DEFAULT_CHAT_TITLE = "Unnamed Chat";
+
 const createChatTitle = async (message: {
 	id: string;
 	role: string;
@@ -79,7 +81,38 @@ const createChatTitle = async (message: {
     Follow the schema provided.
                             `,
 	});
-	return object.title ?? "Unnamed Chat";
+	return object.title ?? DEFAULT_CHAT_TITLE;
+};
+
+const updateChatTitleInBackground = (params: {
+	chatId: string;
+	userId: string;
+	message: {
+		id: string;
+		role: string;
+		parts: unknown[];
+	};
+}) => {
+	createChatTitle(params.message)
+		.then(async (title) => {
+			if (!title || title === DEFAULT_CHAT_TITLE) {
+				return;
+			}
+
+			await db
+				.update(dbChat)
+				.set({ title })
+				.where(
+					and(
+						eq(dbChat.id, params.chatId),
+						eq(dbChat.userId, params.userId),
+						eq(dbChat.title, DEFAULT_CHAT_TITLE)
+					)
+				);
+		})
+		.catch((error) => {
+			console.error("Failed to generate chat title", error);
+		});
 };
 
 const buildActiveTools = (toolsState: ToolsState): ActiveTool[] => {
@@ -170,17 +203,24 @@ export async function POST(req: Request) {
 				]);
 
 			const [chat] = chatResult;
+			const shouldGenerateTitle = !chat;
 
 			if (!chat) {
-				const title = await createChatTitle(message);
-
 				await caller.chat.saveChat({
 					id,
 					userId: session.userId,
 					spaceId: requestEnv.inSpace
 						? requestEnv.spaceId
 						: undefined,
-					title,
+					title: DEFAULT_CHAT_TITLE,
+				});
+			}
+
+			if (shouldGenerateTitle) {
+				updateChatTitleInBackground({
+					chatId: id,
+					userId: session.userId,
+					message,
 				});
 			}
 
