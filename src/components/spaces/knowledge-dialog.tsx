@@ -46,9 +46,14 @@ export function KnowledgeDialog({
 	);
 
 	const [url, setUrl] = useState("");
-	const webPageMutation = useMutation(
-		trpc.space.saveWebPage.mutationOptions()
-	);
+	const webPageMutation = useMutation({
+		...trpc.space.saveWebPage.mutationOptions(),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries(
+				trpc.space.getKnowledge.pathFilter()
+			);
+		},
+	});
 
 	const [pdfFiles, setPdfFiles] = useState<File[]>([]);
 	const [isUploadingPdf, setIsUploadingPdf] = useState(false);
