@@ -1,10 +1,15 @@
-import { and, eq, sql } from "drizzle-orm";
 import { FatalError } from "workflow";
 import { generateEmbeddings } from "@/lib/ai/embedding";
 import { extractRawText, sanitizeData } from "@/lib/ai/extract-web-page";
 import { extractTextFromPdfUrl } from "@/lib/ai/mistral-ocr";
-import { db } from "@/lib/db";
-import { knowledge, knowledgeEmbeddings } from "@/lib/db/schema/app";
+import {
+	deleteKnowledgeEmbeddingsByKnowledgeId,
+	getKnowledgeByIdAndUserId,
+	insertKnowledgeEmbeddings,
+	markKnowledgeFailed,
+	markKnowledgeProcessing,
+	markKnowledgeReady,
+} from "@/lib/db/queries";
 
 const SUMMARY_LIMIT = 500;
 const MAX_ERROR_LENGTH = 500;
@@ -67,18 +72,7 @@ export async function processKnowledgeWorkflow(input: WorkflowInput) {
 async function loadKnowledge({ knowledgeId, userId }: WorkflowInput) {
 	"use step";
 
-	const [record] = await db
-		.select({
-			id: knowledge.id,
-			spaceId: knowledge.spaceId,
-			knowledgeType: knowledge.knowledgeType,
-			knowledgeName: knowledge.knowledgeName,
-			sourceUrl: knowledge.sourceUrl,
-			status: knowledge.status,
-		})
-		.from(knowledge)
-		.where(and(eq(knowledge.id, knowledgeId), eq(knowledge.userId, userId)))
-		.limit(1);
+	const record = await getKnowledgeByIdAndUserId({ knowledgeId, userId });
 
 	if (!record) {
 		throw new FatalError("Knowledge not found");
@@ -94,17 +88,7 @@ async function loadKnowledge({ knowledgeId, userId }: WorkflowInput) {
 async function markProcessing({ knowledgeId, userId }: WorkflowInput) {
 	"use step";
 
-	const [updated] = await db
-		.update(knowledge)
-		.set({
-			status: "processing",
-			processingAttempts: sql<number>`${knowledge.processingAttempts} + 1`,
-			lastProcessingAt: new Date(),
-			processedAt: null,
-			errorMessage: null,
-		})
-		.where(and(eq(knowledge.id, knowledgeId), eq(knowledge.userId, userId)))
-		.returning({ id: knowledge.id });
+	const updated = await markKnowledgeProcessing({ knowledgeId, userId });
 
 	if (!updated) {
 		throw new FatalError("Knowledge not found");
@@ -178,20 +162,11 @@ async function saveEmbeddings({
 }) {
 	"use step";
 
-	await db
-		.delete(knowledgeEmbeddings)
-		.where(eq(knowledgeEmbeddings.knowledgeId, knowledgeId));
+	await deleteKnowledgeEmbeddingsByKnowledgeId({ knowledgeId });
 
 	const createdAt = new Date();
 
-	await db.insert(knowledgeEmbeddings).values(
-		embeddings.map((embedding) => ({
-			knowledgeId,
-			createdAt,
-			content: embedding.content,
-			embedding: embedding.embedding,
-		}))
-	);
+	await insertKnowledgeEmbeddings({ knowledgeId, createdAt, embeddings });
 }
 
 async function markReady({
@@ -205,16 +180,11 @@ async function markReady({
 }) {
 	"use step";
 
-	const [updated] = await db
-		.update(knowledge)
-		.set({
-			status: "ready",
-			knowledgeSummary,
-			processedAt: new Date(),
-			errorMessage: null,
-		})
-		.where(and(eq(knowledge.id, knowledgeId), eq(knowledge.userId, userId)))
-		.returning({ id: knowledge.id });
+	const updated = await markKnowledgeReady({
+		knowledgeId,
+		userId,
+		knowledgeSummary,
+	});
 
 	if (!updated) {
 		throw new FatalError("Knowledge not found");
@@ -232,16 +202,7 @@ async function markFailed({
 }) {
 	"use step";
 
-	await db
-		.update(knowledge)
-		.set({
-			status: "failed",
-			errorMessage,
-			lastProcessingAt: new Date(),
-		})
-		.where(
-			and(eq(knowledge.id, knowledgeId), eq(knowledge.userId, userId))
-		);
+	await markKnowledgeFailed({ knowledgeId, userId, errorMessage });
 }
 
 const normalizeText = (value: string) => {

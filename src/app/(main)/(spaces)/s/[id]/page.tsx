@@ -1,4 +1,3 @@
-import { and, eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 
 import { notFound } from "next/navigation";
@@ -6,8 +5,7 @@ import { Chat } from "@/components/chat";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
 import { getDefaultToolsState } from "@/lib/ai/tools";
 import { getSession, getUser } from "@/lib/auth/utils";
-import { db } from "@/lib/db";
-import { spaces } from "@/lib/db/schema/app";
+import { getSpaceByIdAndUserId } from "@/lib/db/queries";
 
 export default async function SpacePage({
 	params,
@@ -36,10 +34,10 @@ export default async function SpacePage({
 	const initialMode = cookieStore.get("X-Mode-Selection")?.value ?? "ask";
 	const initialAgent = cookieStore.get("X-Selected-Agent")?.value;
 
-	const [spaceData] = await db
-		.select()
-		.from(spaces)
-		.where(and(eq(spaces.id, spaceId), eq(spaces.userId, user?.id ?? "")));
+	const spaceData = await getSpaceByIdAndUserId({
+		spaceId,
+		userId: user?.id ?? "",
+	});
 
 	if (!spaceData) {
 		return notFound();

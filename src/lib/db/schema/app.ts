@@ -1,9 +1,10 @@
-import type { InferSelectModel } from "drizzle-orm";
+import { type InferSelectModel, sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	index,
 	integer,
-	json,
+	jsonb,
 	pgEnum,
 	pgTable,
 	primaryKey,
@@ -33,7 +34,7 @@ export const memories = pgTable(
 			mode: "date",
 		})
 			.notNull()
-			.$defaultFn(() => new Date()),
+			.defaultNow(),
 	},
 	(table) => ({
 		embeddingIndex: index("memories_embedding_index").using(
@@ -66,7 +67,9 @@ export const spaces = pgTable(
 		createdAt: timestamp("created_at", {
 			withTimezone: true,
 			mode: "date",
-		}).notNull(),
+		})
+			.notNull()
+			.defaultNow(),
 	},
 	(table) => ({
 		userCreatedAtIdx: index("spaces_user_created_at_idx").on(
@@ -122,13 +125,22 @@ export const knowledge = pgTable(
 		uploadedAt: timestamp("uploaded_at", {
 			withTimezone: true,
 			mode: "date",
-		}).notNull(),
+		})
+			.notNull()
+			.defaultNow(),
 	},
 	(table) => ({
+		processingAttemptsCheck: check(
+			"knowledge_processing_attempts_check",
+			sql`${table.processingAttempts} >= 0`
+		),
 		userSpaceIdx: index("knowledge_user_space_idx").on(
 			table.userId,
 			table.spaceId
 		),
+		userSpaceUploadedAtIdx: index(
+			"knowledge_user_space_uploaded_at_idx"
+		).on(table.userId, table.spaceId, table.uploadedAt),
 		userUploadedAtIdx: index("knowledge_user_uploaded_at_idx").on(
 			table.userId,
 			table.uploadedAt
@@ -154,7 +166,9 @@ export const knowledgeEmbeddings = pgTable(
 		createdAt: timestamp("created_at", {
 			withTimezone: true,
 			mode: "date",
-		}).notNull(),
+		})
+			.notNull()
+			.defaultNow(),
 	},
 	(table) => ({
 		embeddingIndex: index("embedding_index").using(
@@ -174,7 +188,12 @@ export const chat = pgTable(
 			.primaryKey()
 			.$defaultFn(() => crypto.randomUUID()),
 		title: text("title").notNull(),
-		createdAt: timestamp("created_at").notNull(),
+		createdAt: timestamp("created_at", {
+			withTimezone: true,
+			mode: "date",
+		})
+			.notNull()
+			.defaultNow(),
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, {
@@ -195,6 +214,10 @@ export const chat = pgTable(
 			table.userId,
 			table.createdAt
 		),
+		titleTrgmIdx: index("chat_title_trgm_idx").using(
+			"gin",
+			table.title.op("gin_trgm_ops")
+		),
 	})
 );
 export type Chat = InferSelectModel<typeof chat>;
@@ -212,11 +235,20 @@ export const message = pgTable(
 				onUpdate: "cascade",
 			}),
 		role: varchar("role").notNull(),
-		parts: json("parts").notNull(),
-		attachments: json("attachments").notNull(),
-		createdAt: timestamp("created_at").notNull(),
+		parts: jsonb("parts").notNull(),
+		attachments: jsonb("attachments").notNull(),
+		createdAt: timestamp("created_at", {
+			withTimezone: true,
+			mode: "date",
+		})
+			.notNull()
+			.defaultNow(),
 	},
 	(table) => ({
+		roleCheck: check(
+			"message_role_check",
+			sql`${table.role} in ('user', 'data', 'assistant', 'system')`
+		),
 		chatCreatedAtIdx: index("message_chat_created_at_idx").on(
 			table.chatId,
 			table.createdAt
@@ -241,7 +273,9 @@ export const stream = pgTable(
 		createdAt: timestamp("created_at", {
 			withTimezone: true,
 			mode: "date",
-		}).notNull(),
+		})
+			.notNull()
+			.defaultNow(),
 	},
 	(table) => ({
 		chatCreatedAtIdx: index("stream_chat_created_at_idx").on(
@@ -271,6 +305,7 @@ export const vote = pgTable(
 	},
 	(table) => ({
 		pk: primaryKey({ columns: [table.chatId, table.messageId] }),
+		messageIdIdx: index("vote_message_id_idx").on(table.messageId),
 	})
 );
 export type Vote = InferSelectModel<typeof vote>;

@@ -1,4 +1,3 @@
-import { and, asc, eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Chat as PreviewChat } from "@/components/chat";
@@ -6,12 +5,11 @@ import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
 import { getDefaultToolsState } from "@/lib/ai/tools";
 import { convertToUIMessages } from "@/lib/ai/utils";
 import { getSession, getUser } from "@/lib/auth/utils";
-import { db } from "@/lib/db";
 import {
-	chat as DBChat,
-	message as DBMessage,
-	spaces as DBSpace,
-} from "@/lib/db/schema/app";
+	getChatByIdAndUserId,
+	getMessagesByChatId,
+	getSpaceByIdAndUserId,
+} from "@/lib/db/queries";
 
 export default async function ChatPage({
 	params,
@@ -39,33 +37,23 @@ export default async function ChatPage({
 	const initialMode = cookieStore.get("X-Mode-Selection")?.value ?? "ask";
 	const initialAgent = cookieStore.get("X-Selected-Agent")?.value;
 
-	const [chatData] = await db
-		.select()
-		.from(DBChat)
-		.where(and(eq(DBChat.id, chatId), eq(DBChat.userId, user?.id ?? "")));
+	const chatData = await getChatByIdAndUserId({
+		id: chatId,
+		userId: user?.id ?? "",
+	});
 
 	if (!chatData) {
 		return notFound();
 	}
 
-	const [spaceData] = chatData.spaceId
-		? await db
-				.select()
-				.from(DBSpace)
-				.where(
-					and(
-						eq(DBSpace.id, chatData.spaceId ?? ""),
-						eq(DBSpace.userId, user?.id ?? "")
-					)
-				)
-				.limit(1)
-		: [undefined];
+	const spaceData = chatData.spaceId
+		? await getSpaceByIdAndUserId({
+				spaceId: chatData.spaceId ?? "",
+				userId: user?.id ?? "",
+			})
+		: undefined;
 
-	const messages = await db
-		.select()
-		.from(DBMessage)
-		.where(eq(DBMessage.chatId, chatData.id))
-		.orderBy(asc(DBMessage.createdAt));
+	const messages = await getMessagesByChatId({ id: chatData.id });
 
 	return (
 		<PreviewChat

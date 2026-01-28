@@ -13,7 +13,6 @@ import {
 	stepCountIs,
 	streamText,
 } from "ai";
-import { and, desc, eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import {
@@ -32,13 +31,13 @@ import { saveToMemoriesTool } from "@/lib/ai/tools/save-to-memories";
 import { webSearchTool } from "@/lib/ai/tools/web-search";
 import { convertToUIMessages } from "@/lib/ai/utils";
 import { getSession } from "@/lib/auth/utils";
-import { db } from "@/lib/db";
 import {
-	chat as dbChat,
-	memories as dbMemories,
-	message as dbMessage,
-	stream as dbStream,
-} from "@/lib/db/schema/app";
+	createStream,
+	getChatByIdAndUserId,
+	getMemoriesByUserId,
+	getMessagesByChatIdAndUserId,
+	updateChatTitleIfDefault,
+} from "@/lib/db/queries";
 import { caller } from "@/lib/trpc/server";
 
 export const maxDuration = 60;
@@ -99,16 +98,12 @@ const updateChatTitleInBackground = (params: {
 				return;
 			}
 
-			await db
-				.update(dbChat)
-				.set({ title })
-				.where(
-					and(
-						eq(dbChat.id, params.chatId),
-						eq(dbChat.userId, params.userId),
-						eq(dbChat.title, DEFAULT_CHAT_TITLE)
-					)
-				);
+			await updateChatTitleIfDefault({
+				chatId: params.chatId,
+				userId: params.userId,
+				defaultTitle: DEFAULT_CHAT_TITLE,
+				newTitle: title,
+			});
 		})
 		.catch((error) => {
 			console.error("Failed to generate chat title", error);
@@ -179,30 +174,14 @@ export async function POST(req: Request) {
 			}
 
 			// Parallelize independent database queries for better performance
-			const [chatResult, previousMessages, userMemories] =
-				await Promise.all([
-					db
-						.select()
-						.from(dbChat)
-						.where(
-							and(
-								eq(dbChat.id, id),
-								eq(dbChat.userId, session.userId)
-							)
-						)
-						.limit(1),
-					db.select().from(dbMessage).where(eq(dbMessage.chatId, id)),
-					db
-						.select({
-							content: dbMemories.content,
-							createdAt: dbMemories.createdAt,
-						})
-						.from(dbMemories)
-						.where(eq(dbMemories.userId, session.userId))
-						.orderBy(desc(dbMemories.createdAt)),
-				]);
-
-			const [chat] = chatResult;
+			const [chat, previousMessages, userMemories] = await Promise.all([
+				getChatByIdAndUserId({ id, userId: session.userId }),
+				getMessagesByChatIdAndUserId({
+					chatId: id,
+					userId: session.userId,
+				}),
+				getMemoriesByUserId({ userId: session.userId }),
+			]);
 			const shouldGenerateTitle = !chat;
 
 			if (!chat) {
@@ -243,9 +222,11 @@ export async function POST(req: Request) {
 			});
 
 			const streamId = crypto.randomUUID();
-			await db
-				.insert(dbStream)
-				.values({ id: streamId, chatId: id, createdAt: new Date() });
+			await createStream({
+				id: streamId,
+				chatId: id,
+				createdAt: new Date(),
+			});
 
 			const stream = createUIMessageStream({
 				execute: async ({ writer: dataStream }) => {

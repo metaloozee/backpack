@@ -2,17 +2,24 @@
 
 import { TRPCError } from "@trpc/server";
 import { del, put } from "@vercel/blob";
-import { and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { start } from "workflow/api";
 import { z } from "zod";
-import { db } from "@/lib/db";
 import {
-	chat,
-	knowledge,
-	knowledgeEmbeddings,
-	spaces,
-} from "@/lib/db/schema/app";
+	createKnowledge,
+	createSpace,
+	deleteKnowledgeByIdAndUserId,
+	deleteKnowledgeEmbeddingsByKnowledgeId,
+	deleteSpaceByIdAndUserId,
+	getKnowledgeByIdSpaceAndUserId,
+	getKnowledgeBySpaceIdAndUserId,
+	getSpaceByIdAndUserId,
+	getSpaceOverview,
+	getSpacesByUserId,
+	renameKnowledgeByIdAndUserId,
+	resetKnowledgeForRetry,
+	updateSpace,
+} from "@/lib/db/queries";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 import { sanitizeFileName, sanitizeUserInput } from "@/lib/utils/sanitization";
 import { processKnowledgeWorkflow } from "@/workflows/knowledge-process";
@@ -30,16 +37,10 @@ export const spaceRouter = router({
 			})
 		)
 		.query(async ({ ctx, input }) => {
-			const [spaceData] = await db
-				.select()
-				.from(spaces)
-				.where(
-					and(
-						eq(spaces.id, input.spaceId),
-						eq(spaces.userId, ctx.session.user.id)
-					)
-				)
-				.limit(1);
+			const { spaceData, hasChats } = await getSpaceOverview({
+				spaceId: input.spaceId,
+				userId: ctx.session.user.id,
+			});
 
 			if (!spaceData) {
 				throw new TRPCError({
@@ -48,20 +49,9 @@ export const spaceRouter = router({
 				});
 			}
 
-			const [firstChat] = await db
-				.select({ id: chat.id })
-				.from(chat)
-				.where(
-					and(
-						eq(chat.spaceId, spaceData.id),
-						eq(chat.userId, ctx.session.user.id)
-					)
-				)
-				.limit(1);
-
 			return {
 				spaceData,
-				hasChats: Boolean(firstChat),
+				hasChats,
 			};
 		}),
 	getSpaces: protectedProcedure
@@ -71,12 +61,10 @@ export const spaceRouter = router({
 			})
 		)
 		.query(async ({ ctx, input }) => {
-			const userSpaces = await db
-				.select()
-				.from(spaces)
-				.where(eq(spaces.userId, ctx.session.user.id))
-				.orderBy(desc(spaces.createdAt))
-				.limit(input.limit ?? 100);
+			const userSpaces = await getSpacesByUserId({
+				userId: ctx.session.user.id,
+				limit: input.limit ?? 100,
+			});
 
 			return { spaces: userSpaces };
 		}),
@@ -110,16 +98,12 @@ export const spaceRouter = router({
 					});
 				}
 
-				const [space] = await db
-					.insert(spaces)
-					.values({
-						userId: ctx.session.user.id,
-						spaceTitle: input.spaceTitle,
-						spaceDescription: input.spaceDescription,
-						spaceCustomInstructions: input.spaceCustomInstructions,
-						createdAt: new Date(),
-					})
-					.returning({ id: spaces.id });
+				const space = await createSpace({
+					userId: ctx.session.user.id,
+					spaceTitle: input.spaceTitle,
+					spaceDescription: input.spaceDescription,
+					spaceCustomInstructions: input.spaceCustomInstructions,
+				});
 
 				if (!space) {
 					throw new TRPCError({
@@ -158,20 +142,13 @@ export const spaceRouter = router({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			const [space] = await db
-				.update(spaces)
-				.set({
-					spaceTitle: input.spaceTitle,
-					spaceDescription: input.spaceDescription,
-					spaceCustomInstructions: input.spaceCustomInstructions,
-				})
-				.where(
-					and(
-						eq(spaces.id, input.spaceId),
-						eq(spaces.userId, ctx.session.user.id)
-					)
-				)
-				.returning({ id: spaces.id });
+			const space = await updateSpace({
+				spaceId: input.spaceId,
+				userId: ctx.session.user.id,
+				spaceTitle: input.spaceTitle,
+				spaceDescription: input.spaceDescription,
+				spaceCustomInstructions: input.spaceCustomInstructions,
+			});
 
 			if (!space) {
 				throw new TRPCError({
@@ -189,15 +166,10 @@ export const spaceRouter = router({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			const [space] = await db
-				.delete(spaces)
-				.where(
-					and(
-						eq(spaces.id, input.spaceId),
-						eq(spaces.userId, ctx.session.user.id)
-					)
-				)
-				.returning({ id: spaces.id });
+			const space = await deleteSpaceByIdAndUserId({
+				spaceId: input.spaceId,
+				userId: ctx.session.user.id,
+			});
 
 			if (!space) {
 				throw new TRPCError({
@@ -222,16 +194,10 @@ export const spaceRouter = router({
 				});
 			}
 
-			const [spaceExists] = await db
-				.select({ id: spaces.id })
-				.from(spaces)
-				.where(
-					and(
-						eq(spaces.id, parsedSpaceId.data),
-						eq(spaces.userId, ctx.session.user.id)
-					)
-				)
-				.limit(1);
+			const spaceExists = await getSpaceByIdAndUserId({
+				spaceId: parsedSpaceId.data,
+				userId: ctx.session.user.id,
+			});
 
 			if (!spaceExists) {
 				throw new TRPCError({
@@ -272,18 +238,15 @@ export const spaceRouter = router({
 				}
 			);
 
-			const [knowledgeData] = await db
-				.insert(knowledge)
-				.values({
-					userId: ctx.session.user.id,
-					spaceId: parsedSpaceId.data,
-					knowledgeType: "pdf" as const,
-					knowledgeName: file.name,
-					sourceUrl: blob.url,
-					status: "pending",
-					uploadedAt: new Date(),
-				})
-				.returning({ id: knowledge.id });
+			const knowledgeData = await createKnowledge({
+				userId: ctx.session.user.id,
+				spaceId: parsedSpaceId.data,
+				knowledgeType: "pdf",
+				knowledgeName: file.name,
+				sourceUrl: blob.url,
+				status: "pending",
+				uploadedAt: new Date(),
+			});
 
 			if (!knowledgeData) {
 				throw new TRPCError({
@@ -310,16 +273,10 @@ export const spaceRouter = router({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			const [spaceExists] = await db
-				.select()
-				.from(spaces)
-				.where(
-					and(
-						eq(spaces.id, input.spaceId),
-						eq(spaces.userId, ctx.session.user.id)
-					)
-				)
-				.limit(1);
+			const spaceExists = await getSpaceByIdAndUserId({
+				spaceId: input.spaceId,
+				userId: ctx.session.user.id,
+			});
 
 			if (!spaceExists) {
 				throw new TRPCError({
@@ -328,18 +285,15 @@ export const spaceRouter = router({
 				});
 			}
 
-			const [knowledgeData] = await db
-				.insert(knowledge)
-				.values({
-					userId: ctx.session.user.id,
-					spaceId: input.spaceId,
-					knowledgeType: "webpage" as const,
-					knowledgeName: input.url,
-					sourceUrl: input.url,
-					status: "pending",
-					uploadedAt: new Date(),
-				})
-				.returning({ id: knowledge.id });
+			const knowledgeData = await createKnowledge({
+				userId: ctx.session.user.id,
+				spaceId: input.spaceId,
+				knowledgeType: "webpage",
+				knowledgeName: input.url,
+				sourceUrl: input.url,
+				status: "pending",
+				uploadedAt: new Date(),
+			});
 
 			if (!knowledgeData) {
 				throw new TRPCError({
@@ -365,18 +319,10 @@ export const spaceRouter = router({
 			})
 		)
 		.query(async ({ ctx, input }) => {
-			const knowledgeData = await db
-				.select()
-				.from(knowledge)
-				.where(
-					and(
-						eq(knowledge.spaceId, input.spaceId),
-						eq(knowledge.userId, ctx.session.user.id)
-					)
-				)
-				.orderBy(desc(knowledge.uploadedAt));
-
-			return knowledgeData;
+			return await getKnowledgeBySpaceIdAndUserId({
+				spaceId: input.spaceId,
+				userId: ctx.session.user.id,
+			});
 		}),
 	retryKnowledge: protectedProcedure
 		.input(
@@ -386,20 +332,11 @@ export const spaceRouter = router({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			const [knowledgeRecord] = await db
-				.select({
-					id: knowledge.id,
-					status: knowledge.status,
-				})
-				.from(knowledge)
-				.where(
-					and(
-						eq(knowledge.id, input.knowledgeId),
-						eq(knowledge.spaceId, input.spaceId),
-						eq(knowledge.userId, ctx.session.user.id)
-					)
-				)
-				.limit(1);
+			const knowledgeRecord = await getKnowledgeByIdSpaceAndUserId({
+				knowledgeId: input.knowledgeId,
+				spaceId: input.spaceId,
+				userId: ctx.session.user.id,
+			});
 
 			if (!knowledgeRecord) {
 				throw new TRPCError({
@@ -415,20 +352,10 @@ export const spaceRouter = router({
 				});
 			}
 
-			await db
-				.update(knowledge)
-				.set({
-					status: "pending",
-					errorMessage: null,
-					processedAt: null,
-					lastProcessingAt: null,
-				})
-				.where(
-					and(
-						eq(knowledge.id, input.knowledgeId),
-						eq(knowledge.userId, ctx.session.user.id)
-					)
-				);
+			await resetKnowledgeForRetry({
+				knowledgeId: input.knowledgeId,
+				userId: ctx.session.user.id,
+			});
 
 			await start(processKnowledgeWorkflow, [
 				{
@@ -453,17 +380,12 @@ export const spaceRouter = router({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			const [updatedKnowledge] = await db
-				.update(knowledge)
-				.set({ knowledgeName: input.knowledgeName })
-				.where(
-					and(
-						eq(knowledge.id, input.knowledgeId),
-						eq(knowledge.spaceId, input.spaceId),
-						eq(knowledge.userId, ctx.session.user.id)
-					)
-				)
-				.returning({ id: knowledge.id });
+			const updatedKnowledge = await renameKnowledgeByIdAndUserId({
+				knowledgeId: input.knowledgeId,
+				spaceId: input.spaceId,
+				userId: ctx.session.user.id,
+				knowledgeName: input.knowledgeName,
+			});
 
 			if (!updatedKnowledge) {
 				throw new TRPCError({
@@ -483,21 +405,11 @@ export const spaceRouter = router({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			const [knowledgeRecord] = await db
-				.select({
-					id: knowledge.id,
-					knowledgeType: knowledge.knowledgeType,
-					sourceUrl: knowledge.sourceUrl,
-				})
-				.from(knowledge)
-				.where(
-					and(
-						eq(knowledge.id, input.knowledgeId),
-						eq(knowledge.spaceId, input.spaceId),
-						eq(knowledge.userId, ctx.session.user.id)
-					)
-				)
-				.limit(1);
+			const knowledgeRecord = await getKnowledgeByIdSpaceAndUserId({
+				knowledgeId: input.knowledgeId,
+				spaceId: input.spaceId,
+				userId: ctx.session.user.id,
+			});
 
 			if (!knowledgeRecord) {
 				throw new TRPCError({
@@ -513,20 +425,15 @@ export const spaceRouter = router({
 				await del(knowledgeRecord.sourceUrl);
 			}
 
-			await db
-				.delete(knowledgeEmbeddings)
-				.where(eq(knowledgeEmbeddings.knowledgeId, knowledgeRecord.id));
+			await deleteKnowledgeEmbeddingsByKnowledgeId({
+				knowledgeId: knowledgeRecord.id,
+			});
 
-			const [deletedKnowledge] = await db
-				.delete(knowledge)
-				.where(
-					and(
-						eq(knowledge.id, input.knowledgeId),
-						eq(knowledge.spaceId, input.spaceId),
-						eq(knowledge.userId, ctx.session.user.id)
-					)
-				)
-				.returning({ id: knowledge.id });
+			const deletedKnowledge = await deleteKnowledgeByIdAndUserId({
+				knowledgeId: input.knowledgeId,
+				spaceId: input.spaceId,
+				userId: ctx.session.user.id,
+			});
 
 			if (!deletedKnowledge) {
 				throw new TRPCError({

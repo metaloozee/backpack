@@ -3,12 +3,21 @@
 import { elevenlabs } from "@ai-sdk/elevenlabs";
 import { TRPCError } from "@trpc/server";
 import { experimental_transcribe as transcribe } from "ai";
-import { and, desc, eq, gte, ilike, lt } from "drizzle-orm";
+import { and, eq, gte } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { chat, type Message, message, vote } from "@/lib/db/schema/app";
+import {
+	deleteChatById,
+	getChatsByUserId,
+	getVotesByChatId,
+	saveChat,
+	saveMessages as saveMessagesQuery,
+	searchChatsByUserId,
+	voteMessage as voteMessageQuery,
+} from "@/lib/db/queries";
+import { chat, type Message, message } from "@/lib/db/schema/app";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 
 export const chatRouter = router({
@@ -21,36 +30,12 @@ export const chatRouter = router({
 			})
 		)
 		.query(async ({ ctx, input }) => {
-			const items = await db
-				.select()
-				.from(chat)
-				.limit(input.limit + 1)
-				.where(
-					and(
-						and(
-							eq(chat.userId, ctx.session.user.id),
-							input.spaceId
-								? eq(chat.spaceId, input.spaceId)
-								: undefined
-						),
-						input.cursor
-							? lt(chat.createdAt, input.cursor)
-							: undefined
-					)
-				)
-				.orderBy(desc(chat.createdAt));
-
-			const hasMore = items.length > input.limit;
-			const itemsToReturn = hasMore ? items.slice(0, input.limit) : items;
-
-			const nextCursor = hasMore
-				? itemsToReturn.at(-1)?.createdAt
-				: undefined;
-
-			return {
-				chats: itemsToReturn,
-				nextCursor,
-			};
+			return await getChatsByUserId({
+				userId: ctx.session.user.id,
+				limit: input.limit,
+				cursor: input.cursor,
+				spaceId: input.spaceId,
+			});
 		}),
 	searchChats: protectedProcedure
 		.input(
@@ -60,19 +45,12 @@ export const chatRouter = router({
 			})
 		)
 		.query(async ({ ctx, input }) => {
-			const items = await db
-				.select()
-				.from(chat)
-				.where(
-					and(
-						eq(chat.userId, ctx.session.user.id),
-						ilike(chat.title, `%${input.query}%`)
-					)
-				)
-				.orderBy(desc(chat.createdAt))
-				.limit(input.limit);
-
-			return { chats: items };
+			const chats = await searchChatsByUserId({
+				userId: ctx.session.user.id,
+				query: input.query,
+				limit: input.limit,
+			});
+			return { chats };
 		}),
 	saveMessages: protectedProcedure
 		.input(
@@ -94,7 +72,8 @@ export const chatRouter = router({
 			const parsedMessages = input.messages.map((message: Message) =>
 				messageInsertSchema.parse(message)
 			);
-			return await db.insert(message).values(parsedMessages);
+			await saveMessagesQuery({ messages: parsedMessages });
+			return { success: true };
 		}),
 	saveChat: protectedProcedure
 		.input(
@@ -106,13 +85,13 @@ export const chatRouter = router({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			return await db.insert(chat).values({
+			await saveChat({
 				id: input.id,
-				spaceId: input.spaceId,
 				userId: ctx.session.user.id,
 				title: input.title,
-				createdAt: new Date(),
+				spaceId: input.spaceId,
 			});
+			return { success: true };
 		}),
 	deleteChat: protectedProcedure
 		.input(
@@ -121,14 +100,10 @@ export const chatRouter = router({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			return await db
-				.delete(chat)
-				.where(
-					and(
-						eq(chat.id, input.chatId),
-						eq(chat.userId, ctx.session.user.id)
-					)
-				);
+			return await deleteChatById({
+				id: input.chatId,
+				userId: ctx.session.user.id,
+			});
 		}),
 	deleteTrailingMessages: protectedProcedure
 		.input(
@@ -303,32 +278,12 @@ export const chatRouter = router({
 				});
 			}
 
-			// Check if vote already exists
-			const [existingVote] = await db
-				.select()
-				.from(vote)
-				.where(eq(vote.messageId, input.messageId))
-				.limit(1);
-
-			if (existingVote) {
-				// Update existing vote
-				return await db
-					.update(vote)
-					.set({ isUpvoted: input.type === "up" })
-					.where(
-						and(
-							eq(vote.messageId, input.messageId),
-							eq(vote.chatId, input.chatId)
-						)
-					);
-			}
-
-			// Insert new vote
-			return await db.insert(vote).values({
+			await voteMessageQuery({
 				chatId: input.chatId,
 				messageId: input.messageId,
-				isUpvoted: input.type === "up",
+				type: input.type,
 			});
+			return { success: true };
 		}),
 	getVotesByChatId: protectedProcedure
 		.input(
@@ -356,9 +311,6 @@ export const chatRouter = router({
 				});
 			}
 
-			return await db
-				.select()
-				.from(vote)
-				.where(eq(vote.chatId, input.chatId));
+			return await getVotesByChatId({ id: input.chatId });
 		}),
 });

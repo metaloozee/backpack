@@ -3,7 +3,7 @@ import type { Chat as ChatType } from "@/lib/db/schema/app";
 
 export interface ChatListPage {
 	chats: ChatType[];
-	nextCursor: Date | undefined;
+	nextCursor?: Date;
 }
 
 export type ChatInfiniteData = InfiniteData<ChatListPage, Date | null>;

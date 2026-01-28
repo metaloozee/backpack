@@ -1,10 +1,8 @@
 import { google } from "@ai-sdk/google";
 import { embedMany, tool, type UIMessageStreamWriter } from "ai";
 import type { Session } from "better-auth";
-import { and, cosineDistance, eq, gt, sql } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "@/lib/db";
-import { memories as dbMemories } from "@/lib/db/schema/app";
+import { getClosestMemorySimilarity, insertMemories } from "@/lib/db/queries";
 
 export const saveToMemoriesTool = ({
 	session,
@@ -43,20 +41,12 @@ export const saveToMemoriesTool = ({
 					const content = contents[i];
 					const embedding = embeddings[i];
 
-					const similarity = sql<number>`1 - (${cosineDistance(dbMemories.embedding, embedding)})`;
+					const similarity = await getClosestMemorySimilarity({
+						userId: session.userId,
+						embedding,
+					});
 
-					const existingSimilarMemories = await db
-						.select({ similarity })
-						.from(dbMemories)
-						.where(
-							and(
-								eq(dbMemories.userId, session.userId),
-								gt(similarity, 0.85) // High similarity threshold to avoid duplicates
-							)
-						)
-						.limit(1);
-
-					if (existingSimilarMemories.length === 0) {
+					if (similarity === null || similarity <= 0.85) {
 						newMemories.push({
 							userId: session.userId,
 							content,
@@ -68,7 +58,7 @@ export const saveToMemoriesTool = ({
 
 				let savedCount = 0;
 				if (newMemories.length > 0) {
-					await db.insert(dbMemories).values(newMemories);
+					await insertMemories({ values: newMemories });
 					savedCount = newMemories.length;
 				}
 

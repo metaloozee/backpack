@@ -1,16 +1,15 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "@/lib/db";
-import { memories } from "@/lib/db/schema/app";
+import {
+	deleteAllMemoriesByUserId,
+	deleteMemoriesByIdsAndUserId,
+	deleteMemoryByIdAndUserId,
+	getMemoriesByUserId,
+} from "@/lib/db/queries";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 
 export const memoriesRouter = router({
 	getMemories: protectedProcedure.query(async ({ ctx }) => {
-		return await db
-			.select()
-			.from(memories)
-			.where(eq(memories.userId, ctx.session.user.id))
-			.orderBy(desc(memories.createdAt));
+		return await getMemoriesByUserId({ userId: ctx.session.user.id });
 	}),
 	deleteMemory: protectedProcedure
 		.input(
@@ -19,14 +18,11 @@ export const memoriesRouter = router({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			return await db
-				.delete(memories)
-				.where(
-					and(
-						eq(memories.id, input.id),
-						eq(memories.userId, ctx.session.user.id)
-					)
-				);
+			await deleteMemoryByIdAndUserId({
+				id: input.id,
+				userId: ctx.session.user.id,
+			});
+			return { success: true };
 		}),
 	deleteSelectedMemories: protectedProcedure
 		.input(
@@ -38,19 +34,14 @@ export const memoriesRouter = router({
 			if (input.ids.length === 0) {
 				throw new Error("No memory IDs provided");
 			}
-
-			return await db
-				.delete(memories)
-				.where(
-					and(
-						eq(memories.userId, ctx.session.user.id),
-						inArray(memories.id, input.ids)
-					)
-				);
+			await deleteMemoriesByIdsAndUserId({
+				ids: input.ids,
+				userId: ctx.session.user.id,
+			});
+			return { success: true };
 		}),
 	deleteAllMemories: protectedProcedure.mutation(async ({ ctx }) => {
-		return await db
-			.delete(memories)
-			.where(eq(memories.userId, ctx.session.user.id));
+		await deleteAllMemoriesByUserId({ userId: ctx.session.user.id });
+		return { success: true };
 	}),
 });

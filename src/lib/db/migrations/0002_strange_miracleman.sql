@@ -1,0 +1,1 @@
+CREATE INDEX "chat_title_trgm_idx" ON "chat" USING gin ("title" gin_trgm_ops);
