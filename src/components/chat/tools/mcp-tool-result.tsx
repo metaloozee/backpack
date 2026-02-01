@@ -9,6 +9,7 @@ import {
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Loader } from "@/components/ui/loader";
 
 export interface McpToolResultProps {
 	serverName: string;
@@ -42,6 +43,7 @@ export function McpToolResult({
 	if (isLoading) {
 		return (
 			<div className="flex h-10 w-full items-center gap-2 rounded-md border bg-neutral-900 px-4 text-xs">
+				<Loader size="sm" />
 				<span className="text-muted-foreground">{serverName}</span>
 				<span className="text-muted-foreground">/</span>
 				<span>{toolName}</span>
@@ -52,10 +54,10 @@ export function McpToolResult({
 	return (
 		<Accordion className="w-full">
 			<AccordionItem
-				className="rounded-md border bg-muted/30 px-3"
+				className="rounded-md border bg-neutral-900 px-4"
 				value={toolCallId}
 			>
-				<AccordionTrigger className="flex h-9 w-full items-center justify-between gap-2 text-xs">
+				<AccordionTrigger className="flex h-10 w-full items-center justify-between gap-2 text-xs">
 					<span className="flex items-center gap-2 truncate">
 						<ServerIcon
 							className={`size-3 ${isError ? "text-red-400" : ""}`}
@@ -68,17 +70,17 @@ export function McpToolResult({
 							{toolName}
 						</span>
 						{isError && (
-							<span className="text-[10px] text-red-400">
+							<span className="text-red-400 text-xs">
 								(error)
 							</span>
 						)}
 					</span>
 					<ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
 				</AccordionTrigger>
-				<AccordionContent>
-					<div className="py-2">
+				<AccordionContent className="space-y-1">
+					<div className="pt-2 pb-4">
 						<CodeBlock
-							className="mb-2 overflow-auto rounded-sm bg-neutral-950 font-mono text-[10px] leading-4"
+							className="overflow-auto rounded-sm bg-neutral-950 font-mono text-[6px] leading-4"
 							code={formattedContent}
 							language="json"
 						/>
