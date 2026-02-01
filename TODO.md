@@ -1,6 +1,7 @@
 - [ ] Daytona
 - [ ] Research Agent
-- [ ] MCP Support
+- [ ] Artifacts
+- [x] MCP Support
 - [x] Vercel Workflows
 - [x] fix: Image Display
 - [x] refactor: Space Page

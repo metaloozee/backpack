@@ -20,12 +20,12 @@ import { AcademicSearchTool } from "@/components/chat/tools/academic-search-tool
 import { ExtractTool } from "@/components/chat/tools/extract";
 import { FinanceSearchTool } from "@/components/chat/tools/finance-search-tool";
 import { KnowledgeSearchTool } from "@/components/chat/tools/knowledge-search-tool";
-import { SaveToMemoriesTool } from "@/components/chat/tools/save-to-memories";
-import { WebSearchTool } from "@/components/chat/tools/web-search-tool";
 import {
 	McpToolResult,
 	type McpToolResultProps,
-} from "@/components/mcp-tool-result";
+} from "@/components/chat/tools/mcp-tool-result";
+import { SaveToMemoriesTool } from "@/components/chat/tools/save-to-memories";
+import { WebSearchTool } from "@/components/chat/tools/web-search-tool";
 import { Button } from "@/components/ui/button";
 import { Disclosure, DisclosureTrigger } from "@/components/ui/disclosure";
 import { Loader } from "@/components/ui/loader";

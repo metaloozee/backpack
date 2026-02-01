@@ -1,7 +1,13 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ActivityIcon, PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import {
+	ActivityIcon,
+	KeyIcon,
+	PencilIcon,
+	PlusIcon,
+	TrashIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -139,7 +145,7 @@ export function McpServerConfig() {
 
 	return (
 		<div className="flex w-full flex-col gap-4">
-			<div className="flex w-full flex-row items-center justify-between">
+			<div className="flex w-full flex-row items-end justify-between">
 				<div className="flex flex-col gap-1">
 					<h2 className="font-medium text-lg">MCP Servers</h2>
 					<p className="text-muted-foreground text-xs">
@@ -152,6 +158,7 @@ export function McpServerConfig() {
 						setIsDialogOpen(true);
 					}}
 					size="sm"
+					variant={"outline"}
 				>
 					<PlusIcon className="size-3.5" /> Add Server
 				</Button>
@@ -187,17 +194,12 @@ export function McpServerConfig() {
 							{servers.map((server) => (
 								<TableRow key={server.id}>
 									<TableCell className="font-medium">
-										<div className="flex flex-col gap-0.5">
-											<span className="text-sm">
-												{server.name}
-											</span>
+										<span className="flex items-center gap-2 text-sm">
+											{server.name}
 											{server.hasApiKey && (
-												<span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-													<div className="size-1.5 rounded-full bg-green-500/50" />
-													API Key Set
-												</span>
+												<KeyIcon className="size-3 text-muted-foreground" />
 											)}
-										</div>
+										</span>
 									</TableCell>
 									<TableCell className="font-mono text-muted-foreground text-xs">
 										{server.url}
