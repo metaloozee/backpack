@@ -1,0 +1,156 @@
+═══════════════════════════════════════════════════════════════════════════════
+  TASK COMPLETE: UIMessageStream Parts Flow Analysis
+═══════════════════════════════════════════════════════════════════════════════
+
+EXPECTED OUTCOME ACHIEVED ✓
+───────────────────────────────────────────────────────────────────────────────
+
+1. ✓ LOCATED: How UIMessageStream parts are shaped
+   Files: src/app/api/chat/route.ts:394, src/components/chat/message.tsx
+
+2. ✓ IDENTIFIED: Message.parts transformation/filter chain
+   - No transformations at render (only type casting at retrieval)
+   - Storage: Raw JSONB in database
+   - Retrieval: Type cast via convertToUIMessages()
+   - Rendering: Filter by type, dispatch to handler
+
+3. ✓ TRACED: Path from useChat → ChatMessages → Message
+   - useChat (chat.tsx:154) receives ChatMessage[] from API
+   - ChatMessages (messages.tsx:18) maps each message to PreviewMessage
+   - Message (message.tsx:644) iterates message.parts
+   - renderMessagePart() dispatches to type-specific renderers
+
+DOCUMENTS CREATED:
+───────────────────────────────────────────────────────────────────────────────
+
+1. MESSAGE_PARTS_FLOW_ANALYSIS.md (330 lines)
+   → Complete flow diagram from useChat to rendering
+   → All message part types enumerated
+   → Database schema and retrieval logic
+   → McpToolResult component behavior
+
+2. TRACING_SUMMARY.md 
+   → Quick reference for entire flow
+   → All part types with code locations
+   → Critical transformations documented
+   → Debugging tips and issue checklist
+
+3. QUICK_REFERENCE_MCP_PARTS.md
+   → MCP-specific parts focus
+   → Both part formats documented
+   → renderMcpTool() normalization explained
+   → Expected database format examples
+
+KEY FINDINGS:
+───────────────────────────────────────────────────────────────────────────────
+
+MESSAGE PART SHAPE (from AI SDK):
+{
+  type: string,           // Determines how part is rendered
+  toolCallId?: string,    // For tool parts
+  toolName?: string,      // For MCP tools: "mcp_serverName_toolName"
+  state?: string,         // Tool part state: input-streaming/available/output-*/error
+  text?: string,          // For text parts
+  input?: object,         // Tool input data
+  output?: object,        // Tool output data
+  args?: object,          // Tool call arguments
+  result?: unknown,       // Tool result
+  error?: object,         // Tool error
+  filename?: string,      // For file parts
+  mediaType?: string,     // For file parts
+  url?: string,           // For file parts
+}
+
+TRANSFORMATIONS FOUND:
+───────────────────────────────────────────────────────────────────────────────
+
+1. Backend Stream Generation (route.ts:394)
+   - result.toUIMessageStream() creates tool-call/result/error parts
+   - No transformation to parts, stored as-is
+
+2. Database Retrieval (utils.ts:36)
+   - Type casting: message.parts as UIMessagePart[]
+   - No structural transformation
+
+3. Render-time Dispatch (message.tsx:483-576)
+   - Filter by part.type
+   - MCP Tool Name Parsing (lines 215-228)
+     Input: "mcp_serverName_toolName"
+     Output: { serverName: string, toolName: string }
+   - State Resolution (lines 245-252)
+     If loading: return state
+     If output: return "output-available"
+     Else: return state
+
+RENDERING DETECTION LOGIC:
+───────────────────────────────────────────────────────────────────────────────
+
+MCP Tools (Format 1 - Streaming):
+  if (type.startsWith("tool-mcp_")) → renderMcpTool()
+  Example: type = "tool-mcp_fetch_get_url"
+
+MCP Tools (Format 2 - UIMessageStream):
+  if (type === "tool-call"|"tool-result"|"tool-error" && toolName?.startsWith("mcp_"))
+  Example: type = "tool-call", toolName = "mcp_fetch_get_url"
+
+Built-in Tools:
+  if (type === "tool-extract"|"tool-web_search"|...) → specific renderer()
+
+Text Parts:
+  if (type === "text") → renderTextPart()
+
+Unknown Types:
+  return null (filtered in .filter(Boolean))
+
+NO FILTERING/TRANSFORMATION AT MESSAGE RETRIEVAL:
+───────────────────────────────────────────────────────────────────────────────
+
+Parts flow unchanged from:
+  AI SDK stream generation
+  → Database JSONB storage
+  → Type cast retrieval
+  → Frontend rendering dispatch
+
+All structural information preserved in JSONB column.
+
+DEBUGGING ENTRY POINTS:
+───────────────────────────────────────────────────────────────────────────────
+
+Browser Console:
+  - Line 686: console.log("[message.parts]", message.parts)
+  - Line 504-512: Tool part logging with type/state/input/output
+
+Database Query:
+  SELECT parts FROM message WHERE id = '...' LIMIT 1;
+
+Expected to see tool-call/tool-result/tool-error parts in parts array.
+
+FILES REFERENCED IN ANALYSIS:
+───────────────────────────────────────────────────────────────────────────────
+
+Core Components:
+  ✓ src/components/chat.tsx                     - useChat initialization
+  ✓ src/components/chat/messages.tsx            - ChatMessages renderer
+  ✓ src/components/chat/message.tsx             - Message component & renderers
+  ✓ src/components/mcp-tool-result.tsx          - MCP UI component
+
+Types & Utils:
+  ✓ src/lib/ai/types.ts                         - ChatMessage type definition
+  ✓ src/lib/ai/utils.ts                         - convertToUIMessages()
+  
+Database & API:
+  ✓ src/lib/db/schema/app.ts                    - Message table schema
+  ✓ src/lib/db/queries.ts                       - saveMessages/getMessages
+  ✓ src/app/api/chat/route.ts                   - Backend stream creation
+
+Data Management:
+  ✓ src/components/data-stream-provider.tsx     - DataStream context
+
+═══════════════════════════════════════════════════════════════════════════════
+
+CONCLUSION: Message parts flow from AI SDK generation through database storage 
+to frontend rendering with NO TRANSFORMATIONS applied - only type-based 
+dispatch and state resolution. All structural information is preserved as-is 
+from the UIMessageStream format.
+
+═══════════════════════════════════════════════════════════════════════════════

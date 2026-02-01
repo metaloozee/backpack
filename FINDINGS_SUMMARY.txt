@@ -1,0 +1,184 @@
+================================================================================
+                    MCP TOOL RENDER ANALYSIS - FINDINGS SUMMARY
+================================================================================
+
+TASK COMPLETED: Found all rendering branches for tool parts and exclusions
+CONTEXT: MCP tool results missing in UI
+MAIN FILE: src/components/chat/message.tsx
+
+================================================================================
+                              CRITICAL FINDINGS
+================================================================================
+
+FOUND: 8 EXCLUSION CONDITIONS that prevent MCP tool rendering
+
+1. TYPE MISMATCH (Line 575)
+   - If part.type NOT in recognized list → returns null
+   - Recognized types: text, reasoning, tool-extract, tool-save_to_memories,
+     tool-web_search, tool-knowledge_search, tool-academic_search,
+     tool-finance_search, tool-mcp_*, tool-call, tool-result, tool-error
+
+2. BUILT-IN TOOL STATE LIMITATION (Lines 55-211)
+   ⚠️ CRITICAL: Built-in tools DON'T handle "input-streaming" or "output-error"
+   - Extract, SaveToMemories, WebSearch, KnowledgeSearch, AcademicSearch,
+     FinanceSearch only render if: state === "input-available" OR
+     state === "output-available"
+   - Any other state → returns null (filtered out)
+
+3. MCP TOOL FORMAT PARSING (Lines 220-223)
+   - Format must be: mcp_serverName_toolName
+   - If no underscore after "mcp_" → empty toolName (renders but broken display)
+
+4. MCP TOOL STATE UNKNOWN (Line 252)
+   - If state not in recognized set and no output → returns unknown state
+
+5. EMPTY CONTENT FALLBACK (Line 240)
+   - Empty object {} used if both output and input are falsy
+
+6. NESTED PROPERTY MISMATCH (Lines 65, 175)
+   - Extract and AcademicSearch expect: output.results
+   - If missing → undefined passed to component
+
+7. NULL RETURN FILTER (Line 733)
+   - ALL null returns filtered with .filter(Boolean)
+   - Also removes: undefined, false, 0, ""
+
+8. MISSING PROPERTIES
+   - toolCallId, state, toolName required for rendering
+
+================================================================================
+                           RENDER FLOW SUMMARY
+================================================================================
+
+ENTRY POINT: Line 719-733 in Message component
+   message.parts.map(renderMessagePart).filter(Boolean)
+
+MAIN DISPATCHER: renderMessagePart() Lines 483-576
+   
+   Routes to:
+   ├─ renderTextPart() - always renders if type="text"
+   ├─ renderExtractTool() - Lines 52-72
+   ├─ renderSaveToMemoriesTool() - Lines 76-102
+   ├─ renderWebSearchTool() - Lines 105-123
+   ├─ renderKnowledgeSearchTool() - Lines 126-152
+   ├─ renderAcademicSearchTool() - Lines 156-182
+   ├─ renderFinanceSearchTool() - Lines 186-212
+   └─ renderMcpTool() - Lines 233-266 → McpToolResult UI
+
+================================================================================
+                        STATE SUPPORT COMPARISON
+================================================================================
+
+State            | Built-in Tools | MCP Tools  | Notes
+-----------------+----------------+------------+------
+input-available  | ✅ YES         | ✅ YES     | Standard input state
+input-streaming  | ❌ NO          | ✅ YES     | Shows loading spinner
+output-available | ✅ YES         | ✅ YES     | Standard output state
+output-error     | ❌ NO          | ✅ YES     | Shows error styling
+
+⚠️ KEY INSIGHT: Built-in tools have LESS complete state handling than MCP tools
+
+================================================================================
+                           PROPERTY EXPECTATIONS
+================================================================================
+
+ALL TOOLS require:
+  - toolCallId: string
+  - state: "input-available" | "output-available" (or "input-streaming",
+           "output-error" for MCP)
+
+INPUT-AVAILABLE STATE needs:
+  - input: object/data to display
+
+OUTPUT-AVAILABLE STATE needs:
+  - output: object/data to display
+
+SPECIAL CASES:
+  - Extract: expects output.results (accesses nested property)
+  - Academic Search: expects output.results (accesses nested property)
+  - MCP Tools: accept output or input directly
+  - MCP Tools: always render (never return null)
+
+================================================================================
+                         DEBUG INFORMATION
+================================================================================
+
+Console logging available at Line 505-511 for tool parts:
+  - Logs type, state, toolCallId, hasInput, hasOutput
+  - Helps identify why tools aren't rendering
+
+LogLine:
+  if (typeof type === "string" && type.startsWith("tool-")) {
+    console.log("[renderMessagePart] Tool part:", {
+      type,
+      state: messagePart.state,
+      toolCallId: messagePart.toolCallId,
+      hasInput: !!messagePart.input,
+      hasOutput: !!messagePart.output,
+    });
+  }
+
+================================================================================
+                    POTENTIAL CAUSES FOR MISSING RESULTS
+================================================================================
+
+For MCP tool results not showing:
+
+1. ❌ Type format wrong
+   Check: part.type should be "tool-mcp_serverName_toolName"
+   or "tool-call"/"tool-result"/"tool-error" with toolName="mcp_..."
+
+2. ❌ State value wrong
+   Check: part.state must be one of:
+   - "input-streaming" (shows loading UI)
+   - "input-available" (shows input)
+   - "output-available" (shows output)
+   - "output-error" (shows error)
+
+3. ❌ Output structure wrong
+   Check: If tool expects output.results but received flat output
+
+4. ❌ Parsing failure
+   Check: parseMcpToolName() output - serverName or toolName empty?
+
+5. ❌ Missing properties
+   Check: toolCallId, state, input/output existence
+
+6. ❌ Null returned
+   Check: renderMessagePart() returned null → filtered by .filter(Boolean)
+
+================================================================================
+                        FILES ANALYZED & CREATED
+================================================================================
+
+Main Component: src/components/chat/message.tsx (766 lines)
+UI Component: src/components/mcp-tool-result.tsx (91 lines)
+
+Analysis files created in project root:
+- TOOL_RENDER_ANALYSIS.md (comprehensive analysis with code)
+- QUICK_REFERENCE.md (fast reference guide)
+- RENDER_CODE_PATHS.md (detailed code paths and returns)
+
+================================================================================
+                          KEY RECOMMENDATIONS
+================================================================================
+
+1. Add "input-streaming" support to built-in tools
+   Current: Only handle input-available, output-available
+   Suggested: Add loading state UI like MCP tools do
+
+2. Add "output-error" support to built-in tools
+   Current: No error handling
+   Suggested: Display error message with styling
+
+3. Verify MCP tool data structure
+   Check: output.results vs output structure
+   Check: toolName format with underscores
+
+4. Test state transitions
+   Verify: input-streaming → input-available → output-available flow
+
+5. Monitor console logs
+   Use: Line 505-511 logging to debug tool part rendering
+
+================================================================================

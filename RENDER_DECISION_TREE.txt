@@ -1,0 +1,202 @@
+================================================================================
+                         TOOL RENDER DECISION TREE
+================================================================================
+
+START: message.parts[i] exists?
+│
+├─► YES: Extract part.type
+│   │
+│   ├─► type === "reasoning" AND text.trim().length > 0
+│   │   └─► RENDER: <MessageReasoning />
+│   │
+│   ├─► type === "text"
+│   │   └─► RENDER: renderTextPart()
+│   │
+│   ├─► type === "tool-extract"
+│   │   ├─► state === "input-available"
+│   │   │   └─► RENDER: <ExtractTool input={input} />
+│   │   ├─► state === "output-available"
+│   │   │   └─► RENDER: <ExtractTool output={output?.results} />
+│   │   └─► OTHER STATE
+│   │       └─► RETURN NULL → FILTERED OUT
+│   │
+│   ├─► type === "tool-save_to_memories"
+│   │   ├─► state === "input-available"
+│   │   │   └─► RENDER: <SaveToMemoriesTool input={input} />
+│   │   ├─► state === "output-available"
+│   │   │   └─► RENDER: <SaveToMemoriesTool output={output} />
+│   │   └─► OTHER STATE
+│   │       └─► RETURN NULL → FILTERED OUT
+│   │
+│   ├─► type === "tool-web_search"
+│   │   ├─► state === "input-available"
+│   │   │   └─► RENDER: <WebSearchTool input={input} />
+│   │   ├─► state === "output-available"
+│   │   │   └─► RENDER: <WebSearchTool output={output} />
+│   │   └─► OTHER STATE
+│   │       └─► RETURN NULL → FILTERED OUT
+│   │
+│   ├─► type === "tool-knowledge_search"
+│   │   ├─► state === "input-available"
+│   │   │   └─► RENDER: <KnowledgeSearchTool input={input} />
+│   │   ├─► state === "output-available"
+│   │   │   └─► RENDER: <KnowledgeSearchTool output={output} />
+│   │   └─► OTHER STATE
+│   │       └─► RETURN NULL → FILTERED OUT
+│   │
+│   ├─► type === "tool-academic_search"
+│   │   ├─► state === "input-available"
+│   │   │   └─► RENDER: <AcademicSearchTool input={input} />
+│   │   ├─► state === "output-available"
+│   │   │   └─► RENDER: <AcademicSearchTool output={output?.results} />
+│   │   └─► OTHER STATE
+│   │       └─► RETURN NULL → FILTERED OUT
+│   │
+│   ├─► type === "tool-finance_search"
+│   │   ├─► state === "input-available"
+│   │   │   └─► RENDER: <FinanceSearchTool input={input} />
+│   │   ├─► state === "output-available"
+│   │   │   └─► RENDER: <FinanceSearchTool output={output} />
+│   │   └─► OTHER STATE
+│   │       └─► RETURN NULL → FILTERED OUT
+│   │
+│   ├─► type.startsWith("tool-mcp_")
+│   │   ├─► Parse: parseMcpToolName(type.replace("tool-", ""))
+│   │   │   ├─► Has underscore?
+│   │   │   │   ├─► YES: serverName=before, toolName=after
+│   │   │   │   └─► NO: serverName=all, toolName=""
+│   │   │
+│   │   ├─► state === "input-streaming"
+│   │   │   └─► RENDER: <McpToolResult state="input-streaming" />
+│   │   │       (shows loading spinner)
+│   │   │
+│   │   ├─► state === "input-available"
+│   │   │   └─► RENDER: <McpToolResult state="input-available" />
+│   │   │
+│   │   ├─► state === "output-available"
+│   │   │   └─► RENDER: <McpToolResult state="output-available" />
+│   │   │
+│   │   ├─► state === "output-error"
+│   │   │   └─► RENDER: <McpToolResult state="output-error" />
+│   │   │       (shows error styling)
+│   │   │
+│   │   └─► OTHER STATE
+│   │       └─► RENDER: <McpToolResult state={resolvedState} />
+│   │           (attempts to render with fallback)
+│   │
+│   ├─► type === "tool-call" OR type === "tool-result" OR type === "tool-error"
+│   │   ├─► toolName?.startsWith("mcp_")?
+│   │   │   ├─► YES: Parse and render as MCP tool
+│   │   │   │   ├─► state === "input-streaming"
+│   │   │   │   │   └─► RENDER: <McpToolResult />
+│   │   │   │   ├─► state === "input-available"
+│   │   │   │   │   └─► RENDER: <McpToolResult />
+│   │   │   │   ├─► state === "output-available"
+│   │   │   │   │   └─► RENDER: <McpToolResult />
+│   │   │   │   └─► state === "output-error"
+│   │   │   │       └─► RENDER: <McpToolResult />
+│   │   │   │
+│   │   │   └─► NO: Fall through
+│   │   │
+│   │   └─► RETURN NULL → FILTERED OUT
+│   │
+│   └─► OTHER TYPE
+│       └─► RETURN NULL → FILTERED OUT
+│
+├─► NO: No more parts
+│   └─► END: Only rendered parts visible
+│
+└─► FINAL FILTER: .filter(Boolean)
+    └─► Removes: null, undefined, false, 0, ""
+        └─► Only JSX elements pass through to UI
+
+================================================================================
+                        MCP TOOL STATE FLOW
+================================================================================
+
+VALID STATES FOR MCP TOOLS:
+┌──────────────────┐
+│ input-streaming  │ ← Loading state while input is being prepared
+├──────────────────┤
+│ input-available  │ ← Input ready, shows input data
+├──────────────────┤
+│ output-available │ ← Result ready, shows output in accordion
+├──────────────────┤
+│ output-error     │ ← Error occurred, shows error message in red
+└──────────────────┘
+
+UI REPRESENTATION:
+┌─ input-streaming ──────────────────────────┐
+│ [spinner] serverName / toolName            │
+└────────────────────────────────────────────┘
+
+┌─ input-available ──────────────────────────┐
+│ [icon] serverName / toolName         [v]   │
+│ ┌─────────────────────────────────────────┐│
+│ │ (input data displayed as JSON)          ││
+│ └─────────────────────────────────────────┘│
+└────────────────────────────────────────────┘
+
+┌─ output-available ─────────────────────────┐
+│ [icon] serverName / toolName         [v]   │
+│ ┌─────────────────────────────────────────┐│
+│ │ (output data displayed as JSON)         ││
+│ └─────────────────────────────────────────┘│
+└────────────────────────────────────────────┘
+
+┌─ output-error ─────────────────────────────┐
+│ [error icon] serverName / toolName (error) │
+│ ┌─────────────────────────────────────────┐│
+│ │ (error message or stack trace)          ││
+│ └─────────────────────────────────────────┘│
+└────────────────────────────────────────────┘
+
+================================================================================
+                    STATE SUPPORT BY TOOL TYPE
+================================================================================
+
+BUILT-IN TOOLS (Extract, SaveToMemories, WebSearch, KnowledgeSearch, 
+                AcademicSearch, FinanceSearch):
+
+        input-available         output-available        input-streaming      output-error
+        ✅ Renders              ✅ Renders              ❌ Returns NULL      ❌ Returns NULL
+        |                       |                       |                    |
+        v                       v                       v                    v
+        <Tool input={i} />      <Tool output={o} />     return null          return null
+                                                        (FILTERED OUT)       (FILTERED OUT)
+
+
+MCP TOOLS (via renderMcpTool):
+
+        input-available         output-available        input-streaming      output-error
+        ✅ Renders              ✅ Renders              ✅ Renders           ✅ Renders
+        |                       |                       |                    |
+        v                       v                       v                    v
+        <McpToolResult          <McpToolResult          <McpToolResult       <McpToolResult
+         state="input-avail"/>   state="output-avail"/>  state="input-strm"/> state="output-err"/>
+                                                        [shows spinner]      [shows red error]
+
+================================================================================
+                        CRITICAL FLOW CHECKS
+================================================================================
+
+MISSING MCP RESULT? CHECK IN ORDER:
+
+1. Is part.type correct?
+   □ Format: "tool-mcp_serverName_toolName"
+   □ OR: "tool-call"/"tool-result"/"tool-error" with toolName="mcp_..."
+   └─ If not: Returns NULL → FILTERED OUT ❌
+
+2. Is part.state valid?
+   □ One of: "input-streaming", "input-available", "output-available", "output-error"
+   └─ If not: May crash or render unknown state ❌
+
+3. Did parseMcpToolName() work?
+   □ serverName not empty?
+   □ toolName not empty (unless intentional)?
+   └─ If toolName empty: Renders but with blank tool name ⚠️
+
+4. Do properties exist?
+   □ toolCallId: string ✓
+   □ state: string ✓
+  

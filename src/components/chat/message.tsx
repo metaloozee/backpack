@@ -554,6 +554,38 @@ function renderMessagePart(
 		return renderMcpTool({ ...messagePart, toolName: type }, key);
 	}
 
+	// Handle MCP tools in UIMessageStream format (tool-call/tool-result/tool-error)
+	if (
+		type === "tool-call" ||
+		type === "tool-result" ||
+		type === "tool-error"
+	) {
+		const { toolName } = messagePart as { toolName?: string };
+		if (toolName?.startsWith("mcp_")) {
+			return renderMcpTool(
+				{
+					...messagePart,
+					toolName: `tool-${toolName}`,
+				},
+				key
+			);
+		}
+	}
+
+	// Handle MCP tools in dynamic-tool format
+	if (type === "dynamic-tool") {
+		const { toolName } = messagePart as { toolName?: string };
+		if (toolName?.startsWith("mcp_")) {
+			return renderMcpTool(
+				{
+					...messagePart,
+					toolName: `tool-${toolName}`,
+				},
+				key
+			);
+		}
+	}
+
 	return null;
 }
 

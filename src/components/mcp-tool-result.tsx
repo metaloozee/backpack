@@ -54,10 +54,10 @@ export function McpToolResult({
 	return (
 		<Accordion className="w-full">
 			<AccordionItem
-				className="rounded-md border bg-neutral-900 px-4"
+				className="rounded-md border bg-muted/30 px-3"
 				value={toolCallId}
 			>
-				<AccordionTrigger className="flex h-10 w-full items-center justify-between gap-2 text-xs">
+				<AccordionTrigger className="flex h-9 w-full items-center justify-between gap-2 text-xs">
 					<span className="flex items-center gap-2 truncate">
 						<ServerIcon
 							className={`size-3 ${isError ? "text-red-400" : ""}`}
@@ -77,9 +77,9 @@ export function McpToolResult({
 					</span>
 					<ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
 				</AccordionTrigger>
-				<AccordionContent>
+				<AccordionContent className="pb-3">
 					<CodeBlock
-						className="my-0 max-h-64 overflow-auto p-3 text-xs"
+						className="my-0 max-h-[400px] overflow-auto rounded-sm bg-neutral-950 p-2 font-mono text-[10px] text-neutral-300 leading-4"
 						code={formattedContent}
 						language="json"
 					/>
