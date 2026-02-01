@@ -5,12 +5,14 @@ import ws from "ws";
 import { env } from "@/lib/env.mjs";
 import * as app from "./schema/app";
 import * as auth from "./schema/auth";
+import * as mcp from "./schema/mcp";
 
 export const db = drizzle({
 	connection: env.DATABASE_URL,
 	schema: {
 		...auth,
 		...app,
+		...mcp,
 	},
 	ws,
 });
