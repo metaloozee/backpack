@@ -22,6 +22,10 @@ import { FinanceSearchTool } from "@/components/chat/tools/finance-search-tool";
 import { KnowledgeSearchTool } from "@/components/chat/tools/knowledge-search-tool";
 import { SaveToMemoriesTool } from "@/components/chat/tools/save-to-memories";
 import { WebSearchTool } from "@/components/chat/tools/web-search-tool";
+import {
+	McpToolResult,
+	type McpToolResultProps,
+} from "@/components/mcp-tool-result";
 import { Button } from "@/components/ui/button";
 import { Disclosure, DisclosureTrigger } from "@/components/ui/disclosure";
 import { Loader } from "@/components/ui/loader";
@@ -205,6 +209,60 @@ function renderFinanceSearchTool(part: any, key: string): ReactNode {
 	}
 
 	return null;
+}
+
+// Helper function to parse MCP tool name into server and tool parts
+function parseMcpToolName(toolName: string): {
+	serverName: string;
+	toolName: string;
+} {
+	// Format: mcp_serverName_toolName
+	const withoutPrefix = toolName.slice(4); // Remove "mcp_"
+	const firstUnderscore = withoutPrefix.indexOf("_");
+	if (firstUnderscore === -1) {
+		return { serverName: withoutPrefix, toolName: "" };
+	}
+	return {
+		serverName: withoutPrefix.slice(0, firstUnderscore),
+		toolName: withoutPrefix.slice(firstUnderscore + 1),
+	};
+}
+
+// Helper function to render MCP tool parts
+// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
+function renderMcpTool(part: any, key: string): ReactNode {
+	const { toolCallId, state, toolName: fullToolName, input, output } = part;
+	const { serverName, toolName } = parseMcpToolName(
+		fullToolName.replace("tool-", "")
+	);
+
+	// Determine content based on state or fallback to available data
+	const content = output ?? input ?? {};
+	const isError = state === "output-error";
+	const isLoading =
+		state === "input-streaming" || state === "input-available";
+
+	const getResolvedState = (): McpToolResultProps["state"] => {
+		if (isLoading) {
+			return state;
+		}
+		if (output) {
+			return "output-available";
+		}
+		return state;
+	};
+
+	return (
+		<McpToolResult
+			content={content}
+			isError={isError}
+			key={key}
+			serverName={serverName}
+			state={getResolvedState()}
+			toolCallId={toolCallId}
+			toolName={toolName}
+		/>
+	);
 }
 
 function renderTextPart(
@@ -442,6 +500,17 @@ function renderMessagePart(
 	const { type } = messagePart;
 	const key = `message-${message.id}-part-${index}`;
 
+	// Debug: Log all tool parts
+	if (typeof type === "string" && type.startsWith("tool-")) {
+		console.log("[renderMessagePart] Tool part:", {
+			type,
+			state: messagePart.state,
+			toolCallId: messagePart.toolCallId,
+			hasInput: !!messagePart.input,
+			hasOutput: !!messagePart.output,
+		});
+	}
+
 	if (type === "reasoning" && messagePart.text?.trim().length > 0) {
 		return (
 			<MessageReasoning
@@ -478,6 +547,11 @@ function renderMessagePart(
 
 	if (type === "tool-finance_search") {
 		return renderFinanceSearchTool(messagePart, key);
+	}
+
+	// Handle MCP tools (format: tool-mcp_serverName_toolName)
+	if (typeof type === "string" && type.startsWith("tool-mcp_")) {
+		return renderMcpTool({ ...messagePart, toolName: type }, key);
 	}
 
 	return null;

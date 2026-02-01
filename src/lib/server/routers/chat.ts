@@ -179,6 +179,27 @@ export const chatRouter = router({
 
 			return { success: true, tools: input.tools };
 		}),
+	setMcpServersSelection: protectedProcedure
+		.input(
+			z.object({
+				servers: z.record(z.string(), z.boolean()),
+			})
+		)
+		.mutation(async ({ input }) => {
+			const cookieStore = await cookies();
+
+			cookieStore.set(
+				"X-MCP-Servers-State",
+				JSON.stringify(input.servers),
+				{
+					httpOnly: false,
+					secure: process.env.NODE_ENV === "production",
+					sameSite: "lax",
+				}
+			);
+
+			return { success: true, servers: input.servers };
+		}),
 	setModeSelection: protectedProcedure
 		.input(
 			z.object({

@@ -57,6 +57,7 @@ interface InputPanelProps {
 	initialModel?: string;
 	initialMode?: string;
 	initialAgent?: string;
+	initialMcpServers?: Record<string, boolean>;
 }
 
 function PureInput({
@@ -75,6 +76,7 @@ function PureInput({
 	initialModel,
 	initialMode,
 	initialAgent,
+	initialMcpServers,
 }: InputPanelProps) {
 	const greeting = "How can I help you today?";
 	const trpc = useTRPC();
@@ -566,6 +568,7 @@ function PureInput({
 					<div className="flex w-full items-center justify-between">
 						<ModeSelector
 							initialAgent={initialAgent}
+							initialMcpServers={initialMcpServers}
 							initialMode={initialMode}
 							setTools={setTools}
 							tools={tools}

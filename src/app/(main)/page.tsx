@@ -21,6 +21,17 @@ export default async function IndexPage() {
 			initialTools = getDefaultToolsState();
 		}
 	}
+
+	const mcpServersStateString = cookieStore.get("X-MCP-Servers-State")?.value;
+	let initialMcpServers = {};
+	if (mcpServersStateString) {
+		try {
+			initialMcpServers = JSON.parse(mcpServersStateString);
+		} catch (_) {
+			// ignore
+		}
+	}
+
 	const initialMode = cookieStore.get("X-Mode-Selection")?.value ?? "ask";
 	const initialAgent = cookieStore.get("X-Selected-Agent")?.value;
 
@@ -31,6 +42,7 @@ export default async function IndexPage() {
 				env={{ inSpace: false }}
 				id={id}
 				initialAgent={initialAgent}
+				initialMcpServers={initialMcpServers}
 				initialMessages={[]}
 				initialMode={initialMode}
 				initialModel={selectedModel}

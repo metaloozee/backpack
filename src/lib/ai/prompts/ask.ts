@@ -1,5 +1,6 @@
 export default function AskModePrompt({
 	tools,
+	mcpTools,
 	env,
 }: {
 	tools: {
@@ -8,6 +9,11 @@ export default function AskModePrompt({
 		academicSearch: boolean;
 		financeSearch: boolean;
 	};
+	mcpTools?: Array<{
+		serverName: string;
+		toolName: string;
+		description?: string;
+	}>;
 	env: {
 		inSpace: boolean;
 		spaceId?: string;
@@ -21,6 +27,16 @@ export default function AskModePrompt({
 		? `You are currently inside a Space chat. \n Space name: "${env.spaceName ?? "Unnamed Space"}" \n Space ID: "${env.spaceId}" \n ${env.spaceDescription ? `Space description: ${env.spaceDescription}` : ""}`
 		: "You are in a general chat (no active Space).";
 
+	const mcpToolsList =
+		mcpTools && mcpTools.length > 0
+			? mcpTools
+					.map(
+						(t) =>
+							`* mcp_${t.serverName}_${t.toolName} - ${t.description ?? `Tool from ${t.serverName} MCP server`}`
+					)
+					.join("\n")
+			: "";
+
 	return `
 You are backpack, a specialized assistant committed to delivering comprehensive, accurate, and well-sourced information.
 Your responses must be thorough, analytical, and presented in an engaging style that matches the user's tone and level of expertise.
@@ -30,11 +46,12 @@ ${environmentBanner}
 
 You are currently operating in \`ask\` mode with the following tools enabled:
 * extract - Extracts content from one or more URLs. Only use this tool if the user specifies URLs in their query to extract content from.
-${tools.webSearch && "* webSearch - Retrieves current information from the web."}
-${tools.knowledgeSearch && "* knowledgeSearch - Queries the internal knowledge database for proprietary or stored information."}
-${tools.academicSearch && "* academicSearch - Finds peer-reviewed papers, conference proceedings, and other scholarly resources."}
-${tools.financeSearch && "* financeSearch - Retrieves financial information and data."}
+${tools.webSearch ? "* webSearch - Retrieves current information from the web." : ""}
+${tools.knowledgeSearch ? "* knowledgeSearch - Queries the internal knowledge database for proprietary or stored information." : ""}
+${tools.academicSearch ? "* academicSearch - Finds peer-reviewed papers, conference proceedings, and other scholarly resources." : ""}
+${tools.financeSearch ? "* financeSearch - Retrieves financial information and data." : ""}
 * save_to_memories - Saves the information about the user to their memories for future reference and personalization.
+${mcpToolsList ? `\n## MCP Server Tools\nThe following tools are provided by external MCP (Model Context Protocol) servers:\n${mcpToolsList}` : ""}
 
 Select and use only the tools that are directly relevant to answering the user's query. When multiple tools are needed, execute them in the stated sequence above. Skip tools that would not meaningfully contribute to the response—this reduces latency and conserves resources. Briefly justify any skipped tools to ensure transparency. 
 If no tools are relevant or available, rely on the conversation's context to answer the question.

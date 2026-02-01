@@ -36,6 +36,7 @@ export function Chat({
 	initialTools,
 	initialMode,
 	initialAgent,
+	initialMcpServers,
 }: {
 	id: string;
 	env: {
@@ -52,6 +53,7 @@ export function Chat({
 	initialTools?: ToolsState;
 	initialMode?: string;
 	initialAgent?: string;
+	initialMcpServers?: Record<string, boolean>;
 }) {
 	const pathname = usePathname();
 	const isSpaceChat = env.inSpace || pathname.startsWith("/s/");
@@ -302,6 +304,7 @@ export function Chat({
 				attachments={attachments}
 				chatId={id}
 				initialAgent={initialAgent}
+				initialMcpServers={initialMcpServers}
 				initialMode={initialMode}
 				initialModel={initialModel}
 				input={input}

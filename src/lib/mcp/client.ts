@@ -1,3 +1,4 @@
+import { createMCPClient, type MCPClient } from "@ai-sdk/mcp";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { decryptApiKey } from "@/lib/mcp/encryption";
@@ -96,6 +97,95 @@ export async function createMcpClientForServer(
 
 	await client.connect(transport);
 	return client;
+}
+
+// MCP tools are a record of tool name to tool definition
+type McpToolSet = Record<string, unknown>;
+
+export interface McpToolInfo {
+	serverName: string;
+	toolName: string;
+	description?: string;
+}
+
+export interface McpToolsResult {
+	tools: McpToolSet;
+	clients: MCPClient[];
+	serverNames: Map<string, string>;
+	toolInfos: McpToolInfo[];
+}
+
+/**
+ * Creates MCP clients and tools for the given servers using @ai-sdk/mcp.
+ * Returns tools that are directly compatible with streamText.
+ */
+export async function createMcpToolsForServers(
+	servers: McpServerConfig[]
+): Promise<McpToolsResult> {
+	const allTools: McpToolSet = {};
+	const clients: MCPClient[] = [];
+	const serverNames = new Map<string, string>();
+	const toolInfos: McpToolInfo[] = [];
+
+	for (const server of servers) {
+		try {
+			const decryptedApiKey = server.apiKey
+				? decryptApiKey(server.apiKey)
+				: undefined;
+
+			const mcpClient = await createMCPClient({
+				transport: {
+					type: "http",
+					url: server.url,
+					headers: decryptedApiKey
+						? { Authorization: `Bearer ${decryptedApiKey}` }
+						: undefined,
+				},
+			});
+
+			clients.push(mcpClient);
+
+			const tools = await mcpClient.tools();
+
+			for (const [toolName, tool] of Object.entries(tools)) {
+				const prefixedName = `mcp_${server.name}_${toolName}`;
+				allTools[prefixedName] = tool;
+				serverNames.set(prefixedName, server.name);
+
+				// Extract description from tool if available
+				const toolWithMeta = tool as { description?: string };
+				toolInfos.push({
+					serverName: server.name,
+					toolName,
+					description: toolWithMeta.description,
+				});
+			}
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			console.error(
+				`Failed to create MCP client for server ${server.name}:`,
+				errorMessage
+			);
+		}
+	}
+
+	return { tools: allTools, clients, serverNames, toolInfos };
+}
+
+/**
+ * Closes all MCP clients.
+ */
+export async function closeMcpClients(clients: MCPClient[]): Promise<void> {
+	for (const client of clients) {
+		try {
+			await client.close();
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			console.error("Error closing MCP client:", errorMessage);
+		}
+	}
 }
 
 export async function getMcpToolsForServers(

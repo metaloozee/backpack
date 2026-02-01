@@ -34,10 +34,16 @@ import { getSession } from "@/lib/auth/utils";
 import {
 	createStream,
 	getChatByIdAndUserId,
+	getMcpServerConfigsByIds,
 	getMemoriesByUserId,
 	getMessagesByChatIdAndUserId,
 	updateChatTitleIfDefault,
 } from "@/lib/db/queries";
+import {
+	closeMcpClients,
+	createMcpToolsForServers,
+	type McpServerConfig,
+} from "@/lib/mcp/client";
 import { caller } from "@/lib/trpc/server";
 
 export const maxDuration = 60;
@@ -51,6 +57,10 @@ interface ToolsState {
 	financeSearch?: boolean;
 }
 
+interface McpServersState {
+	[serverId: string]: boolean;
+}
+
 const parseToolsState = (toolsStateString: string | undefined): ToolsState => {
 	if (!toolsStateString) {
 		return {};
@@ -59,6 +69,20 @@ const parseToolsState = (toolsStateString: string | undefined): ToolsState => {
 		return JSON.parse(toolsStateString) as ToolsState;
 	} catch (error) {
 		console.error("Failed to parse tools state from cookie:", error);
+		return {};
+	}
+};
+
+const parseMcpServersState = (
+	mcpServersStateString: string | undefined
+): McpServersState => {
+	if (!mcpServersStateString) {
+		return {};
+	}
+	try {
+		return JSON.parse(mcpServersStateString) as McpServersState;
+	} catch (error) {
+		console.error("Failed to parse MCP servers state from cookie:", error);
 		return {};
 	}
 };
@@ -153,12 +177,17 @@ export async function POST(req: Request) {
 			const cookieStore = await cookies();
 			const toolsStateString = cookieStore.get("X-Tools-State")?.value;
 			const toolsState = parseToolsState(toolsStateString);
+			const mcpServersStateString = cookieStore.get(
+				"X-MCP-Servers-State"
+			)?.value;
+			const mcpServersState = parseMcpServersState(mcpServersStateString);
 
 			console.log({
 				webSearch: toolsState.webSearch ?? false,
 				knowledgeSearch: toolsState.knowledgeSearch ?? false,
 				academicSearch: toolsState.academicSearch ?? false,
 				financeSearch: toolsState.financeSearch ?? false,
+				mcpServers: mcpServersState,
 			});
 
 			if (!(message && id)) {
@@ -174,14 +203,26 @@ export async function POST(req: Request) {
 			}
 
 			// Parallelize independent database queries for better performance
-			const [chat, previousMessages, userMemories] = await Promise.all([
-				getChatByIdAndUserId({ id, userId: session.userId }),
-				getMessagesByChatIdAndUserId({
-					chatId: id,
-					userId: session.userId,
-				}),
-				getMemoriesByUserId({ userId: session.userId }),
-			]);
+			// Get enabled MCP server IDs from the state
+			const enabledMcpServerIds = Object.entries(mcpServersState)
+				.filter(([_, enabled]) => enabled)
+				.map(([serverId]) => serverId);
+
+			const [chat, previousMessages, userMemories, mcpServerConfigs] =
+				await Promise.all([
+					getChatByIdAndUserId({ id, userId: session.userId }),
+					getMessagesByChatIdAndUserId({
+						chatId: id,
+						userId: session.userId,
+					}),
+					getMemoriesByUserId({ userId: session.userId }),
+					enabledMcpServerIds.length > 0
+						? getMcpServerConfigsByIds({
+								ids: enabledMcpServerIds,
+								userId: session.userId,
+							})
+						: Promise.resolve([]),
+				]);
 			const shouldGenerateTitle = !chat;
 
 			if (!chat) {
@@ -232,7 +273,35 @@ export async function POST(req: Request) {
 				execute: async ({ writer: dataStream }) => {
 					const activeTools = buildActiveTools(toolsState);
 
-					console.log(activeTools);
+					// Create MCP tools if there are enabled servers
+					const mcpServersForTools: McpServerConfig[] =
+						mcpServerConfigs
+							.filter((config) => config.enabled)
+							.map((config) => ({
+								name: config.name,
+								url: config.url,
+								apiKey: config.apiKeyEncrypted ?? undefined,
+							}));
+
+					const mcpToolsResult =
+						mcpServersForTools.length > 0
+							? await createMcpToolsForServers(mcpServersForTools)
+							: {
+									tools: {},
+									clients: [],
+									serverNames: new Map(),
+									toolInfos: [],
+								};
+
+					// Add MCP tool names to active tools
+					const mcpToolNames = Object.keys(mcpToolsResult.tools);
+					const allActiveTools = [...activeTools, ...mcpToolNames];
+
+					console.log({
+						activeTools,
+						mcpToolNames,
+						allActiveTools,
+					});
 
 					// Build provider-specific reasoning options based on model
 					const isGemini3 = model.id.startsWith("gemini-3");
@@ -262,6 +331,24 @@ export async function POST(req: Request) {
 							}
 						: undefined;
 
+					// Build combined tools object
+					const allTools = {
+						save_to_memories: saveToMemoriesTool({
+							session,
+							dataStream,
+						}),
+						extract: extractTool({ dataStream }),
+						web_search: webSearchTool({ dataStream }),
+						knowledge_search: knowledgeSearchTool({
+							session,
+							dataStream,
+							env: requestEnv,
+						}),
+						academic_search: academicSearchTool({ dataStream }),
+						finance_search: financeSearchTool({ dataStream }),
+						...mcpToolsResult.tools,
+					};
+
 					const result = streamText({
 						model: model.instance as LanguageModel,
 						providerOptions: reasoningProviderOptions,
@@ -276,6 +363,7 @@ export async function POST(req: Request) {
 								financeSearch:
 									toolsState.financeSearch ?? false,
 							},
+							mcpTools: mcpToolsResult.toolInfos,
 							env: {
 								...requestEnv,
 								memories: userMemories,
@@ -289,22 +377,15 @@ export async function POST(req: Request) {
 						onError: (error) => {
 							console.error(error);
 						},
-						activeTools,
-						tools: {
-							save_to_memories: saveToMemoriesTool({
-								session,
-								dataStream,
-							}),
-							extract: extractTool({ dataStream }),
-							web_search: webSearchTool({ dataStream }),
-							knowledge_search: knowledgeSearchTool({
-								session,
-								dataStream,
-								env: requestEnv,
-							}),
-							academic_search: academicSearchTool({ dataStream }),
-							finance_search: financeSearchTool({ dataStream }),
+						onFinish: async () => {
+							// Close MCP clients after streaming is done
+							if (mcpToolsResult.clients.length > 0) {
+								await closeMcpClients(mcpToolsResult.clients);
+							}
 						},
+						activeTools:
+							allActiveTools as (keyof typeof allTools)[],
+						tools: allTools,
 					});
 
 					result.consumeStream();

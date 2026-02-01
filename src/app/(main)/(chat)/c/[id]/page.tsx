@@ -34,6 +34,17 @@ export default async function ChatPage({
 			initialTools = getDefaultToolsState();
 		}
 	}
+
+	const mcpServersStateString = cookieStore.get("X-MCP-Servers-State")?.value;
+	let initialMcpServers = {};
+	if (mcpServersStateString) {
+		try {
+			initialMcpServers = JSON.parse(mcpServersStateString);
+		} catch (_) {
+			// No action needed
+		}
+	}
+
 	const initialMode = cookieStore.get("X-Mode-Selection")?.value ?? "ask";
 	const initialAgent = cookieStore.get("X-Selected-Agent")?.value;
 
@@ -71,6 +82,7 @@ export default async function ChatPage({
 			}}
 			id={chatId}
 			initialAgent={initialAgent}
+			initialMcpServers={initialMcpServers}
 			initialMessages={convertToUIMessages(messages)}
 			initialMode={initialMode}
 			initialModel={selectedModel}

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { format } from "timeago.js";
 import { DisplayMemories } from "@/components/display-memories";
+import { McpServerConfig } from "@/components/mcp-server-config";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -45,6 +46,10 @@ export default async function AccountPage() {
 				</div>
 				<Separator />
 				<DisplayMemories />
+			</div>
+
+			<div className="flex w-full flex-col items-center justify-center gap-4">
+				<McpServerConfig />
 			</div>
 
 			<div className="flex w-full flex-row items-center justify-between rounded-lg border border-red-900 bg-red-950/50">

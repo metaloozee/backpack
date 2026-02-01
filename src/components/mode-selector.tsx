@@ -1,15 +1,23 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckIcon, Settings2Icon, TelescopeIcon } from "lucide-react";
+import {
+	CheckIcon,
+	ServerIcon,
+	Settings2Icon,
+	TelescopeIcon,
+} from "lucide-react";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
@@ -27,6 +35,7 @@ import {
 } from "@/lib/ai/tools";
 import { slideVariants, transitions } from "@/lib/animations";
 import { useTRPC } from "@/lib/trpc/trpc";
+import { cn } from "@/lib/utils";
 
 const modeTypes = [
 	{
@@ -59,6 +68,7 @@ interface ModeSelectorProps {
 	setTools: Dispatch<SetStateAction<ToolsState>>;
 	initialMode?: string;
 	initialAgent?: string;
+	initialMcpServers?: Record<string, boolean>;
 }
 
 export function ModeSelector({
@@ -66,6 +76,7 @@ export function ModeSelector({
 	setTools,
 	initialMode,
 	initialAgent,
+	initialMcpServers = {},
 }: ModeSelectorProps) {
 	const [selectedMode, setSelectedMode] = useState<ModeType>(
 		(initialMode as ModeType) ?? "ask"
@@ -73,13 +84,24 @@ export function ModeSelector({
 	const [selectedAgent, setSelectedAgent] = useState<string | null>(
 		initialAgent ?? null
 	);
+	const [mcpServersState, setMcpServersState] =
+		useState<Record<string, boolean>>(initialMcpServers);
 
 	const trpc = useTRPC();
+	const { data: mcpServersData } = useQuery(
+		trpc.mcp.getServers.queryOptions(undefined, {
+			enabled: selectedMode === "ask",
+		})
+	);
+
 	const setToolsSelectionMutation = useMutation(
 		trpc.chat.setToolsSelection.mutationOptions()
 	);
 	const setModeSelectionMutation = useMutation(
 		trpc.chat.setModeSelection.mutationOptions()
+	);
+	const setMcpServersSelectionMutation = useMutation(
+		trpc.chat.setMcpServersSelection.mutationOptions()
 	);
 
 	const updateTool = (toolId: string, value: boolean) => {
@@ -105,6 +127,34 @@ export function ModeSelector({
 						return current;
 					});
 					toast.error("Failed to save tool selection");
+				},
+			}
+		);
+	};
+
+	const updateMcpServer = (serverId: string, value: boolean) => {
+		const previousValue = mcpServersState[serverId];
+
+		const newState = {
+			...mcpServersState,
+			[serverId]: value,
+		};
+		setMcpServersState(newState);
+
+		setMcpServersSelectionMutation.mutate(
+			{ servers: newState },
+			{
+				onError: () => {
+					setMcpServersState((current) => {
+						if (current[serverId] === value) {
+							return {
+								...current,
+								[serverId]: previousValue,
+							};
+						}
+						return current;
+					});
+					toast.error("Failed to save MCP server selection");
 				},
 			}
 		);
@@ -268,6 +318,92 @@ export function ModeSelector({
 									</DropdownMenuItem>
 								);
 							})}
+
+							{selectedMode === "ask" &&
+								mcpServersData?.servers &&
+								mcpServersData.servers.length > 0 && (
+									<>
+										<DropdownMenuSeparator className="bg-neutral-800" />
+										<DropdownMenuLabel className="px-3 py-2 font-medium text-muted-foreground text-xs">
+											MCP Servers
+										</DropdownMenuLabel>
+										{mcpServersData.servers.map(
+											(server) => {
+												const isChecked =
+													mcpServersState[
+														server.id
+													] ?? false;
+												const isError =
+													!!server.lastError;
+												const toolCount =
+													server.toolsCache &&
+													Array.isArray(
+														server.toolsCache
+													)
+														? server.toolsCache
+																.length
+														: 0;
+
+												return (
+													<DropdownMenuItem
+														className={cn(
+															"flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800",
+															isError &&
+																"cursor-not-allowed opacity-70"
+														)}
+														disabled={isError}
+														key={server.id}
+														onClick={(e) =>
+															e.preventDefault()
+														}
+													>
+														<div className="flex items-center gap-3">
+															<ServerIcon className="size-4 text-muted-foreground" />
+															<div className="flex flex-col">
+																<div className="flex items-center gap-2">
+																	<span className="font-medium text-sm">
+																		{
+																			server.name
+																		}
+																	</span>
+																	{toolCount >
+																		0 && (
+																		<Badge
+																			className="h-4 px-1 text-[10px]"
+																			variant="secondary"
+																		>
+																			{
+																				toolCount
+																			}
+																		</Badge>
+																	)}
+																</div>
+																<span className="truncate text-muted-foreground text-xs">
+																	{isError
+																		? "Connection failed"
+																		: server.url}
+																</span>
+															</div>
+														</div>
+														<Switch
+															checked={isChecked}
+															disabled={isError}
+															key={`mcp-switch-${server.id}-${isChecked}`}
+															onCheckedChange={(
+																checked
+															) => {
+																updateMcpServer(
+																	server.id,
+																	checked
+																);
+															}}
+														/>
+													</DropdownMenuItem>
+												);
+											}
+										)}
+									</>
+								)}
 						</DropdownMenuContent>
 					</DropdownMenu>
 				)}

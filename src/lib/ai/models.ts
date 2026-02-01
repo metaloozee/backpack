@@ -2,7 +2,6 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { type GoogleGenerativeAIProviderOptions, google } from "@ai-sdk/google";
 import { groq } from "@ai-sdk/groq";
 import { openai } from "@ai-sdk/openai";
-import type { OpenRouterLanguageModel } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
 
 export type InputModality = "text" | "image" | "audio" | "video" | "pdf";
@@ -18,7 +17,7 @@ export interface Model {
 	name: string;
 	id: string;
 	provider: string;
-	instance: LanguageModel | OpenRouterLanguageModel;
+	instance: LanguageModel;
 	modalities: {
 		input: InputModality[];
 		output: OutputModality[];
