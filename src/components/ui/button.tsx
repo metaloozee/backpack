@@ -51,6 +51,7 @@ function Button({
 	const resolvedType = type ?? "button";
 
 	return (
+		// @ts-expect-error - Slot props incompatible with button props in React 19
 		<Comp
 			className={cn(buttonVariants({ variant, size, className }))}
 			data-slot="button"

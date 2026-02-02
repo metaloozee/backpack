@@ -29,6 +29,7 @@ function Badge({
 	className,
 	variant,
 	asChild = false,
+	ref: _ref,
 	...props
 }: React.ComponentProps<"span"> &
 	VariantProps<typeof badgeVariants> & { asChild?: boolean }) {

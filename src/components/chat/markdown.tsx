@@ -80,7 +80,7 @@ const makeComponent = <T extends ElementType>(
 };
 
 const components: Partial<Components> = {
-	code: ({ node, className, children, ...props }) => {
+	code: ({ node, className, children, ref: _ref, ...props }) => {
 		const match = LANGUAGE_REGEX.exec(className || "");
 		if (match) {
 			const language = match[1] || "text";
@@ -106,7 +106,7 @@ const components: Partial<Components> = {
 			{children}
 		</div>
 	),
-	ol: ({ node, children, ...props }) => {
+	ol: ({ node, children, ref: _ref, ...props }) => {
 		return (
 			<ol className="ml-4 list-outside list-decimal" {...props}>
 				{children}
@@ -114,14 +114,14 @@ const components: Partial<Components> = {
 		);
 	},
 	li: makeComponent("li", { className: listItemClassName }),
-	ul: ({ node, children, ...props }) => {
+	ul: ({ node, children, ref: _ref, ...props }) => {
 		return (
 			<ul className="ml-4 list-outside list-disc" {...props}>
 				{children}
 			</ul>
 		);
 	},
-	strong: ({ node, children, ...props }) => {
+	strong: ({ node, children, ref: _ref, ...props }) => {
 		return (
 			<span className="font-semibold" {...props}>
 				{children}
@@ -147,7 +147,7 @@ const components: Partial<Components> = {
 	h4: makeComponent("h4", { className: headingClassNames.h4 }),
 	h5: makeComponent("h5", { className: headingClassNames.h5 }),
 	h6: makeComponent("h6", { className: headingClassNames.h6 }),
-	blockquote: ({ node, children, ...props }) => {
+	blockquote: ({ node, children, ref: _ref, ...props }) => {
 		return (
 			<blockquote
 				className="my-4 border-neutral-300 border-l-4 pl-4 text-neutral-600 italic dark:border-neutral-700 dark:text-neutral-400"
@@ -157,7 +157,7 @@ const components: Partial<Components> = {
 			</blockquote>
 		);
 	},
-	hr: ({ ...props }) => (
+	hr: ({ ref: _ref, ...props }) => (
 		<hr
 			className="my-6 border-neutral-200 border-t dark:border-neutral-700"
 			{...props}
@@ -166,26 +166,26 @@ const components: Partial<Components> = {
 	table: ({ node, children, ...props }) => {
 		return <DownloadableTable {...props}>{children}</DownloadableTable>;
 	},
-	thead: ({ node, children, ...props }) => {
+	thead: ({ node, children, ref: _ref, ...props }) => {
 		return (
 			<TableHeader className="dark:bg-neutral-900" {...props}>
 				{children}
 			</TableHeader>
 		);
 	},
-	tbody: ({ node, children, ...props }) => {
+	tbody: ({ node, children, ref: _ref, ...props }) => {
 		return <TableBody {...props}>{children}</TableBody>;
 	},
-	tr: ({ node, children, ...props }) => {
+	tr: ({ node, children, ref: _ref, ...props }) => {
 		return <TableRow {...props}>{children}</TableRow>;
 	},
-	th: ({ node, children, ...props }) => {
+	th: ({ node, children, ref: _ref, ...props }) => {
 		return <TableHead {...props}>{children}</TableHead>;
 	},
-	td: ({ node, children, ...props }) => {
+	td: ({ node, children, ref: _ref, ...props }) => {
 		return <TableCell {...props}>{children}</TableCell>;
 	},
-	img: ({ node, alt, src, width, height, ...props }) => {
+	img: ({ node, alt, src, width, height, ref: _ref, ...props }) => {
 		let imageWidth = 600;
 		if (typeof width === "number") {
 			imageWidth = width;
@@ -307,9 +307,8 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
 
 	return (
 		<TooltipProvider delayDuration={0}>
-			<div>
+			<div className="space-y-4 text-sm leading-7 sm:text-base">
 				<ReactMarkdown
-					className="space-y-4 text-sm leading-7 sm:text-base"
 					components={citationAwareComponents}
 					rehypePlugins={rehypePlugins}
 					remarkPlugins={remarkPlugins}
