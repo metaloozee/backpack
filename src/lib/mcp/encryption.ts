@@ -1,66 +1,103 @@
+import "server-only";
+
 import crypto from "node:crypto";
 import { env } from "@/lib/env.mjs";
 
 const ALGORITHM = "aes-256-gcm";
-const AUTH_TAG_LENGTH = 16; // 128 bits
-const IV_LENGTH = 12; // 96 bits (GCM standard)
+const IV_LENGTH = 12;
+const MASTER_KEY = Buffer.from(env.MCP_ENCRYPTION_KEY, "base64");
 
-export function encryptApiKey(plaintext: string): string {
-	try {
-		const key = Buffer.from(env.MCP_ENCRYPTION_KEY, "utf-8");
+export interface EncryptedKeyPayload {
+	iv_b64: string;
+	tag_b64: string;
+	ct_b64: string;
+	v: number;
+}
 
-		if (key.length !== 32) {
-			throw new Error("MCP_ENCRYPTION_KEY must be 32 bytes");
+export type EncryptedKeyInput = EncryptedKeyPayload | string;
+
+const isEncryptedKeyPayload = (
+	value: unknown
+): value is EncryptedKeyPayload => {
+	if (typeof value !== "object" || value === null) {
+		return false;
+	}
+
+	const candidate = value as Partial<EncryptedKeyPayload>;
+	return (
+		typeof candidate.iv_b64 === "string" &&
+		typeof candidate.tag_b64 === "string" &&
+		typeof candidate.ct_b64 === "string" &&
+		typeof candidate.v === "number"
+	);
+};
+
+export function parseEncryptedKey(
+	payload: EncryptedKeyInput
+): EncryptedKeyPayload {
+	if (typeof payload === "string") {
+		try {
+			const parsed = JSON.parse(payload) as unknown;
+			if (!isEncryptedKeyPayload(parsed)) {
+				throw new Error("Invalid encrypted key payload shape");
+			}
+			return parsed;
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			throw new Error(
+				`Failed to parse MCP API key payload: ${errorMessage}`
+			);
 		}
+	}
 
+	if (!isEncryptedKeyPayload(payload)) {
+		throw new Error(
+			"Invalid encrypted key payload: must be a string or object with iv_b64, tag_b64, ct_b64, and v properties"
+		);
+	}
+
+	return payload;
+}
+
+export function encryptKey(plaintext: string): EncryptedKeyPayload {
+	try {
 		const iv = crypto.randomBytes(IV_LENGTH);
-		const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+		const cipher = crypto.createCipheriv(ALGORITHM, MASTER_KEY, iv);
 
-		let encrypted = cipher.update(plaintext, "utf8", "base64");
-		encrypted += cipher.final("base64");
-		const authTag = cipher.getAuthTag();
-
-		// Prepend IV and authTag to ciphertext
-		const combined = Buffer.concat([
-			iv,
-			authTag,
-			Buffer.from(encrypted, "base64"),
+		const ciphertext = Buffer.concat([
+			cipher.update(plaintext, "utf8"),
+			cipher.final(),
 		]);
-		return combined.toString("base64");
+		const tag = cipher.getAuthTag();
+
+		return {
+			iv_b64: iv.toString("base64"),
+			tag_b64: tag.toString("base64"),
+			ct_b64: ciphertext.toString("base64"),
+			v: 1,
+		};
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : String(error);
-		throw new Error(`Failed to encrypt API key: ${errorMessage}`);
+		throw new Error(`Failed to encrypt MCP API key: ${errorMessage}`);
 	}
 }
 
-export function decryptApiKey(ciphertext: string): string {
+export function decryptKey(payload: EncryptedKeyPayload) {
 	try {
-		const key = Buffer.from(env.MCP_ENCRYPTION_KEY, "utf-8");
+		const iv = Buffer.from(payload.iv_b64, "base64");
+		const tag = Buffer.from(payload.tag_b64, "base64");
+		const ct = Buffer.from(payload.ct_b64, "base64");
 
-		if (key.length !== 32) {
-			throw new Error("MCP_ENCRYPTION_KEY must be 32 bytes");
-		}
+		const decipher = crypto.createDecipheriv(ALGORITHM, MASTER_KEY, iv);
+		decipher.setAuthTag(tag);
 
-		const data = Buffer.from(ciphertext, "base64");
-
-		if (data.length < IV_LENGTH + AUTH_TAG_LENGTH) {
-			throw new Error("Invalid ciphertext: insufficient data");
-		}
-
-		const iv = data.subarray(0, IV_LENGTH);
-		const authTag = data.subarray(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH);
-		const encrypted = data.subarray(IV_LENGTH + AUTH_TAG_LENGTH);
-
-		const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-		decipher.setAuthTag(authTag);
-
-		let decrypted = decipher.update(encrypted, undefined, "utf8");
-		decrypted += decipher.final("utf8");
-		return decrypted;
+		const pt = Buffer.concat([decipher.update(ct), decipher.final()]);
+		return pt.toString("utf-8");
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : String(error);
-		throw new Error(`Failed to decrypt API key: ${errorMessage}`);
+		throw new Error(`Failed to decrypt MCP API key: ${errorMessage}`);
 	}
 }

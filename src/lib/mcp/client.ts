@@ -1,12 +1,16 @@
 import { createMCPClient, type MCPClient } from "@ai-sdk/mcp";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { decryptApiKey } from "@/lib/mcp/encryption";
+import {
+	decryptKey,
+	type EncryptedKeyInput,
+	parseEncryptedKey,
+} from "@/lib/mcp/encryption";
 
 export interface McpServerConfig {
 	name: string;
 	url: string;
-	apiKey?: string;
+	apiKey?: EncryptedKeyInput;
 }
 
 export interface TestConnectionResult {
@@ -80,7 +84,7 @@ export async function createMcpClientForServer(
 	});
 
 	const decryptedApiKey = server.apiKey
-		? decryptApiKey(server.apiKey)
+		? decryptKey(parseEncryptedKey(server.apiKey))
 		: undefined;
 
 	const transportInit: RequestInit | undefined = decryptedApiKey
@@ -130,7 +134,7 @@ export async function createMcpToolsForServers(
 	for (const server of servers) {
 		try {
 			const decryptedApiKey = server.apiKey
-				? decryptApiKey(server.apiKey)
+				? decryptKey(parseEncryptedKey(server.apiKey))
 				: undefined;
 
 			const mcpClient = await createMCPClient({

@@ -8,7 +8,11 @@ import {
 	updateMcpServerConfig,
 } from "@/lib/db/queries";
 import { testMcpConnection } from "@/lib/mcp/client";
-import { decryptApiKey, encryptApiKey } from "@/lib/mcp/encryption";
+import {
+	decryptKey,
+	encryptKey,
+	parseEncryptedKey,
+} from "@/lib/mcp/encryption";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 
 const MCP_CONNECTION_TIMEOUT_MS = 5000;
@@ -35,7 +39,9 @@ export const mcpRouter = router({
 
 					if (apiKeyEncrypted) {
 						try {
-							const decrypted = decryptApiKey(apiKeyEncrypted);
+							const decrypted = decryptKey(
+								parseEncryptedKey(apiKeyEncrypted)
+							);
 							apiKeyLast4 = decrypted.slice(-4);
 						} catch {
 							/* decrypt failure: apiKeyLast4 stays null, hasApiKey stays true */
@@ -63,7 +69,7 @@ export const mcpRouter = router({
 		.mutation(async ({ ctx, input }) => {
 			try {
 				const apiKeyEncrypted = input.apiKey
-					? encryptApiKey(input.apiKey)
+					? JSON.stringify(encryptKey(input.apiKey))
 					: undefined;
 
 				const config = await createMcpServerConfig({
@@ -108,10 +114,11 @@ export const mcpRouter = router({
 				});
 			}
 
+			const apiKey = input.apiKey;
 			const shouldEncryptNewApiKey =
-				input.apiKey !== undefined && input.apiKey !== "";
+				apiKey !== undefined && apiKey !== "";
 			const apiKeyEncrypted = shouldEncryptNewApiKey
-				? encryptApiKey(input.apiKey as string)
+				? JSON.stringify(encryptKey(apiKey))
 				: undefined;
 
 			try {
@@ -254,7 +261,7 @@ async function resolveConnectionParams(
 		return {
 			url: server.url,
 			apiKey: server.apiKeyEncrypted
-				? decryptApiKey(server.apiKeyEncrypted)
+				? decryptKey(parseEncryptedKey(server.apiKeyEncrypted))
 				: undefined,
 			serverId: input.id,
 		};
