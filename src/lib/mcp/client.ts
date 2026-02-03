@@ -103,7 +103,6 @@ export async function createMcpClientForServer(
 	return client;
 }
 
-// MCP tools are a record of tool name to tool definition
 type McpToolSet = Record<string, unknown>;
 
 export interface McpToolInfo {
@@ -119,10 +118,6 @@ export interface McpToolsResult {
 	toolInfos: McpToolInfo[];
 }
 
-/**
- * Creates MCP clients and tools for the given servers using @ai-sdk/mcp.
- * Returns tools that are directly compatible with streamText.
- */
 export async function createMcpToolsForServers(
 	servers: McpServerConfig[]
 ): Promise<McpToolsResult> {
@@ -177,9 +172,6 @@ export async function createMcpToolsForServers(
 	return { tools: allTools, clients, serverNames, toolInfos };
 }
 
-/**
- * Closes all MCP clients.
- */
 export async function closeMcpClients(clients: MCPClient[]): Promise<void> {
 	for (const client of clients) {
 		try {

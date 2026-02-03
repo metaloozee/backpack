@@ -4,13 +4,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	ActivityIcon,
 	KeyIcon,
+	Loader2Icon,
 	PencilIcon,
 	PlusIcon,
 	TrashIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -111,33 +112,38 @@ export function McpServerConfig() {
 	const renderStatusBadge = (server: McpServer) => {
 		if (server.lastConnectedAt) {
 			return (
-				<span
-					className="flex items-center gap-1.5 text-[10px] text-muted-foreground"
+				<Badge
+					className="gap-1.5 border-0 bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
 					title={`Last connected: ${server.lastConnectedAt.toLocaleString()}`}
+					variant="secondary"
 				>
-					<div className="size-1.5 rounded-full bg-green-500" />
+					<span className="size-1.5 rounded-full bg-emerald-500" />
 					Connected
-				</span>
+				</Badge>
 			);
 		}
 
 		if (server.lastError) {
 			return (
-				<span
-					className="flex items-center gap-1.5 text-[10px] text-muted-foreground"
+				<Badge
+					className="gap-1.5 border-0 bg-red-500/15 text-red-700 dark:bg-red-500/20 dark:text-red-300"
 					title={server.lastError}
+					variant="secondary"
 				>
-					<div className="size-1.5 rounded-full bg-red-500" />
+					<span className="size-1.5 rounded-full bg-red-500" />
 					Error
-				</span>
+				</Badge>
 			);
 		}
 
 		return (
-			<span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-				<div className="size-1.5 rounded-full bg-yellow-500" />
+			<Badge
+				className="gap-1.5 border-0 bg-amber-500/15 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300"
+				variant="secondary"
+			>
+				<span className="size-1.5 rounded-full bg-amber-500" />
 				Unknown
-			</span>
+			</Badge>
 		);
 	};
 
@@ -182,10 +188,10 @@ export function McpServerConfig() {
 								<TableHead>
 									<p className="text-xs">URL</p>
 								</TableHead>
-								<TableHead className="w-[120px]">
+								<TableHead className="w-30">
 									<p className="text-xs">Status</p>
 								</TableHead>
-								<TableHead className="w-[150px] text-right">
+								<TableHead className="w-37 text-right">
 									<p className="text-xs">Actions</p>
 								</TableHead>
 							</TableRow>
@@ -320,12 +326,27 @@ function ServerDialog({
 	const [url, setUrl] = useState(initialData?.url ?? "");
 	const [apiKey, setApiKey] = useState("");
 
-	const addMutation = useMutation(
-		trpc.mcp.addServer.mutationOptions({
-			onSuccess: () => {
+	const testConnectionMutation = useMutation(
+		trpc.mcp.testConnection.mutationOptions({
+			onSuccess: (result) => {
 				queryClient.invalidateQueries({
 					queryKey: trpc.mcp.getServers.queryKey(),
 				});
+				if (!result.success && result.error) {
+					toast.error(`Connection failed: ${result.error}`);
+				}
+			},
+			onError: (err) => toast.error(`Test failed: ${err.message}`),
+		})
+	);
+
+	const addMutation = useMutation(
+		trpc.mcp.addServer.mutationOptions({
+			onSuccess: (result) => {
+				queryClient.invalidateQueries({
+					queryKey: trpc.mcp.getServers.queryKey(),
+				});
+				testConnectionMutation.mutate({ serverId: result.id });
 				toast.success("Server added");
 				onOpenChange(false);
 				resetForm();
@@ -374,9 +395,7 @@ function ServerDialog({
 
 	const isPending = addMutation.isPending || updateMutation.isPending;
 	let submitLabel = "Add Server";
-	if (isPending) {
-		submitLabel = "Saving...";
-	} else if (initialData) {
+	if (initialData) {
 		submitLabel = "Update";
 	}
 
@@ -441,7 +460,11 @@ function ServerDialog({
 							Cancel
 						</Button>
 						<Button disabled={isPending} type="submit">
-							{submitLabel}
+							{isPending ? (
+								<Loader2Icon className="animate-spin" />
+							) : (
+								submitLabel
+							)}
 						</Button>
 					</DialogFooter>
 				</form>
