@@ -1117,9 +1117,9 @@ export async function updateMcpServerConfig({
 	url?: string;
 	apiKeyEncrypted?: string;
 	enabled?: boolean;
-	lastConnectedAt?: Date;
-	lastError?: string;
-	toolsCache?: unknown;
+	lastConnectedAt?: Date | null;
+	lastError?: string | null;
+	toolsCache?: unknown | null;
 }): Promise<McpServerConfig | undefined> {
 	try {
 		const updateData: Partial<{
@@ -1127,9 +1127,9 @@ export async function updateMcpServerConfig({
 			url: string;
 			apiKeyEncrypted: string;
 			enabled: boolean;
-			lastConnectedAt: Date;
-			lastError: string;
-			toolsCache: unknown;
+			lastConnectedAt: Date | null;
+			lastError: string | null;
+			toolsCache: unknown | null;
 			updatedAt: Date;
 		}> = {
 			updatedAt: new Date(),

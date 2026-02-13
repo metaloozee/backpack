@@ -121,6 +121,10 @@ export const mcpRouter = router({
 				? JSON.stringify(encryptKey(apiKey))
 				: undefined;
 
+			const authOrUrlChanged =
+				input.url !== undefined ||
+				(input.apiKey !== undefined && input.apiKey !== "");
+
 			try {
 				const config = await updateMcpServerConfig({
 					id: input.id,
@@ -129,6 +133,11 @@ export const mcpRouter = router({
 					url: input.url,
 					apiKeyEncrypted,
 					enabled: input.enabled,
+					...(authOrUrlChanged && {
+						lastConnectedAt: null,
+						lastError: null,
+						toolsCache: null,
+					}),
 				});
 
 				if (!config) {
@@ -207,15 +216,21 @@ export const mcpRouter = router({
 				clearTimeout(timeoutId);
 
 				if (serverId) {
-					await updateMcpServerConfig({
-						id: serverId,
-						userId: ctx.session.user.id,
-						lastConnectedAt: result.success
-							? new Date()
-							: undefined,
-						lastError: result.error ?? undefined,
-						toolsCache: result.success ? result.tools : undefined,
-					});
+					if (result.success) {
+						await updateMcpServerConfig({
+							id: serverId,
+							userId: ctx.session.user.id,
+							lastConnectedAt: new Date(),
+							lastError: null,
+							toolsCache: result.tools ?? null,
+						});
+					} else {
+						await updateMcpServerConfig({
+							id: serverId,
+							userId: ctx.session.user.id,
+							lastError: result.error ?? "Connection failed",
+						});
+					}
 				}
 
 				return result;

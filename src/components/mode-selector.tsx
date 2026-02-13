@@ -34,6 +34,7 @@ import {
 	type ToolsState,
 } from "@/lib/ai/tools";
 import { slideVariants, transitions } from "@/lib/animations";
+import { getMcpStatus, isMcpServerDisabled } from "@/lib/mcp/status";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
@@ -333,8 +334,14 @@ export function ModeSelector({
 													mcpServersState[
 														server.id
 													] ?? false;
-												const isError =
-													!!server.lastError;
+												const status = getMcpStatus({
+													lastConnectedAt:
+														server.lastConnectedAt,
+													lastError: server.lastError,
+													hasApiKey: server.hasApiKey,
+												});
+												const disabled =
+													isMcpServerDisabled(status);
 												const toolCount =
 													server.toolsCache &&
 													Array.isArray(
@@ -344,14 +351,35 @@ export function ModeSelector({
 																.length
 														: 0;
 
+												const subtitle = (() => {
+													if (disabled) {
+														if (
+															status ===
+															"needs_auth"
+														) {
+															return "Authenticate to connect";
+														}
+														if (
+															status === "failed"
+														) {
+															return "Connection failed";
+														}
+														return "Connection unknown";
+													}
+													if (status === "degraded") {
+														return "Retry recommended";
+													}
+													return server.url;
+												})();
+
 												return (
 													<DropdownMenuItem
 														className={cn(
 															"flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800",
-															isError &&
+															disabled &&
 																"cursor-not-allowed opacity-70"
 														)}
-														disabled={isError}
+														disabled={disabled}
 														key={server.id}
 														onClick={(e) =>
 															e.preventDefault()
@@ -379,15 +407,13 @@ export function ModeSelector({
 																	)}
 																</div>
 																<span className="truncate text-muted-foreground text-xs">
-																	{isError
-																		? "Connection failed"
-																		: server.url}
+																	{subtitle}
 																</span>
 															</div>
 														</div>
 														<Switch
 															checked={isChecked}
-															disabled={isError}
+															disabled={disabled}
 															key={`mcp-switch-${server.id}-${isChecked}`}
 															onCheckedChange={(
 																checked

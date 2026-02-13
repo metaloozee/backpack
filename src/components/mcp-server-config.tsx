@@ -33,6 +33,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { getMcpStatus } from "@/lib/mcp/status";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { Loader } from "./ui/loader";
 
@@ -110,41 +111,62 @@ export function McpServerConfig() {
 	};
 
 	const renderStatusBadge = (server: McpServer) => {
-		if (server.lastConnectedAt) {
-			return (
-				<Badge
-					className="gap-1.5 border-0 bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
-					title={`Last connected: ${server.lastConnectedAt.toLocaleString()}`}
-					variant="secondary"
-				>
-					<span className="size-1.5 rounded-full bg-emerald-500" />
-					Connected
-				</Badge>
-			);
-		}
+		const status = getMcpStatus({
+			lastConnectedAt: server.lastConnectedAt,
+			lastError: server.lastError,
+			hasApiKey: server.hasApiKey,
+		});
 
-		if (server.lastError) {
-			return (
-				<Badge
-					className="gap-1.5 border-0 bg-red-500/15 text-red-700 dark:bg-red-500/20 dark:text-red-300"
-					title={server.lastError}
-					variant="secondary"
-				>
-					<span className="size-1.5 rounded-full bg-red-500" />
-					Error
-				</Badge>
-			);
+		switch (status) {
+			case "ready":
+				return (
+					<Badge
+						className="gap-1.5 border-0 bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
+						title={
+							server.lastConnectedAt
+								? `Last connected: ${server.lastConnectedAt.toLocaleString()}`
+								: undefined
+						}
+						variant="secondary"
+					>
+						<span className="size-1.5 rounded-full bg-emerald-500" />
+						Connected
+					</Badge>
+				);
+			case "degraded":
+				return (
+					<Badge
+						className="gap-1.5 border-0 bg-amber-500/15 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300"
+						title={server.lastError ?? "Retry connection"}
+						variant="secondary"
+					>
+						<span className="size-1.5 rounded-full bg-amber-500" />
+						Degraded
+					</Badge>
+				);
+			case "failed":
+			case "needs_auth":
+				return (
+					<Badge
+						className="gap-1.5 border-0 bg-red-500/15 text-red-700 dark:bg-red-500/20 dark:text-red-300"
+						title={server.lastError ?? undefined}
+						variant="secondary"
+					>
+						<span className="size-1.5 rounded-full bg-red-500" />
+						{status === "needs_auth" ? "Needs auth" : "Failed"}
+					</Badge>
+				);
+			default:
+				return (
+					<Badge
+						className="gap-1.5 border-0 bg-amber-500/15 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300"
+						variant="secondary"
+					>
+						<span className="size-1.5 rounded-full bg-amber-500" />
+						Unknown
+					</Badge>
+				);
 		}
-
-		return (
-			<Badge
-				className="gap-1.5 border-0 bg-amber-500/15 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300"
-				variant="secondary"
-			>
-				<span className="size-1.5 rounded-full bg-amber-500" />
-				Unknown
-			</Badge>
-		);
 	};
 
 	const servers = data?.servers ?? [];
