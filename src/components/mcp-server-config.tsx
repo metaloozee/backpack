@@ -1,5 +1,6 @@
 "use client";
 
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	ActivityIcon,
@@ -9,7 +10,7 @@ import {
 	PlusIcon,
 	TrashIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,10 +60,10 @@ export function McpServerConfig() {
 
 	const deleteMutation = useMutation(
 		trpc.mcp.deleteServer.mutationOptions({
-			onSuccess: () => {
-				queryClient.invalidateQueries({
-					queryKey: trpc.mcp.getServers.queryKey(),
-				});
+			onSuccess: async () => {
+				await queryClient.invalidateQueries(
+					trpc.mcp.getServers.pathFilter()
+				);
 				toast.success("Server deleted");
 			},
 			onError: (err) => toast.error(`Failed to delete: ${err.message}`),
@@ -71,12 +72,12 @@ export function McpServerConfig() {
 
 	const testConnectionMutation = useMutation(
 		trpc.mcp.testConnection.mutationOptions({
-			onSuccess: (result) => {
+			onSuccess: async (result) => {
 				if (result.success) {
+					await queryClient.invalidateQueries(
+						trpc.mcp.getServers.pathFilter()
+					);
 					toast.success("Connection successful");
-					queryClient.invalidateQueries({
-						queryKey: trpc.mcp.getServers.queryKey(),
-					});
 				} else {
 					toast.error(`Connection failed: ${result.error}`);
 				}
@@ -344,16 +345,44 @@ function ServerDialog({
 }) {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
-	const [name, setName] = useState(initialData?.name ?? "");
-	const [url, setUrl] = useState(initialData?.url ?? "");
-	const [apiKey, setApiKey] = useState("");
+
+	const form = useForm({
+		defaultValues: {
+			name: initialData?.name ?? "",
+			url: initialData?.url ?? "",
+			apiKey: "",
+		},
+		onSubmit: async ({ value }) => {
+			const nameLower = value.name.trim().toLowerCase();
+			if (initialData) {
+				await updateMutation.mutateAsync({
+					id: initialData.id,
+					name: nameLower,
+					url: value.url.trim(),
+					apiKey: value.apiKey.trim() || undefined,
+				});
+			} else {
+				await addMutation.mutateAsync({
+					name: nameLower,
+					url: value.url.trim(),
+					apiKey: value.apiKey.trim() || undefined,
+				});
+			}
+		},
+	});
+
+	useEffect(() => {
+		if (open) {
+			form.reset();
+		}
+	}, [open, form]);
 
 	const testConnectionMutation = useMutation(
 		trpc.mcp.testConnection.mutationOptions({
-			onSuccess: (result) => {
-				queryClient.invalidateQueries({
-					queryKey: trpc.mcp.getServers.queryKey(),
-				});
+			onSuccess: async (result) => {
+				await queryClient.invalidateQueries(
+					trpc.mcp.getServers.pathFilter()
+				);
 				if (!result.success && result.error) {
 					toast.error(`Connection failed: ${result.error}`);
 				}
@@ -364,14 +393,14 @@ function ServerDialog({
 
 	const addMutation = useMutation(
 		trpc.mcp.addServer.mutationOptions({
-			onSuccess: (result) => {
-				queryClient.invalidateQueries({
-					queryKey: trpc.mcp.getServers.queryKey(),
-				});
+			onSuccess: async (result) => {
+				await queryClient.invalidateQueries(
+					trpc.mcp.getServers.pathFilter()
+				);
 				testConnectionMutation.mutate({ serverId: result.id });
 				toast.success("Server added");
 				onOpenChange(false);
-				resetForm();
+				form.reset();
 			},
 			onError: (err) => toast.error(`Failed to add: ${err.message}`),
 		})
@@ -379,47 +408,19 @@ function ServerDialog({
 
 	const updateMutation = useMutation(
 		trpc.mcp.updateServer.mutationOptions({
-			onSuccess: () => {
-				queryClient.invalidateQueries({
-					queryKey: trpc.mcp.getServers.queryKey(),
-				});
+			onSuccess: async () => {
+				await queryClient.invalidateQueries(
+					trpc.mcp.getServers.pathFilter()
+				);
 				toast.success("Server updated");
 				onOpenChange(false);
-				resetForm();
+				form.reset();
 			},
 			onError: (err) => toast.error(`Failed to update: ${err.message}`),
 		})
 	);
 
-	const resetForm = () => {
-		setName("");
-		setUrl("");
-		setApiKey("");
-	};
-
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (initialData) {
-			updateMutation.mutate({
-				id: initialData.id,
-				name,
-				url,
-				apiKey: apiKey || undefined,
-			});
-		} else {
-			addMutation.mutate({
-				name,
-				url,
-				apiKey: apiKey || undefined,
-			});
-		}
-	};
-
-	const isPending = addMutation.isPending || updateMutation.isPending;
-	let submitLabel = "Add Server";
-	if (initialData) {
-		submitLabel = "Update";
-	}
+	const submitLabel = initialData ? "Update" : "Add Server";
 
 	return (
 		<Dialog onOpenChange={onOpenChange} open={open}>
@@ -432,47 +433,97 @@ function ServerDialog({
 						Configure your Model Context Protocol server connection.
 					</DialogDescription>
 				</DialogHeader>
-				<form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="name">Name</Label>
-						<Input
-							id="name"
-							onChange={(e) => setName(e.target.value)}
-							placeholder="e.g. My Local Server"
-							required
-							value={name}
-						/>
-					</div>
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="url">URL</Label>
-						<Input
-							id="url"
-							onChange={(e) => setUrl(e.target.value)}
-							placeholder="http://localhost:8000/mcp"
-							required
-							type="url"
-							value={url}
-						/>
-					</div>
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="apiKey">
-							API Key {initialData && "(Optional)"}
-						</Label>
-						<Input
-							id="apiKey"
-							onChange={(e) => setApiKey(e.target.value)}
-							placeholder={
-								initialData
-									? "Leave blank to keep existing key"
-									: "Enter API key if required"
-							}
-							type="password"
-							value={apiKey}
-						/>
-						<p className="text-[10px] text-muted-foreground">
-							Stored securely and encrypted.
-						</p>
-					</div>
+				<form
+					className="flex flex-col gap-4"
+					onSubmit={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						form.handleSubmit();
+					}}
+				>
+					<form.Field
+						name="name"
+						validators={{
+							onChange: ({ value }) =>
+								value?.trim() ? undefined : "Name is required",
+						}}
+					>
+						{(field) => (
+							<div className="flex flex-col gap-2">
+								<Label htmlFor={field.name}>Name</Label>
+								<Input
+									id={field.name}
+									onBlur={field.handleBlur}
+									onChange={(e) =>
+										field.handleChange(e.target.value)
+									}
+									placeholder="e.g. My Local Server"
+									value={field.state.value}
+								/>
+								{field.state.meta.isTouched &&
+								field.state.meta.errors.length > 0 ? (
+									<p className="text-red-500 text-sm">
+										{field.state.meta.errors[0]}
+									</p>
+								) : null}
+							</div>
+						)}
+					</form.Field>
+					<form.Field
+						name="url"
+						validators={{
+							onChange: ({ value }) =>
+								value?.trim() ? undefined : "URL is required",
+						}}
+					>
+						{(field) => (
+							<div className="flex flex-col gap-2">
+								<Label htmlFor={field.name}>URL</Label>
+								<Input
+									id={field.name}
+									onBlur={field.handleBlur}
+									onChange={(e) =>
+										field.handleChange(e.target.value)
+									}
+									placeholder="http://localhost:8000/mcp"
+									type="url"
+									value={field.state.value}
+								/>
+								{field.state.meta.isTouched &&
+								field.state.meta.errors.length > 0 ? (
+									<p className="text-red-500 text-sm">
+										{field.state.meta.errors[0]}
+									</p>
+								) : null}
+							</div>
+						)}
+					</form.Field>
+					<form.Field name="apiKey">
+						{(field) => (
+							<div className="flex flex-col gap-2">
+								<Label htmlFor={field.name}>
+									API Key {initialData && "(Optional)"}
+								</Label>
+								<Input
+									id={field.name}
+									onBlur={field.handleBlur}
+									onChange={(e) =>
+										field.handleChange(e.target.value)
+									}
+									placeholder={
+										initialData
+											? "Leave blank to keep existing key"
+											: "Enter API key if required"
+									}
+									type="password"
+									value={field.state.value}
+								/>
+								<p className="text-[10px] text-muted-foreground">
+									Stored securely and encrypted.
+								</p>
+							</div>
+						)}
+					</form.Field>
 					<DialogFooter>
 						<Button
 							onClick={() => onOpenChange(false)}
@@ -481,13 +532,28 @@ function ServerDialog({
 						>
 							Cancel
 						</Button>
-						<Button disabled={isPending} type="submit">
-							{isPending ? (
-								<Loader2Icon className="animate-spin" />
-							) : (
-								submitLabel
+						<form.Subscribe
+							selector={(state) => [
+								state.canSubmit,
+								state.isDirty,
+								state.isSubmitting,
+							]}
+						>
+							{([canSubmit, isDirty, isSubmitting]) => (
+								<Button
+									disabled={
+										!(canSubmit && isDirty) || isSubmitting
+									}
+									type="submit"
+								>
+									{isSubmitting ? (
+										<Loader2Icon className="animate-spin" />
+									) : (
+										submitLabel
+									)}
+								</Button>
 							)}
-						</Button>
+						</form.Subscribe>
 					</DialogFooter>
 				</form>
 			</DialogContent>
