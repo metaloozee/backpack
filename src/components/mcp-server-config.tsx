@@ -10,7 +10,7 @@ import {
 	PlusIcon,
 	TrashIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,7 @@ export function McpServerConfig() {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [dialogOpenKey, setDialogOpenKey] = useState(0);
 	const [editingServer, setEditingServer] = useState<McpServer | null>(null);
 	const [pendingDelete, setPendingDelete] = useState<McpServer | null>(null);
 
@@ -88,6 +89,7 @@ export function McpServerConfig() {
 
 	const handleEdit = (server: McpServer) => {
 		setEditingServer(server);
+		setDialogOpenKey((k) => k + 1);
 		setIsDialogOpen(true);
 	};
 
@@ -184,6 +186,7 @@ export function McpServerConfig() {
 				<Button
 					onClick={() => {
 						setEditingServer(null);
+						setDialogOpenKey((k) => k + 1);
 						setIsDialogOpen(true);
 					}}
 					size="sm"
@@ -326,7 +329,7 @@ export function McpServerConfig() {
 
 			<ServerDialog
 				initialData={editingServer}
-				key={editingServer?.id ?? "new-server"}
+				key={`${editingServer?.id ?? "new-server"}-${dialogOpenKey}`}
 				onOpenChange={handleDialogClose}
 				open={isDialogOpen}
 			/>
@@ -370,12 +373,6 @@ function ServerDialog({
 			}
 		},
 	});
-
-	useEffect(() => {
-		if (open) {
-			form.reset();
-		}
-	}, [open, form]);
 
 	const testConnectionMutation = useMutation(
 		trpc.mcp.testConnection.mutationOptions({
