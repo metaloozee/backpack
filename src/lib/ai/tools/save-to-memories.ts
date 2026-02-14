@@ -2,6 +2,10 @@ import { google } from "@ai-sdk/google";
 import { embedMany, tool, type UIMessageStreamWriter } from "ai";
 import type { Session } from "better-auth";
 import { z } from "zod";
+import {
+	GOOGLE_EMBEDDING_DIMENSIONS,
+	GOOGLE_EMBEDDING_MODEL,
+} from "@/lib/ai/defaults";
 import { getClosestMemorySimilarity, insertMemories } from "@/lib/db/queries";
 
 export const saveToMemoriesTool = ({
@@ -26,7 +30,13 @@ export const saveToMemoriesTool = ({
 
 			try {
 				const { embeddings } = await embedMany({
-					model: google.textEmbeddingModel("text-embedding-004"),
+					model: google.embeddingModel(GOOGLE_EMBEDDING_MODEL),
+					providerOptions: {
+						google: {
+							outputDimensionality: GOOGLE_EMBEDDING_DIMENSIONS,
+							taskType: "SEMANTIC_SIMILARITY",
+						},
+					},
 					values: contents,
 				});
 

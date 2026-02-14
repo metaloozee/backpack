@@ -3,6 +3,10 @@ import { embedMany, tool, type UIMessageStreamWriter } from "ai";
 import type { Session } from "better-auth";
 import { and, cosineDistance, eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import {
+	GOOGLE_EMBEDDING_DIMENSIONS,
+	GOOGLE_EMBEDDING_MODEL,
+} from "@/lib/ai/defaults";
 import { db } from "@/lib/db";
 import { knowledge, knowledgeEmbeddings } from "@/lib/db/schema/app";
 
@@ -33,11 +37,17 @@ export const knowledgeSearchTool = ({
 			});
 
 			const { embeddings } = await embedMany({
-				model: google.textEmbeddingModel("text-embedding-004"),
+				model: google.embeddingModel(GOOGLE_EMBEDDING_MODEL),
+				providerOptions: {
+					google: {
+						outputDimensionality: GOOGLE_EMBEDDING_DIMENSIONS,
+						taskType: "RETRIEVAL_QUERY",
+					},
+				},
 				values: keywords,
 			});
 
-			const Promises = embeddings.map(
+			const promises = embeddings.map(
 				async (embedding, index: number) => {
 					const distance = cosineDistance(
 						knowledgeEmbeddings.embedding,
@@ -80,7 +90,7 @@ export const knowledgeSearchTool = ({
 				}
 			);
 
-			const results = await Promise.all(Promises);
+			const results = await Promise.all(promises);
 
 			dataStream.write({
 				type: "tool-output-available",

@@ -1,6 +1,10 @@
 /** biome-ignore-all lint/suspicious/noConsole: debug logging needed for development */
 import { google } from "@ai-sdk/google";
 import { embedMany } from "ai";
+import {
+	GOOGLE_EMBEDDING_DIMENSIONS,
+	GOOGLE_EMBEDDING_MODEL,
+} from "@/lib/ai/defaults";
 
 const REGEX_SPLIT_WORDS = /\s+/;
 
@@ -62,7 +66,13 @@ export const generateEmbeddings = async (
 		);
 
 		const { embeddings } = await embedMany({
-			model: google.textEmbeddingModel("text-embedding-004"),
+			model: google.embeddingModel(GOOGLE_EMBEDDING_MODEL),
+			providerOptions: {
+				google: {
+					outputDimensionality: GOOGLE_EMBEDDING_DIMENSIONS,
+					taskType: "RETRIEVAL_DOCUMENT",
+				},
+			},
 			values: batch,
 		});
 
