@@ -6,7 +6,8 @@ import { CornerDownLeftIcon, XIcon } from "lucide-react";
 import {
 	type Dispatch,
 	type SetStateAction,
-	useEffect,
+	useCallback,
+	useLayoutEffect,
 	useRef,
 	useState,
 } from "react";
@@ -37,23 +38,21 @@ export function MessageEditor({
 	);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+	const adjustHeight = useCallback(() => {
+		if (textareaRef.current) {
+			textareaRef.current.style.height = "auto";
+			textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
+		}
+	}, []);
+
 	const trpc = useTRPC();
 	const mutation = useMutation(
 		trpc.chat.deleteTrailingMessages.mutationOptions()
 	);
 
-	useEffect(() => {
-		if (textareaRef.current) {
-			adjustHeight();
-		}
-	});
-
-	const adjustHeight = () => {
-		if (textareaRef.current) {
-			textareaRef.current.style.height = "auto";
-			textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
-		}
-	};
+	useLayoutEffect(() => {
+		adjustHeight();
+	}, [adjustHeight]);
 
 	const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
 		setDraftContent(event.target.value);

@@ -10,7 +10,14 @@ import {
 	PencilLineIcon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { memo, type ReactNode, useEffect, useState } from "react";
+import {
+	memo,
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { toast } from "sonner";
 import { useCopyToClipboard } from "usehooks-ts";
 import { Markdown } from "@/components/chat/markdown";
@@ -276,7 +283,7 @@ function renderTextPart(
 		setMessages: UseChatHelpers<ChatMessage>["setMessages"];
 		regenerate: UseChatHelpers<ChatMessage>["regenerate"];
 		isCopied: boolean;
-		setIsCopied: (copied: boolean) => void;
+		onCopySuccess: () => void;
 		copyToClipboard: ReturnType<typeof useCopyToClipboard>[1];
 	}
 ): ReactNode {
@@ -287,7 +294,7 @@ function renderTextPart(
 		setMessages,
 		regenerate,
 		isCopied,
-		setIsCopied,
+		onCopySuccess,
 		copyToClipboard,
 	} = props;
 	return (
@@ -362,7 +369,7 @@ function renderTextPart(
 													await copyToClipboard(
 														textFromParts
 													);
-													setIsCopied(true);
+													onCopySuccess();
 												}}
 												size={"icon"}
 												variant="ghost"
@@ -492,7 +499,7 @@ function renderMessagePart(
 		setMessages: UseChatHelpers<ChatMessage>["setMessages"];
 		regenerate: UseChatHelpers<ChatMessage>["regenerate"];
 		isCopied: boolean;
-		setIsCopied: (copied: boolean) => void;
+		onCopySuccess: () => void;
 		copyToClipboard: ReturnType<typeof useCopyToClipboard>[1];
 	}
 ): ReactNode {
@@ -671,15 +678,27 @@ export function Message({
 	const [mode, setMode] = useState<"view" | "edit">("view");
 	const [_, copyToClipboard] = useCopyToClipboard();
 	const [isCopied, setIsCopied] = useState(false);
+	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	useEffect(() => {
-		if (isCopied) {
-			const timer = setTimeout(() => {
-				setIsCopied(false);
-			}, 2000);
-			return () => clearTimeout(timer);
+	useEffect(
+		() => () => {
+			if (timerRef.current) {
+				clearTimeout(timerRef.current);
+			}
+		},
+		[]
+	);
+
+	const onCopySuccess = useCallback(() => {
+		if (timerRef.current) {
+			clearTimeout(timerRef.current);
 		}
-	}, [isCopied]);
+		setIsCopied(true);
+		timerRef.current = setTimeout(() => {
+			setIsCopied(false);
+			timerRef.current = null;
+		}, 2000);
+	}, []);
 
 	const attachmentsFromMessage = message.parts.filter(
 		(part) => part.type === "file"
@@ -737,7 +756,7 @@ export function Message({
 									setMessages,
 									regenerate,
 									isCopied,
-									setIsCopied,
+									onCopySuccess,
 									copyToClipboard,
 								})
 							)

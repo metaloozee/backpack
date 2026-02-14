@@ -134,17 +134,16 @@ function PureInput({
 		}
 	}, [localStorageInput, setInput, adjustHeight]);
 
-	useEffect(() => {
-		setLocalStorageInput(input);
-	}, [input, setLocalStorageInput]);
-
 	const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-		setInput(event.target.value);
+		const value = event.target.value;
+		setInput(value);
+		setLocalStorageInput(value);
 		adjustHeight();
 	};
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [uploadQueue, setUploadQueue] = useState<string[]>([]);
+	const { isAtBottom, scrollToBottom } = useScrollToBottom();
 
 	const submitForm = useCallback(() => {
 		window.history.replaceState({}, "", `/c/${chatId}`);
@@ -169,18 +168,22 @@ function PureInput({
 			],
 		});
 
+		scrollToBottom();
 		setAttachments([]);
 		resetHeight();
 		setInput("");
+		setLocalStorageInput("");
 		textareaRef.current?.focus();
 	}, [
 		input,
 		setInput,
+		setLocalStorageInput,
 		attachments,
 		sendMessage,
 		setAttachments,
 		chatId,
 		resetHeight,
+		scrollToBottom,
 	]);
 
 	const handleFiles = useCallback(
@@ -321,14 +324,6 @@ function PureInput({
 
 	const isLoading = status === "submitted" || status === "streaming";
 
-	const { isAtBottom, scrollToBottom } = useScrollToBottom();
-
-	useEffect(() => {
-		if (status === "submitted") {
-			scrollToBottom();
-		}
-	}, [status, scrollToBottom]);
-
 	const [isRecording, setIsRecording] = useState(false);
 	const [isTranscribing, setIsTranscribing] = useState(false);
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -372,6 +367,7 @@ function PureInput({
 								await transcribe.mutateAsync(formData);
 
 							setInput(text);
+							setLocalStorageInput(text);
 							setIsTranscribing(false);
 							setIsRecording(false);
 						} catch {
@@ -399,7 +395,13 @@ function PureInput({
 				toast.error("Failed to record audio, please try again!");
 			}
 		}
-	}, [isRecording, transcribe.mutateAsync, setInput, cleanupRecorder]);
+	}, [
+		isRecording,
+		transcribe.mutateAsync,
+		setInput,
+		setLocalStorageInput,
+		cleanupRecorder,
+	]);
 
 	return (
 		<motion.div

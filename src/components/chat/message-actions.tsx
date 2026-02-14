@@ -8,7 +8,7 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useCopyToClipboard } from "usehooks-ts";
 import { Button } from "@/components/ui/button";
@@ -31,33 +31,59 @@ export function PureMessageActions({
 	const [isCopied, setIsCopied] = useState(false);
 	const [isThumbsUp, setIsThumbsUp] = useState(false);
 	const [isThumbsDown, setIsThumbsDown] = useState(false);
+	const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const thumbsUpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const thumbsDownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+		null
+	);
 
-	useEffect(() => {
-		if (isCopied) {
-			const timer = setTimeout(() => {
-				setIsCopied(false);
-			}, 2000);
-			return () => clearTimeout(timer);
-		}
-	}, [isCopied]);
+	useEffect(
+		() => () => {
+			if (copyTimerRef.current) {
+				clearTimeout(copyTimerRef.current);
+			}
+			if (thumbsUpTimerRef.current) {
+				clearTimeout(thumbsUpTimerRef.current);
+			}
+			if (thumbsDownTimerRef.current) {
+				clearTimeout(thumbsDownTimerRef.current);
+			}
+		},
+		[]
+	);
 
-	useEffect(() => {
-		if (isThumbsUp) {
-			const timer = setTimeout(() => {
-				setIsThumbsUp(false);
-			}, 5000);
-			return () => clearTimeout(timer);
+	const scheduleCopyReset = () => {
+		if (copyTimerRef.current) {
+			clearTimeout(copyTimerRef.current);
 		}
-	}, [isThumbsUp]);
+		setIsCopied(true);
+		copyTimerRef.current = setTimeout(() => {
+			setIsCopied(false);
+			copyTimerRef.current = null;
+		}, 2000);
+	};
 
-	useEffect(() => {
-		if (isThumbsDown) {
-			const timer = setTimeout(() => {
-				setIsThumbsDown(false);
-			}, 5000);
-			return () => clearTimeout(timer);
+	const scheduleThumbsUpReset = () => {
+		if (thumbsUpTimerRef.current) {
+			clearTimeout(thumbsUpTimerRef.current);
 		}
-	}, [isThumbsDown]);
+		setIsThumbsUp(true);
+		thumbsUpTimerRef.current = setTimeout(() => {
+			setIsThumbsUp(false);
+			thumbsUpTimerRef.current = null;
+		}, 5000);
+	};
+
+	const scheduleThumbsDownReset = () => {
+		if (thumbsDownTimerRef.current) {
+			clearTimeout(thumbsDownTimerRef.current);
+		}
+		setIsThumbsDown(true);
+		thumbsDownTimerRef.current = setTimeout(() => {
+			setIsThumbsDown(false);
+			thumbsDownTimerRef.current = null;
+		}, 5000);
+	};
 
 	if (isLoading) {
 		return null;
@@ -92,7 +118,7 @@ export function PureMessageActions({
 									}
 
 									await copyToClipboard(textFromParts);
-									setIsCopied(true);
+									scheduleCopyReset();
 								}}
 								size={"icon"}
 								variant={"ghost"}
@@ -161,9 +187,7 @@ export function PureMessageActions({
 						>
 							<Button
 								className="text-xs"
-								onClick={() => {
-									setIsThumbsUp(true);
-								}}
+								onClick={scheduleThumbsUpReset}
 								size={"icon"}
 								variant={"ghost"}
 							>
@@ -231,9 +255,7 @@ export function PureMessageActions({
 						>
 							<Button
 								className="text-xs"
-								onClick={() => {
-									setIsThumbsDown(true);
-								}}
+								onClick={scheduleThumbsDownReset}
 								size={"icon"}
 								variant={"ghost"}
 							>

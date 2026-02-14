@@ -7,7 +7,7 @@ import { DefaultChatTransport } from "ai";
 import type { Session } from "better-auth";
 import { usePathname } from "next/navigation";
 import { parseAsString, useQueryState } from "nuqs";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import DisplayChats from "@/components/chat/display-chats";
 import { ChatMessages } from "@/components/chat/messages";
@@ -141,7 +141,11 @@ export function Chat({
 		[id, env.spaceId, generateTempTitle, queryClient, trpc]
 	);
 
-	const [hasOptimisticallyAdded, setHasOptimisticallyAdded] = useState(false);
+	const [_hasOptimisticallyAdded, setHasOptimisticallyAdded] =
+		useState(false);
+	const optimisticInvalidationRef = useRef<ReturnType<
+		typeof setTimeout
+	> | null>(null);
 
 	const {
 		messages,
@@ -204,6 +208,16 @@ export function Chat({
 			if (isFirstMessage) {
 				optimisticallyAddChat(fullMessage);
 				setHasOptimisticallyAdded(true);
+				if (optimisticInvalidationRef.current) {
+					clearTimeout(optimisticInvalidationRef.current);
+				}
+				optimisticInvalidationRef.current = setTimeout(() => {
+					queryClient.invalidateQueries(
+						trpc.chat.getChats.pathFilter()
+					);
+					setHasOptimisticallyAdded(false);
+					optimisticInvalidationRef.current = null;
+				}, 1000);
 			}
 
 			return originalSendMessage(message);
@@ -213,7 +227,18 @@ export function Chat({
 			messages.length,
 			optimisticallyAddChat,
 			originalSendMessage,
+			queryClient,
+			trpc,
 		]
+	);
+
+	useEffect(
+		() => () => {
+			if (optimisticInvalidationRef.current) {
+				clearTimeout(optimisticInvalidationRef.current);
+			}
+		},
+		[]
 	);
 
 	// Computed values
@@ -231,17 +256,6 @@ export function Chat({
 		showSpaceIntro &&
 		Boolean(env.spaceId) &&
 		(spaceOverview?.hasChats ?? false);
-
-	// Handle optimistic chat invalidation
-	useEffect(() => {
-		if (hasOptimisticallyAdded && messages.length > 1) {
-			const timer = setTimeout(() => {
-				queryClient.invalidateQueries(trpc.chat.getChats.pathFilter());
-				setHasOptimisticallyAdded(false);
-			}, 1000);
-			return () => clearTimeout(timer);
-		}
-	}, [hasOptimisticallyAdded, messages.length, queryClient, trpc]);
 
 	// Handle query parameter appending
 	const [query, setQuery] = useQueryState("query", parseAsString);

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,6 +71,289 @@ interface SpacesListData {
 	}>;
 }
 
+interface SettingsDialogFormProps {
+	spaceId: string;
+	spaceName?: string;
+	spaceDescription?: string;
+	spaceCustomInstructions?: string;
+	updateMutation: {
+		mutate: (variables: {
+			spaceId: string;
+			spaceTitle: string;
+			spaceDescription?: string;
+			spaceCustomInstructions?: string;
+		}) => void;
+		isPending: boolean;
+	};
+	setIsOpen: (open: boolean) => void;
+	setIsDeleteDialogOpen: (open: boolean) => void;
+	isDangerSectionOpen: boolean;
+	setIsDangerSectionOpen: (open: boolean) => void;
+}
+
+function SettingsDialogForm({
+	spaceId,
+	spaceName,
+	spaceDescription,
+	spaceCustomInstructions,
+	updateMutation,
+	setIsOpen,
+	setIsDeleteDialogOpen,
+	isDangerSectionOpen,
+	setIsDangerSectionOpen,
+}: SettingsDialogFormProps) {
+	const form = useForm({
+		defaultValues: {
+			title: spaceName || "",
+			description: spaceDescription || "",
+			customInstructions: spaceCustomInstructions || "",
+		},
+		onSubmit: ({ value }) => {
+			updateMutation.mutate({
+				spaceId,
+				spaceTitle: value.title,
+				spaceDescription: value.description || undefined,
+				spaceCustomInstructions: value.customInstructions || undefined,
+			});
+		},
+	});
+
+	return (
+		<motion.div
+			animate="visible"
+			className="space-y-4"
+			initial="hidden"
+			transition={transitions.smooth}
+			variants={modalVariants}
+		>
+			<DialogHeader>
+				<motion.div
+					animate="visible"
+					initial="hidden"
+					variants={fadeVariants}
+				>
+					<DialogTitle>Space Settings</DialogTitle>
+				</motion.div>
+			</DialogHeader>
+			<Separator />
+			<form
+				className="space-y-6"
+				onSubmit={(e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					form.handleSubmit();
+				}}
+			>
+				<motion.div
+					animate="visible"
+					className="space-y-4"
+					initial="hidden"
+					transition={staggerVariants.container.visible.transition}
+					variants={staggerVariants.container}
+				>
+					<form.Field
+						name="title"
+						validators={{
+							onChange: ({ value }) =>
+								!value || value.trim().length === 0
+									? "Space title is required"
+									: "",
+						}}
+					>
+						{(field) => (
+							<motion.div
+								className="space-y-2"
+								variants={staggerVariants.item}
+							>
+								<Label htmlFor={field.name}>Space Title</Label>
+								<Input
+									id={field.name}
+									name={field.name}
+									onBlur={field.handleBlur}
+									onChange={(e) =>
+										field.handleChange(e.target.value)
+									}
+									placeholder="Enter space title"
+									value={field.state.value}
+								/>
+								{field.state.meta.isTouched &&
+								field.state.meta.errors.length > 0 ? (
+									<p className="text-red-500 text-sm">
+										{field.state.meta.errors[0]}
+									</p>
+								) : null}
+							</motion.div>
+						)}
+					</form.Field>
+
+					<form.Field name="description">
+						{(field) => (
+							<motion.div
+								className="space-y-2"
+								variants={staggerVariants.item}
+							>
+								<Label htmlFor={field.name}>Description</Label>
+								<Textarea
+									className="min-h-8"
+									id={field.name}
+									name={field.name}
+									onBlur={field.handleBlur}
+									onChange={(e) =>
+										field.handleChange(e.target.value)
+									}
+									placeholder="Enter space description"
+									value={field.state.value}
+								/>
+							</motion.div>
+						)}
+					</form.Field>
+
+					<form.Field name="customInstructions">
+						{(field) => (
+							<motion.div
+								className="space-y-2"
+								variants={staggerVariants.item}
+							>
+								<Label htmlFor={field.name}>
+									Custom Instructions
+								</Label>
+								<Textarea
+									className="min-h-32"
+									id={field.name}
+									name={field.name}
+									onBlur={field.handleBlur}
+									onChange={(e) =>
+										field.handleChange(e.target.value)
+									}
+									placeholder="Enter custom instructions for this space"
+									value={field.state.value}
+								/>
+							</motion.div>
+						)}
+					</form.Field>
+				</motion.div>
+
+				<Disclosure
+					className="space-y-2"
+					onOpenChange={setIsDangerSectionOpen}
+					open={isDangerSectionOpen}
+					transition={transitions.smooth}
+				>
+					<DisclosureTrigger>
+						<div className="flex cursor-pointer items-center justify-between rounded-lg border border-red-900/30 bg-red-950/20 p-4 transition-colors hover:bg-red-950/30">
+							<div className="flex items-center gap-3">
+								<AlertTriangleIcon className="size-5 text-red-500" />
+								<div>
+									<h3 className="font-semibold text-red-500 text-sm">
+										Danger Zone
+									</h3>
+									<p className="text-neutral-400 text-xs">
+										Irreversible and destructive actions
+									</p>
+								</div>
+							</div>
+							<motion.div
+								animate={{
+									rotate: isDangerSectionOpen ? 180 : 0,
+								}}
+								transition={transitions.smooth}
+							>
+								<ChevronDownIcon className="size-5 text-neutral-400" />
+							</motion.div>
+						</div>
+					</DisclosureTrigger>
+					<DisclosureContent>
+						<div className="space-y-3 rounded-lg border border-red-900/30 bg-red-950/10 p-4">
+							<div className="space-y-2">
+								<h4 className="font-medium text-neutral-200 text-sm">
+									Delete Space
+								</h4>
+								<p className="text-neutral-400 text-xs">
+									Once you delete a space, there is no going
+									back. This will permanently delete all
+									chats, messages, and data associated with
+									this space.
+								</p>
+							</div>
+							<motion.div
+								initial="rest"
+								whileHover="hover"
+								whileTap="tap"
+							>
+								<Button
+									onClick={() => setIsDeleteDialogOpen(true)}
+									type="button"
+									variant="destructive"
+								>
+									<Trash2Icon className="size-4" />
+									Delete Space
+								</Button>
+							</motion.div>
+						</div>
+					</DisclosureContent>
+				</Disclosure>
+				<DialogFooter className="w-full">
+					<form.Subscribe
+						selector={(state) => [
+							state.canSubmit,
+							state.isSubmitting,
+						]}
+					>
+						{([canSubmit, isSubmitting]) => (
+							<motion.div
+								animate="visible"
+								className="flex w-full justify-end gap-2"
+								initial="hidden"
+								transition={{
+									delay: 0.3,
+									...transitions.smooth,
+								}}
+								variants={fadeVariants}
+							>
+								<motion.div
+									initial="rest"
+									variants={buttonVariants}
+									whileHover="hover"
+									whileTap="tap"
+								>
+									<Button
+										onClick={() => setIsOpen(false)}
+										type="button"
+										variant="outline"
+									>
+										Cancel
+									</Button>
+								</motion.div>
+								<motion.div
+									initial="rest"
+									variants={buttonVariants}
+									whileHover="hover"
+									whileTap="tap"
+								>
+									<Button
+										disabled={
+											!canSubmit ||
+											isSubmitting ||
+											updateMutation.isPending
+										}
+										type="submit"
+										variant="secondary"
+									>
+										{isSubmitting ||
+										updateMutation.isPending
+											? "Saving..."
+											: "Save Settings"}
+									</Button>
+								</motion.div>
+							</motion.div>
+						)}
+					</form.Subscribe>
+				</DialogFooter>
+			</form>
+		</motion.div>
+	);
+}
+
 export function SettingsDialog({
 	spaceId,
 	spaceName,
@@ -81,8 +364,17 @@ export function SettingsDialog({
 	const queryClient = useQueryClient();
 	const router = useRouter();
 	const [isOpen, setIsOpen] = useState(false);
+	const [dialogOpenKey, setDialogOpenKey] = useState(0);
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 	const [isDangerSectionOpen, setIsDangerSectionOpen] = useState(false);
+
+	const handleOpenChange = (open: boolean) => {
+		setIsOpen(open);
+		if (open) {
+			setDialogOpenKey((k) => k + 1);
+			setIsDangerSectionOpen(false);
+		}
+	};
 
 	const updateMutation = useMutation({
 		...trpc.space.updateSpace.mutationOptions(),
@@ -161,7 +453,6 @@ export function SettingsDialog({
 		},
 		onSuccess: () => {
 			toast.success("Space settings updated successfully");
-			form.reset();
 			setIsOpen(false);
 		},
 		onSettled: () => {
@@ -188,31 +479,9 @@ export function SettingsDialog({
 		},
 	});
 
-	const form = useForm({
-		defaultValues: {
-			title: spaceName || "",
-			description: spaceDescription || "",
-			customInstructions: spaceCustomInstructions || "",
-		},
-		onSubmit: ({ value }) => {
-			updateMutation.mutate({
-				spaceId,
-				spaceTitle: value.title,
-				spaceDescription: value.description || undefined,
-				spaceCustomInstructions: value.customInstructions || undefined,
-			});
-		},
-	});
-
-	useEffect(() => {
-		if (isOpen) {
-			form.reset();
-		}
-	}, [isOpen, form]);
-
 	return (
 		<>
-			<Dialog onOpenChange={setIsOpen} open={isOpen}>
+			<Dialog onOpenChange={handleOpenChange} open={isOpen}>
 				<DialogTrigger asChild>
 					<Button size={"sm"} variant="outline">
 						<motion.div
@@ -226,260 +495,18 @@ export function SettingsDialog({
 					</Button>
 				</DialogTrigger>
 				<DialogContent className="min-w-2xl bg-neutral-950">
-					<motion.div
-						animate="visible"
-						className="space-y-4"
-						initial="hidden"
-						transition={transitions.smooth}
-						variants={modalVariants}
-					>
-						<DialogHeader>
-							<motion.div
-								animate="visible"
-								initial="hidden"
-								variants={fadeVariants}
-							>
-								<DialogTitle>Space Settings</DialogTitle>
-							</motion.div>
-						</DialogHeader>
-						<Separator />
-						<form
-							className="space-y-6"
-							onSubmit={(e) => {
-								e.preventDefault();
-								e.stopPropagation();
-								form.handleSubmit();
-							}}
-						>
-							<motion.div
-								animate="visible"
-								className="space-y-4"
-								initial="hidden"
-								transition={
-									staggerVariants.container.visible.transition
-								}
-								variants={staggerVariants.container}
-							>
-								<form.Field
-									name="title"
-									validators={{
-										onChange: ({ value }) =>
-											!value || value.trim().length === 0
-												? "Space title is required"
-												: "",
-									}}
-								>
-									{(field) => (
-										<motion.div
-											className="space-y-2"
-											variants={staggerVariants.item}
-										>
-											<Label htmlFor={field.name}>
-												Space Title
-											</Label>
-											<Input
-												id={field.name}
-												name={field.name}
-												onBlur={field.handleBlur}
-												onChange={(e) =>
-													field.handleChange(
-														e.target.value
-													)
-												}
-												placeholder="Enter space title"
-												value={field.state.value}
-											/>
-											{field.state.meta.isTouched &&
-											field.state.meta.errors.length >
-												0 ? (
-												<p className="text-red-500 text-sm">
-													{field.state.meta.errors[0]}
-												</p>
-											) : null}
-										</motion.div>
-									)}
-								</form.Field>
-
-								<form.Field name="description">
-									{(field) => (
-										<motion.div
-											className="space-y-2"
-											variants={staggerVariants.item}
-										>
-											<Label htmlFor={field.name}>
-												Description
-											</Label>
-											<Textarea
-												className="min-h-8"
-												id={field.name}
-												name={field.name}
-												onBlur={field.handleBlur}
-												onChange={(e) =>
-													field.handleChange(
-														e.target.value
-													)
-												}
-												placeholder="Enter space description"
-												value={field.state.value}
-											/>
-										</motion.div>
-									)}
-								</form.Field>
-
-								<form.Field name="customInstructions">
-									{(field) => (
-										<motion.div
-											className="space-y-2"
-											variants={staggerVariants.item}
-										>
-											<Label htmlFor={field.name}>
-												Custom Instructions
-											</Label>
-											<Textarea
-												className="min-h-32"
-												id={field.name}
-												name={field.name}
-												onBlur={field.handleBlur}
-												onChange={(e) =>
-													field.handleChange(
-														e.target.value
-													)
-												}
-												placeholder="Enter custom instructions for this space"
-												value={field.state.value}
-											/>
-										</motion.div>
-									)}
-								</form.Field>
-							</motion.div>
-
-							<Disclosure
-								className="space-y-2"
-								onOpenChange={setIsDangerSectionOpen}
-								open={isDangerSectionOpen}
-								transition={transitions.smooth}
-							>
-								<DisclosureTrigger>
-									<div className="flex cursor-pointer items-center justify-between rounded-lg border border-red-900/30 bg-red-950/20 p-4 transition-colors hover:bg-red-950/30">
-										<div className="flex items-center gap-3">
-											<AlertTriangleIcon className="size-5 text-red-500" />
-											<div>
-												<h3 className="font-semibold text-red-500 text-sm">
-													Danger Zone
-												</h3>
-												<p className="text-neutral-400 text-xs">
-													Irreversible and destructive
-													actions
-												</p>
-											</div>
-										</div>
-										<motion.div
-											animate={{
-												rotate: isDangerSectionOpen
-													? 180
-													: 0,
-											}}
-											transition={transitions.smooth}
-										>
-											<ChevronDownIcon className="size-5 text-neutral-400" />
-										</motion.div>
-									</div>
-								</DisclosureTrigger>
-								<DisclosureContent>
-									<div className="space-y-3 rounded-lg border border-red-900/30 bg-red-950/10 p-4">
-										<div className="space-y-2">
-											<h4 className="font-medium text-neutral-200 text-sm">
-												Delete Space
-											</h4>
-											<p className="text-neutral-400 text-xs">
-												Once you delete a space, there
-												is no going back. This will
-												permanently delete all chats,
-												messages, and data associated
-												with this space.
-											</p>
-										</div>
-										<motion.div
-											initial="rest"
-											whileHover="hover"
-											whileTap="tap"
-										>
-											<Button
-												onClick={() =>
-													setIsDeleteDialogOpen(true)
-												}
-												type="button"
-												variant="destructive"
-											>
-												<Trash2Icon className="size-4" />
-												Delete Space
-											</Button>
-										</motion.div>
-									</div>
-								</DisclosureContent>
-							</Disclosure>
-							<DialogFooter className="w-full">
-								<form.Subscribe
-									selector={(state) => [
-										state.canSubmit,
-										state.isSubmitting,
-									]}
-								>
-									{([canSubmit, isSubmitting]) => (
-										<motion.div
-											animate="visible"
-											className="flex w-full justify-end gap-2"
-											initial="hidden"
-											transition={{
-												delay: 0.3,
-												...transitions.smooth,
-											}}
-											variants={fadeVariants}
-										>
-											<motion.div
-												initial="rest"
-												variants={buttonVariants}
-												whileHover="hover"
-												whileTap="tap"
-											>
-												<Button
-													onClick={() => {
-														form.reset();
-														setIsOpen(false);
-													}}
-													type="button"
-													variant="outline"
-												>
-													Cancel
-												</Button>
-											</motion.div>
-											<motion.div
-												initial="rest"
-												variants={buttonVariants}
-												whileHover="hover"
-												whileTap="tap"
-											>
-												<Button
-													disabled={
-														!canSubmit ||
-														isSubmitting ||
-														updateMutation.isPending
-													}
-													type="submit"
-													variant="secondary"
-												>
-													{isSubmitting ||
-													updateMutation.isPending
-														? "Saving..."
-														: "Save Settings"}
-												</Button>
-											</motion.div>
-										</motion.div>
-									)}
-								</form.Subscribe>
-							</DialogFooter>
-						</form>
-					</motion.div>
+					<SettingsDialogForm
+						isDangerSectionOpen={isDangerSectionOpen}
+						key={dialogOpenKey}
+						setIsDangerSectionOpen={setIsDangerSectionOpen}
+						setIsDeleteDialogOpen={setIsDeleteDialogOpen}
+						setIsOpen={setIsOpen}
+						spaceCustomInstructions={spaceCustomInstructions}
+						spaceDescription={spaceDescription}
+						spaceId={spaceId}
+						spaceName={spaceName}
+						updateMutation={updateMutation}
+					/>
 				</DialogContent>
 			</Dialog>
 
