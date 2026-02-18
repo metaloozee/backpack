@@ -27,6 +27,29 @@ import {
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
+function useQueryAppend({
+	sendMessage,
+}: {
+	sendMessage: (message: any) => void;
+}) {
+	"use no memo";
+
+	const [query, setQuery] = useQueryState("query", parseAsString);
+	const hasAppendedQuery = useRef(false);
+
+	useEffect(() => {
+		if (query && !hasAppendedQuery.current) {
+			sendMessage({
+				role: "user",
+				parts: [{ type: "text", text: query }],
+			});
+
+			hasAppendedQuery.current = true;
+			setQuery(null);
+		}
+	}, [query, sendMessage, setQuery]);
+}
+
 export function Chat({
 	id,
 	env,
@@ -257,21 +280,7 @@ export function Chat({
 		Boolean(env.spaceId) &&
 		(spaceOverview?.hasChats ?? false);
 
-	// Handle query parameter appending
-	const [query, setQuery] = useQueryState("query", parseAsString);
-	const [hasAppendedQuery, setHasAppendedQuery] = useState(false);
-
-	useEffect(() => {
-		if (query && !hasAppendedQuery) {
-			sendMessage({
-				role: "user",
-				parts: [{ type: "text", text: query }],
-			});
-
-			setHasAppendedQuery(true);
-			setQuery(null);
-		}
-	}, [query, sendMessage, hasAppendedQuery, setQuery]);
+	useQueryAppend({ sendMessage });
 
 	useAutoResume({
 		autoResume,

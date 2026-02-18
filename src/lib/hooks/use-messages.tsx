@@ -20,19 +20,26 @@ export function useMessages({
 	} = useScrollToBottom();
 
 	const [hasSentMessage, setHasSentMessage] = useState(false);
+	const [prevChatId, setPrevChatId] = useState(chatId);
+	const [prevStatus, setPrevStatus] = useState(status);
+
+	if (chatId !== prevChatId) {
+		setPrevChatId(chatId);
+		setHasSentMessage(false);
+	}
+
+	if (status !== prevStatus) {
+		setPrevStatus(status);
+		if (status === "submitted") {
+			setHasSentMessage(true);
+		}
+	}
 
 	useEffect(() => {
 		if (chatId) {
 			scrollToBottom("instant");
-			setHasSentMessage(false);
 		}
 	}, [chatId, scrollToBottom]);
-
-	useEffect(() => {
-		if (status === "submitted") {
-			setHasSentMessage(true);
-		}
-	}, [status]);
 
 	return {
 		containerRef,

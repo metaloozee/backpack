@@ -11,7 +11,7 @@ import {
 	WrenchIcon,
 } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,7 @@ export function ModelSelector({ initialModel }: ModelSelectorProps) {
 		initialModel ?? models[0].id
 	);
 	const [open] = useState(false);
+	const listboxId = useId();
 
 	const trpc = useTRPC();
 	const setModelSelectionMutation = useMutation(
@@ -100,6 +101,7 @@ export function ModelSelector({ initialModel }: ModelSelectorProps) {
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<Button
+					aria-controls={listboxId}
 					aria-expanded={open}
 					className="w-auto justify-between font-normal"
 					role="combobox"
@@ -117,7 +119,7 @@ export function ModelSelector({ initialModel }: ModelSelectorProps) {
 					<ChevronDown className="size-3 shrink-0 opacity-50" />
 				</Button>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent className="w-[150px] p-1">
+			<DropdownMenuContent className="w-[150px] p-1" id={listboxId}>
 				<Command>
 					<CommandList>
 						{Object.entries(groupedModels).map(

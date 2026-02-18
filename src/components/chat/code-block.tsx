@@ -137,10 +137,14 @@ export const CodeBlockCopyButton = ({
 		try {
 			await navigator.clipboard.writeText(code);
 			setIsCopied(true);
-			onCopy?.();
+			if (onCopy) {
+				onCopy();
+			}
 			setTimeout(() => setIsCopied(false), timeout);
 		} catch (error) {
-			onError?.(error as Error);
+			if (onError) {
+				onError(error as Error);
+			}
 		}
 	};
 
@@ -203,9 +207,9 @@ export const CodeBlockDownloadButton = ({
 	const { code, language } = useContext(CodeBlockContext);
 
 	const downloadCode = () => {
+		const extension = FILE_EXTENSIONS[language.toLowerCase()] || "txt";
+		const finalFilename = filename || `code.${extension}`;
 		try {
-			const extension = FILE_EXTENSIONS[language.toLowerCase()] || "txt";
-			const finalFilename = filename || `code.${extension}`;
 			const blob = new Blob([code], { type: "text/plain" });
 			const url = URL.createObjectURL(blob);
 			const link = document.createElement("a");
@@ -215,9 +219,13 @@ export const CodeBlockDownloadButton = ({
 			link.click();
 			document.body.removeChild(link);
 			URL.revokeObjectURL(url);
-			onDownload?.();
+			if (onDownload) {
+				onDownload();
+			}
 		} catch (error) {
-			onError?.(error as Error);
+			if (onError) {
+				onError(error as Error);
+			}
 		}
 	};
 

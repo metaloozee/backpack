@@ -43,6 +43,8 @@ import type { Memory } from "@/lib/db/schema/app";
 import { useTRPC } from "@/lib/trpc/trpc";
 
 export function DisplayMemories() {
+	"use no memo";
+
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(

@@ -5,6 +5,7 @@ import { Geist } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { DataStreamProvider } from "@/components/data-stream-provider";
 import { Devtools } from "@/components/devtools";
+import { MotionProvider } from "@/components/motion-provider";
 // import { ReactScan } from "@/components/react-scan";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -46,17 +47,19 @@ export default function RootLayout({
 					</a>
 					<NuqsAdapter>
 						<DataStreamProvider>
-							<ThemeProvider
-								attribute="class"
-								defaultTheme="system"
-								disableTransitionOnChange
-								enableSystem
-							>
-								{/* <ReactScan /> */}
-								<Devtools />
-								<Toaster position="top-center" richColors />
-								<main id="main-content">{children}</main>
-							</ThemeProvider>
+							<MotionProvider>
+								<ThemeProvider
+									attribute="class"
+									defaultTheme="system"
+									disableTransitionOnChange
+									enableSystem
+								>
+									{/* <ReactScan /> */}
+									<Devtools />
+									<Toaster position="top-center" richColors />
+									<main id="main-content">{children}</main>
+								</ThemeProvider>
+							</MotionProvider>
 						</DataStreamProvider>
 					</NuqsAdapter>
 				</body>

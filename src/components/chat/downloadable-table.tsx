@@ -14,6 +14,45 @@ interface DownloadableTableProps {
 	className?: string;
 }
 
+function buildCSVContent(container: HTMLDivElement): string | null {
+	const tableElement = container.querySelector("table");
+	if (!tableElement) {
+		return null;
+	}
+
+	const rows: string[][] = [];
+
+	const headers = Array.from(tableElement.querySelectorAll("thead th")).map(
+		(th) => th.textContent?.trim() || ""
+	);
+	if (headers.length > 0) {
+		rows.push(headers);
+	}
+
+	const bodyRows = tableElement.querySelectorAll("tbody tr");
+	for (const row of bodyRows) {
+		const cells = Array.from(row.querySelectorAll("td")).map(
+			(td) => td.textContent?.trim() || ""
+		);
+		if (cells.length > 0) {
+			rows.push(cells);
+		}
+	}
+
+	return rows
+		.map((row) =>
+			row
+				.map((cell) => {
+					const escapedCell = cell.replace(/"/g, '""');
+					return CSV_ESCAPE_REGEX.test(escapedCell)
+						? `"${escapedCell}"`
+						: escapedCell;
+				})
+				.join(",")
+		)
+		.join("\n");
+}
+
 export function DownloadableTable({
 	children,
 	className,
@@ -22,43 +61,17 @@ export function DownloadableTable({
 
 	const downloadCSV = () => {
 		try {
-			const tableElement = tableRef.current?.querySelector("table");
-			if (!tableElement) {
+			const container = tableRef.current;
+			if (!container) {
 				toast.error("Failed to download table");
 				return;
 			}
 
-			const rows: string[][] = [];
-
-			const headers = Array.from(
-				tableElement.querySelectorAll("thead th")
-			).map((th) => th.textContent?.trim() || "");
-			if (headers.length > 0) {
-				rows.push(headers);
+			const csvContent = buildCSVContent(container);
+			if (csvContent === null) {
+				toast.error("Failed to download table");
+				return;
 			}
-
-			const bodyRows = tableElement.querySelectorAll("tbody tr");
-			for (const row of bodyRows) {
-				const cells = Array.from(row.querySelectorAll("td")).map(
-					(td) => td.textContent?.trim() || ""
-				);
-				if (cells.length > 0) {
-					rows.push(cells);
-				}
-			}
-
-			const csvContent = rows
-				.map((row) =>
-					row
-						.map((cell) => {
-							const escapedCell = cell.replace(/"/g, '""');
-							return CSV_ESCAPE_REGEX.test(escapedCell)
-								? `"${escapedCell}"`
-								: escapedCell;
-						})
-						.join(",")
-				)
-				.join("\n");
 
 			const blob = new Blob([csvContent], {
 				type: "text/csv;charset=utf-8;",

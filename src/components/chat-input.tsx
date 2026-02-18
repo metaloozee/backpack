@@ -238,10 +238,10 @@ function PureInput({
 					...currentAttachments,
 					...uploadedAttachments,
 				]);
+				setUploadQueue([]);
 			} catch (error) {
 				console.error("Error uploading files!", error);
 				toast.error("Failed to upload files, please try again!");
-			} finally {
 				setUploadQueue([]);
 			}
 		},
@@ -370,12 +370,12 @@ function PureInput({
 							setLocalStorageInput(text);
 							setIsTranscribing(false);
 							setIsRecording(false);
+							cleanupRecorder();
 						} catch {
 							setIsTranscribing(false);
 							toast.error(
 								"Failed to transcribe audio, please try again!"
 							);
-						} finally {
 							cleanupRecorder();
 						}
 					}
@@ -397,7 +397,7 @@ function PureInput({
 		}
 	}, [
 		isRecording,
-		transcribe.mutateAsync,
+		transcribe,
 		setInput,
 		setLocalStorageInput,
 		cleanupRecorder,

@@ -10,14 +10,7 @@ import {
 	PencilLineIcon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import {
-	memo,
-	type ReactNode,
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { memo, type ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useCopyToClipboard } from "usehooks-ts";
 import { Markdown } from "@/components/chat/markdown";
@@ -678,26 +671,19 @@ export function Message({
 	const [mode, setMode] = useState<"view" | "edit">("view");
 	const [_, copyToClipboard] = useCopyToClipboard();
 	const [isCopied, setIsCopied] = useState(false);
-	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	useEffect(
-		() => () => {
-			if (timerRef.current) {
-				clearTimeout(timerRef.current);
-			}
-		},
-		[]
-	);
+	useEffect(() => {
+		if (!isCopied) {
+			return;
+		}
+		const timer = setTimeout(() => {
+			setIsCopied(false);
+		}, 2000);
+		return () => clearTimeout(timer);
+	}, [isCopied]);
 
 	const onCopySuccess = useCallback(() => {
-		if (timerRef.current) {
-			clearTimeout(timerRef.current);
-		}
 		setIsCopied(true);
-		timerRef.current = setTimeout(() => {
-			setIsCopied(false);
-			timerRef.current = null;
-		}, 2000);
 	}, []);
 
 	const attachmentsFromMessage = message.parts.filter(

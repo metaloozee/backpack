@@ -26,7 +26,6 @@ import { Citation } from "./citation";
 import "katex/dist/katex.min.css";
 
 const LANGUAGE_REGEX = /language-(\w+)/;
-const CITATION_REGEX = /\[(\d+)\]/g;
 const TRAILING_NEWLINE_REGEX = /\n$/;
 
 const headingClassNames = {
@@ -231,9 +230,8 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
 		let lastIndex = 0;
 		let match: RegExpExecArray | null;
 
-		// Reset regex lastIndex to avoid issues with global regex
-		CITATION_REGEX.lastIndex = 0;
-		match = CITATION_REGEX.exec(text);
+		const citationRegex = /\[(\d+)\]/g;
+		match = citationRegex.exec(text);
 		while (match !== null) {
 			if (match.index > lastIndex) {
 				parts.push(text.slice(lastIndex, match.index));
@@ -254,7 +252,7 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
 			}
 
 			lastIndex = match.index + match[0].length;
-			match = CITATION_REGEX.exec(text);
+			match = citationRegex.exec(text);
 		}
 
 		if (lastIndex < text.length) {

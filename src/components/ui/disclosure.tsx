@@ -9,7 +9,7 @@ import {
 	type Variants,
 } from "motion/react";
 import * as React from "react";
-import { createContext, useContext, useEffect, useId, useState } from "react";
+import { createContext, useContext, useId, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export interface DisclosureContextType {
@@ -35,25 +35,23 @@ function DisclosureProvider({
 	onOpenChange,
 	variants,
 }: DisclosureProviderProps) {
-	const [internalOpenValue, setInternalOpenValue] =
-		useState<boolean>(openProp);
+	const [internalOpen, setInternalOpen] = useState(openProp);
 
-	useEffect(() => {
-		setInternalOpenValue(openProp);
-	}, [openProp]);
+	const isControlled = onOpenChange !== undefined;
+	const open = isControlled ? openProp : internalOpen;
 
 	const toggle = () => {
-		const newOpen = !internalOpenValue;
-		setInternalOpenValue(newOpen);
-		if (onOpenChange) {
-			onOpenChange(newOpen);
+		if (isControlled) {
+			onOpenChange(!openProp);
+		} else {
+			setInternalOpen((prev) => !prev);
 		}
 	};
 
 	return (
 		<DisclosureContext.Provider
 			value={{
-				open: internalOpenValue,
+				open,
 				toggle,
 				variants,
 			}}

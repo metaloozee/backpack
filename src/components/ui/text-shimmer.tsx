@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "motion/react";
-import React, { type JSX, useMemo } from "react";
+import type React from "react";
+import type { JSX } from "react";
 import { cn } from "@/lib/utils";
 
 export interface TextShimmerProps {
@@ -11,6 +12,8 @@ export interface TextShimmerProps {
 	spread?: number;
 }
 
+const motionComponentCache = new Map();
+
 export function TextShimmer({
 	children,
 	as: Component = "p",
@@ -18,13 +21,17 @@ export function TextShimmer({
 	duration = 2,
 	spread = 2,
 }: TextShimmerProps) {
-	const MotionComponent = motion.create(
-		Component as keyof JSX.IntrinsicElements
-	);
+	if (!motionComponentCache.has(Component)) {
+		motionComponentCache.set(
+			Component,
+			motion.create(Component as keyof JSX.IntrinsicElements)
+		);
+	}
+	const MotionComponent = motionComponentCache.get(
+		Component
+	) as typeof motion.p;
 
-	const dynamicSpread = useMemo(() => {
-		return children.length * spread;
-	}, [children, spread]);
+	const dynamicSpread = children.length * spread;
 
 	return (
 		<MotionComponent

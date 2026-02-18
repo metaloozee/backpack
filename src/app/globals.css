@@ -173,3 +173,13 @@
 	content-visibility: auto;
 	contain-intrinsic-size: 0 100px;
 }
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}

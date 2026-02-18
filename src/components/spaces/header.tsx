@@ -53,13 +53,15 @@ function HeaderCreateSpaceForm({
 			customInstructions: "",
 		},
 		onSubmit: async ({ value }) => {
+			const spaceDescription = value.spaceDescription || undefined;
+			const spaceCustomInstructions =
+				value.customInstructions || undefined;
 			try {
 				const res = await mutation.mutateAsync({
 					userId,
 					spaceTitle: value.spaceTitle,
-					spaceDescription: value.spaceDescription || undefined,
-					spaceCustomInstructions:
-						value.customInstructions || undefined,
+					spaceDescription,
+					spaceCustomInstructions,
 				});
 				setIsOpen(false);
 				router.push(`/s/${res.id}`);

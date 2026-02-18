@@ -89,9 +89,9 @@ export function MessageEditor({
 
 			setMode("view");
 			regenerate();
+			setIsSubmitting(false);
 		} catch {
 			toast.error("Failed to save message");
-		} finally {
 			setIsSubmitting(false);
 		}
 	};
