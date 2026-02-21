@@ -211,9 +211,6 @@ export function McpServerConfig() {
 								<TableHead>
 									<p className="text-xs">Name</p>
 								</TableHead>
-								<TableHead>
-									<p className="text-xs">URL</p>
-								</TableHead>
 								<TableHead className="w-30">
 									<p className="text-xs">Status</p>
 								</TableHead>
@@ -232,9 +229,9 @@ export function McpServerConfig() {
 												<KeyIcon className="size-3 text-muted-foreground" />
 											)}
 										</span>
-									</TableCell>
-									<TableCell className="font-mono text-muted-foreground text-xs">
-										{server.url}
+										<span className="font-mono text-muted-foreground text-xs">
+											{server.url}
+										</span>
 									</TableCell>
 									<TableCell>
 										{renderStatusBadge(server)}

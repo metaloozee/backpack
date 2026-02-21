@@ -406,7 +406,7 @@ export function ModeSelector({
 																		</Badge>
 																	)}
 																</div>
-																<span className="truncate text-muted-foreground text-xs">
+																<span className="text-muted-foreground text-xs">
 																	{subtitle}
 																</span>
 															</div>
