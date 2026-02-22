@@ -98,7 +98,7 @@ function SettingsDialogForm({
 	return (
 		<motion.div
 			animate="visible"
-			className="space-y-4"
+			className="w-full min-w-0 space-y-4"
 			initial="hidden"
 			transition={transitions.smooth}
 			variants={modalVariants}
@@ -114,7 +114,7 @@ function SettingsDialogForm({
 			</DialogHeader>
 			<Separator />
 			<form
-				className="space-y-6"
+				className="w-full min-w-0 space-y-6"
 				onSubmit={(e) => {
 					e.preventDefault();
 					e.stopPropagation();
@@ -123,7 +123,7 @@ function SettingsDialogForm({
 			>
 				<motion.div
 					animate="visible"
-					className="space-y-4"
+					className="w-full min-w-0 space-y-4"
 					initial="hidden"
 					transition={staggerVariants.container.visible.transition}
 					variants={staggerVariants.container}
@@ -171,7 +171,7 @@ function SettingsDialogForm({
 							>
 								<Label htmlFor={field.name}>Description</Label>
 								<Textarea
-									className="min-h-8"
+									className="max-h-12 resize-none"
 									id={field.name}
 									name={field.name}
 									onBlur={field.handleBlur}
@@ -195,7 +195,7 @@ function SettingsDialogForm({
 									Custom Instructions
 								</Label>
 								<Textarea
-									className="min-h-32"
+									className="h-full max-h-56 min-h-12"
 									id={field.name}
 									name={field.name}
 									onBlur={field.handleBlur}
@@ -269,7 +269,7 @@ function SettingsDialogForm({
 						</div>
 					</DisclosureContent>
 				</Disclosure>
-				<DialogFooter className="w-full">
+				<DialogFooter className="w-full min-w-0">
 					<form.Subscribe
 						selector={(state) => [
 							state.canSubmit,
@@ -279,7 +279,7 @@ function SettingsDialogForm({
 						{([canSubmit, isSubmitting]) => (
 							<motion.div
 								animate="visible"
-								className="flex w-full justify-end gap-2"
+								className="flex w-full min-w-0 justify-end gap-2"
 								initial="hidden"
 								transition={{
 									delay: 0.3,
@@ -406,7 +406,7 @@ export function SettingsDialog({
 						Settings
 					</Button>
 				</DialogTrigger>
-				<DialogContent className="min-w-2xl bg-neutral-950">
+				<DialogContent className="w-full max-w-[calc(100%-2rem)] bg-neutral-950 sm:max-w-4xl">
 					<SettingsDialogForm
 						isDangerSectionOpen={isDangerSectionOpen}
 						key={dialogOpenKey}
@@ -429,6 +429,7 @@ export function SettingsDialog({
 				<DialogContent className="bg-neutral-950">
 					<motion.div
 						animate="visible"
+						className="w-full min-w-0"
 						exit="exit"
 						initial="hidden"
 						variants={modalVariants}
@@ -455,7 +456,7 @@ export function SettingsDialog({
 								</motion.div>
 							</motion.div>
 
-							<div className="flex w-full flex-row-reverse gap-2">
+							<div className="flex w-full min-w-0 flex-row-reverse gap-2">
 								<motion.div
 									initial="rest"
 									whileHover="hover"
