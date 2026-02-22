@@ -48,29 +48,6 @@ interface SettingsDialogProps {
 	spaceCustomInstructions?: string;
 }
 
-interface SpaceOverviewData {
-	spaceData: {
-		id: string;
-		spaceTitle: string;
-		spaceDescription: string | null;
-		spaceCustomInstructions: string | null;
-		userId: string;
-		createdAt: Date;
-	};
-	hasChats: boolean;
-}
-
-interface SpacesListData {
-	spaces: Array<{
-		id: string;
-		spaceTitle: string;
-		spaceDescription: string | null;
-		spaceCustomInstructions: string | null;
-		userId: string;
-		createdAt: Date;
-	}>;
-}
-
 interface SettingsDialogFormProps {
 	spaceId: string;
 	spaceName?: string;
@@ -378,77 +355,7 @@ export function SettingsDialog({
 
 	const updateMutation = useMutation({
 		...trpc.space.updateSpace.mutationOptions(),
-		onMutate: async (variables) => {
-			await queryClient.cancelQueries(
-				trpc.space.getSpaceOverview.pathFilter()
-			);
-			await queryClient.cancelQueries(trpc.space.getSpaces.pathFilter());
-
-			const previousSpaceOverview =
-				queryClient.getQueryData<SpaceOverviewData>(
-					trpc.space.getSpaceOverview.queryKey({ spaceId })
-				);
-			const previousSpaces = queryClient.getQueriesData<SpacesListData>(
-				trpc.space.getSpaces.pathFilter()
-			);
-
-			queryClient.setQueryData<SpaceOverviewData>(
-				trpc.space.getSpaceOverview.queryKey({ spaceId }),
-				(old) => {
-					if (!old?.spaceData) {
-						return old;
-					}
-					return {
-						...old,
-						spaceData: {
-							...old.spaceData,
-							spaceTitle: variables.spaceTitle,
-							spaceDescription:
-								variables.spaceDescription || null,
-							spaceCustomInstructions:
-								variables.spaceCustomInstructions || null,
-						},
-					};
-				}
-			);
-
-			for (const [queryKey] of previousSpaces) {
-				queryClient.setQueryData<SpacesListData>(queryKey, (old) => {
-					if (!old?.spaces) {
-						return old;
-					}
-					return {
-						spaces: old.spaces.map((space) =>
-							space.id === spaceId
-								? {
-										...space,
-										spaceTitle: variables.spaceTitle,
-										spaceDescription:
-											variables.spaceDescription || null,
-										spaceCustomInstructions:
-											variables.spaceCustomInstructions ||
-											null,
-									}
-								: space
-						),
-					};
-				});
-			}
-
-			return { previousSpaceOverview, previousSpaces };
-		},
-		onError: (error, _variables, context) => {
-			if (context?.previousSpaceOverview) {
-				queryClient.setQueryData(
-					trpc.space.getSpaceOverview.queryKey({ spaceId }),
-					context.previousSpaceOverview
-				);
-			}
-			if (context?.previousSpaces) {
-				for (const [queryKey, queryData] of context.previousSpaces) {
-					queryClient.setQueryData(queryKey, queryData);
-				}
-			}
+		onError: (error) => {
 			toast.error(error.message || "Failed to update space settings");
 		},
 		onSuccess: () => {
@@ -465,13 +372,13 @@ export function SettingsDialog({
 
 	const deleteMutation = useMutation({
 		...trpc.space.deleteSpace.mutationOptions(),
-		onSuccess: async () => {
+		onSuccess: () => {
 			toast.success("Space deleted successfully");
+
 			setIsDeleteDialogOpen(false);
 			setIsOpen(false);
-			await queryClient.invalidateQueries(
-				trpc.space.getSpaces.pathFilter()
-			);
+
+			queryClient.invalidateQueries(trpc.space.getSpaces.pathFilter());
 			router.push("/s");
 		},
 		onError: (error) => {

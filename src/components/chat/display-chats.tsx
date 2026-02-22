@@ -33,10 +33,6 @@ import {
 	transitions,
 } from "@/lib/animations";
 import type { Chat } from "@/lib/db/schema/app";
-import {
-	type ChatInfiniteData,
-	removeChatFromInfiniteData,
-} from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
@@ -220,19 +216,8 @@ export default function DisplayChats({ spaceId }: { spaceId?: string }) {
 			onMutate: ({ chatId }) => {
 				setPendingChatId(chatId);
 			},
-			onSuccess: async (_, variables) => {
-				const chatId = variables.chatId;
-				queryClient.setQueriesData(
-					trpc.chat.getChats.pathFilter(),
-					(old) =>
-						removeChatFromInfiniteData(
-							old as ChatInfiniteData | undefined,
-							chatId
-						)
-				);
-				await queryClient.invalidateQueries(
-					trpc.chat.getChats.pathFilter()
-				);
+			onSuccess: () => {
+				queryClient.invalidateQueries(trpc.chat.getChats.pathFilter());
 				toast.success("Chat deleted");
 			},
 			onError: (error) => {

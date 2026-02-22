@@ -68,13 +68,6 @@ export function DisplayMemories() {
 	const deleteMemoryMutation = useMutation(
 		trpc.memories.deleteMemory.mutationOptions({
 			onSuccess: (_, variables) => {
-				queryClient.setQueryData(
-					trpc.memories.getMemories.queryKey(),
-					(oldData: Memory[] | undefined) =>
-						oldData?.filter(
-							(memory) => memory.id !== variables.id
-						) ?? []
-				);
 				toast.success("Memory deleted successfully");
 				setDeleteDialogOpen((current) =>
 					current === variables.id ? null : current
@@ -85,6 +78,11 @@ export function DisplayMemories() {
 					description: error.message,
 				});
 				setDeleteDialogOpen(null);
+			},
+			onSettled: () => {
+				queryClient.invalidateQueries(
+					trpc.memories.getMemories.pathFilter()
+				);
 			},
 		})
 	);
