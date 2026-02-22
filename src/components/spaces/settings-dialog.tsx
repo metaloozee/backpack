@@ -358,15 +358,17 @@ export function SettingsDialog({
 		onError: (error) => {
 			toast.error(error.message || "Failed to update space settings");
 		},
-		onSuccess: () => {
+		onSuccess: async () => {
 			toast.success("Space settings updated successfully");
-			setIsOpen(false);
-		},
-		onSettled: () => {
-			queryClient.invalidateQueries(
+
+			await queryClient.invalidateQueries(
 				trpc.space.getSpaceOverview.pathFilter()
 			);
-			queryClient.invalidateQueries(trpc.space.getSpaces.pathFilter());
+			await queryClient.invalidateQueries(
+				trpc.space.getSpaces.pathFilter()
+			);
+
+			setIsOpen(false);
 		},
 	});
 

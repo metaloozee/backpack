@@ -216,8 +216,14 @@ export default function DisplayChats({ spaceId }: { spaceId?: string }) {
 			onMutate: ({ chatId }) => {
 				setPendingChatId(chatId);
 			},
-			onSuccess: () => {
-				queryClient.invalidateQueries(trpc.chat.getChats.pathFilter());
+			onSuccess: async () => {
+				await queryClient.invalidateQueries(
+					trpc.chat.getChats.pathFilter()
+				);
+
+				await queryClient.invalidateQueries(
+					trpc.chat.searchChats.pathFilter()
+				);
 				toast.success("Chat deleted");
 			},
 			onError: (error) => {

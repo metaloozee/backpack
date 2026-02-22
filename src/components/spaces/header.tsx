@@ -56,22 +56,31 @@ function HeaderCreateSpaceForm({
 			const spaceDescription = value.spaceDescription || undefined;
 			const spaceCustomInstructions =
 				value.customInstructions || undefined;
-			try {
-				const res = await mutation.mutateAsync({
+			const res = await mutation.mutateAsync(
+				{
 					userId,
 					spaceTitle: value.spaceTitle,
 					spaceDescription,
 					spaceCustomInstructions,
-				});
-				setIsOpen(false);
-				router.push(`/s/${res.id}`);
-				await queryClient.invalidateQueries(
-					trpc.space.getSpaces.pathFilter()
-				);
-				toast.success("Successfully Created a New Space.");
-			} catch (err) {
-				toast.error("Uh oh!", { description: (err as Error).message });
-			}
+				},
+				{
+					onSuccess: async () => {
+						toast.success("Successfully Created a New Space.");
+						await queryClient.invalidateQueries(
+							trpc.space.getSpaces.pathFilter()
+						);
+
+						setIsOpen(false);
+
+						router.push(`/s/${res.id}`);
+					},
+					onError: (error) => {
+						toast.error("Failed to create space", {
+							description: error.message,
+						});
+					},
+				}
+			);
 		},
 	});
 
