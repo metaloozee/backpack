@@ -15,7 +15,7 @@ import { SpaceIntro } from "@/components/chat/space-intro";
 import { Input as InputPanel } from "@/components/chat-input";
 import { useDataStream } from "@/components/data-stream-provider";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getDefaultToolsState, type ToolsState } from "@/lib/ai/tools";
+import type { ToolsState } from "@/lib/ai/tools";
 import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/ai/utils";
 import type { Chat as ChatType, Knowledge } from "@/lib/db/schema/app";
@@ -55,11 +55,6 @@ export function Chat({
 	env,
 	initialMessages,
 	autoResume,
-	initialModel,
-	initialTools,
-	initialMode,
-	initialAgent,
-	initialMcpServers,
 }: {
 	id: string;
 	env: {
@@ -88,9 +83,6 @@ export function Chat({
 		useKnowledgeOverview(env.spaceId);
 
 	const [input, setInput] = useState<string>("");
-	const [tools, setTools] = useState<ToolsState>(
-		initialTools ?? getDefaultToolsState()
-	);
 	const [attachments, setAttachments] = useState<Attachment[]>([]);
 
 	const { setDataStream } = useDataStream();
@@ -326,20 +318,14 @@ export function Chat({
 			<InputPanel
 				attachments={attachments}
 				chatId={id}
-				initialAgent={initialAgent}
-				initialMcpServers={initialMcpServers}
-				initialMode={initialMode}
-				initialModel={initialModel}
 				input={input}
 				messages={messages}
 				sendMessage={sendMessage}
 				setAttachments={setAttachments}
 				setInput={setInput}
 				setMessages={setMessages}
-				setTools={setTools}
 				status={status}
 				stop={stop}
-				tools={tools}
 			/>
 
 			{showSpaceHistory && env.spaceId && (

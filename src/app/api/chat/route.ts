@@ -22,6 +22,7 @@ import {
 import { z } from "zod";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
 import { getModel } from "@/lib/ai/models";
+import AgentModePrompt from "@/lib/ai/prompts/agent";
 import AskModePrompt from "@/lib/ai/prompts/ask";
 import { academicSearchTool } from "@/lib/ai/tools/academic-search";
 import { extractTool } from "@/lib/ai/tools/extract";
@@ -60,32 +61,6 @@ interface ToolsState {
 interface McpServersState {
 	[serverId: string]: boolean;
 }
-
-const parseToolsState = (toolsStateString: string | undefined): ToolsState => {
-	if (!toolsStateString) {
-		return {};
-	}
-	try {
-		return JSON.parse(toolsStateString) as ToolsState;
-	} catch (error) {
-		console.error("Failed to parse tools state from cookie:", error);
-		return {};
-	}
-};
-
-const parseMcpServersState = (
-	mcpServersStateString: string | undefined
-): McpServersState => {
-	if (!mcpServersStateString) {
-		return {};
-	}
-	try {
-		return JSON.parse(mcpServersStateString) as McpServersState;
-	} catch (error) {
-		console.error("Failed to parse MCP servers state from cookie:", error);
-		return {};
-	}
-};
 
 const DEFAULT_CHAT_TITLE = "Unnamed Chat";
 
@@ -161,6 +136,7 @@ type ActiveTool =
 	| "academic_search"
 	| "finance_search";
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: too complex to refactor
 export async function POST(req: Request) {
 	try {
 		const session = await getSession();
@@ -175,12 +151,44 @@ export async function POST(req: Request) {
 			const { message, id, env: requestEnv } = requestBody;
 
 			const cookieStore = await cookies();
-			const toolsStateString = cookieStore.get("X-Tools-State")?.value;
-			const toolsState = parseToolsState(toolsStateString);
-			const mcpServersStateString = cookieStore.get(
-				"X-MCP-Servers-State"
-			)?.value;
-			const mcpServersState = parseMcpServersState(mcpServersStateString);
+			const raw = cookieStore.get("backpack-prefs")?.value;
+
+			let prefs = {
+				modelId: DEFAULT_MODEL_ID,
+				mode: "ask" as string,
+				selectedAgent: null as string | null,
+				toolsState: {} as ToolsState,
+				mcpServersState: {} as McpServersState,
+			};
+
+			if (raw) {
+				try {
+					const parsed = JSON.parse(raw);
+					const state = parsed?.state ?? {};
+					prefs = {
+						modelId: state.modelId ?? DEFAULT_MODEL_ID,
+						mode: state.mode ?? "ask",
+						selectedAgent: state.selectedAgent ?? null,
+						toolsState: state.tools ?? {},
+						mcpServersState: state.mcpServers ?? {},
+					};
+				} catch {
+					// use defaults
+				}
+			}
+
+			const {
+				modelId,
+				mode,
+				selectedAgent,
+				toolsState,
+				mcpServersState,
+			} = prefs;
+			const model = getModel(modelId);
+
+			if (!model) {
+				throw new Error("Invalid model selected");
+			}
 
 			console.log({
 				webSearch: toolsState.webSearch ?? false,
@@ -194,16 +202,10 @@ export async function POST(req: Request) {
 				throw new Error("Message and ID are required");
 			}
 
-			const modelId =
-				cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
-			const model = getModel(modelId);
-
 			if (!model) {
 				throw new Error("Invalid model selected");
 			}
 
-			// Parallelize independent database queries for better performance
-			// Get enabled MCP server IDs from the state
 			const enabledMcpServerIds = Object.entries(mcpServersState)
 				.filter(([_, enabled]) => enabled)
 				.map(([serverId]) => serverId);
@@ -353,22 +355,35 @@ export async function POST(req: Request) {
 						model: model.instance as LanguageModel,
 						providerOptions: reasoningProviderOptions,
 						messages: await convertToModelMessages(uiMessages),
-						system: AskModePrompt({
-							tools: {
-								webSearch: toolsState.webSearch ?? false,
-								knowledgeSearch:
-									toolsState.knowledgeSearch ?? false,
-								academicSearch:
-									toolsState.academicSearch ?? false,
-								financeSearch:
-									toolsState.financeSearch ?? false,
-							},
-							mcpTools: mcpToolsResult.toolInfos,
-							env: {
-								...requestEnv,
-								memories: userMemories,
-							},
-						}),
+						system:
+							mode === "agent" && selectedAgent
+								? AgentModePrompt({
+										agent: selectedAgent,
+										env: {
+											...requestEnv,
+											memories: userMemories,
+										},
+									})
+								: AskModePrompt({
+										tools: {
+											webSearch:
+												toolsState.webSearch ?? false,
+											knowledgeSearch:
+												toolsState.knowledgeSearch ??
+												false,
+											academicSearch:
+												toolsState.academicSearch ??
+												false,
+											financeSearch:
+												toolsState.financeSearch ??
+												false,
+										},
+										mcpTools: mcpToolsResult.toolInfos,
+										env: {
+											...requestEnv,
+											memories: userMemories,
+										},
+									}),
 						stopWhen: stepCountIs(10),
 						experimental_transform: smoothStream({
 							chunking: "word",

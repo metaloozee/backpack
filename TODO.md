@@ -1,4 +1,4 @@
-- [ ] Zustand
+- [x] Zustand
 - [ ] Daytona
 - [ ] Research Agent
 - [ ] Artifacts

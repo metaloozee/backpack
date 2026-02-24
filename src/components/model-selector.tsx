@@ -1,6 +1,5 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
 import {
 	BrainIcon,
 	Check,
@@ -12,7 +11,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useId, useState } from "react";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Command, CommandList } from "@/components/ui/command";
@@ -32,11 +30,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { models } from "@/lib/ai/models";
-import { useTRPC } from "@/lib/trpc/trpc";
-
-interface ModelSelectorProps {
-	initialModel?: string;
-}
+import { usePrefsStore } from "@/lib/store/store";
 
 const groupedModels = models.reduce(
 	(acc, model) => {
@@ -49,7 +43,7 @@ const groupedModels = models.reduce(
 	{} as Record<string, typeof models>
 );
 
-const providerNames = {
+const providerNames: Record<string, string> = {
 	google: "Gemini",
 	anthropic: "Claude",
 	groq: "Groq",
@@ -59,43 +53,13 @@ const providerNames = {
 	cerebras: "Cerebras",
 };
 
-export function ModelSelector({ initialModel }: ModelSelectorProps) {
-	const [selectedModel, setSelectedModel] = useState(
-		initialModel ?? models[0].id
-	);
+export function ModelSelector() {
+	const modelId = usePrefsStore((s) => s.modelId);
+	const setModelId = usePrefsStore((s) => s.setModelId);
 	const [open] = useState(false);
 	const listboxId = useId();
 
-	const trpc = useTRPC();
-	const setModelSelectionMutation = useMutation(
-		trpc.chat.setModelSelection.mutationOptions()
-	);
-
-	const handleModelChange = (modelId: string) => {
-		if (modelId === selectedModel) {
-			return;
-		}
-
-		const previousModel = selectedModel;
-
-		setSelectedModel(modelId);
-
-		setModelSelectionMutation.mutate(
-			{ modelId },
-			{
-				onError: () => {
-					setSelectedModel((curr) =>
-						curr === modelId ? previousModel : curr
-					);
-					toast.error("Failed to save model selection");
-				},
-			}
-		);
-	};
-
-	const selectedModelData = models.find(
-		(model) => model.id === selectedModel
-	);
+	const selectedModelData = models.find((m) => m.id === modelId);
 
 	return (
 		<DropdownMenu>
@@ -128,21 +92,14 @@ export function ModelSelector({ initialModel }: ModelSelectorProps) {
 									<DropdownMenuSubTrigger>
 										<div className="flex items-center gap-2">
 											<Image
-												alt={
-													selectedModelData?.provider ??
-													""
-												}
+												alt={provider}
 												className="dark:invert"
 												height={20}
 												src={`https://models.dev/logos/${provider}.svg`}
 												width={20}
 											/>
 											<span>
-												{
-													providerNames[
-														provider as keyof typeof providerNames
-													]
-												}
+												{providerNames[provider]}
 											</span>
 										</div>
 									</DropdownMenuSubTrigger>
@@ -155,13 +112,13 @@ export function ModelSelector({ initialModel }: ModelSelectorProps) {
 												className="cursor-pointer"
 												key={model.id}
 												onSelect={() =>
-													handleModelChange(model.id)
+													setModelId(model.id)
 												}
 											>
 												<div className="flex w-full items-center justify-between gap-5">
 													<div className="flex items-center gap-2">
 														{model.id ===
-															selectedModel && (
+															modelId && (
 															<Check className="size-3" />
 														)}
 														<span>
