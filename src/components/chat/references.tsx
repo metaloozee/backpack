@@ -25,7 +25,7 @@ export function References({ citations }: ReferencesProps) {
 						className="flex items-start gap-2 text-xs"
 						key={citation.id}
 					>
-						<span className="w-6 flex-shrink-0 text-muted-foreground">
+						<span className="w-6 shrink-0 text-muted-foreground">
 							[{citation.id}]
 						</span>
 						<div className="flex-1">

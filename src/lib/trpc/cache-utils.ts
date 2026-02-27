@@ -8,37 +8,6 @@ export interface ChatListPage {
 
 export type ChatInfiniteData = InfiniteData<ChatListPage, Date | null>;
 
-export function removeChatFromInfiniteData(
-	data: ChatInfiniteData | undefined,
-	chatId: string
-): ChatInfiniteData | undefined {
-	if (!data) {
-		return data;
-	}
-
-	let shouldUpdate = false;
-	const pages = data.pages.map((page) => {
-		const filteredChats = page.chats.filter((chat) => chat.id !== chatId);
-		if (filteredChats.length !== page.chats.length) {
-			shouldUpdate = true;
-			return {
-				...page,
-				chats: filteredChats,
-			};
-		}
-		return page;
-	});
-
-	if (!shouldUpdate) {
-		return data;
-	}
-
-	return {
-		...data,
-		pages,
-	};
-}
-
 export function prependChatToInfiniteData(
 	data: ChatInfiniteData | undefined,
 	chat: ChatType

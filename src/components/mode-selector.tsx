@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
 	CheckIcon,
@@ -8,8 +8,6 @@ import {
 	Settings2Icon,
 	TelescopeIcon,
 } from "lucide-react";
-import { type Dispatch, type SetStateAction, useState } from "react";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,212 +26,62 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-	defaultTools,
-	getDefaultToolsState,
-	type ToolsState,
-} from "@/lib/ai/tools";
+import { defaultTools } from "@/lib/ai/tools";
 import { slideVariants, transitions } from "@/lib/animations";
 import { getMcpStatus, isMcpServerDisabled } from "@/lib/mcp/status";
+import type { ModeType } from "@/lib/store/slices/mode.slice";
+import { usePrefsStore } from "@/lib/store/store";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
 const modeTypes = [
-	{
-		value: "ask",
-		label: "Ask",
-		description: "Standard mode with all features",
-		tools: {
-			webSearch: true,
-			knowledgeSearch: true,
-			academicSearch: true,
-			financeSearch: true,
-		},
-		disabled: false,
-	},
-	{
-		value: "agent",
-		label: "Agent",
-		description: "Specialized sets of agents for agentic workflows",
-		agents: {
-			research: true,
-		},
-		disabled: false,
-	},
+	{ value: "ask", label: "Ask", disabled: false },
+	{ value: "agent", label: "Agent", disabled: false },
 ] as const;
 
-type ModeType = (typeof modeTypes)[number]["value"];
-
-interface ModeSelectorProps {
-	tools: ToolsState;
-	setTools: Dispatch<SetStateAction<ToolsState>>;
-	initialMode?: string;
-	initialAgent?: string;
-	initialMcpServers?: Record<string, boolean>;
-}
-
-export function ModeSelector({
-	tools,
-	setTools,
-	initialMode,
-	initialAgent,
-	initialMcpServers = {},
-}: ModeSelectorProps) {
-	const [selectedMode, setSelectedMode] = useState<ModeType>(
-		(initialMode as ModeType) ?? "ask"
-	);
-	const [selectedAgent, setSelectedAgent] = useState<string | null>(
-		initialAgent ?? null
-	);
-	const [mcpServersState, setMcpServersState] =
-		useState<Record<string, boolean>>(initialMcpServers);
+export function ModeSelector() {
+	// All state from the store — no local useState
+	const mode = usePrefsStore((s) => s.mode);
+	const setMode = usePrefsStore((s) => s.setMode);
+	const selectedAgent = usePrefsStore((s) => s.selectedAgent);
+	const setSelectedAgent = usePrefsStore((s) => s.setSelectedAgent);
+	const tools = usePrefsStore((s) => s.tools);
+	const setTool = usePrefsStore((s) => s.setTool);
+	const setAllTools = usePrefsStore((s) => s.setAllTools);
+	const resetTools = usePrefsStore((s) => s.resetTools);
+	const mcpServers = usePrefsStore((s) => s.mcpServers);
+	const setMcpServer = usePrefsStore((s) => s.setMcpServer);
 
 	const trpc = useTRPC();
 	const { data: mcpServersData } = useQuery(
 		trpc.mcp.getServers.queryOptions(undefined, {
-			enabled: selectedMode === "ask",
+			enabled: mode === "ask",
 		})
 	);
 
-	const setToolsSelectionMutation = useMutation(
-		trpc.chat.setToolsSelection.mutationOptions()
-	);
-	const setModeSelectionMutation = useMutation(
-		trpc.chat.setModeSelection.mutationOptions()
-	);
-	const setMcpServersSelectionMutation = useMutation(
-		trpc.chat.setMcpServersSelection.mutationOptions()
-	);
-
-	const updateTool = (toolId: string, value: boolean) => {
-		const previousValue = tools[toolId];
-
-		const newState = {
-			...tools,
-			[toolId]: value,
-		};
-		setTools(newState);
-
-		setToolsSelectionMutation.mutate(
-			{ tools: newState },
-			{
-				onError: () => {
-					setTools((current) => {
-						if (current[toolId] === value) {
-							return {
-								...current,
-								[toolId]: previousValue,
-							};
-						}
-						return current;
-					});
-					toast.error("Failed to save tool selection");
-				},
-			}
-		);
-	};
-
-	const updateMcpServer = (serverId: string, value: boolean) => {
-		const previousValue = mcpServersState[serverId];
-
-		const newState = {
-			...mcpServersState,
-			[serverId]: value,
-		};
-		setMcpServersState(newState);
-
-		setMcpServersSelectionMutation.mutate(
-			{ servers: newState },
-			{
-				onError: () => {
-					setMcpServersState((current) => {
-						if (current[serverId] === value) {
-							return {
-								...current,
-								[serverId]: previousValue,
-							};
-						}
-						return current;
-					});
-					toast.error("Failed to save MCP server selection");
-				},
-			}
-		);
-	};
-
 	const handleModeChange = (value: string) => {
 		const newMode = value as ModeType;
-
-		if (newMode === selectedMode) {
+		if (newMode === mode) {
 			return;
 		}
 
-		const previousMode = selectedMode;
-		const previousAgent = selectedAgent;
-		const previousTools = { ...tools };
+		setMode(newMode);
 
-		setSelectedMode(newMode);
-
-		if (newMode === "ask") {
-			setSelectedAgent(null);
-			const defaultState = getDefaultToolsState();
-			setTools(defaultState);
-
-			setModeSelectionMutation.mutate(
-				{ mode: newMode },
-				{
-					onError: () => {
-						setSelectedMode(previousMode);
-						setSelectedAgent(previousAgent);
-						setTools(previousTools);
-						toast.error("Failed to save mode selection");
-					},
-					onSuccess: () => {
-						setToolsSelectionMutation.mutate(
-							{ tools: defaultState },
-							{
-								onError: () => {
-									setTools(previousTools);
-									toast.error(
-										"Failed to save tool selection"
-									);
-								},
-							}
-						);
-					},
-				}
+		if (newMode === "agent") {
+			// Clear all tools when switching to agent mode
+			const cleared = Object.fromEntries(
+				defaultTools.map((t) => [t.id, false])
 			);
-		} else if (newMode === "agent") {
-			const clearedTools = Object.fromEntries(
-				defaultTools.map((tool) => [tool.id, false])
-			) as ToolsState;
-			setTools(clearedTools);
-
-			setModeSelectionMutation.mutate(
-				{ mode: newMode },
-				{
-					onError: () => {
-						setSelectedMode(previousMode);
-						setSelectedAgent(previousAgent);
-						setTools(previousTools);
-						toast.error("Failed to save mode selection");
-					},
-					onSuccess: () => {
-						setToolsSelectionMutation.mutate(
-							{ tools: clearedTools },
-							{
-								onError: () => {
-									setTools(previousTools);
-									toast.error(
-										"Failed to save tool selection"
-									);
-								},
-							}
-						);
-					},
-				}
-			);
+			setAllTools(cleared as typeof tools);
+		} else {
+			// Restore defaults when switching back to ask
+			resetTools();
 		}
+	};
+
+	const handleAgentSelect = (agentKey: string) => {
+		const newAgent = selectedAgent === agentKey ? null : agentKey;
+		setSelectedAgent(newAgent);
 	};
 
 	return (
@@ -249,22 +97,22 @@ export function ModeSelector({
 				transition={transitions.smooth}
 				variants={slideVariants.up}
 			>
-				<Tabs onValueChange={handleModeChange} value={selectedMode}>
+				<Tabs onValueChange={handleModeChange} value={mode}>
 					<TabsList className="bg-neutral-950">
-						{modeTypes.map((mode) => (
+						{modeTypes.map((m) => (
 							<TabsTrigger
 								className="text-xs"
-								disabled={mode.disabled}
-								key={mode.value}
-								value={mode.value}
+								disabled={m.disabled}
+								key={m.value}
+								value={m.value}
 							>
-								{mode.label}
+								{m.label}
 							</TabsTrigger>
 						))}
 					</TabsList>
 				</Tabs>
-				{/* Dropdown for current mode options - placed outside tabs to avoid nested buttons */}
-				{selectedMode === "ask" && (
+
+				{mode === "ask" && (
 					<DropdownMenu>
 						<TooltipProvider>
 							<Tooltip>
@@ -312,16 +160,15 @@ export function ModeSelector({
 										<Switch
 											checked={isChecked}
 											key={`tool-switch-${tool.id}-${isChecked}`}
-											onCheckedChange={(checked) => {
-												updateTool(tool.id, checked);
-											}}
+											onCheckedChange={(checked) =>
+												setTool(tool.id, checked)
+											}
 										/>
 									</DropdownMenuItem>
 								);
 							})}
 
-							{selectedMode === "ask" &&
-								mcpServersData?.servers &&
+							{mcpServersData?.servers &&
 								mcpServersData.servers.length > 0 && (
 									<>
 										<DropdownMenuSeparator className="bg-neutral-800" />
@@ -331,9 +178,8 @@ export function ModeSelector({
 										{mcpServersData.servers.map(
 											(server) => {
 												const isChecked =
-													mcpServersState[
-														server.id
-													] ?? false;
+													mcpServers[server.id] ??
+													false;
 												const status = getMcpStatus({
 													lastConnectedAt:
 														server.lastConnectedAt,
@@ -417,12 +263,12 @@ export function ModeSelector({
 															key={`mcp-switch-${server.id}-${isChecked}`}
 															onCheckedChange={(
 																checked
-															) => {
-																updateMcpServer(
+															) =>
+																setMcpServer(
 																	server.id,
 																	checked
-																);
-															}}
+																)
+															}
 														/>
 													</DropdownMenuItem>
 												);
@@ -433,14 +279,15 @@ export function ModeSelector({
 						</DropdownMenuContent>
 					</DropdownMenu>
 				)}
-				{selectedMode === "agent" && (
+
+				{mode === "agent" && (
 					<DropdownMenu>
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<DropdownMenuTrigger asChild>
 										<Button
-											aria-label="Research mode options"
+											aria-label="Agent mode options"
 											className="ml-1 h-7 w-7 rounded-sm border-0 bg-transparent p-0 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
 											size="icon"
 											variant="ghost"
@@ -458,13 +305,7 @@ export function ModeSelector({
 							align="start"
 							className="w-xs border-neutral-800 bg-neutral-950"
 						>
-							{Object.entries(
-								modeTypes.find((m) => m.value === "agent")
-									?.agents || {}
-							).map(([agentKey, enabled]) => {
-								if (!enabled) {
-									return null;
-								}
+							{["research"].map((agentKey) => {
 								const isSelected = selectedAgent === agentKey;
 								return (
 									<DropdownMenuItem
@@ -472,39 +313,7 @@ export function ModeSelector({
 										key={agentKey}
 										onSelect={(e) => {
 											e.preventDefault();
-											const newAgent =
-												selectedAgent === agentKey
-													? null
-													: agentKey;
-											const previousAgent = selectedAgent;
-
-											setSelectedAgent(newAgent);
-
-											setModeSelectionMutation.mutate(
-												{
-													mode: "agent",
-													selectedAgent:
-														newAgent || undefined,
-												},
-												{
-													onError: () => {
-														setSelectedAgent(
-															(current) => {
-																if (
-																	current ===
-																	newAgent
-																) {
-																	toast.error(
-																		"Failed to save agent selection"
-																	);
-																	return previousAgent;
-																}
-																return current;
-															}
-														);
-													},
-												}
-											);
+											handleAgentSelect(agentKey);
 										}}
 									>
 										<div className="flex items-center gap-3">
@@ -535,9 +344,10 @@ export function ModeSelector({
 					</DropdownMenu>
 				)}
 			</motion.div>
+
 			<div className="relative flex w-[200px] gap-2">
 				<AnimatePresence initial={false}>
-					{selectedMode === "ask" &&
+					{mode === "ask" &&
 						defaultTools
 							.filter((t) => tools[t.id])
 							.map((t) => {

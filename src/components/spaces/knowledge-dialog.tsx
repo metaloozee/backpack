@@ -239,7 +239,7 @@ export function KnowledgeDialog({
 					<DialogTitle>Knowledge Base</DialogTitle>
 				</DialogHeader>
 				<Tabs
-					className="flex w-full flex-1 flex-col"
+					className="flex w-full min-w-0 flex-1 flex-col"
 					onValueChange={(value) =>
 						setActiveTab(value as "webpage" | "pdf")
 					}
@@ -259,7 +259,7 @@ export function KnowledgeDialog({
 								spaceId={spaceId}
 							/>
 						</ScrollArea>
-						<DialogFooter className="w-full">
+						<DialogFooter className="w-full min-w-0">
 							{uploadForm}
 						</DialogFooter>
 					</TabsContent>
@@ -273,7 +273,7 @@ export function KnowledgeDialog({
 								spaceId={spaceId}
 							/>
 						</ScrollArea>
-						<DialogFooter className="w-full">
+						<DialogFooter className="w-full min-w-0">
 							{uploadForm}
 						</DialogFooter>
 					</TabsContent>

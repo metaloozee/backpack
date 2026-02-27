@@ -1,12 +1,8 @@
-import { cookies } from "next/headers";
-
 import { notFound } from "next/navigation";
 import { Chat } from "@/components/chat";
-import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
-import { getDefaultToolsState } from "@/lib/ai/tools";
 import { getSession, getUser } from "@/lib/auth/utils";
 import { getSpaceByIdAndUserId } from "@/lib/db/queries";
-
+import { getServerPrefs } from "@/lib/store/server-prefs";
 export default async function SpacePage({
 	params,
 }: {
@@ -18,21 +14,8 @@ export default async function SpacePage({
 	const { id: spaceId } = await params;
 	const chatId = crypto.randomUUID();
 
-	const cookieStore = await cookies();
-	const selectedModel =
-		cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
-
-	const toolsStateString = cookieStore.get("X-Tools-State")?.value;
-	let initialTools = getDefaultToolsState();
-	if (toolsStateString) {
-		try {
-			initialTools = JSON.parse(toolsStateString);
-		} catch (_) {
-			initialTools = getDefaultToolsState();
-		}
-	}
-	const initialMode = cookieStore.get("X-Mode-Selection")?.value ?? "ask";
-	const initialAgent = cookieStore.get("X-Selected-Agent")?.value;
+	const { modelId, mode, selectedAgent, tools, mcpServers } =
+		await getServerPrefs();
 
 	const spaceData = await getSpaceByIdAndUserId({
 		spaceId,
@@ -56,11 +39,12 @@ export default async function SpacePage({
 						spaceData.spaceCustomInstructions ?? undefined,
 				}}
 				id={chatId}
-				initialAgent={initialAgent}
+				initialAgent={selectedAgent ?? undefined}
+				initialMcpServers={mcpServers}
 				initialMessages={[]}
-				initialMode={initialMode}
-				initialModel={selectedModel}
-				initialTools={initialTools}
+				initialMode={mode}
+				initialModel={modelId}
+				initialTools={tools}
 				session={session}
 			/>
 		</div>

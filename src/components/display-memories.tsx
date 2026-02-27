@@ -67,15 +67,13 @@ export function DisplayMemories() {
 	);
 	const deleteMemoryMutation = useMutation(
 		trpc.memories.deleteMemory.mutationOptions({
-			onSuccess: (_, variables) => {
-				queryClient.setQueryData(
-					trpc.memories.getMemories.queryKey(),
-					(oldData: Memory[] | undefined) =>
-						oldData?.filter(
-							(memory) => memory.id !== variables.id
-						) ?? []
+			onSuccess: async (_, variables) => {
+				await queryClient.invalidateQueries(
+					trpc.memories.getMemories.pathFilter()
 				);
+
 				toast.success("Memory deleted successfully");
+
 				setDeleteDialogOpen((current) =>
 					current === variables.id ? null : current
 				);
@@ -84,7 +82,6 @@ export function DisplayMemories() {
 				toast.error("Failed to delete memory", {
 					description: error.message,
 				});
-				setDeleteDialogOpen(null);
 			},
 		})
 	);
@@ -96,7 +93,7 @@ export function DisplayMemories() {
 				return <p className="text-xs">CONTENT</p>;
 			},
 			cell: ({ row }) => (
-				<div className="max-w-[400px] whitespace-pre-line break-words">
+				<div className="wrap-break-word max-w-[400px] whitespace-pre-line">
 					{row.getValue("content")}
 				</div>
 			),

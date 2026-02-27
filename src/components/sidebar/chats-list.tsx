@@ -19,10 +19,6 @@ import {
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Loader } from "@/components/ui/loader";
-import {
-	type ChatInfiniteData,
-	removeChatFromInfiniteData,
-} from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
@@ -136,25 +132,20 @@ export function SidebarChatsList({
 				setPendingChatId(chatId);
 			},
 			onSuccess: async (_, { chatId }) => {
-				queryClient.setQueriesData(
-					trpc.chat.getChats.pathFilter(),
-					(old) =>
-						removeChatFromInfiniteData(
-							old as ChatInfiniteData | undefined,
-							chatId
-						)
-				);
 				await queryClient.invalidateQueries(
 					trpc.chat.getChats.pathFilter()
 				);
+
 				if (trimmedQuery) {
 					await queryClient.invalidateQueries(
 						trpc.chat.searchChats.pathFilter()
 					);
 				}
+
 				if (chatId === currentChatId) {
 					router.replace("/");
 				}
+
 				toast.success("Chat deleted");
 			},
 			onError: (error) => {

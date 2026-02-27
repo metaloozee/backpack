@@ -28,7 +28,6 @@ import { ModelSelector } from "@/components/model-selector";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
 import { Textarea } from "@/components/ui/textarea";
-import type { ToolsState } from "@/lib/ai/tools";
 import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import {
 	fadeVariants,
@@ -52,12 +51,6 @@ interface InputPanelProps {
 	messages: ChatMessage[];
 	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
 	sendMessage: UseChatHelpers<ChatMessage>["sendMessage"];
-	tools: ToolsState;
-	setTools: Dispatch<SetStateAction<ToolsState>>;
-	initialModel?: string;
-	initialMode?: string;
-	initialAgent?: string;
-	initialMcpServers?: Record<string, boolean>;
 }
 
 function PureInput({
@@ -71,12 +64,6 @@ function PureInput({
 	messages,
 	setMessages,
 	sendMessage,
-	tools,
-	setTools,
-	initialModel,
-	initialMode,
-	initialAgent,
-	initialMcpServers,
 }: InputPanelProps) {
 	const greeting = "How can I help you today?";
 	const trpc = useTRPC();
@@ -469,7 +456,7 @@ function PureInput({
 						}}
 					>
 						<Button
-							className="!bg-transparent rounded-full border"
+							className="rounded-full border bg-transparent!"
 							data-testid="scroll-to-bottom-button"
 							onClick={(event) => {
 								event.preventDefault();
@@ -540,7 +527,7 @@ function PureInput({
 				>
 					<Textarea
 						autoFocus
-						className="!bg-transparent w-full resize-none border-0 text-sm ring-0 placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+						className="w-full resize-none border-0 bg-transparent! text-sm ring-0 placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50!"
 						onChange={handleInput}
 						onKeyDown={(event) => {
 							if (
@@ -568,13 +555,7 @@ function PureInput({
 					/>
 
 					<div className="flex w-full items-center justify-between">
-						<ModeSelector
-							initialAgent={initialAgent}
-							initialMcpServers={initialMcpServers}
-							initialMode={initialMode}
-							setTools={setTools}
-							tools={tools}
-						/>
+						<ModeSelector />
 
 						<motion.div
 							animate="visible"
@@ -590,12 +571,10 @@ function PureInput({
 									/>
 
 									<motion.div
-										className="flex-shrink-0"
+										className="shrink-0"
 										variants={fadeVariants}
 									>
-										<ModelSelector
-											initialModel={initialModel}
-										/>
+										<ModelSelector />
 									</motion.div>
 
 									{isLoading ? (
@@ -632,7 +611,7 @@ const AttachmentButton = React.memo(
 	}) => (
 		<Button
 			aria-label="Attach file"
-			className="flex-shrink-0"
+			className="shrink-0"
 			disabled={status !== "ready"}
 			onClick={(event) => {
 				event.preventDefault();
@@ -827,9 +806,6 @@ export const Input = React.memo(PureInput, (prevProps, nextProps) => {
 	}
 
 	// Deep equality checks using fast-deep-equal
-	if (!equal(prevProps.tools, nextProps.tools)) {
-		return false;
-	}
 	if (!equal(prevProps.attachments, nextProps.attachments)) {
 		return false;
 	}

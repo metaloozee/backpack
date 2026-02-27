@@ -5,7 +5,6 @@ import { TRPCError } from "@trpc/server";
 import { experimental_transcribe as transcribe } from "ai";
 import { and, eq, gte } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
-import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import {
@@ -144,93 +143,6 @@ export const chatRouter = router({
 						gte(message.createdAt, currentMessage.createdAt)
 					)
 				);
-		}),
-	setModelSelection: protectedProcedure
-		.input(
-			z.object({
-				modelId: z.string(),
-			})
-		)
-		.mutation(async ({ input }) => {
-			const cookieStore = await cookies();
-
-			cookieStore.set("X-Model-Id", input.modelId, {
-				httpOnly: false,
-				secure: process.env.NODE_ENV === "production",
-				sameSite: "lax",
-			});
-
-			return { success: true, modelId: input.modelId };
-		}),
-	setToolsSelection: protectedProcedure
-		.input(
-			z.object({
-				tools: z.record(z.string(), z.boolean()),
-			})
-		)
-		.mutation(async ({ input }) => {
-			const cookieStore = await cookies();
-
-			cookieStore.set("X-Tools-State", JSON.stringify(input.tools), {
-				httpOnly: false,
-				secure: process.env.NODE_ENV === "production",
-				sameSite: "lax",
-			});
-
-			return { success: true, tools: input.tools };
-		}),
-	setMcpServersSelection: protectedProcedure
-		.input(
-			z.object({
-				servers: z.record(z.string(), z.boolean()),
-			})
-		)
-		.mutation(async ({ input }) => {
-			const cookieStore = await cookies();
-
-			cookieStore.set(
-				"X-MCP-Servers-State",
-				JSON.stringify(input.servers),
-				{
-					httpOnly: false,
-					secure: process.env.NODE_ENV === "production",
-					sameSite: "lax",
-				}
-			);
-
-			return { success: true, servers: input.servers };
-		}),
-	setModeSelection: protectedProcedure
-		.input(
-			z.object({
-				mode: z.string(),
-				selectedAgent: z.string().optional(),
-			})
-		)
-		.mutation(async ({ input }) => {
-			const cookieStore = await cookies();
-
-			cookieStore.set("X-Mode-Selection", input.mode, {
-				httpOnly: false,
-				secure: process.env.NODE_ENV === "production",
-				sameSite: "lax",
-			});
-
-			if (input.selectedAgent) {
-				cookieStore.set("X-Selected-Agent", input.selectedAgent, {
-					httpOnly: false,
-					secure: process.env.NODE_ENV === "production",
-					sameSite: "lax",
-				});
-			} else {
-				cookieStore.delete("X-Selected-Agent");
-			}
-
-			return {
-				success: true,
-				mode: input.mode,
-				selectedAgent: input.selectedAgent,
-			};
 		}),
 	transcribe: protectedProcedure
 		.input(z.instanceof(FormData))

@@ -6,6 +6,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { DataStreamProvider } from "@/components/data-stream-provider";
 import { Devtools } from "@/components/devtools";
 import { MotionProvider } from "@/components/motion-provider";
+import { StoreHydration } from "@/components/store-hydration";
 // import { ReactScan } from "@/components/react-scan";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -39,6 +40,7 @@ export default function RootLayout({
 					)}
 					suppressHydrationWarning
 				>
+					<StoreHydration />
 					<a
 						className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
 						href="#main-content"

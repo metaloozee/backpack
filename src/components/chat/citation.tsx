@@ -31,12 +31,12 @@ function FaviconIcon({ domain }: { domain: string }) {
 
 	if (faviconError) {
 		return (
-			<NotebookTabsIcon className="mt-0.5 size-4 flex-shrink-0 fill-current" />
+			<NotebookTabsIcon className="mt-0.5 size-4 shrink-0 fill-current" />
 		);
 	}
 
 	return (
-		<div className="relative mt-0.5 size-4 flex-shrink-0">
+		<div className="relative mt-0.5 size-4 shrink-0">
 			{!faviconLoaded && (
 				<NotebookTabsIcon className="size-4 fill-current" />
 			)}
@@ -136,48 +136,48 @@ function DocumentIcon({ url, title }: { url: string; title: string }) {
 
 	if (isPdfDocument(urlLower, titleLower)) {
 		return (
-			<FileIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-red-500" />
+			<FileIcon className="mt-0.5 size-4 shrink-0 fill-current text-red-500" />
 		);
 	}
 
 	if (isWordDocument(urlLower, titleLower)) {
 		return (
-			<FileTextIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-blue-600" />
+			<FileTextIcon className="mt-0.5 size-4 shrink-0 fill-current text-blue-600" />
 		);
 	}
 
 	if (isSpreadsheetDocument(urlLower, titleLower)) {
 		return (
-			<FileSpreadsheetIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-green-600" />
+			<FileSpreadsheetIcon className="mt-0.5 size-4 shrink-0 fill-current text-green-600" />
 		);
 	}
 
 	if (isPresentationDocument(urlLower, titleLower)) {
 		return (
-			<PresentationIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-orange-600" />
+			<PresentationIcon className="mt-0.5 size-4 shrink-0 fill-current text-orange-600" />
 		);
 	}
 
 	if (isImageDocument(urlLower, titleLower)) {
 		return (
-			<ImageIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-purple-600" />
+			<ImageIcon className="mt-0.5 size-4 shrink-0 fill-current text-purple-600" />
 		);
 	}
 
 	if (isVideoDocument(urlLower, titleLower)) {
 		return (
-			<VideoIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-red-600" />
+			<VideoIcon className="mt-0.5 size-4 shrink-0 fill-current text-red-600" />
 		);
 	}
 
 	if (isKnowledgeBaseDocument(url, titleLower)) {
 		return (
-			<BookOpenIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-emerald-600" />
+			<BookOpenIcon className="mt-0.5 size-4 shrink-0 fill-current text-emerald-600" />
 		);
 	}
 
 	return (
-		<FileIcon className="mt-0.5 size-4 flex-shrink-0 fill-current text-gray-500" />
+		<FileIcon className="mt-0.5 size-4 shrink-0 fill-current text-gray-500" />
 	);
 }
 

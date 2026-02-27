@@ -1,8 +1,5 @@
-import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Chat as PreviewChat } from "@/components/chat";
-import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
-import { getDefaultToolsState } from "@/lib/ai/tools";
 import { convertToUIMessages } from "@/lib/ai/utils";
 import { getSession, getUser } from "@/lib/auth/utils";
 import {
@@ -10,7 +7,7 @@ import {
 	getMessagesByChatId,
 	getSpaceByIdAndUserId,
 } from "@/lib/db/queries";
-
+import { getServerPrefs } from "@/lib/store/server-prefs";
 export default async function ChatPage({
 	params,
 }: {
@@ -21,32 +18,8 @@ export default async function ChatPage({
 
 	const { id: chatId } = await params;
 
-	const cookieStore = await cookies();
-	const selectedModel =
-		cookieStore.get("X-Model-Id")?.value ?? DEFAULT_MODEL_ID;
-
-	const toolsStateString = cookieStore.get("X-Tools-State")?.value;
-	let initialTools = getDefaultToolsState();
-	if (toolsStateString) {
-		try {
-			initialTools = JSON.parse(toolsStateString);
-		} catch (_) {
-			initialTools = getDefaultToolsState();
-		}
-	}
-
-	const mcpServersStateString = cookieStore.get("X-MCP-Servers-State")?.value;
-	let initialMcpServers = {};
-	if (mcpServersStateString) {
-		try {
-			initialMcpServers = JSON.parse(mcpServersStateString);
-		} catch (_) {
-			// No action needed
-		}
-	}
-
-	const initialMode = cookieStore.get("X-Mode-Selection")?.value ?? "ask";
-	const initialAgent = cookieStore.get("X-Selected-Agent")?.value;
+	const { modelId, mode, selectedAgent, tools, mcpServers } =
+		await getServerPrefs();
 
 	const chatData = await getChatByIdAndUserId({
 		id: chatId,
@@ -81,12 +54,12 @@ export default async function ChatPage({
 					: undefined,
 			}}
 			id={chatId}
-			initialAgent={initialAgent}
-			initialMcpServers={initialMcpServers}
+			initialAgent={selectedAgent ?? undefined}
+			initialMcpServers={mcpServers}
 			initialMessages={convertToUIMessages(messages)}
-			initialMode={initialMode}
-			initialModel={selectedModel}
-			initialTools={initialTools}
+			initialMode={mode}
+			initialModel={modelId}
+			initialTools={tools}
 			session={session}
 		/>
 	);
