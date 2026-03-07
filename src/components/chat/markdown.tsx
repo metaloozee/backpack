@@ -19,10 +19,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { useCitations } from "@/lib/hooks/use-citations";
 import { cn } from "@/lib/utils";
-import { Citation } from "./citation";
 import "katex/dist/katex.min.css";
 
 const LANGUAGE_REGEX = /language-(\w+)/;
@@ -219,103 +216,16 @@ const remarkPlugins = [remarkGfm, remarkMath];
 const rehypePlugins = [rehypeKatex];
 
 const NonMemoizedMarkdown = ({ children }: { children: string }) => {
-	const { processedContent, citations } = useCitations(children);
-
-	const renderTextWithCitations = (text: string | ReactNode): ReactNode => {
-		if (typeof text !== "string") {
-			return text;
-		}
-
-		const parts: ReactNode[] = [];
-		let lastIndex = 0;
-		let match: RegExpExecArray | null;
-
-		const citationRegex = /\[(\d+)\]/g;
-		match = citationRegex.exec(text);
-		while (match !== null) {
-			if (match.index > lastIndex) {
-				parts.push(text.slice(lastIndex, match.index));
-			}
-
-			const citationId = Number.parseInt(match[1], 10);
-			const citation = citations.find((c) => c.id === citationId);
-
-			if (citation) {
-				parts.push(
-					<Citation
-						citation={citation}
-						key={`citation-${citation.id}-${match.index}`}
-					/>
-				);
-			} else {
-				parts.push(match[0]);
-			}
-
-			lastIndex = match.index + match[0].length;
-			match = citationRegex.exec(text);
-		}
-
-		if (lastIndex < text.length) {
-			parts.push(text.slice(lastIndex));
-		}
-
-		return parts.length > 1 ? parts : text;
-	};
-
-	const renderChildrenWithCitations = (
-		nodeChildren: ReactNode
-	): ReactNode => {
-		if (
-			nodeChildren === null ||
-			nodeChildren === undefined ||
-			typeof nodeChildren === "boolean"
-		) {
-			return nodeChildren;
-		}
-
-		if (typeof nodeChildren === "string") {
-			return renderTextWithCitations(nodeChildren);
-		}
-
-		if (Array.isArray(nodeChildren)) {
-			return nodeChildren.map((child) =>
-				renderChildrenWithCitations(child)
-			);
-		}
-
-		return nodeChildren;
-	};
-
-	const makeCitationComponent = <T extends ElementType>(
-		Tag: T,
-		defaultProps?: Partial<ComponentPropsWithoutRef<T>>
-	) => makeComponent(Tag, defaultProps, renderChildrenWithCitations);
-
-	const citationAwareComponents: Partial<Components> = {
-		...components,
-		p: makeCitationComponent("p"),
-		h1: makeCitationComponent("h1", { className: headingClassNames.h1 }),
-		h2: makeCitationComponent("h2", { className: headingClassNames.h2 }),
-		h3: makeCitationComponent("h3", { className: headingClassNames.h3 }),
-		h4: makeCitationComponent("h4", { className: headingClassNames.h4 }),
-		h5: makeCitationComponent("h5", { className: headingClassNames.h5 }),
-		h6: makeCitationComponent("h6", { className: headingClassNames.h6 }),
-		li: makeCitationComponent("li", { className: listItemClassName }),
-	};
-
 	return (
-		<TooltipProvider delayDuration={0}>
-			<div className="space-y-4 text-sm leading-7 sm:text-base">
-				<ReactMarkdown
-					components={citationAwareComponents}
-					rehypePlugins={rehypePlugins}
-					remarkPlugins={remarkPlugins}
-				>
-					{processedContent}
-				</ReactMarkdown>
-				{/* <References citations={citations} /> */}
-			</div>
-		</TooltipProvider>
+		<div className="space-y-4 text-sm leading-7 sm:text-base">
+			<ReactMarkdown
+				components={components}
+				rehypePlugins={rehypePlugins}
+				remarkPlugins={remarkPlugins}
+			>
+				{children}
+			</ReactMarkdown>
+		</div>
 	);
 };
 
