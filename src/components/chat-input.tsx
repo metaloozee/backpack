@@ -3,15 +3,7 @@
 
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
-import equal from "fast-deep-equal";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-	ChevronDownIcon,
-	CornerDownLeftIcon,
-	MicIcon,
-	PaperclipIcon,
-	StopCircleIcon,
-} from "lucide-react";
+import { MicIcon, PaperclipIcon, StopCircleIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import React, {
 	type Dispatch,
@@ -23,22 +15,36 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 import { useLocalStorage } from "usehooks-ts";
+import {
+	Attachment,
+	AttachmentInfo,
+	AttachmentPreview,
+	Attachments,
+} from "@/components/ai-elements/attachments";
+import {
+	PromptInput,
+	PromptInputActionMenu,
+	PromptInputActionMenuContent,
+	PromptInputActionMenuItem,
+	PromptInputActionMenuTrigger,
+	PromptInputBody,
+	PromptInputButton,
+	PromptInputFooter,
+	PromptInputHeader,
+	PromptInputSubmit,
+	PromptInputTextarea,
+	PromptInputTools,
+} from "@/components/ai-elements/prompt-input";
 import { ModeSelector } from "@/components/mode-selector";
 import { ModelSelector } from "@/components/model-selector";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
-import { Textarea } from "@/components/ui/textarea";
-import type { Attachment, ChatMessage } from "@/lib/ai/types";
-import {
-	fadeVariants,
-	layoutTransition,
-	slideVariants,
-	transitions,
-} from "@/lib/animations";
-import { useScrollToBottom } from "@/lib/hooks/use-scroll-to-bottom";
+import type {
+	ChatMessage,
+	Attachment as PendingAttachment,
+} from "@/lib/ai/types";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
-import { PreviewAttachment } from "./chat/preview-attachment";
 
 interface InputPanelProps {
 	chatId: string;
@@ -46,8 +52,8 @@ interface InputPanelProps {
 	setInput: Dispatch<SetStateAction<string>>;
 	status: UseChatHelpers<ChatMessage>["status"];
 	stop: () => void;
-	attachments: Attachment[];
-	setAttachments: Dispatch<SetStateAction<Attachment[]>>;
+	attachments: PendingAttachment[];
+	setAttachments: Dispatch<SetStateAction<PendingAttachment[]>>;
 	messages: ChatMessage[];
 	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
 	sendMessage: UseChatHelpers<ChatMessage>["sendMessage"];
@@ -67,70 +73,56 @@ function PureInput({
 }: InputPanelProps) {
 	const greeting = "How can I help you today?";
 	const trpc = useTRPC();
-
+	const pathname = usePathname();
+	const isSpaceChat = pathname.startsWith("/s/");
+	const isLoading = status === "submitted" || status === "streaming";
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
-	const inputContainerRef = useRef<HTMLDivElement>(null);
-	const [inputContainerHeight, setInputContainerHeight] = useState(0);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isDragging, setIsDragging] = useState(false);
-
-	useEffect(() => {
-		const inputEl = inputContainerRef.current;
-
-		if (inputEl) {
-			const resizeObserver = new ResizeObserver(() => {
-				setInputContainerHeight(inputEl.offsetHeight);
-			});
-			resizeObserver.observe(inputEl);
-			return () => {
-				resizeObserver.unobserve(inputEl);
-			};
-		}
-	}, []);
-
-	const adjustHeight = useCallback(() => {
-		if (textareaRef.current) {
-			textareaRef.current.style.height = "auto";
-			textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
-		}
-	}, []);
-
-	const resetHeight = useCallback(() => {
-		if (textareaRef.current) {
-			textareaRef.current.style.height = "auto";
-			textareaRef.current.style.height = "98px";
-		}
-	}, []);
-
-	useEffect(() => {
-		if (textareaRef.current) {
-			adjustHeight();
-		}
-	}, [adjustHeight]);
-
+	const [uploadQueue, setUploadQueue] = useState<string[]>([]);
 	const [localStorageInput, setLocalStorageInput] = useLocalStorage(
 		"input",
 		""
 	);
+	const [isRecording, setIsRecording] = useState(false);
+	const [isTranscribing, setIsTranscribing] = useState(false);
+	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+	const transcribe = useMutation(trpc.chat.transcribe.mutationOptions());
+
+	const adjustHeight = useCallback(() => {
+		if (!textareaRef.current) {
+			return;
+		}
+
+		textareaRef.current.style.height = "auto";
+		textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
+	}, []);
+
+	const resetHeight = useCallback(() => {
+		if (!textareaRef.current) {
+			return;
+		}
+
+		textareaRef.current.style.height = "98px";
+	}, []);
 
 	useEffect(() => {
-		if (textareaRef.current) {
-			const domValue = textareaRef.current.value;
-			const finalValue = domValue || localStorageInput || "";
-			setInput(finalValue);
-			adjustHeight();
+		if (!textareaRef.current) {
+			return;
 		}
-	}, [localStorageInput, setInput, adjustHeight]);
+
+		const domValue = textareaRef.current.value;
+		const nextValue = domValue || localStorageInput || "";
+		setInput(nextValue);
+		adjustHeight();
+	}, [adjustHeight, localStorageInput, setInput]);
 
 	const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-		const value = event.target.value;
-		setInput(value);
-		setLocalStorageInput(value);
+		const nextValue = event.target.value;
+		setInput(nextValue);
+		setLocalStorageInput(nextValue);
 		adjustHeight();
 	};
-
-	const fileInputRef = useRef<HTMLInputElement>(null);
-	const [uploadQueue, setUploadQueue] = useState<string[]>([]);
-	const { isAtBottom, scrollToBottom } = useScrollToBottom();
 
 	const submitForm = useCallback(() => {
 		window.history.replaceState({}, "", `/c/${chatId}`);
@@ -149,33 +141,31 @@ function PureInput({
 					mediaType: attachment.contentType,
 				})),
 				{
-					type: "text",
+					type: "text" as const,
 					text: input,
 				},
 			],
 		});
 
-		scrollToBottom();
 		setAttachments([]);
 		resetHeight();
 		setInput("");
 		setLocalStorageInput("");
 		textareaRef.current?.focus();
 	}, [
-		input,
-		setInput,
-		setLocalStorageInput,
 		attachments,
+		chatId,
+		input,
+		resetHeight,
 		sendMessage,
 		setAttachments,
-		chatId,
-		resetHeight,
-		scrollToBottom,
+		setInput,
+		setLocalStorageInput,
 	]);
 
 	const handleFiles = useCallback(
 		async (files: File[]) => {
-			if (!files || files.length === 0) {
+			if (files.length === 0) {
 				return;
 			}
 
@@ -189,628 +179,382 @@ function PureInput({
 						body: formData,
 					});
 
-					if (response.ok) {
-						const data = await response.json();
-						const { url, pathname: fileName, contentType } = data;
-
-						toast.success("File uploaded successfully!");
-
-						return {
-							url,
-							name: fileName,
-							contentType,
-						};
+					if (!response.ok) {
+						const { error } = await response.json();
+						toast.error(error);
+						return null;
 					}
-					const { error } = await response.json();
-					toast.error(error);
+
+					const data = await response.json();
+
+					return {
+						url: data.url as string,
+						name: data.pathname as string,
+						contentType: data.contentType as string,
+					};
 				} catch {
 					toast.error("Failed to upload file, please try again!");
+					return null;
 				}
 			};
 
-			setUploadQueue((prev) => [
-				...prev,
+			setUploadQueue((current) => [
+				...current,
 				...files.map((file) => file.name),
 			]);
 
 			try {
-				const uploadPromises = files.map((file) =>
-					uploadSingleFile(file)
-				);
 				const uploadedAttachments = (
-					await Promise.all(uploadPromises)
-				).filter(Boolean) as Attachment[];
+					await Promise.all(
+						files.map((file) => uploadSingleFile(file))
+					)
+				).filter(Boolean) as PendingAttachment[];
 
-				setAttachments((currentAttachments) => [
-					...currentAttachments,
+				if (uploadedAttachments.length > 0) {
+					toast.success("File uploaded successfully!");
+				}
+
+				setAttachments((current) => [
+					...current,
 					...uploadedAttachments,
 				]);
-				setUploadQueue([]);
-			} catch (error) {
-				console.error("Error uploading files!", error);
-				toast.error("Failed to upload files, please try again!");
+			} finally {
 				setUploadQueue([]);
 			}
 		},
 		[setAttachments]
 	);
 
-	const handleFileChange = useCallback(
-		async (event: React.ChangeEvent<HTMLInputElement>) => {
-			const files = Array.from(event.target.files || []);
-			await handleFiles(files);
-
-			if (event.target) {
-				event.target.value = "";
-			}
-		},
-		[handleFiles]
-	);
-
-	const handleDrop = useCallback(
-		async (event: React.DragEvent<HTMLDivElement>) => {
-			event.preventDefault();
-			event.stopPropagation();
-			setIsDragging(false);
-
-			const files = Array.from(event.dataTransfer.files);
-			if (files.length > 0) {
-				await handleFiles(files);
-			}
-		},
-		[handleFiles]
-	);
-
-	const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
-		event.preventDefault();
-		event.stopPropagation();
-		if (event.dataTransfer.items && event.dataTransfer.items.length > 0) {
-			setIsDragging(true);
-		}
-	};
-
-	const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
-		event.preventDefault();
-		event.stopPropagation();
-
-		if (event.currentTarget.contains(event.relatedTarget as Node)) {
+	const cleanupRecorder = useCallback(() => {
+		if (!mediaRecorderRef.current?.stream) {
+			mediaRecorderRef.current = null;
+			setIsRecording(false);
 			return;
 		}
-		setIsDragging(false);
-	};
 
-	const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-		event.preventDefault();
-		event.stopPropagation();
-	};
-
-	const handlePaste = useCallback(
-		async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
-			const items = event.clipboardData.items;
-			const files: File[] = [];
-			for (const item of items) {
-				if (item.kind === "file" && item.type.startsWith("image/")) {
-					const file = item.getAsFile();
-					if (file) {
-						files.push(file);
-					}
-				}
-			}
-
-			if (files.length > 0) {
-				event.preventDefault();
-				await handleFiles(files);
-				// toast.success(`${files.length} image(s) pasted and uploading.`);
-			}
-		},
-		[handleFiles]
-	);
-
-	const pathname = usePathname();
-	const isSpaceChat = pathname.startsWith("/s/");
-
-	const isLoading = status === "submitted" || status === "streaming";
-
-	const [isRecording, setIsRecording] = useState(false);
-	const [isTranscribing, setIsTranscribing] = useState(false);
-	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-
-	const transcribe = useMutation(trpc.chat.transcribe.mutationOptions());
-
-	const cleanupRecorder = useCallback(() => {
-		if (mediaRecorderRef.current?.stream) {
-			for (const track of mediaRecorderRef.current.stream.getTracks()) {
-				track.stop();
-			}
+		for (const track of mediaRecorderRef.current.stream.getTracks()) {
+			track.stop();
 		}
+
 		mediaRecorderRef.current = null;
 		setIsRecording(false);
 	}, []);
 
 	const handleRecord = useCallback(async () => {
-		setIsRecording(true);
-
 		if (isRecording && mediaRecorderRef.current) {
 			mediaRecorderRef.current.stop();
 			cleanupRecorder();
-		} else {
-			try {
-				const stream = await navigator.mediaDevices.getUserMedia({
-					audio: true,
-				});
-				const recorder = new MediaRecorder(stream);
-				mediaRecorderRef.current = recorder;
+			return;
+		}
 
-				recorder.addEventListener("dataavailable", async (event) => {
-					if (event.data.size > 0) {
-						const audioBlob = event.data;
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({
+				audio: true,
+			});
+			const recorder = new MediaRecorder(stream);
+			mediaRecorderRef.current = recorder;
+			setIsRecording(true);
 
-						try {
-							setIsTranscribing(true);
-							const formData = new FormData();
-							formData.append("audio", audioBlob, "audio.webm");
+			recorder.addEventListener("dataavailable", async (event) => {
+				if (event.data.size === 0) {
+					return;
+				}
 
-							const { text } =
-								await transcribe.mutateAsync(formData);
+				try {
+					setIsTranscribing(true);
+					const formData = new FormData();
+					formData.append("audio", event.data, "audio.webm");
 
-							setInput(text);
-							setLocalStorageInput(text);
-							setIsTranscribing(false);
-							setIsRecording(false);
-							cleanupRecorder();
-						} catch {
-							setIsTranscribing(false);
-							toast.error(
-								"Failed to transcribe audio, please try again!"
-							);
-							cleanupRecorder();
-						}
-					}
-				});
+					const { text } = await transcribe.mutateAsync(formData);
 
-				recorder.addEventListener("stop", () => {
-					for (const track of stream.getTracks()) {
-						track.stop();
-					}
-				});
+					setInput(text);
+					setLocalStorageInput(text);
+					setIsTranscribing(false);
+					cleanupRecorder();
+				} catch {
+					setIsTranscribing(false);
+					toast.error(
+						"Failed to transcribe audio, please try again!"
+					);
+					cleanupRecorder();
+				}
+			});
 
-				recorder.start();
-				setIsRecording(true);
-			} catch {
-				setIsRecording(false);
-				console.error("Error recording audio");
-				toast.error("Failed to record audio, please try again!");
-			}
+			recorder.addEventListener("stop", () => {
+				for (const track of stream.getTracks()) {
+					track.stop();
+				}
+			});
+
+			recorder.start();
+		} catch {
+			setIsRecording(false);
+			console.error("Error recording audio");
+			toast.error("Failed to record audio, please try again!");
 		}
 	}, [
+		cleanupRecorder,
 		isRecording,
-		transcribe,
 		setInput,
 		setLocalStorageInput,
-		cleanupRecorder,
+		transcribe,
 	]);
 
+	let recordingLabel = "Start voice recording";
+	if (isTranscribing) {
+		recordingLabel = "Transcribing...";
+	} else if (isRecording) {
+		recordingLabel = "Stop recording";
+	}
+
+	let recordingIcon: React.ReactNode = <MicIcon className="size-4" />;
+	if (isTranscribing) {
+		recordingIcon = <Loader variant="secondary" />;
+	} else if (isRecording) {
+		recordingIcon = <StopCircleIcon className="size-4" />;
+	}
+
 	return (
-		<motion.div
+		<div
 			className={cn(
 				"sticky w-full bg-background",
 				messages.length > 0
 					? "right-0 bottom-0 left-0"
 					: "flex flex-col items-center justify-center"
 			)}
-			layout
-			onDragEnter={handleDragEnter}
-			onDragLeave={handleDragLeave}
-			onDragOver={handleDragOver}
-			onDrop={handleDrop}
-			transition={layoutTransition}
 		>
-			<AnimatePresence>
-				{isDragging && (
-					<motion.div
-						animate={{ opacity: 1 }}
-						className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-neutral-950/50 backdrop-blur-sm"
-						exit={{ opacity: 0 }}
-						initial={{ opacity: 0 }}
-					>
-						<div className="font-semibold text-2xl text-white">
-							Drop files to upload
-						</div>
-					</motion.div>
-				)}
-			</AnimatePresence>
+			{isDragging ? (
+				<div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral-950/50 backdrop-blur-sm">
+					<div className="font-semibold text-2xl text-white">
+						Drop files to upload
+					</div>
+				</div>
+			) : null}
+
 			<input
 				className="pointer-events-none fixed -top-4 -left-4 size-0.5 opacity-0"
 				multiple
-				onChange={handleFileChange}
+				onChange={async (event) => {
+					const files = Array.from(event.target.files ?? []);
+					await handleFiles(files);
+					event.target.value = "";
+				}}
 				ref={fileInputRef}
 				tabIndex={-1}
 				type="file"
 			/>
 
-			<AnimatePresence>
-				{messages.length === 0 && !isSpaceChat && (
-					<motion.div
-						animate="visible"
-						className="mb-6"
-						exit="exit"
-						initial="hidden"
-						variants={slideVariants.down}
-					>
-						<h1 className="bg-linear-to-br from-white to-neutral-500 bg-clip-text text-3xl text-transparent">
-							{greeting}
-						</h1>
-					</motion.div>
-				)}
-				{messages.length > 0 && !isAtBottom && (
-					<motion.div
-						animate={{ opacity: 1, y: 0 }}
-						className="absolute left-1/2 -translate-x-1/2 rounded-full bg-background/40 backdrop-blur-md"
-						exit={{ opacity: 0, y: 10 }}
-						initial={{ opacity: 0, y: 10 }}
-						style={{ bottom: `${inputContainerHeight + 16}px` }}
-						transition={{
-							type: "spring",
-							stiffness: 300,
-							damping: 20,
-						}}
-					>
-						<Button
-							className="rounded-full border bg-transparent!"
-							data-testid="scroll-to-bottom-button"
-							onClick={(event) => {
-								event.preventDefault();
-								scrollToBottom();
-							}}
-							size={"sm"}
-							variant="secondary"
-						>
-							<p className="font-normal text-xs">
-								Scroll to bottom
-							</p>
-							<ChevronDownIcon className="size-3" />
-						</Button>
-					</motion.div>
-				)}
-			</AnimatePresence>
-
-			<div
-				className={cn("mx-auto w-full max-w-3xl")}
-				ref={inputContainerRef}
-			>
-				{(attachments.length > 0 || uploadQueue.length > 0) && (
-					<div className="mx-6 rounded-t-md border border-b-0 bg-neutral-900/50 p-2">
-						<motion.div
-							animate={{ opacity: 1, y: 0 }}
-							className="flex flex-row flex-nowrap items-end justify-start gap-2 overflow-x-auto"
-							data-testid="attachments-preview"
-							exit={{ opacity: 0, y: 10 }}
-							initial={{ opacity: 0, y: 10 }}
-							transition={{ delay: 0.2 }}
-						>
-							{attachments.map((attachment, index) => (
-								<PreviewAttachment
-									attachment={attachment}
-									key={
-										attachment.url ||
-										`${attachment.name}-${index}`
-									}
-									onRemove={() => {
-										setAttachments((current) =>
-											current.filter(
-												(_, i) => i !== index
-											)
-										);
-									}}
-									showName={false}
-								/>
-							))}
-							{uploadQueue.map((fileName) => (
-								<PreviewAttachment
-									attachment={{
-										url: "",
-										name: fileName,
-										contentType: "",
-									}}
-									isUploading={true}
-									key={`upload-${fileName}`}
-									showName={true}
-								/>
-							))}
-						</motion.div>
-					</div>
-				)}
-				<div
-					className={cn(
-						"relative mb-2 flex w-full flex-col rounded-lg border bg-neutral-900/50 p-4 transition-all duration-200 focus-within:border-neutral-700/70 hover:border-neutral-700/70"
-					)}
-				>
-					<Textarea
-						autoFocus
-						className="w-full resize-none border-0 bg-transparent! text-sm ring-0 placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50!"
-						onChange={handleInput}
-						onKeyDown={(event) => {
-							if (
-								event.key === "Enter" &&
-								!event.shiftKey &&
-								!event.nativeEvent.isComposing
-							) {
-								event.preventDefault();
-
-								if (status !== "ready") {
-									toast.error(
-										"Please wait for the model to finish its response!"
-									);
-								} else {
-									submitForm();
-								}
-							}
-						}}
-						onPaste={handlePaste}
-						placeholder="Ask me anything..."
-						ref={textareaRef}
-						spellCheck={true}
-						tabIndex={0}
-						value={input}
-					/>
-
-					<div className="flex w-full items-center justify-between">
-						<ModeSelector />
-
-						<motion.div
-							animate="visible"
-							initial="hidden"
-							transition={transitions.smooth}
-							variants={fadeVariants}
-						>
-							<AnimatePresence>
-								<div className="flex items-center gap-2">
-									<AttachmentButton
-										fileInputRef={fileInputRef}
-										status={status}
-									/>
-
-									<motion.div
-										className="shrink-0"
-										variants={fadeVariants}
-									>
-										<ModelSelector />
-									</motion.div>
-
-									{isLoading ? (
-										<StopButton
-											setMessages={setMessages}
-											stop={stop}
-										/>
-									) : (
-										<SendButton
-											handleRecord={handleRecord}
-											input={input}
-											isRecording={isRecording}
-											isTranscribing={isTranscribing}
-											submitForm={submitForm}
-										/>
-									)}
-								</div>
-							</AnimatePresence>
-						</motion.div>
-					</div>
+			{messages.length === 0 && !isSpaceChat ? (
+				<div className="mb-6">
+					<h1 className="bg-linear-to-br from-white to-neutral-500 bg-clip-text text-3xl text-transparent">
+						{greeting}
+					</h1>
 				</div>
-			</div>
-		</motion.div>
-	);
-}
+			) : null}
 
-const AttachmentButton = React.memo(
-	({
-		fileInputRef,
-		status,
-	}: {
-		fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
-		status: UseChatHelpers<ChatMessage>["status"];
-	}) => (
-		<Button
-			aria-label="Attach file"
-			className="shrink-0"
-			disabled={status !== "ready"}
-			onClick={(event) => {
-				event.preventDefault();
-				fileInputRef.current?.click();
-			}}
-			variant={"ghost"}
-		>
-			<PaperclipIcon className="size-3 text-muted-foreground" />
-		</Button>
-	)
-);
-
-AttachmentButton.displayName = "AttachmentButton";
-
-const StopButton = React.memo(
-	({
-		stop,
-		setMessages,
-	}: {
-		stop: () => void;
-		setMessages: UseChatHelpers<ChatMessage>["setMessages"];
-	}) => (
-		<Button
-			aria-label="Stop generating"
-			onClick={(event) => {
-				event.preventDefault();
-				stop();
-				setMessages((messages: ChatMessage[]) => messages);
-			}}
-			variant={"destructive"}
-		>
-			<motion.div
-				animate="visible"
-				exit="exit"
-				initial="hidden"
-				transition={transitions.smooth}
-				variants={slideVariants.up}
-			>
-				<StopCircleIcon />
-			</motion.div>
-		</Button>
-	)
-);
-
-StopButton.displayName = "StopButton";
-
-const SendButton = React.memo(
-	({
-		input,
-		submitForm,
-		handleRecord,
-		isRecording,
-		isTranscribing,
-	}: {
-		input: string;
-		submitForm: () => void;
-		handleRecord: () => void;
-		isRecording: boolean;
-		isTranscribing: boolean;
-	}) => (
-		<motion.div
-			animate="visible"
-			exit="exit"
-			initial="hidden"
-			transition={transitions.smooth}
-			variants={fadeVariants}
-		>
-			{input.trim().length <= 0 ? (
-				<Button
-					aria-label={(() => {
-						if (isTranscribing) {
-							return "Transcribing...";
-						}
-						if (isRecording) {
-							return "Stop recording";
-						}
-						return "Start voice recording";
-					})()}
-					className="px-4"
-					disabled={isTranscribing}
-					onClick={handleRecord}
-					variant={isRecording ? "destructive" : "default"}
-				>
-					<motion.div
-						animate="visible"
-						exit="exit"
-						initial="hidden"
-						transition={transitions.smooth}
-						variants={slideVariants.up}
-					>
-						<AnimatePresence mode="wait">
-							{(() => {
-								if (isTranscribing) {
-									return (
-										<motion.div
-											animate={{ opacity: 1, y: 0 }}
-											exit={{ opacity: 0, y: -5 }}
-											initial={{ opacity: 0, y: 5 }}
-											key="transcribing-icon"
-											transition={transitions.smooth}
-										>
-											<Loader variant={"secondary"} />
-										</motion.div>
-									);
-								}
-								if (isRecording) {
-									return (
-										<motion.div
-											animate={{ opacity: 1, y: 0 }}
-											exit={{ opacity: 0, y: -5 }}
-											initial={{ opacity: 0, y: 5 }}
-											key="stop-recording-icon"
-											transition={transitions.smooth}
-										>
-											<StopCircleIcon />
-										</motion.div>
-									);
-								}
-								return (
-									<motion.div
-										animate={{ opacity: 1, y: 0 }}
-										exit={{ opacity: 0, y: -5 }}
-										initial={{ opacity: 0, y: 5 }}
-										key="audio-icon"
-										transition={transitions.smooth}
-									>
-										<MicIcon />
-									</motion.div>
-								);
-							})()}
-						</AnimatePresence>
-					</motion.div>
-				</Button>
-			) : (
-				<Button
-					aria-label="Send message"
-					className="px-4"
-					onClick={(event) => {
+			<div className="mx-auto w-full max-w-3xl">
+				<PromptInput
+					className="mb-2 rounded-2xl border border-white/10 bg-neutral-900/50 backdrop-blur"
+					onDragEnter={(event) => {
 						event.preventDefault();
+						event.stopPropagation();
+						if (event.dataTransfer.items.length > 0) {
+							setIsDragging(true);
+						}
+					}}
+					onDragLeave={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						if (
+							event.currentTarget.contains(
+								event.relatedTarget as Node
+							)
+						) {
+							return;
+						}
+						setIsDragging(false);
+					}}
+					onDragOver={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+					}}
+					onDrop={async (event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						setIsDragging(false);
+						await handleFiles(Array.from(event.dataTransfer.files));
+					}}
+					onSubmit={(_, event) => {
+						event.preventDefault();
+						if (status !== "ready") {
+							toast.error(
+								"Please wait for the model to finish its response!"
+							);
+							return;
+						}
 						submitForm();
 					}}
 				>
-					<motion.div
-						animate="visible"
-						exit="exit"
-						initial="hidden"
-						transition={transitions.smooth}
-						variants={slideVariants.up}
-					>
-						<AnimatePresence mode="wait">
-							{input.trim().length > 0 ? (
-								<motion.div
-									animate={{ opacity: 1, y: 0 }}
-									exit={{ opacity: 0, y: -5 }}
-									initial={{ opacity: 0, y: 5 }}
-									key="send-icon"
-									transition={transitions.smooth}
+					{attachments.length > 0 || uploadQueue.length > 0 ? (
+						<PromptInputHeader>
+							<Attachments variant="inline">
+								{attachments.map((attachment, index) => (
+									<Attachment
+										data={{
+											filename: attachment.name,
+											mediaType: attachment.contentType,
+											url: attachment.url,
+										}}
+										key={`${attachment.url}-${index}`}
+										onRemove={() => {
+											setAttachments((current) =>
+												current.filter(
+													(_, currentIndex) =>
+														currentIndex !== index
+												)
+											);
+										}}
+										variant="inline"
+									>
+										<AttachmentPreview />
+										<AttachmentInfo />
+									</Attachment>
+								))}
+
+								{uploadQueue.map((fileName) => (
+									<div
+										className="flex items-center gap-2 rounded-full border bg-muted/20 px-3 py-2"
+										key={`upload-${fileName}`}
+									>
+										<Loader />
+										<span className="max-w-40 truncate text-sm">
+											{fileName}
+										</span>
+									</div>
+								))}
+							</Attachments>
+						</PromptInputHeader>
+					) : null}
+
+					<PromptInputBody className="px-4 pt-3 pb-2">
+						<PromptInputTextarea
+							autoFocus
+							className="resize-none! min-h-18 border-0 bg-transparent! px-0 text-[15px] leading-6 focus-visible:ring-0"
+							onChange={handleInput}
+							onKeyDown={(event) => {
+								if (
+									event.key === "Enter" &&
+									!event.shiftKey &&
+									!event.nativeEvent.isComposing
+								) {
+									event.preventDefault();
+									if (status !== "ready") {
+										toast.error(
+											"Please wait for the model to finish its response!"
+										);
+										return;
+									}
+									submitForm();
+								}
+							}}
+							onPaste={async (event) => {
+								const files: File[] = [];
+
+								for (const item of event.clipboardData.items) {
+									if (
+										item.kind === "file" &&
+										item.type.startsWith("image/")
+									) {
+										const file = item.getAsFile();
+										if (file) {
+											files.push(file);
+										}
+									}
+								}
+
+								if (files.length === 0) {
+									return;
+								}
+
+								event.preventDefault();
+								await handleFiles(files);
+							}}
+							placeholder="Ask me anything..."
+							ref={textareaRef}
+							value={input}
+						/>
+					</PromptInputBody>
+
+					<PromptInputFooter className="flex items-center justify-between border-white/5 border-t px-4 py-3">
+						<PromptInputTools className="shrink-0 items-center gap-2">
+							<ModeSelector />
+						</PromptInputTools>
+
+						<div>
+							<PromptInputTools className="ml-auto flex shrink-0 items-center gap-2">
+								<PromptInputActionMenu>
+									<PromptInputActionMenuTrigger aria-label="Open attachment actions" />
+									<PromptInputActionMenuContent>
+										<PromptInputActionMenuItem
+											disabled={status !== "ready"}
+											onClick={(event) => {
+												event.preventDefault();
+												fileInputRef.current?.click();
+											}}
+										>
+											<PaperclipIcon className="size-4" />
+											Add attachments
+										</PromptInputActionMenuItem>
+									</PromptInputActionMenuContent>
+								</PromptInputActionMenu>
+
+								<PromptInputButton
+									aria-label={recordingLabel}
+									disabled={isTranscribing}
+									onClick={handleRecord}
+									variant={
+										isRecording ? "destructive" : "ghost"
+									}
 								>
-									<CornerDownLeftIcon />
-								</motion.div>
-							) : (
-								<motion.div
-									animate={{ opacity: 1, y: 0 }}
-									exit={{ opacity: 0, y: -5 }}
-									initial={{ opacity: 0, y: 5 }}
-									key="send-icon-fallback"
-									transition={transitions.smooth}
-								>
-									<CornerDownLeftIcon />
-								</motion.div>
-							)}
-						</AnimatePresence>
-					</motion.div>
-				</Button>
-			)}
-		</motion.div>
-	)
-);
+									{recordingIcon}
+								</PromptInputButton>
 
-SendButton.displayName = "SendButton";
+								<ModelSelector />
 
-export const Input = React.memo(PureInput, (prevProps, nextProps) => {
-	// Primitive comparisons first (fastest)
-	if (prevProps.status !== nextProps.status) {
-		return false;
-	}
-	if (prevProps.input !== nextProps.input) {
-		return false;
-	}
-	if (prevProps.messages.length !== nextProps.messages.length) {
-		return false;
-	}
+								{isLoading ? (
+									<Button
+										aria-label="Stop generating"
+										onClick={(event) => {
+											event.preventDefault();
+											stop();
+											setMessages(
+												(
+													currentMessages: ChatMessage[]
+												) => currentMessages
+											);
+										}}
+										type="button"
+										variant="destructive"
+									>
+										<StopCircleIcon className="size-4" />
+									</Button>
+								) : (
+									<PromptInputSubmit
+										aria-label="Send message"
+										className="rounded-md px-3"
+										disabled={!input.trim()}
+										status={status}
+									/>
+								)}
+							</PromptInputTools>
+						</div>
+					</PromptInputFooter>
+				</PromptInput>
+			</div>
+		</div>
+	);
+}
 
-	// Deep equality checks using fast-deep-equal
-	if (!equal(prevProps.attachments, nextProps.attachments)) {
-		return false;
-	}
-
-	return true;
-});
+export const Input = React.memo(PureInput);
 
 Input.displayName = "Input";

@@ -75,7 +75,7 @@ const makeComponent = <T extends ElementType>(
 	};
 };
 
-const components: Partial<Components> = {
+export const chatMarkdownComponents: Partial<Components> = {
 	code: ({ node, className, children, ref: _ref, ...props }) => {
 		const match = LANGUAGE_REGEX.exec(className || "");
 		if (match) {
@@ -212,16 +212,16 @@ const components: Partial<Components> = {
 	},
 };
 
-const remarkPlugins = [remarkGfm, remarkMath];
-const rehypePlugins = [rehypeKatex];
+export const chatMarkdownRemarkPlugins = [remarkGfm, remarkMath];
+export const chatMarkdownRehypePlugins = [rehypeKatex];
 
 const NonMemoizedMarkdown = ({ children }: { children: string }) => {
 	return (
 		<div className="space-y-4 text-sm leading-7 sm:text-base">
 			<ReactMarkdown
-				components={components}
-				rehypePlugins={rehypePlugins}
-				remarkPlugins={remarkPlugins}
+				components={chatMarkdownComponents}
+				rehypePlugins={chatMarkdownRehypePlugins}
+				remarkPlugins={chatMarkdownRemarkPlugins}
 			>
 				{children}
 			</ReactMarkdown>

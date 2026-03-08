@@ -14,7 +14,8 @@ import { Loader } from "@/components/ui/loader";
 export interface McpToolResultProps {
 	serverName: string;
 	toolName: string;
-	content: unknown;
+	input?: unknown;
+	output?: unknown;
 	isError?: boolean;
 	state?:
 		| "input-streaming"
@@ -25,20 +26,29 @@ export interface McpToolResultProps {
 	isOpen?: boolean;
 }
 
+function formatToolPayload(payload: unknown) {
+	if (typeof payload === "string") {
+		return payload;
+	}
+
+	return JSON.stringify(payload, null, 2);
+}
+
 export function McpToolResult({
 	serverName,
 	toolName,
-	content,
+	input,
+	output,
 	isError = false,
 	state,
 	toolCallId,
 }: McpToolResultProps) {
 	const isLoading =
 		state === "input-streaming" || state === "input-available";
-	const formattedContent =
-		typeof content === "string"
-			? content
-			: JSON.stringify(content, null, 2);
+	const formattedInput =
+		input === undefined ? null : formatToolPayload(input);
+	const formattedOutput =
+		output === undefined ? null : formatToolPayload(output);
 
 	if (isLoading) {
 		return (
@@ -78,13 +88,30 @@ export function McpToolResult({
 					<ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
 				</AccordionTrigger>
 				<AccordionContent className="space-y-1">
-					<div className="pt-2 pb-4">
-						<CodeBlock
-							className="overflow-auto rounded-sm bg-neutral-950 font-mono text-[6px] leading-4"
-							code={formattedContent}
-							language="json"
-						/>
-					</div>
+					{formattedInput ? (
+						<div className="space-y-2 pt-2">
+							<p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+								Input
+							</p>
+							<CodeBlock
+								className="overflow-auto rounded-sm bg-neutral-950 font-mono text-[6px] leading-4"
+								code={formattedInput}
+								language="json"
+							/>
+						</div>
+					) : null}
+					{formattedOutput ? (
+						<div className="space-y-2 pt-2 pb-4">
+							<p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+								Output
+							</p>
+							<CodeBlock
+								className="overflow-auto rounded-sm bg-neutral-950 font-mono text-[6px] leading-4"
+								code={formattedOutput}
+								language="json"
+							/>
+						</div>
+					) : null}
 				</AccordionContent>
 			</AccordionItem>
 		</Accordion>

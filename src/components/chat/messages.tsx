@@ -1,11 +1,16 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import equal from "fast-deep-equal";
-import { motion } from "motion/react";
+import { MessageSquareIcon } from "lucide-react";
 import { memo } from "react";
+import {
+	Conversation,
+	ConversationContent,
+	ConversationEmptyState,
+	ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
 import { Message as PreviewMessage } from "@/components/chat/message";
 import { Loader } from "@/components/ui/loader";
 import type { ChatMessage } from "@/lib/ai/types";
-import { useMessages } from "@/lib/hooks/use-messages";
 
 interface ChatMessageProps {
 	chatId: string;
@@ -16,74 +21,63 @@ interface ChatMessageProps {
 }
 
 function PureChatMessages({
-	chatId,
 	status,
 	messages,
 	setMessages,
 	regenerate,
 }: ChatMessageProps) {
-	const {
-		containerRef: messageContainerRef,
-		endRef: messagesEndRef,
-		onViewportEnter,
-		onViewportLeave,
-		hasSentMessage,
-	} = useMessages({
-		chatId,
-		status,
-	});
+	const latestAssistantId = [...messages]
+		.reverse()
+		.find((message) => message.role === "assistant")?.id;
 
 	return (
-		<div
-			className="mx-auto mt-10 flex w-full max-w-3xl flex-col items-center px-4"
-			ref={messageContainerRef}
-		>
-			{messages.length === 0 && (
-				<div className="flex h-full flex-col items-center justify-center">
-					<p className="text-muted-foreground text-sm">
-						No messages yet. Start a conversation!
-					</p>
-				</div>
-			)}
-
-			{messages.map((message, index) => (
-				<PreviewMessage
-					isLoading={
-						status === "streaming" && messages.length - 1 === index
-					}
-					key={message.id}
-					message={message}
-					regenerate={regenerate}
-					requiresScrollPadding={
-						hasSentMessage && index === messages.length - 1
-					}
-					setMessages={setMessages}
-				/>
-			))}
-
-			{status === "submitted" &&
-				messages.length > 0 &&
-				messages.at(-1)?.role === "user" && (
-					<Loader className="my-10" />
+		<Conversation className="h-full w-full">
+			<ConversationContent>
+				{messages.length === 0 ? (
+					<ConversationEmptyState
+						description="Type a message below to begin chatting."
+						icon={
+							<MessageSquareIcon className="size-6 text-muted-foreground" />
+						}
+						title="Start a conversation"
+					/>
+				) : (
+					messages.map((message, index) => (
+						<PreviewMessage
+							isLatestAssistant={message.id === latestAssistantId}
+							isLoading={
+								status === "streaming" &&
+								messages.length - 1 === index
+							}
+							key={message.id}
+							message={message}
+							regenerate={regenerate}
+							requiresScrollPadding={
+								index === messages.length - 1
+							}
+							setMessages={setMessages}
+						/>
+					))
 				)}
 
-			<motion.div
-				className="min-h-[24px] min-w-[24px] shrink-0"
-				onViewportEnter={onViewportEnter}
-				onViewportLeave={onViewportLeave}
-				ref={messagesEndRef}
-			/>
-		</div>
+				{status === "submitted" &&
+				messages.length > 0 &&
+				messages.at(-1)?.role === "user" ? (
+					<div className="flex justify-start">
+						<Loader className="my-4" />
+					</div>
+				) : null}
+			</ConversationContent>
+			<ConversationScrollButton />
+		</Conversation>
 	);
 }
 
 export const ChatMessages = memo(PureChatMessages, (prevProps, nextProps) => {
-	// During streaming, always re-render to show updates
 	if (prevProps.status === "streaming" || nextProps.status === "streaming") {
 		return false;
 	}
 
-	// Primitive comparisons first (fastest)
 	if (prevProps.status !== nextProps.status) {
 		return false;
 	}
@@ -94,7 +88,6 @@ export const ChatMessages = memo(PureChatMessages, (prevProps, nextProps) => {
 		return false;
 	}
 
-	// Deep equality check for messages
 	if (!equal(prevProps.messages, nextProps.messages)) {
 		return false;
 	}
