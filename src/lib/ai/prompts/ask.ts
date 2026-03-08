@@ -1,3 +1,6 @@
+const escapePromptTagContent = (value: string): string =>
+	value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 export default function AskModePrompt({
 	tools,
 	mcpTools,
@@ -26,6 +29,11 @@ export default function AskModePrompt({
 	const environmentBanner = env.inSpace
 		? `You are currently inside a Space chat. \n Space name: "${env.spaceName ?? "Unnamed Space"}" \n Space ID: "${env.spaceId}" \n ${env.spaceDescription ? `Space description: ${env.spaceDescription}` : ""}`
 		: "You are in a general chat (no active Space).";
+
+	const trimmedCustomInstructions = env.spaceCustomInstructions?.trim() ?? "";
+	const customInstructions = trimmedCustomInstructions
+		? `${escapePromptTagContent(trimmedCustomInstructions)}`
+		: "";
 
 	const mcpToolsList =
 		mcpTools && mcpTools.length > 0
@@ -100,7 +108,7 @@ ${
 ## Metadata
 <Date>${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</Date>
 <Context>${env.inSpace ? "space" : "general chat"}${env.inSpace ? `:${env.spaceName}` : ""}</Context>
-<CustomInstructions>${env.spaceCustomInstructions ?? ""}</CustomInstructions>
+<CustomInstructions>${customInstructions}</CustomInstructions>
 <Memories>${env.memories?.map((memory) => `- ${memory.content}`).join("\n")}</Memories>
 `;
 }
