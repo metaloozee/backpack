@@ -1,16 +1,11 @@
 "use client";
 
 import type { UseChatHelpers } from "@ai-sdk/react";
-import {
-	ChevronDownIcon,
-	ChevronUpIcon,
-	CopyIcon,
-	RefreshCcwIcon,
-} from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, RefreshCcwIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { type ComponentProps, type ReactNode, useState } from "react";
 import { toast } from "sonner";
-import { useCopyToClipboard } from "usehooks-ts";
+import { Streamdown } from "streamdown";
 import {
 	Attachment,
 	AttachmentInfo,
@@ -25,12 +20,6 @@ import {
 	MessageResponse,
 	MessageToolbar,
 } from "@/components/ai-elements/message";
-import {
-	chatMarkdownComponents,
-	chatMarkdownRehypePlugins,
-	chatMarkdownRemarkPlugins,
-	Markdown,
-} from "@/components/chat/markdown";
 import { AcademicSearchTool } from "@/components/chat/tools/academic-search-tool";
 import { ExtractTool } from "@/components/chat/tools/extract";
 import { FinanceSearchTool } from "@/components/chat/tools/finance-search-tool";
@@ -41,12 +30,20 @@ import {
 } from "@/components/chat/tools/mcp-tool-result";
 import { SaveToMemoriesTool } from "@/components/chat/tools/save-to-memories";
 import { WebSearchTool } from "@/components/chat/tools/web-search-tool";
+import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { Disclosure, DisclosureTrigger } from "@/components/ui/disclosure";
 import { Loader } from "@/components/ui/loader";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { ChatMessage } from "@/lib/ai/types";
 import { getTextFromMessage, sanitizeText } from "@/lib/ai/utils";
 import { transitions } from "@/lib/animations";
+import { streamdownPlugins } from "@/lib/streamdown";
 import { cn } from "@/lib/utils";
 
 type MessagePart = ChatMessage["parts"][number];
@@ -362,7 +359,12 @@ function MessageReasoning({
 				className="relative overflow-hidden"
 			>
 				<div className="text-neutral-600 dark:text-neutral-400">
-					<Markdown>{reasoning}</Markdown>
+					<Streamdown
+						className="text-sm leading-7 sm:text-base"
+						plugins={streamdownPlugins}
+					>
+						{reasoning}
+					</Streamdown>
 				</div>
 				{isExpanded ? null : (
 					<div className="pointer-events-none absolute bottom-0 left-0 h-20 w-full bg-gradient-to-t from-background to-transparent" />
@@ -447,12 +449,9 @@ function renderTextPart(
 		<MessageResponse
 			className={cn(
 				message.role !== "user" &&
-					"w-full rounded-2xl border border-border/50 bg-background/70 px-4 py-3"
+					"w-full rounded-2xl bg-background/70 px-4 py-3"
 			)}
-			components={chatMarkdownComponents}
 			key={`${message.id}-text-${index}`}
-			rehypePlugins={chatMarkdownRehypePlugins}
-			remarkPlugins={chatMarkdownRemarkPlugins}
 		>
 			{sanitizeText(part.text)}
 		</MessageResponse>
@@ -539,7 +538,6 @@ export function Message({
 	requiresScrollPadding: boolean;
 	isLatestAssistant: boolean;
 }) {
-	const [_, copyToClipboard] = useCopyToClipboard();
 	const reasoningParts = message.parts.filter(
 		(part) => part.type === "reasoning"
 	);
@@ -588,23 +586,41 @@ export function Message({
 							>
 								<RefreshCcwIcon className="size-3" />
 							</MessageAction>
-							<MessageAction
-								label="Copy"
-								onClick={async () => {
-									if (!textContent.trim()) {
-										toast.error(
-											"There is no text to copy."
-										);
-										return;
-									}
+							<TooltipProvider delayDuration={200}>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<CopyButton
+											aria-label="Copy"
+											className="h-8 w-8 text-xs hover:bg-accent hover:text-accent-foreground"
+											onCopy={() =>
+												toast.success(
+													"Copied to clipboard"
+												)
+											}
+											onError={(error) => {
+												if (
+													error.message ===
+													"No text to copy"
+												) {
+													toast.error(
+														"There is no text to copy."
+													);
+													return;
+												}
 
-									await copyToClipboard(textContent);
-									toast.success("Copied to clipboard");
-								}}
-								tooltip="Copy message"
-							>
-								<CopyIcon className="size-3" />
-							</MessageAction>
+												toast.error(
+													"Failed to copy to clipboard"
+												);
+											}}
+											size="sm"
+											value={textContent.trim()}
+										/>
+									</TooltipTrigger>
+									<TooltipContent>
+										Copy message
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
 						</MessageActions>
 					</MessageToolbar>
 				) : null}

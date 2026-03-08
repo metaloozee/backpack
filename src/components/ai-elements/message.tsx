@@ -1,11 +1,7 @@
 "use client";
 
 import type * as React from "react";
-import type { Components } from "react-markdown";
-import ReactMarkdown from "react-markdown";
-import rehypeKatex from "rehype-katex";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
+import { Streamdown } from "streamdown";
 import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
@@ -13,7 +9,11 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { streamdownPlugins } from "@/lib/streamdown";
 import { cn } from "@/lib/utils";
+
+type Options = React.ComponentPropsWithoutRef<typeof Streamdown>;
+type Components = Options["components"];
 
 export function Message({
 	from,
@@ -55,36 +55,25 @@ export function MessageResponse({
 	children,
 	className,
 	components,
-	rehypePlugins = [rehypeKatex],
-	remarkPlugins = [remarkGfm, remarkMath],
+	plugins = streamdownPlugins,
 	...props
-}: React.ComponentProps<"div"> & {
+}: Omit<Options, "children" | "components"> & {
 	children: string;
-	components?: Partial<Components>;
-	rehypePlugins?: unknown[];
-	remarkPlugins?: unknown[];
-	parseIncompleteMarkdown?: boolean;
-	allowedImagePrefixes?: string[];
-	allowedLinkPrefixes?: string[];
-	defaultOrigin?: string;
+	components?: Components;
 }) {
 	return (
-		<div
+		<Streamdown
 			className={cn(
-				"space-y-4 text-sm leading-7 sm:text-base",
+				"text-sm leading-7 sm:text-base",
 				"group-data-[message-from=user]/message:rounded-2xl group-data-[message-from=user]/message:bg-neutral-900 group-data-[message-from=user]/message:px-4 group-data-[message-from=user]/message:py-3 group-data-[message-from=user]/message:text-primary",
 				className
 			)}
+			components={components}
+			plugins={plugins}
 			{...props}
 		>
-			<ReactMarkdown
-				components={components}
-				rehypePlugins={rehypePlugins as []}
-				remarkPlugins={remarkPlugins as []}
-			>
-				{children}
-			</ReactMarkdown>
-		</div>
+			{children}
+		</Streamdown>
 	);
 }
 

@@ -10,13 +10,14 @@ import {
 	useMemo,
 	useState,
 } from "react";
-import { Markdown } from "@/components/chat/markdown";
+import { Streamdown } from "streamdown";
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Loader } from "@/components/ui/loader";
+import { streamdownPlugins } from "@/lib/streamdown";
 import { cn } from "@/lib/utils";
 
 interface ReasoningContextValue {
@@ -156,7 +157,12 @@ export function ReasoningContent({
 			className={cn("pt-3 text-muted-foreground text-sm", className)}
 			{...props}
 		>
-			<Markdown>{children}</Markdown>
+			<Streamdown
+				className="text-sm leading-7 sm:text-base"
+				plugins={streamdownPlugins}
+			>
+				{children}
+			</Streamdown>
 		</CollapsibleContent>
 	);
 }
