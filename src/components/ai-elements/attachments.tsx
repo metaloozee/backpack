@@ -179,15 +179,23 @@ export function AttachmentRemove(
 		return null;
 	}
 
+	const {
+		label,
+		className: propsClassName,
+		onClick: propsOnClick,
+		...rest
+	} = props;
+
 	return (
 		<Button
-			aria-label={props.label ?? "Remove attachment"}
+			{...rest}
+			aria-label={label ?? "Remove attachment"}
 			className={cn(
 				"absolute top-2 right-2 size-7 opacity-0 transition-opacity group-hover/attachment:opacity-100",
-				props.className
+				propsClassName
 			)}
 			onClick={(event) => {
-				props.onClick?.(event);
+				propsOnClick?.(event);
 				if (event.defaultPrevented) {
 					return;
 				}
@@ -196,7 +204,6 @@ export function AttachmentRemove(
 			size="icon"
 			type="button"
 			variant="secondary"
-			{...props}
 		>
 			<XIcon className="size-3" />
 		</Button>

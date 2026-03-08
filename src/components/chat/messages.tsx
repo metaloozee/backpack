@@ -16,16 +16,10 @@ interface ChatMessageProps {
 	chatId: string;
 	status: UseChatHelpers<ChatMessage>["status"];
 	messages: ChatMessage[];
-	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
 	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
 }
 
-function PureChatMessages({
-	status,
-	messages,
-	setMessages,
-	regenerate,
-}: ChatMessageProps) {
+function PureChatMessages({ status, messages, regenerate }: ChatMessageProps) {
 	const latestAssistantId = [...messages]
 		.reverse()
 		.find((message) => message.role === "assistant")?.id;
@@ -52,10 +46,6 @@ function PureChatMessages({
 							key={message.id}
 							message={message}
 							regenerate={regenerate}
-							requiresScrollPadding={
-								index === messages.length - 1
-							}
-							setMessages={setMessages}
 						/>
 					))
 				)}

@@ -76,14 +76,17 @@ export function getStatusBadge(state: ToolState) {
 	}
 }
 
-export function Tool(props: React.ComponentProps<typeof Collapsible>) {
+export function Tool({
+	className: propsClassName,
+	...props
+}: React.ComponentProps<typeof Collapsible>) {
 	return (
 		<Collapsible
+			{...props}
 			className={cn(
 				"w-full rounded-xl border bg-muted/20",
-				props.className
+				propsClassName
 			)}
-			{...props}
 		/>
 	);
 }
@@ -169,6 +172,10 @@ export function ToolOutput({
 	output?: React.ReactNode;
 	errorText?: string;
 }) {
+	if (output === undefined && errorText === undefined) {
+		return null;
+	}
+
 	return (
 		<div className={cn("space-y-2", className)} {...props}>
 			<p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">

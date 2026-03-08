@@ -94,7 +94,7 @@ export function McpToolResult({
 								Input
 							</p>
 							<CodeBlock
-								className="overflow-auto rounded-sm bg-neutral-950 font-mono text-[6px] leading-4"
+								className="overflow-auto rounded-sm bg-neutral-950 font-mono text-[10px] leading-4"
 								code={formattedInput}
 								language="json"
 							/>
@@ -106,7 +106,7 @@ export function McpToolResult({
 								Output
 							</p>
 							<CodeBlock
-								className="overflow-auto rounded-sm bg-neutral-950 font-mono text-[6px] leading-4"
+								className="overflow-auto rounded-sm bg-neutral-950 font-mono text-[10px] leading-4"
 								code={formattedOutput}
 								language="json"
 							/>

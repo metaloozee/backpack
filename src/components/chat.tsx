@@ -295,7 +295,6 @@ export function Chat({
 					chatId={id}
 					messages={messages}
 					regenerate={regenerate}
-					setMessages={setMessages}
 					status={status}
 				/>
 			)}

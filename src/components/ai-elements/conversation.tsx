@@ -83,6 +83,7 @@ export function ConversationScrollButton(
 	props: React.ComponentProps<typeof Button>
 ) {
 	const { isAtBottom, scrollToBottom } = useStickToBottomContext();
+	const { className: propsClassName, onClick: propsOnClick, ...rest } = props;
 
 	if (isAtBottom) {
 		return null;
@@ -90,12 +91,13 @@ export function ConversationScrollButton(
 
 	return (
 		<Button
+			{...rest}
 			className={cn(
 				"absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-background/90 backdrop-blur-sm",
-				props.className
+				propsClassName
 			)}
 			onClick={(event) => {
-				props.onClick?.(event);
+				propsOnClick?.(event);
 				if (event.defaultPrevented) {
 					return;
 				}
@@ -104,7 +106,6 @@ export function ConversationScrollButton(
 			size="sm"
 			type="button"
 			variant="secondary"
-			{...props}
 		>
 			<span className="font-normal text-xs">Scroll to bottom</span>
 			<ChevronDownIcon className="size-3" />

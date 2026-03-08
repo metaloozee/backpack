@@ -114,7 +114,7 @@ export const CodeBlock = ({
 
 export type CodeBlockCopyButtonProps = Omit<
 	ComponentProps<typeof CopyButton>,
-	"value" | "onCopy" | "onCopyError" | "timeout"
+	"value" | "onCopy" | "onCopyError" | "timeout" | "children"
 > & {
 	onCopy?: () => void;
 	onCopyError?: (error: Error) => void;
@@ -125,9 +125,8 @@ export const CodeBlockCopyButton = ({
 	onCopy,
 	onCopyError,
 	timeout = 2000,
-	children,
 	className,
-	...props
+	...rest
 }: CodeBlockCopyButtonProps) => {
 	const { code } = useContext(CodeBlockContext);
 
@@ -139,10 +138,8 @@ export const CodeBlockCopyButton = ({
 			size="sm"
 			timeout={timeout}
 			value={code}
-			{...props}
-		>
-			{children}
-		</CopyButton>
+			{...rest}
+		/>
 	);
 };
 

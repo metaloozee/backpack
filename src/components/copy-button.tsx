@@ -26,7 +26,7 @@ const sizeMap: Record<SizeVariant, { button: string; icon: string }> = {
 	xs: { button: "size-7", icon: "size-3" },
 	sm: { button: "size-8", icon: "size-3.5" },
 	default: { button: "size-9", icon: "size-4" },
-	lg: { button: "size-10", icon: "size-4.5" },
+	lg: { button: "size-10", icon: "size-5" },
 };
 
 const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(

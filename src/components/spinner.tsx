@@ -109,7 +109,6 @@ export const Spinner = forwardRef<
 		>
 			<SpinnerPrimitive
 				aria-hidden
-				aria-label="Loading"
 				className="h-full w-full"
 				ref={ref}
 				role="presentation"

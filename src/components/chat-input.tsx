@@ -137,7 +137,7 @@ function PureInput({
 				...attachments.map((attachment) => ({
 					type: "file" as const,
 					url: attachment.url,
-					filename: attachment.name,
+					name: attachment.name,
 					mediaType: attachment.contentType,
 				})),
 				{
@@ -438,6 +438,7 @@ function PureInput({
 
 					<PromptInputBody className="px-4 pt-3 pb-2">
 						<PromptInputTextarea
+							aria-label="Chat input"
 							autoFocus
 							className="resize-none! min-h-18 border-0 bg-transparent! px-0 text-[15px] leading-6 focus-visible:ring-0"
 							onChange={handleInput}

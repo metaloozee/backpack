@@ -103,15 +103,20 @@ export function PromptInputTools(props: React.ComponentProps<"div">) {
 	);
 }
 
-export function PromptInputTextarea(
-	props: React.ComponentProps<typeof Textarea>
-) {
+export function PromptInputTextarea({
+	className,
+	ref,
+	...props
+}: React.ComponentProps<typeof Textarea> & {
+	ref?: React.Ref<HTMLTextAreaElement>;
+}) {
 	return (
 		<Textarea
 			className={cn(
 				"min-h-[96px] w-full resize-none border-0 bg-transparent px-0 text-sm shadow-none focus-visible:ring-0",
-				props.className
+				className
 			)}
+			ref={ref}
 			{...props}
 		/>
 	);

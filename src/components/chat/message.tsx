@@ -43,10 +43,10 @@ type MessagePart = ChatMessage["parts"][number];
 
 const TOOL_PREFIX_REGEX = /^tool-/;
 
-function createToolCallId(part: MessagePart) {
+function createToolCallId(part: MessagePart, fallbackId: string) {
 	return "toolCallId" in part && typeof part.toolCallId === "string"
 		? part.toolCallId
-		: crypto.randomUUID();
+		: fallbackId;
 }
 
 function getDynamicToolState(partType: string, state: unknown) {
@@ -65,8 +65,14 @@ function getDynamicToolState(partType: string, state: unknown) {
 	return "input-available";
 }
 
-function getNormalizedStaticToolData(part: MessagePart) {
-	if (typeof part.type === "string" && part.type.startsWith("tool-")) {
+const DYNAMIC_TOOL_TYPES = ["tool-call", "tool-result", "tool-error"];
+
+function getNormalizedStaticToolData(part: MessagePart, fallbackId: string) {
+	if (
+		typeof part.type === "string" &&
+		part.type.startsWith("tool-") &&
+		!DYNAMIC_TOOL_TYPES.includes(part.type)
+	) {
 		return {
 			type: part.type,
 			state: "state" in part ? part.state : undefined,
@@ -74,14 +80,14 @@ function getNormalizedStaticToolData(part: MessagePart) {
 			output: "output" in part ? part.output : undefined,
 			errorText: "errorText" in part ? part.errorText : undefined,
 			toolName: part.type.replace(TOOL_PREFIX_REGEX, ""),
-			toolCallId: createToolCallId(part),
+			toolCallId: createToolCallId(part, fallbackId),
 		};
 	}
 
 	return null;
 }
 
-function getNormalizedDynamicToolData(part: MessagePart) {
+function getNormalizedDynamicToolData(part: MessagePart, fallbackId: string) {
 	const partType = part.type as string;
 
 	if (
@@ -108,16 +114,17 @@ function getNormalizedDynamicToolData(part: MessagePart) {
 					? part.errorText
 					: undefined,
 			toolName,
-			toolCallId: createToolCallId(part),
+			toolCallId: createToolCallId(part, fallbackId),
 		};
 	}
 
 	return null;
 }
 
-function getNormalizedToolData(part: MessagePart) {
+function getNormalizedToolData(part: MessagePart, fallbackId: string) {
 	return (
-		getNormalizedStaticToolData(part) ?? getNormalizedDynamicToolData(part)
+		getNormalizedStaticToolData(part, fallbackId) ??
+		getNormalizedDynamicToolData(part, fallbackId)
 	);
 }
 
@@ -397,8 +404,13 @@ function MessageReasoning({ reasoning }: { reasoning: string }) {
 	);
 }
 
-function renderToolPart(part: MessagePart): ReactNode {
-	const tool = getNormalizedToolData(part);
+function renderToolPart(
+	part: MessagePart,
+	message: ChatMessage,
+	partIndex: number
+): ReactNode {
+	const fallbackId = `${message.id}-${partIndex}`;
+	const tool = getNormalizedToolData(part, fallbackId);
 
 	if (!tool) {
 		return null;
@@ -457,7 +469,7 @@ function renderMessagePart(
 		return renderTextPart(part, message, index);
 	}
 
-	return renderToolPart(part);
+	return renderToolPart(part, message, index);
 }
 
 function renderAttachments(message: ChatMessage) {
@@ -566,9 +578,7 @@ export function Message({
 }: {
 	message: ChatMessage;
 	isLoading: boolean;
-	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
 	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
-	requiresScrollPadding: boolean;
 	isLatestAssistant: boolean;
 }) {
 	const reasoningParts = message.parts.filter(

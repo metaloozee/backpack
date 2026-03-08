@@ -8,7 +8,7 @@ export default function ResearchAgentPrompt({
 		spaceDescription?: string;
 		spaceCustomInstructions?: string;
 	};
-}) {
+}): string {
 	const environmentBanner = env.inSpace
 		? `You are currently inside a Space: "${env.spaceName ?? "Unnamed Space"}"\n${env.spaceDescription ? `Description: ${env.spaceDescription}` : ""}`
 		: "You are in a general research context.";
@@ -79,6 +79,6 @@ When given a research query:
 ## Metadata
 <Date>${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</Date>
 <Context>${env.inSpace ? "space" : "general"}${env.inSpace ? `:${env.spaceName}` : ""}</Context>
-${env.spaceCustomInstructions ? `<CustomInstructions>${env.spaceCustomInstructions}</CustomInstructions>` : ""}
-    `;
+${env.spaceCustomInstructions ? `<CustomInstructions>${env.spaceCustomInstructions.trim()}</CustomInstructions>` : ""}
+`;
 }
