@@ -4,11 +4,11 @@ import {
 	AlertCircleIcon,
 	CheckCircle2Icon,
 	ChevronDownIcon,
-	LoaderCircleIcon,
 	WrenchIcon,
 } from "lucide-react";
 import type * as React from "react";
 import { CodeBlock } from "@/components/chat/code-block";
+import { Spinner } from "@/components/spinner";
 import { Badge } from "@/components/ui/badge";
 import {
 	Collapsible,
@@ -41,14 +41,14 @@ export function getStatusBadge(state: ToolState) {
 		case "input-streaming":
 			return (
 				<Badge variant="secondary">
-					<LoaderCircleIcon className="size-3 animate-spin" />
+					<Spinner className="size-3" size="sm" />
 					Pending
 				</Badge>
 			);
 		case "input-available":
 			return (
 				<Badge variant="secondary">
-					<LoaderCircleIcon className="size-3 animate-spin" />
+					<Spinner className="size-3" size="sm" />
 					Running
 				</Badge>
 			);

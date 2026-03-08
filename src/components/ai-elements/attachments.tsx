@@ -54,7 +54,8 @@ export function Attachments({
 		<div
 			className={cn(
 				variant === "grid" && "grid grid-cols-1 gap-2 sm:grid-cols-2",
-				variant === "inline" && "flex flex-wrap gap-2",
+				variant === "inline" &&
+					"flex min-w-0 flex-wrap gap-2 overflow-hidden",
 				variant === "list" && "flex flex-col gap-2",
 				className
 			)}
@@ -82,7 +83,7 @@ export function Attachment({
 				className={cn(
 					"group/attachment relative overflow-hidden rounded-xl border bg-muted/20",
 					variant === "inline" &&
-						"flex items-center gap-2 rounded-full px-3 py-2",
+						"flex min-w-0 max-w-40 items-center gap-2 rounded-full px-3 py-2",
 					variant === "list" && "flex items-center gap-3 px-3 py-2",
 					variant === "grid" && "flex min-h-20 flex-col",
 					className
@@ -145,12 +146,21 @@ export function AttachmentInfo({
 }: React.ComponentProps<"div"> & {
 	showMediaType?: boolean;
 }) {
-	const { data } = useAttachment();
+	const { data, variant } = useAttachment();
 	const attachmentName = getAttachmentName(data);
 
 	return (
-		<div className={cn("min-w-0", className)} {...props}>
-			<p className="truncate text-sm">{attachmentName}</p>
+		<div
+			className={cn(
+				"min-w-0",
+				variant === "inline" && "flex-1 overflow-hidden",
+				className
+			)}
+			{...props}
+		>
+			<p className="truncate text-sm" title={attachmentName}>
+				{attachmentName}
+			</p>
 			{showMediaType && data.mediaType ? (
 				<p className="truncate text-muted-foreground text-xs">
 					{data.mediaType}

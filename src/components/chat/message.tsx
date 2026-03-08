@@ -3,8 +3,8 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { ChevronDownIcon, ChevronUpIcon, RefreshCcwIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import Image from "next/image";
 import { type ComponentProps, type ReactNode, useState } from "react";
-import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import {
 	Attachment,
@@ -33,13 +33,6 @@ import { WebSearchTool } from "@/components/chat/tools/web-search-tool";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { Disclosure, DisclosureTrigger } from "@/components/ui/disclosure";
-import { Loader } from "@/components/ui/loader";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
 import type { ChatMessage } from "@/lib/ai/types";
 import { getTextFromMessage, sanitizeText } from "@/lib/ai/utils";
 import { transitions } from "@/lib/animations";
@@ -337,13 +330,7 @@ function renderMcpToolPart(
 	);
 }
 
-function MessageReasoning({
-	isLoading,
-	reasoning,
-}: {
-	isLoading: boolean;
-	reasoning: string;
-}) {
+function MessageReasoning({ reasoning }: { reasoning: string }) {
 	const [isExpanded, setIsExpanded] = useState(false);
 
 	return (
@@ -390,7 +377,6 @@ function MessageReasoning({
 								key={isExpanded ? "expanded" : "collapsed"}
 								transition={transitions.fast}
 							>
-								{isLoading ? <Loader size="sm" /> : null}
 								{isExpanded ? (
 									<>
 										Hide Reasoning
@@ -481,11 +467,62 @@ function renderAttachments(message: ChatMessage) {
 		return null;
 	}
 
+	if (message.role === "user") {
+		const imageParts = fileParts.filter((p) =>
+			p.mediaType?.startsWith("image/")
+		);
+		const otherParts = fileParts.filter(
+			(p) => !p.mediaType?.startsWith("image/")
+		);
+
+		return (
+			<>
+				{imageParts.length > 0 ? (
+					<div className="flex flex-wrap gap-2">
+						{imageParts.map((part, index) => (
+							<div
+								className="relative aspect-video w-60 overflow-hidden rounded-2xl border border-white/10"
+								key={`${message.id}-img-${part.url}-${index}`}
+							>
+								<Image
+									alt={getAttachmentFilename(part, index)}
+									className="object-cover"
+									fill
+									sizes="240px"
+									src={part.url}
+								/>
+							</div>
+						))}
+					</div>
+				) : null}
+
+				{otherParts.length > 0 ? (
+					<Attachments variant="inline">
+						{otherParts.map((part, index) => (
+							<Attachment
+								data={{
+									filename: getAttachmentFilename(
+										part,
+										imageParts.length + index
+									),
+									mediaType: part.mediaType,
+									url: part.url,
+								}}
+								key={`${message.id}-file-${part.url}-${index}`}
+								variant="inline"
+							>
+								<AttachmentPreview />
+								<AttachmentInfo className="pr-2" />
+							</Attachment>
+						))}
+					</Attachments>
+				) : null}
+			</>
+		);
+	}
+
 	return (
-		<Attachments
-			className={cn(message.role === "user" ? "self-end" : "")}
-			variant={message.role === "user" ? "inline" : "grid"}
-		>
+		<Attachments variant="grid">
 			{fileParts.map((part, index) => (
 				<Attachment
 					data={{
@@ -494,16 +531,12 @@ function renderAttachments(message: ChatMessage) {
 						url: part.url,
 					}}
 					key={`${message.id}-file-${part.url}-${index}`}
-					variant={message.role === "user" ? "inline" : "grid"}
+					variant="grid"
 				>
 					<AttachmentPreview />
-					{message.role !== "user" ? (
-						<div className="space-y-2 p-3">
-							<AttachmentInfo showMediaType={true} />
-						</div>
-					) : (
-						<AttachmentInfo className="pr-2" />
-					)}
+					<div className="space-y-2 p-3">
+						<AttachmentInfo showMediaType={true} />
+					</div>
 				</Attachment>
 			))}
 		</Attachments>
@@ -554,18 +587,11 @@ export function Message({
 			data-testid={`message-${message.id}`}
 		>
 			<ChatMessageItem from={message.role}>
-				{renderAttachments(message)}
-
 				<MessageContent>
+					{renderAttachments(message)}
+
 					{hasReasoning ? (
-						<MessageReasoning
-							isLoading={
-								isLatestAssistant &&
-								isLoading &&
-								message.parts.at(-1)?.type === "reasoning"
-							}
-							reasoning={reasoningText}
-						/>
+						<MessageReasoning reasoning={reasoningText} />
 					) : null}
 
 					{message.parts.map((part, index) =>
@@ -584,43 +610,15 @@ export function Message({
 								onClick={() => regenerate()}
 								tooltip="Regenerate response"
 							>
-								<RefreshCcwIcon className="size-3" />
+								<RefreshCcwIcon className="size-4" />
 							</MessageAction>
-							<TooltipProvider delayDuration={200}>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<CopyButton
-											aria-label="Copy"
-											className="h-8 w-8 text-xs hover:bg-accent hover:text-accent-foreground"
-											onCopy={() =>
-												toast.success(
-													"Copied to clipboard"
-												)
-											}
-											onError={(error) => {
-												if (
-													error.message ===
-													"No text to copy"
-												) {
-													toast.error(
-														"There is no text to copy."
-													);
-													return;
-												}
-
-												toast.error(
-													"Failed to copy to clipboard"
-												);
-											}}
-											size="sm"
-											value={textContent.trim()}
-										/>
-									</TooltipTrigger>
-									<TooltipContent>
-										Copy message
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
+							<MessageAction
+								asChild
+								label="Copy"
+								tooltip="Copy message content"
+							>
+								<CopyButton value={textContent} />
+							</MessageAction>
 						</MessageActions>
 					</MessageToolbar>
 				) : null}

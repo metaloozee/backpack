@@ -125,14 +125,14 @@ export function DisplayMemories() {
 					<div className="flex w-full justify-end space-x-2">
 						<CopyButton
 							className="h-8 w-8 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-							onCopy={() =>
+							onCopy={() => {
 								toast.success(
 									"Memory content copied to clipboard"
-								)
-							}
-							onError={() =>
-								toast.error("Failed to copy to clipboard")
-							}
+								);
+							}}
+							onCopyError={() => {
+								toast.error("Failed to copy to clipboard");
+							}}
 							size="sm"
 							timeout={2000}
 							value={memory.content}

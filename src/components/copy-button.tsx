@@ -5,24 +5,28 @@ import {
 	type ButtonHTMLAttributes,
 	forwardRef,
 	type MouseEvent,
+	useEffect,
+	useRef,
 	useState,
 } from "react";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type SizeVariant = "sm" | "default" | "lg";
+type SizeVariant = "xs" | "sm" | "default" | "lg";
 
 interface CopyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	value?: string;
 	onCopy?: () => void | Promise<void>;
-	onError?: (error: Error) => void;
+	onCopyError?: (error: Error) => void;
 	size?: SizeVariant;
 	timeout?: number;
 }
 
-const sizeMap: Record<SizeVariant, { button: string; icon: number }> = {
-	sm: { button: "h-8 w-8", icon: 14 },
-	default: { button: "h-9 w-9", icon: 16 },
-	lg: { button: "h-12 w-12", icon: 20 },
+const sizeMap: Record<SizeVariant, { button: string; icon: string }> = {
+	xs: { button: "size-7", icon: "size-3" },
+	sm: { button: "size-8", icon: "size-3.5" },
+	default: { button: "size-9", icon: "size-4" },
+	lg: { button: "size-10", icon: "size-4.5" },
 };
 
 const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(
@@ -33,90 +37,96 @@ const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(
 			className,
 			onClick,
 			onCopy,
-			onError,
+			onCopyError,
 			timeout = 1500,
 			...props
 		},
 		ref
 	) => {
-		const [copied, setCopied] = useState<boolean>(false);
+		const [copied, setCopied] = useState(false);
+		const timeoutRef = useRef<number | null>(null);
+
+		useEffect(() => {
+			return () => {
+				if (timeoutRef.current !== null) {
+					window.clearTimeout(timeoutRef.current);
+				}
+			};
+		}, []);
+
+		const scheduleReset = () => {
+			if (timeoutRef.current !== null) {
+				window.clearTimeout(timeoutRef.current);
+			}
+
+			timeoutRef.current = window.setTimeout(() => {
+				setCopied(false);
+				timeoutRef.current = null;
+			}, timeout);
+		};
 
 		const handleCopy = async (event: MouseEvent<HTMLButtonElement>) => {
-			if (!value) {
-				onError?.(new Error("No text to copy"));
-				onClick?.(event);
-				return;
-			}
-
-			if (
-				typeof window === "undefined" ||
-				!navigator.clipboard?.writeText
-			) {
-				onError?.(new Error("Clipboard API not available"));
-				onClick?.(event);
-				return;
-			}
-
 			try {
-				await navigator.clipboard.writeText(value ?? "");
+				if (!value) {
+					throw new Error("No text to copy");
+				}
+
+				if (
+					typeof window === "undefined" ||
+					!navigator.clipboard?.writeText
+				) {
+					throw new Error("Clipboard API not available");
+				}
+
+				await navigator.clipboard.writeText(value);
 				await onCopy?.();
 				setCopied(true);
-				setTimeout(() => setCopied(false), timeout);
+				scheduleReset();
 			} catch (error) {
-				onError?.(
+				onCopyError?.(
 					error instanceof Error
 						? error
 						: new Error("Failed to copy to clipboard")
 				);
+			} finally {
+				onClick?.(event);
 			}
-
-			onClick?.(event);
 		};
 
-		const { button: buttonSize, icon: iconSize } = sizeMap[size];
+		const resolvedSize = sizeMap[size];
 
 		return (
 			<button
 				aria-label={copied ? "Copied" : "Copy to clipboard"}
 				className={cn(
-					"relative inline-flex cursor-pointer items-center justify-center rounded-md text-neutral-900 transition-all duration-200 ease-out active:scale-[0.97] disabled:pointer-events-none disabled:opacity-100 dark:text-neutral-50",
-					buttonSize,
+					buttonVariants({ size: "icon", variant: "ghost" }),
+					"relative overflow-hidden rounded-md text-foreground",
+					resolvedSize.button,
 					className
 				)}
-				disabled={copied}
 				onClick={handleCopy}
 				ref={ref}
 				type="button"
 				{...props}
 			>
-				<div
+				<CheckIcon
+					aria-hidden="true"
 					className={cn(
-						"transition-all duration-200",
-						copied
-							? "scale-100 opacity-100 blur-none"
-							: "scale-70 opacity-0 blur-[2px]"
+						"absolute transition-all duration-200 ease-out",
+						resolvedSize.icon,
+						copied ? "scale-100 opacity-100" : "scale-75 opacity-0"
 					)}
-				>
-					<CheckIcon
-						aria-hidden="true"
-						size={iconSize}
-						strokeWidth={2}
-					/>
-				</div>
-				<div
+					strokeWidth={2}
+				/>
+				<CopyIcon
+					aria-hidden="true"
 					className={cn(
-						"absolute transition-all duration-200",
-						copied
-							? "scale-0 opacity-0 blur-[2px]"
-							: "scale-100 opacity-100 blur-none"
+						"transition-all duration-200 ease-out",
+						resolvedSize.icon,
+						copied ? "scale-75 opacity-0" : "scale-100 opacity-100"
 					)}
-				>
-					<CopyIcon
-						aria-hidden="true"
-						size={iconSize}
-						strokeWidth={2}
-					/>
-				</div>
+					strokeWidth={2}
+				/>
 			</button>
 		);
 	}
