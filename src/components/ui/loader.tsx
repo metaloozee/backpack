@@ -1,10 +1,10 @@
 "use client";
 
 import { cva, type VariantProps } from "class-variance-authority";
-import { motion } from "motion/react";
+import { Spinner } from "@/components/spinner";
 import { cn } from "@/lib/utils";
 
-const loaderVariants = cva("rounded-full border-2 will-change-transform", {
+const loaderVariants = cva("", {
 	variants: {
 		size: {
 			sm: "size-3",
@@ -14,45 +14,30 @@ const loaderVariants = cva("rounded-full border-2 will-change-transform", {
 			xl: "size-8",
 		},
 		variant: {
-			default: "border-muted border-t-current",
-			primary: "border-primary/20 border-t-primary",
-			secondary: "border-secondary/20 border-t-secondary",
-			destructive: "border-destructive/20 border-t-destructive",
-			muted: "border-muted border-t-muted-foreground",
-			accent: "border-accent/20 border-t-accent-foreground",
-		},
-		speed: {
-			slow: "",
-			default: "",
-			fast: "",
+			default: "text-muted-foreground",
+			primary: "text-primary",
+			secondary: "text-secondary-foreground",
+			destructive: "text-destructive",
+			muted: "text-muted-foreground",
+			accent: "text-accent-foreground",
 		},
 	},
 	defaultVariants: {
 		size: "default",
 		variant: "default",
-		speed: "default",
 	},
 });
 
-const speedConfig = {
-	slow: { duration: 2 },
-	default: { duration: 1 },
-	fast: { duration: 0.6 },
+const speedMap = {
+	slow: "slow",
+	default: "normal",
+	fast: "fast",
 } as const;
 
 interface LoaderProps extends VariantProps<typeof loaderVariants> {
-	/**
-	 * Additional CSS classes to apply
-	 */
 	className?: string;
-	/**
-	 * Whether to show the loader
-	 * @default true
-	 */
 	show?: boolean;
-	/**
-	 * Test id for testing purposes
-	 */
+	speed?: keyof typeof speedMap;
 	"data-testid"?: string;
 }
 
@@ -69,15 +54,10 @@ function Loader({
 	}
 
 	return (
-		<motion.div
-			animate={{ rotate: 360 }}
-			className={cn(loaderVariants({ size, variant, speed }), className)}
+		<Spinner
+			className={cn(loaderVariants({ size, variant }), className)}
 			data-testid={testId}
-			transition={{
-				...speedConfig[speed ?? "default"],
-				repeat: Number.POSITIVE_INFINITY,
-				ease: "linear",
-			}}
+			speed={speedMap[speed ?? "default"]}
 		/>
 	);
 }

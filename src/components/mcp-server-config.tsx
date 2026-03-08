@@ -5,13 +5,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	ActivityIcon,
 	KeyIcon,
-	Loader2Icon,
 	PencilIcon,
 	PlusIcon,
 	TrashIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Spinner } from "@/components/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -540,11 +540,7 @@ function ServerDialog({
 									}
 									type="submit"
 								>
-									{isSubmitting ? (
-										<Loader2Icon className="animate-spin" />
-									) : (
-										submitLabel
-									)}
+									{isSubmitting ? <Spinner /> : submitLabel}
 								</Button>
 							)}
 						</form.Subscribe>

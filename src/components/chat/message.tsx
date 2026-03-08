@@ -1,21 +1,25 @@
 "use client";
 
 import type { UseChatHelpers } from "@ai-sdk/react";
-import equal from "fast-deep-equal";
-import {
-	CheckIcon,
-	ChevronDownIcon,
-	ChevronUpIcon,
-	CopyIcon,
-	PencilLineIcon,
-} from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, RefreshCcwIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { memo, type ReactNode, useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
-import { useCopyToClipboard } from "usehooks-ts";
-import { Markdown } from "@/components/chat/markdown";
-import { MessageActions } from "@/components/chat/message-actions";
-import { PreviewAttachment } from "@/components/chat/preview-attachment";
+import Image from "next/image";
+import { type ComponentProps, type ReactNode, useState } from "react";
+import { Streamdown } from "streamdown";
+import {
+	Attachment,
+	AttachmentInfo,
+	AttachmentPreview,
+	Attachments,
+} from "@/components/ai-elements/attachments";
+import {
+	Message as ChatMessageItem,
+	MessageAction,
+	MessageActions,
+	MessageContent,
+	MessageResponse,
+	MessageToolbar,
+} from "@/components/ai-elements/message";
 import { AcademicSearchTool } from "@/components/chat/tools/academic-search-tool";
 import { ExtractTool } from "@/components/chat/tools/extract";
 import { FinanceSearchTool } from "@/components/chat/tools/finance-search-tool";
@@ -26,573 +30,314 @@ import {
 } from "@/components/chat/tools/mcp-tool-result";
 import { SaveToMemoriesTool } from "@/components/chat/tools/save-to-memories";
 import { WebSearchTool } from "@/components/chat/tools/web-search-tool";
+import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { Disclosure, DisclosureTrigger } from "@/components/ui/disclosure";
-import { Loader } from "@/components/ui/loader";
 import type { ChatMessage } from "@/lib/ai/types";
-import { sanitizeText } from "@/lib/ai/utils";
+import { getTextFromMessage, sanitizeText } from "@/lib/ai/utils";
 import { transitions } from "@/lib/animations";
+import { streamdownPlugins } from "@/lib/streamdown";
 import { cn } from "@/lib/utils";
-import { useDataStream } from "../data-stream-provider";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "../ui/tooltip";
-import { MessageEditor } from "./message-editor";
 
-interface MessageReasoningProps {
-	isLoading: boolean;
-	reasoning: string;
+type MessagePart = ChatMessage["parts"][number];
+
+const TOOL_PREFIX_REGEX = /^tool-/;
+
+function createToolCallId(part: MessagePart, fallbackId: string) {
+	return "toolCallId" in part && typeof part.toolCallId === "string"
+		? part.toolCallId
+		: fallbackId;
 }
 
-// Helper function to render extract tool parts
-// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
-function renderExtractTool(part: any, key: string): ReactNode {
-	const { toolCallId, state } = part;
-
-	if (state === "input-available") {
-		const { input } = part;
-		return <ExtractTool input={input} key={key} toolCallId={toolCallId} />;
+function getDynamicToolState(partType: string, state: unknown) {
+	if (partType === "tool-result") {
+		return "output-available";
 	}
 
-	if (state === "output-available") {
-		const { output } = part;
-		return (
-			<ExtractTool
-				key={key}
-				output={output?.results}
-				toolCallId={toolCallId}
-			/>
-		);
+	if (partType === "tool-error") {
+		return "output-error";
+	}
+
+	if (typeof state === "string") {
+		return state;
+	}
+
+	return "input-available";
+}
+
+const DYNAMIC_TOOL_TYPES = ["tool-call", "tool-result", "tool-error"];
+
+function getNormalizedStaticToolData(part: MessagePart, fallbackId: string) {
+	if (
+		typeof part.type === "string" &&
+		part.type.startsWith("tool-") &&
+		!DYNAMIC_TOOL_TYPES.includes(part.type)
+	) {
+		return {
+			type: part.type,
+			state: "state" in part ? part.state : undefined,
+			input: "input" in part ? part.input : undefined,
+			output: "output" in part ? part.output : undefined,
+			errorText: "errorText" in part ? part.errorText : undefined,
+			toolName: part.type.replace(TOOL_PREFIX_REGEX, ""),
+			toolCallId: createToolCallId(part, fallbackId),
+		};
 	}
 
 	return null;
 }
 
-// Helper function to render save to memories tool parts
-// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
-function renderSaveToMemoriesTool(part: any, key: string): ReactNode {
-	const { toolCallId, state } = part;
+function getNormalizedDynamicToolData(part: MessagePart, fallbackId: string) {
+	const partType = part.type as string;
 
-	if (state === "input-available") {
-		const { input } = part;
-		return (
-			<SaveToMemoriesTool
-				input={input}
-				key={key}
-				toolCallId={toolCallId}
-			/>
-		);
-	}
+	if (
+		partType === "tool-call" ||
+		partType === "tool-result" ||
+		partType === "tool-error" ||
+		partType === "dynamic-tool"
+	) {
+		const toolName =
+			"toolName" in part && typeof part.toolName === "string"
+				? part.toolName
+				: "unknown";
 
-	if (state === "output-available") {
-		const { output } = part;
-		return (
-			<SaveToMemoriesTool
-				key={key}
-				output={output}
-				toolCallId={toolCallId}
-			/>
-		);
-	}
-
-	return null;
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
-function renderWebSearchTool(part: any, key: string): ReactNode {
-	const { toolCallId, state } = part;
-
-	if (state === "input-available") {
-		const { input } = part;
-		return (
-			<WebSearchTool input={input} key={key} toolCallId={toolCallId} />
-		);
-	}
-
-	if (state === "output-available") {
-		const { output } = part;
-		return (
-			<WebSearchTool key={key} output={output} toolCallId={toolCallId} />
-		);
+		return {
+			type: `tool-${toolName}`,
+			state:
+				"state" in part
+					? getDynamicToolState(partType, part.state)
+					: getDynamicToolState(partType, undefined),
+			input: "input" in part ? part.input : undefined,
+			output: "output" in part ? part.output : undefined,
+			errorText:
+				"errorText" in part && typeof part.errorText === "string"
+					? part.errorText
+					: undefined,
+			toolName,
+			toolCallId: createToolCallId(part, fallbackId),
+		};
 	}
 
 	return null;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
-function renderKnowledgeSearchTool(part: any, key: string): ReactNode {
-	const { toolCallId, state } = part;
-
-	if (state === "input-available") {
-		const { input } = part;
-		return (
-			<KnowledgeSearchTool
-				input={input}
-				key={key}
-				toolCallId={toolCallId}
-			/>
-		);
-	}
-
-	if (state === "output-available") {
-		const { output } = part;
-		return (
-			<KnowledgeSearchTool
-				key={key}
-				output={output || undefined}
-				toolCallId={toolCallId}
-			/>
-		);
-	}
-
-	return null;
+function getNormalizedToolData(part: MessagePart, fallbackId: string) {
+	return (
+		getNormalizedStaticToolData(part, fallbackId) ??
+		getNormalizedDynamicToolData(part, fallbackId)
+	);
 }
 
-// Helper function to render academic search tool parts
-// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
-function renderAcademicSearchTool(part: any, key: string): ReactNode {
-	const { toolCallId, state } = part;
-
-	if (state === "input-available") {
-		const { input } = part;
-		return (
-			<AcademicSearchTool
-				input={input}
-				key={key}
-				toolCallId={toolCallId}
-			/>
-		);
-	}
-
-	if (state === "output-available") {
-		const { output } = part;
-		return (
-			<AcademicSearchTool
-				key={key}
-				output={output?.results}
-				toolCallId={toolCallId}
-			/>
-		);
-	}
-
-	return null;
-}
-
-// Helper function to render finance search tool parts
-// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
-function renderFinanceSearchTool(part: any, key: string): ReactNode {
-	const { toolCallId, state } = part;
-
-	if (state === "input-available") {
-		const { input } = part;
-		return (
-			<FinanceSearchTool
-				input={input}
-				key={key}
-				toolCallId={toolCallId}
-			/>
-		);
-	}
-
-	if (state === "output-available") {
-		const { output } = part;
-		return (
-			<FinanceSearchTool
-				key={key}
-				output={output || undefined}
-				toolCallId={toolCallId}
-			/>
-		);
-	}
-
-	return null;
-}
-
-// Helper function to parse MCP tool name into server and tool parts
 function parseMcpToolName(toolName: string): {
 	serverName: string;
 	toolName: string;
 } {
-	// Format: mcp_serverName_toolName
-	const withoutPrefix = toolName.slice(4); // Remove "mcp_"
+	const withoutPrefix = toolName.slice(4);
 	const firstUnderscore = withoutPrefix.indexOf("_");
+
 	if (firstUnderscore === -1) {
 		return { serverName: withoutPrefix, toolName: "" };
 	}
+
 	return {
 		serverName: withoutPrefix.slice(0, firstUnderscore),
 		toolName: withoutPrefix.slice(firstUnderscore + 1),
 	};
 }
 
-// Helper function to render MCP tool parts
-// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
-function renderMcpTool(part: any, key: string): ReactNode {
-	const { toolCallId, state, toolName: fullToolName, input, output } = part;
-	const { serverName, toolName } = parseMcpToolName(
-		fullToolName.replace("tool-", "")
+function renderExtractTool(
+	tool: NonNullable<ReturnType<typeof getNormalizedToolData>>
+) {
+	if (tool.state === "output-available") {
+		return (
+			<ExtractTool
+				key={`${tool.toolCallId}-${tool.type}`}
+				output={
+					tool.output &&
+					typeof tool.output === "object" &&
+					"results" in tool.output
+						? (tool.output.results as ComponentProps<
+								typeof ExtractTool
+							>["output"])
+						: undefined
+				}
+				toolCallId={tool.toolCallId}
+			/>
+		);
+	}
+
+	return (
+		<ExtractTool
+			input={tool.input as ComponentProps<typeof ExtractTool>["input"]}
+			key={`${tool.toolCallId}-${tool.type}`}
+			toolCallId={tool.toolCallId}
+		/>
 	);
+}
 
-	// Determine content based on state or fallback to available data
-	const content = output ?? input ?? {};
-	const isError = state === "output-error";
+function renderSaveToMemoriesTool(
+	tool: NonNullable<ReturnType<typeof getNormalizedToolData>>
+) {
+	return (
+		<SaveToMemoriesTool
+			input={
+				tool.state === "output-available"
+					? undefined
+					: (tool.input as ComponentProps<
+							typeof SaveToMemoriesTool
+						>["input"])
+			}
+			key={`${tool.toolCallId}-${tool.type}`}
+			output={
+				tool.state === "output-available"
+					? (tool.output as ComponentProps<
+							typeof SaveToMemoriesTool
+						>["output"])
+					: undefined
+			}
+			toolCallId={tool.toolCallId}
+		/>
+	);
+}
+
+function renderWebSearchToolPart(
+	tool: NonNullable<ReturnType<typeof getNormalizedToolData>>
+) {
+	return (
+		<WebSearchTool
+			input={
+				tool.state === "output-available"
+					? undefined
+					: (tool.input as ComponentProps<
+							typeof WebSearchTool
+						>["input"])
+			}
+			key={`${tool.toolCallId}-${tool.type}`}
+			output={
+				tool.state === "output-available"
+					? (tool.output as ComponentProps<
+							typeof WebSearchTool
+						>["output"])
+					: undefined
+			}
+			toolCallId={tool.toolCallId}
+		/>
+	);
+}
+
+function renderKnowledgeSearchToolPart(
+	tool: NonNullable<ReturnType<typeof getNormalizedToolData>>
+) {
+	return (
+		<KnowledgeSearchTool
+			input={
+				tool.state === "output-available"
+					? undefined
+					: (tool.input as ComponentProps<
+							typeof KnowledgeSearchTool
+						>["input"])
+			}
+			key={`${tool.toolCallId}-${tool.type}`}
+			output={
+				tool.state === "output-available"
+					? (tool.output as ComponentProps<
+							typeof KnowledgeSearchTool
+						>["output"])
+					: undefined
+			}
+			toolCallId={tool.toolCallId}
+		/>
+	);
+}
+
+function renderAcademicSearchToolPart(
+	tool: NonNullable<ReturnType<typeof getNormalizedToolData>>
+) {
+	return (
+		<AcademicSearchTool
+			input={
+				tool.state === "output-available"
+					? undefined
+					: (tool.input as ComponentProps<
+							typeof AcademicSearchTool
+						>["input"])
+			}
+			key={`${tool.toolCallId}-${tool.type}`}
+			output={
+				tool.state === "output-available" &&
+				tool.output &&
+				typeof tool.output === "object" &&
+				"results" in tool.output
+					? (tool.output.results as ComponentProps<
+							typeof AcademicSearchTool
+						>["output"])
+					: undefined
+			}
+			toolCallId={tool.toolCallId}
+		/>
+	);
+}
+
+function renderFinanceSearchToolPart(
+	tool: NonNullable<ReturnType<typeof getNormalizedToolData>>
+) {
+	return (
+		<FinanceSearchTool
+			input={
+				tool.state === "output-available"
+					? undefined
+					: (tool.input as ComponentProps<
+							typeof FinanceSearchTool
+						>["input"])
+			}
+			key={`${tool.toolCallId}-${tool.type}`}
+			output={
+				tool.state === "output-available"
+					? (tool.output as ComponentProps<
+							typeof FinanceSearchTool
+						>["output"])
+					: undefined
+			}
+			toolCallId={tool.toolCallId}
+		/>
+	);
+}
+
+function renderMcpToolPart(
+	tool: NonNullable<ReturnType<typeof getNormalizedToolData>>
+) {
+	if (!tool.toolName.startsWith("mcp_")) {
+		return null;
+	}
+
+	const { serverName, toolName } = parseMcpToolName(tool.toolName);
+	const isError = tool.state === "output-error";
 	const isLoading =
-		state === "input-streaming" || state === "input-available";
+		tool.state === "input-streaming" || tool.state === "input-available";
+	let resolvedState = tool.state;
 
-	const getResolvedState = (): McpToolResultProps["state"] => {
-		if (isLoading) {
-			return state;
-		}
-		if (output) {
-			return "output-available";
-		}
-		return state;
-	};
+	if (!isLoading && tool.output) {
+		resolvedState = "output-available";
+	}
 
 	return (
 		<McpToolResult
-			content={content}
+			input={tool.input}
 			isError={isError}
-			key={key}
+			key={`${tool.toolCallId}-${tool.type}`}
+			output={
+				tool.output ??
+				(tool.errorText ? { error: tool.errorText } : undefined)
+			}
 			serverName={serverName}
-			state={getResolvedState()}
-			toolCallId={toolCallId}
+			state={resolvedState as McpToolResultProps["state"]}
+			toolCallId={tool.toolCallId}
 			toolName={toolName}
 		/>
 	);
 }
 
-function renderTextPart(
-	// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
-	messagePart: any,
-	key: string,
-	props: {
-		message: ChatMessage;
-		mode: "view" | "edit";
-		setMode: React.Dispatch<React.SetStateAction<"view" | "edit">>;
-		setMessages: UseChatHelpers<ChatMessage>["setMessages"];
-		regenerate: UseChatHelpers<ChatMessage>["regenerate"];
-		isCopied: boolean;
-		onCopySuccess: () => void;
-		copyToClipboard: ReturnType<typeof useCopyToClipboard>[1];
-	}
-): ReactNode {
-	const {
-		message,
-		mode,
-		setMode,
-		setMessages,
-		regenerate,
-		isCopied,
-		onCopySuccess,
-		copyToClipboard,
-	} = props;
-	return (
-		<div className="w-full" key={key}>
-			<AnimatePresence initial={false} mode="wait">
-				{mode === "view" ? (
-					<motion.div
-						animate={{ opacity: 1, height: "auto" }}
-						exit={{ opacity: 0.5, height: 0 }}
-						initial={{ opacity: 0.5, height: 0 }}
-						key="view"
-						style={{ overflow: "hidden" }}
-						transition={{
-							duration: 0.3,
-							ease: "easeInOut",
-						}}
-					>
-						<div
-							className={cn(
-								"group/message flex w-full flex-row items-center gap-2",
-								{
-									"justify-end": message.role === "user",
-								}
-							)}
-						>
-							{message.role === "user" && (
-								<TooltipProvider delayDuration={200}>
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												className="rounded opacity-0 transition-all duration-200 ease-in-out group-hover/message:opacity-100"
-												data-testid="message-edit-button"
-												onClick={() => {
-													setMode("edit");
-												}}
-												size={"icon"}
-												variant="ghost"
-											>
-												<PencilLineIcon className="size-3" />
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent sideOffset={10}>
-											Edit Message
-										</TooltipContent>
-									</Tooltip>
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												className="rounded opacity-0 transition-all duration-200 ease-in-out group-hover/message:opacity-100"
-												data-testid="message-copy-button"
-												onClick={async () => {
-													const textFromParts =
-														message.parts
-															?.filter(
-																(textPart) =>
-																	textPart.type ===
-																	"text"
-															)
-															.map(
-																(textPart) =>
-																	textPart.text
-															)
-															.join("\n")
-															.trim();
-
-													if (!textFromParts) {
-														return toast.error(
-															"There is no text to copy."
-														);
-													}
-
-													await copyToClipboard(
-														textFromParts
-													);
-													onCopySuccess();
-												}}
-												size={"icon"}
-												variant="ghost"
-											>
-												<AnimatePresence
-													initial={false}
-													mode="wait"
-												>
-													{isCopied ? (
-														<motion.div
-															animate={{
-																scale: 1,
-																opacity: 1,
-																rotate: 0,
-															}}
-															exit={{
-																scale: 0,
-																opacity: 0,
-																rotate: 180,
-															}}
-															initial={{
-																scale: 0,
-																opacity: 0,
-																rotate: -180,
-															}}
-															key="check"
-															transition={
-																transitions.bouncy
-															}
-														>
-															<CheckIcon className="size-3" />
-														</motion.div>
-													) : (
-														<motion.div
-															animate={{
-																scale: 1,
-																opacity: 1,
-																rotate: 0,
-															}}
-															exit={{
-																scale: 0,
-																opacity: 0,
-																rotate: 180,
-															}}
-															initial={{
-																scale: 0,
-																opacity: 0,
-																rotate: -180,
-															}}
-															key="copy"
-															transition={
-																transitions.smooth
-															}
-														>
-															<CopyIcon className="size-3" />
-														</motion.div>
-													)}
-												</AnimatePresence>
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent sideOffset={10}>
-											<p>
-												{isCopied
-													? "Copied!"
-													: "Copy message"}
-											</p>
-										</TooltipContent>
-									</Tooltip>
-								</TooltipProvider>
-							)}
-							<div
-								className={cn(
-									"flex flex-col gap-4 overflow-x-auto",
-									{
-										"border bg-neutral-900 px-4 py-1 text-primary":
-											message.role === "user",
-									},
-									message.parts.filter(
-										(filePart) => filePart.type === "file"
-									).length > 0
-										? "rounded-b-xl rounded-tl-xl"
-										: "rounded-t-xl rounded-bl-xl"
-								)}
-								data-testid="message-content"
-							>
-								<Markdown>
-									{sanitizeText(messagePart.text)}
-								</Markdown>
-							</div>
-						</div>
-					</motion.div>
-				) : (
-					<motion.div
-						animate={{ opacity: 1, height: "auto" }}
-						exit={{ opacity: 0.5, height: 0 }}
-						initial={{ opacity: 0.5, height: 0 }}
-						key="edit"
-						style={{ overflow: "hidden" }}
-						transition={{
-							duration: 0.3,
-							ease: "easeInOut",
-						}}
-					>
-						<MessageEditor
-							key={message.id}
-							message={message}
-							regenerate={regenerate}
-							setMessages={setMessages}
-							setMode={setMode}
-						/>
-					</motion.div>
-				)}
-			</AnimatePresence>
-		</div>
-	);
-}
-
-function renderMessagePart(
-	// biome-ignore lint/suspicious/noExplicitAny: Complex message part types require any
-	messagePart: any,
-	index: number,
-	props: {
-		message: ChatMessage;
-		isLoading: boolean;
-		mode: "view" | "edit";
-		setMode: React.Dispatch<React.SetStateAction<"view" | "edit">>;
-		setMessages: UseChatHelpers<ChatMessage>["setMessages"];
-		regenerate: UseChatHelpers<ChatMessage>["regenerate"];
-		isCopied: boolean;
-		onCopySuccess: () => void;
-		copyToClipboard: ReturnType<typeof useCopyToClipboard>[1];
-	}
-): ReactNode {
-	const { message, isLoading } = props;
-	const { type } = messagePart;
-	const key = `message-${message.id}-part-${index}`;
-
-	// Debug: Log all tool parts
-	if (typeof type === "string" && type.startsWith("tool-")) {
-		console.log("[renderMessagePart] Tool part:", {
-			type,
-			state: messagePart.state,
-			toolCallId: messagePart.toolCallId,
-			hasInput: !!messagePart.input,
-			hasOutput: !!messagePart.output,
-		});
-	}
-
-	if (type === "reasoning" && messagePart.text?.trim().length > 0) {
-		return (
-			<MessageReasoning
-				isLoading={isLoading}
-				key={key}
-				reasoning={messagePart.text}
-			/>
-		);
-	}
-
-	if (type === "text") {
-		return renderTextPart(messagePart, key, props);
-	}
-
-	if (type === "tool-extract") {
-		return renderExtractTool(messagePart, key);
-	}
-
-	if (type === "tool-save_to_memories") {
-		return renderSaveToMemoriesTool(messagePart, key);
-	}
-
-	if (type === "tool-web_search") {
-		return renderWebSearchTool(messagePart, key);
-	}
-
-	if (type === "tool-knowledge_search") {
-		return renderKnowledgeSearchTool(messagePart, key);
-	}
-
-	if (type === "tool-academic_search") {
-		return renderAcademicSearchTool(messagePart, key);
-	}
-
-	if (type === "tool-finance_search") {
-		return renderFinanceSearchTool(messagePart, key);
-	}
-
-	// Handle MCP tools (format: tool-mcp_serverName_toolName)
-	if (typeof type === "string" && type.startsWith("tool-mcp_")) {
-		return renderMcpTool({ ...messagePart, toolName: type }, key);
-	}
-
-	// Handle MCP tools in UIMessageStream format (tool-call/tool-result/tool-error)
-	if (
-		type === "tool-call" ||
-		type === "tool-result" ||
-		type === "tool-error"
-	) {
-		const { toolName } = messagePart as { toolName?: string };
-		if (toolName?.startsWith("mcp_")) {
-			return renderMcpTool(
-				{
-					...messagePart,
-					toolName: `tool-${toolName}`,
-				},
-				key
-			);
-		}
-	}
-
-	// Handle MCP tools in dynamic-tool format
-	if (type === "dynamic-tool") {
-		const { toolName } = messagePart as { toolName?: string };
-		if (toolName?.startsWith("mcp_")) {
-			return renderMcpTool(
-				{
-					...messagePart,
-					toolName: `tool-${toolName}`,
-				},
-				key
-			);
-		}
-	}
-
-	return null;
-}
-
-export function MessageReasoning({
-	isLoading,
-	reasoning,
-}: MessageReasoningProps) {
+function MessageReasoning({ reasoning }: { reasoning: string }) {
 	const [isExpanded, setIsExpanded] = useState(false);
 
 	return (
@@ -608,9 +353,14 @@ export function MessageReasoning({
 				className="relative overflow-hidden"
 			>
 				<div className="text-neutral-600 dark:text-neutral-400">
-					<Markdown>{reasoning}</Markdown>
+					<Streamdown
+						className="text-sm leading-7 sm:text-base"
+						plugins={streamdownPlugins}
+					>
+						{reasoning}
+					</Streamdown>
 				</div>
-				{!isExpanded && (
+				{isExpanded ? null : (
 					<div className="pointer-events-none absolute bottom-0 left-0 h-20 w-full bg-gradient-to-t from-background to-transparent" />
 				)}
 			</motion.div>
@@ -619,7 +369,7 @@ export function MessageReasoning({
 				<DisclosureTrigger>
 					<Button
 						className="dark:!text-neutral-500 !text-neutral-600 overflow-hidden text-xs"
-						size={"sm"}
+						size="sm"
 						variant="ghost"
 					>
 						<AnimatePresence mode="wait">
@@ -632,9 +382,8 @@ export function MessageReasoning({
 									opacity: 0,
 								}}
 								key={isExpanded ? "expanded" : "collapsed"}
-								transition={{ duration: 0.15 }}
+								transition={transitions.fast}
 							>
-								{isLoading && <Loader size="sm" />}
 								{isExpanded ? (
 									<>
 										Hide Reasoning
@@ -655,127 +404,235 @@ export function MessageReasoning({
 	);
 }
 
-export function Message({
-	message,
-	isLoading,
-	setMessages,
-	regenerate,
-	requiresScrollPadding,
-}: {
-	message: ChatMessage;
-	isLoading: boolean;
-	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
-	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
-	requiresScrollPadding: boolean;
-}) {
-	const [mode, setMode] = useState<"view" | "edit">("view");
-	const [_, copyToClipboard] = useCopyToClipboard();
-	const [isCopied, setIsCopied] = useState(false);
+function renderToolPart(
+	part: MessagePart,
+	message: ChatMessage,
+	partIndex: number
+): ReactNode {
+	const fallbackId = `${message.id}-${partIndex}`;
+	const tool = getNormalizedToolData(part, fallbackId);
 
-	useEffect(() => {
-		if (!isCopied) {
-			return;
-		}
-		const timer = setTimeout(() => {
-			setIsCopied(false);
-		}, 2000);
-		return () => clearTimeout(timer);
-	}, [isCopied]);
+	if (!tool) {
+		return null;
+	}
 
-	const onCopySuccess = useCallback(() => {
-		setIsCopied(true);
-	}, []);
+	switch (tool.type) {
+		case "tool-extract":
+			return renderExtractTool(tool);
+		case "tool-save_to_memories":
+			return renderSaveToMemoriesTool(tool);
+		case "tool-web_search":
+			return renderWebSearchToolPart(tool);
+		case "tool-knowledge_search":
+			return renderKnowledgeSearchToolPart(tool);
+		case "tool-academic_search":
+			return renderAcademicSearchToolPart(tool);
+		case "tool-finance_search":
+			return renderFinanceSearchToolPart(tool);
+		default:
+			return renderMcpToolPart(tool);
+	}
+}
 
-	const attachmentsFromMessage = message.parts.filter(
-		(part) => part.type === "file"
-	);
-
-	useDataStream();
+function renderTextPart(
+	part: MessagePart,
+	message: ChatMessage,
+	index: number
+) {
+	if (part.type !== "text") {
+		return null;
+	}
 
 	return (
-		<AnimatePresence>
-			<motion.div
-				animate={{ y: 0, opacity: 1 }}
-				className="message-item mx-auto w-full max-w-3xl px-4"
-				data-role={message.role}
-				data-testid={`message-${message.id}`}
-				initial={{ y: 5, opacity: 0 }}
-			>
-				<div
-					className={cn("flex w-full gap-4", {
-						"my-10": message.role === "user",
-					})}
-				>
-					<div
-						className={cn("flex w-full flex-col gap-4", {
-							"min-h-96":
-								message.role === "assistant" &&
-								requiresScrollPadding,
-						})}
-					>
-						{attachmentsFromMessage.length > 0 && (
-							<div
-								className="flex flex-row justify-end gap-2"
-								data-testid={"message-attachments"}
-							>
-								{attachmentsFromMessage.map((attachment) => (
-									<PreviewAttachment
-										attachment={{
-											name: attachment.filename ?? "file",
-											contentType: attachment.mediaType,
-											url: attachment.url,
-										}}
-										key={attachment.url}
-										showName={false}
-									/>
-								))}
-							</div>
-						)}
-
-						{message.parts
-							?.map((messagePart, index) =>
-								renderMessagePart(messagePart, index, {
-									message,
-									isLoading,
-									mode,
-									setMode,
-									setMessages,
-									regenerate,
-									isCopied,
-									onCopySuccess,
-									copyToClipboard,
-								})
-							)
-							.filter(Boolean)}
-
-						<MessageActions
-							isLoading={isLoading}
-							message={message}
-						/>
-					</div>
-				</div>
-			</motion.div>
-		</AnimatePresence>
+		<MessageResponse
+			className={cn(
+				message.role !== "user" &&
+					"w-full rounded-2xl bg-background/70 px-4 py-3"
+			)}
+			key={`${message.id}-text-${index}`}
+		>
+			{sanitizeText(part.text)}
+		</MessageResponse>
 	);
 }
 
-export const PreviewMessage = memo(Message, (prevProps, nextProps) => {
-	// During loading/streaming, always re-render to show updates
-	if (prevProps.isLoading || nextProps.isLoading) {
-		return false;
+function renderMessagePart(
+	part: MessagePart,
+	message: ChatMessage,
+	index: number
+) {
+	if (part.type === "reasoning" || part.type === "file") {
+		return null;
 	}
 
-	if (!equal(prevProps.message.id, nextProps.message.id)) {
-		return false;
-	}
-	if (
-		!equal(prevProps.requiresScrollPadding, nextProps.requiresScrollPadding)
-	) {
-		return false;
-	}
-	if (!equal(prevProps.message.parts, nextProps.message.parts)) {
-		return false;
+	if (part.type === "text") {
+		return renderTextPart(part, message, index);
 	}
 
-	return true;
-});
+	return renderToolPart(part, message, index);
+}
+
+function renderAttachments(message: ChatMessage) {
+	const fileParts = message.parts.filter((part) => part.type === "file");
+
+	if (fileParts.length === 0) {
+		return null;
+	}
+
+	if (message.role === "user") {
+		const imageParts = fileParts.filter((p) =>
+			p.mediaType?.startsWith("image/")
+		);
+		const otherParts = fileParts.filter(
+			(p) => !p.mediaType?.startsWith("image/")
+		);
+
+		return (
+			<>
+				{imageParts.length > 0 ? (
+					<div className="flex flex-wrap gap-2">
+						{imageParts.map((part, index) => (
+							<div
+								className="relative aspect-video w-60 overflow-hidden rounded-2xl border border-white/10"
+								key={`${message.id}-img-${part.url}-${index}`}
+							>
+								<Image
+									alt={getAttachmentFilename(part, index)}
+									className="object-cover"
+									fill
+									sizes="240px"
+									src={part.url}
+								/>
+							</div>
+						))}
+					</div>
+				) : null}
+
+				{otherParts.length > 0 ? (
+					<Attachments variant="inline">
+						{otherParts.map((part, index) => (
+							<Attachment
+								data={{
+									filename: getAttachmentFilename(
+										part,
+										imageParts.length + index
+									),
+									mediaType: part.mediaType,
+									url: part.url,
+								}}
+								key={`${message.id}-file-${part.url}-${index}`}
+								variant="inline"
+							>
+								<AttachmentPreview />
+								<AttachmentInfo className="pr-2" />
+							</Attachment>
+						))}
+					</Attachments>
+				) : null}
+			</>
+		);
+	}
+
+	return (
+		<Attachments variant="grid">
+			{fileParts.map((part, index) => (
+				<Attachment
+					data={{
+						filename: getAttachmentFilename(part, index),
+						mediaType: part.mediaType,
+						url: part.url,
+					}}
+					key={`${message.id}-file-${part.url}-${index}`}
+					variant="grid"
+				>
+					<AttachmentPreview />
+					<div className="space-y-2 p-3">
+						<AttachmentInfo showMediaType={true} />
+					</div>
+				</Attachment>
+			))}
+		</Attachments>
+	);
+}
+
+function getAttachmentFilename(
+	part: Extract<MessagePart, { type: "file" }>,
+	index: number
+) {
+	if (typeof part.filename === "string") {
+		return part.filename;
+	}
+
+	if ("name" in part && typeof part.name === "string") {
+		return part.name;
+	}
+
+	return `attachment-${index + 1}`;
+}
+
+export function Message({
+	message,
+	isLoading,
+	regenerate,
+	isLatestAssistant,
+}: {
+	message: ChatMessage;
+	isLoading: boolean;
+	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
+	isLatestAssistant: boolean;
+}) {
+	const reasoningParts = message.parts.filter(
+		(part) => part.type === "reasoning"
+	);
+	const reasoningText = reasoningParts
+		.map((part) => part.text)
+		.join("\n\n")
+		.trim();
+	const hasReasoning = reasoningText.length > 0;
+	const textContent = getTextFromMessage(message);
+
+	return (
+		<div
+			className="message-item w-full"
+			data-testid={`message-${message.id}`}
+		>
+			<ChatMessageItem from={message.role}>
+				<MessageContent>
+					{renderAttachments(message)}
+
+					{hasReasoning ? (
+						<MessageReasoning reasoning={reasoningText} />
+					) : null}
+
+					{message.parts.map((part, index) =>
+						renderMessagePart(part, message, index)
+					)}
+				</MessageContent>
+
+				{message.role === "assistant" &&
+				isLatestAssistant &&
+				!isLoading ? (
+					<MessageToolbar>
+						<div />
+						<MessageActions>
+							<MessageAction
+								label="Retry"
+								onClick={() => regenerate()}
+								tooltip="Regenerate response"
+							>
+								<RefreshCcwIcon className="size-4" />
+							</MessageAction>
+							<MessageAction
+								asChild
+								label="Copy"
+								tooltip="Copy message content"
+							>
+								<CopyButton value={textContent} />
+							</MessageAction>
+						</MessageActions>
+					</MessageToolbar>
+				) : null}
+			</ChatMessageItem>
+		</div>
+	);
+}

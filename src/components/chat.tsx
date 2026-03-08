@@ -14,7 +14,6 @@ import { ChatMessages } from "@/components/chat/messages";
 import { SpaceIntro } from "@/components/chat/space-intro";
 import { Input as InputPanel } from "@/components/chat-input";
 import { useDataStream } from "@/components/data-stream-provider";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ToolsState } from "@/lib/ai/tools";
 import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/ai/utils";
@@ -292,15 +291,12 @@ export function Chat({
 			suppressHydrationWarning
 		>
 			{messages.length > 0 && (
-				<ScrollArea className="h-full w-full">
-					<ChatMessages
-						chatId={id}
-						messages={messages}
-						regenerate={regenerate}
-						setMessages={setMessages}
-						status={status}
-					/>
-				</ScrollArea>
+				<ChatMessages
+					chatId={id}
+					messages={messages}
+					regenerate={regenerate}
+					status={status}
+				/>
 			)}
 
 			{showSpaceIntro && (

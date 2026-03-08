@@ -13,12 +13,12 @@ import {
 	useReactTable,
 	type VisibilityState,
 } from "@tanstack/react-table";
-import { CheckIcon, CopyIcon, TrashIcon } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { TrashIcon } from "lucide-react";
 import { parseAsString, useQueryState } from "nuqs";
 import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "timeago.js";
+import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -57,7 +57,6 @@ export function DisplayMemories() {
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(
 		null
 	);
-	const [copiedId, setCopiedId] = useState<string | null>(null);
 
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
@@ -122,80 +121,22 @@ export function DisplayMemories() {
 					deleteMemoryMutation.mutate({ id: memory.id });
 				};
 
-				const handleCopy = async () => {
-					try {
-						await navigator.clipboard.writeText(memory.content);
-						setCopiedId(memory.id);
-						toast.success("Memory content copied to clipboard");
-						setTimeout(() => setCopiedId(null), 2000);
-					} catch {
-						toast.error("Failed to copy to clipboard");
-					}
-				};
-
 				return (
 					<div className="flex w-full justify-end space-x-2">
-						<Button
-							className="h-8"
-							onClick={handleCopy}
+						<CopyButton
+							className="h-8 w-8 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+							onCopy={() => {
+								toast.success(
+									"Memory content copied to clipboard"
+								);
+							}}
+							onCopyError={() => {
+								toast.error("Failed to copy to clipboard");
+							}}
 							size="sm"
-							variant="outline"
-						>
-							<AnimatePresence initial={false} mode="wait">
-								{copiedId === memory.id ? (
-									<motion.div
-										animate={{
-											scale: 1,
-											opacity: 1,
-											rotate: 0,
-										}}
-										exit={{
-											scale: 0,
-											opacity: 0,
-											rotate: 180,
-										}}
-										initial={{
-											scale: 0,
-											opacity: 0,
-											rotate: -180,
-										}}
-										key="check"
-										transition={{
-											type: "spring",
-											stiffness: 500,
-											damping: 30,
-										}}
-									>
-										<CheckIcon className="size-3" />
-									</motion.div>
-								) : (
-									<motion.div
-										animate={{
-											scale: 1,
-											opacity: 1,
-											rotate: 0,
-										}}
-										exit={{
-											scale: 0,
-											opacity: 0,
-											rotate: 180,
-										}}
-										initial={{
-											scale: 0,
-											opacity: 0,
-											rotate: -180,
-										}}
-										key="copy"
-										transition={{
-											type: "tween",
-											duration: 0.2,
-										}}
-									>
-										<CopyIcon className="size-3" />
-									</motion.div>
-								)}
-							</AnimatePresence>
-						</Button>
+							timeout={2000}
+							value={memory.content}
+						/>
 
 						<Dialog
 							onOpenChange={(open) =>

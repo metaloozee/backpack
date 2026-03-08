@@ -345,7 +345,7 @@ export function ModeSelector() {
 				)}
 			</motion.div>
 
-			<div className="relative flex w-[200px] gap-2">
+			<div className="relative flex max-w-[112px] items-center gap-1 overflow-hidden sm:max-w-[140px]">
 				<AnimatePresence initial={false}>
 					{mode === "ask" &&
 						defaultTools
@@ -368,7 +368,7 @@ export function ModeSelector() {
 										<TooltipProvider>
 											<Tooltip>
 												<TooltipTrigger asChild>
-													<div className="flex size-6 items-center justify-center rounded-full border border-neutral-800 bg-neutral-900">
+													<div className="flex size-6 shrink-0 items-center justify-center rounded-full border border-neutral-800 bg-neutral-900">
 														<Icon className="size-3.5 text-muted-foreground" />
 													</div>
 												</TooltipTrigger>

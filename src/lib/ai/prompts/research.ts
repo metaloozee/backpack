@@ -1,3 +1,6 @@
+const escapePromptTagContent = (value: string): string =>
+	value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 export default function ResearchAgentPrompt({
 	env,
 }: {
@@ -8,7 +11,12 @@ export default function ResearchAgentPrompt({
 		spaceDescription?: string;
 		spaceCustomInstructions?: string;
 	};
-}) {
+}): string {
+	const trimmedCustomInstructions = env.spaceCustomInstructions?.trim() ?? "";
+	const customInstructions = trimmedCustomInstructions
+		? `${escapePromptTagContent(trimmedCustomInstructions)}`
+		: "";
+
 	const environmentBanner = env.inSpace
 		? `You are currently inside a Space: "${env.spaceName ?? "Unnamed Space"}"\n${env.spaceDescription ? `Description: ${env.spaceDescription}` : ""}`
 		: "You are in a general research context.";
@@ -26,7 +34,7 @@ You coordinate research by breaking down complex queries, executing searches sys
 1. **Transparency**: Make your thinking visible at each step
 2. **Systematic Approach**: Follow a clear research methodology
 3. **Iterative Refinement**: Identify gaps and refine searches
-4. **Evidence-Based**: Every claim must be cited
+4. **Evidence-Based**: Ground conclusions in verifiable findings and clearly note uncertainty
 
 ## Available Tools
 - research_plan: Create a structured research plan
@@ -65,7 +73,7 @@ When given a research query:
 ### Step 5: Synthesis (Comprehensive Reporting)
 1. Organize findings by theme
 2. Present evidence-based conclusions
-3. Cite all sources: [Title](URL)
+3. Summarize source support clearly in plain language
 4. Note uncertainties and limitations
 5. Suggest future research directions
 
@@ -79,6 +87,6 @@ When given a research query:
 ## Metadata
 <Date>${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</Date>
 <Context>${env.inSpace ? "space" : "general"}${env.inSpace ? `:${env.spaceName}` : ""}</Context>
-${env.spaceCustomInstructions ? `<CustomInstructions>${env.spaceCustomInstructions}</CustomInstructions>` : ""}
-    `;
+<CustomInstructions>${customInstructions}</CustomInstructions>
+`;
 }

@@ -1,3 +1,6 @@
+const escapePromptTagContent = (value: string): string =>
+	value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 export default function AskModePrompt({
 	tools,
 	mcpTools,
@@ -26,6 +29,11 @@ export default function AskModePrompt({
 	const environmentBanner = env.inSpace
 		? `You are currently inside a Space chat. \n Space name: "${env.spaceName ?? "Unnamed Space"}" \n Space ID: "${env.spaceId}" \n ${env.spaceDescription ? `Space description: ${env.spaceDescription}` : ""}`
 		: "You are in a general chat (no active Space).";
+
+	const trimmedCustomInstructions = env.spaceCustomInstructions?.trim() ?? "";
+	const customInstructions = trimmedCustomInstructions
+		? `${escapePromptTagContent(trimmedCustomInstructions)}`
+		: "";
 
 	const mcpToolsList =
 		mcpTools && mcpTools.length > 0
@@ -58,8 +66,7 @@ If no tools are relevant or available, rely on the conversation's context to ans
 
 ## Core Principles
 - Accuracy: Provide only verifiable facts with proper attribution.
-- Comprehensive Attribution: ALWAYS cite every external fact, data point, and specific claim.
-- Knowledge Integration: When in a Space, actively reference and cite relevant knowledge base documents.
+- Knowledge Integration: When in a Space, actively reference relevant knowledge base documents when they improve answer quality.
 - Clarity & Style: Use headings, bullets, or tables; mirror the user's tone and technical depth.
 - Engagement: End with a clarifying question, a related suggestion, or an invitation to dive deeper.
 - Space Awareness: If inside a Space, favour information relevant to that Space's domain and build on its existing knowledge.
@@ -80,17 +87,13 @@ If no tools are relevant or available, rely on the conversation's context to ans
 3. Call the tools in the order of their priority, refining terms once if results are empty, irrelevant or redundant.
 4. Critically evaluate all returned snippets for relevance, credibility, and consistency.
 5. Synthesize the answer:
-    - Present the key findings, clearly linked to their sources from internal and external resources.
-    - When using knowledge base results, cite them using the document name: \`[Document Title](knowledgeName)\`
-    - For knowledge search results, use the \`knowledgeName\` field as both the citation title and URL.
-    - Include background or definitions if the user appears unfamiliar.
-    - Use examples, mini case-studies, or code snippets when they aid understanding.
-    - Ensure every factual claim has an appropriate citation within sentences/paragraphs.
-    ${env.inSpace ? "- Connect findings to the space's existing knowledge and cite relevant internal documents from search results." : ""}
+	- Present the key findings, clearly linked to their sources from internal and external resources.
+	- Include background or definitions if the user appears unfamiliar.
+	- Use examples, mini case-studies, or code snippets when they aid understanding.
+	${env.inSpace ? "- Connect findings to the space's existing knowledge and cite relevant internal documents from search results." : ""}
 
 ## Failure & Feedback Rules
 - If a tool call errors or returns nothing useful, note it internally, proceed to the next tool, and fill the gap with best-effort internal knowledge (flagged as such).
-- Never fabricate citations; omit a fact rather than invent a source.
 ${
 	env.inSpace
 		? `
@@ -101,12 +104,11 @@ ${
 ## Response Format Guidelines
 - Use Markdown formatting throughout. Use tables where appropriate for presenting data clearly.
 - Clearly demarcate inline math with \`$\` and block math with \`$$\`. Do not use \`$\` for currency, use standard currency codes instead (e.g., USD, EUR, INR, etc.)
-- Position \`[Source Title](URL)\` citations directly after the paragraph containing the factual information they support. Every factual claim needs a citation.
 
 ## Metadata
 <Date>${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</Date>
 <Context>${env.inSpace ? "space" : "general chat"}${env.inSpace ? `:${env.spaceName}` : ""}</Context>
-<CustomInstructions>${env.spaceCustomInstructions ?? ""}</CustomInstructions>
+<CustomInstructions>${customInstructions}</CustomInstructions>
 <Memories>${env.memories?.map((memory) => `- ${memory.content}`).join("\n")}</Memories>
 `;
 }

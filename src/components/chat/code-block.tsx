@@ -1,13 +1,14 @@
 "use client";
 
-import { CheckIcon, CopyIcon, DownloadIcon } from "lucide-react";
+import { DownloadIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
 	oneDark,
 	oneLight,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -111,56 +112,34 @@ export const CodeBlock = ({
 	</CodeBlockContext.Provider>
 );
 
-export type CodeBlockCopyButtonProps = ComponentProps<typeof Button> & {
+export type CodeBlockCopyButtonProps = Omit<
+	ComponentProps<typeof CopyButton>,
+	"value" | "onCopy" | "onCopyError" | "timeout" | "children"
+> & {
 	onCopy?: () => void;
-	onError?: (error: Error) => void;
+	onCopyError?: (error: Error) => void;
 	timeout?: number;
 };
 
 export const CodeBlockCopyButton = ({
 	onCopy,
-	onError,
+	onCopyError,
 	timeout = 2000,
-	children,
 	className,
-	...props
+	...rest
 }: CodeBlockCopyButtonProps) => {
-	const [isCopied, setIsCopied] = useState(false);
 	const { code } = useContext(CodeBlockContext);
 
-	const copyToClipboard = async () => {
-		if (typeof window === "undefined" || !navigator.clipboard.writeText) {
-			onError?.(new Error("Clipboard API not available"));
-			return;
-		}
-
-		try {
-			await navigator.clipboard.writeText(code);
-			setIsCopied(true);
-			if (onCopy) {
-				onCopy();
-			}
-			setTimeout(() => setIsCopied(false), timeout);
-		} catch (error) {
-			if (onError) {
-				onError(error as Error);
-			}
-		}
-	};
-
-	const Icon = isCopied ? CheckIcon : CopyIcon;
-
 	return (
-		<Button
+		<CopyButton
 			className={cn("size-8 shrink-0", className)}
-			onClick={copyToClipboard}
-			size="icon"
-			type="button"
-			variant="ghost"
-			{...props}
-		>
-			{children ?? <Icon className="size-3.5" />}
-		</Button>
+			onCopy={onCopy}
+			onCopyError={onCopyError}
+			size="sm"
+			timeout={timeout}
+			value={code}
+			{...rest}
+		/>
 	);
 };
 
