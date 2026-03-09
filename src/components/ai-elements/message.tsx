@@ -2,6 +2,7 @@
 
 import type * as React from "react";
 import { Streamdown } from "streamdown";
+import { Citation } from "@/components/chat/citation";
 import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
@@ -63,13 +64,26 @@ export function MessageResponse({
 }) {
 	return (
 		<Streamdown
+			allowedTags={{
+				citation: ["id", "url", "title", "description", "quote"],
+			}}
 			className={cn(
 				"streamdown-content",
 				"text-sm leading-7 sm:text-base",
 				"group-data-[message-from=user]/message:rounded-2xl group-data-[message-from=user]/message:bg-neutral-900 group-data-[message-from=user]/message:px-4 group-data-[message-from=user]/message:py-3 group-data-[message-from=user]/message:text-primary",
 				className
 			)}
-			components={components}
+			components={{
+				...components,
+				citation: ({ id, url, title, description }) => (
+					<Citation
+						description={(description as string) ?? ""}
+						id={(id as string) ?? ""}
+						title={(title as string) ?? ""}
+						url={(url as string) ?? ""}
+					/>
+				),
+			}}
 			linkSafety={{
 				enabled: false,
 			}}
