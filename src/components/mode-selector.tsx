@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
 	CheckIcon,
 	ServerIcon,
@@ -344,46 +344,6 @@ export function ModeSelector() {
 					</DropdownMenu>
 				)}
 			</motion.div>
-
-			<div className="relative flex max-w-[112px] items-center gap-1 overflow-hidden sm:max-w-[140px]">
-				<AnimatePresence initial={false}>
-					{mode === "ask" &&
-						defaultTools
-							.filter((t) => tools[t.id])
-							.map((t) => {
-								const Icon = t.icon;
-								return (
-									<motion.div
-										animate={{ opacity: 1, scale: 1, y: 0 }}
-										exit={{ opacity: 0, scale: 0.9, y: -2 }}
-										initial={{
-											opacity: 0,
-											scale: 0.9,
-											y: 2,
-										}}
-										key={`selected-tool-${t.id}-${tools[t.id]}`}
-										layout
-										transition={transitions.smooth}
-									>
-										<TooltipProvider>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<div className="flex size-6 shrink-0 items-center justify-center rounded-full border border-neutral-800 bg-neutral-900">
-														<Icon className="size-3.5 text-muted-foreground" />
-													</div>
-												</TooltipTrigger>
-												<TooltipContent>
-													<span className="text-xs">
-														{t.name}
-													</span>
-												</TooltipContent>
-											</Tooltip>
-										</TooltipProvider>
-									</motion.div>
-								);
-							})}
-				</AnimatePresence>
-			</div>
 		</motion.div>
 	);
 }

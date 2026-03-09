@@ -64,12 +64,22 @@ export function MessageResponse({
 	return (
 		<Streamdown
 			className={cn(
+				"streamdown-content",
 				"text-sm leading-7 sm:text-base",
 				"group-data-[message-from=user]/message:rounded-2xl group-data-[message-from=user]/message:bg-neutral-900 group-data-[message-from=user]/message:px-4 group-data-[message-from=user]/message:py-3 group-data-[message-from=user]/message:text-primary",
 				className
 			)}
 			components={components}
+			linkSafety={{
+				enabled: false,
+			}}
+			mermaid={{
+				config: {
+					theme: "dark",
+				},
+			}}
 			plugins={plugins}
+			shikiTheme={["github-dark", "github-light"]}
 			{...props}
 		>
 			{children}

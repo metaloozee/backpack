@@ -3,7 +3,13 @@
 
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
-import { MicIcon, PaperclipIcon, StopCircleIcon } from "lucide-react";
+import {
+	CornerDownLeftIcon,
+	MicIcon,
+	PaperclipIcon,
+	StopCircleIcon,
+} from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { usePathname } from "next/navigation";
 import React, {
 	type Dispatch,
@@ -23,28 +29,24 @@ import {
 } from "@/components/ai-elements/attachments";
 import {
 	PromptInput,
-	PromptInputActionMenu,
-	PromptInputActionMenuContent,
-	PromptInputActionMenuItem,
-	PromptInputActionMenuTrigger,
 	PromptInputBody,
 	PromptInputButton,
 	PromptInputFooter,
 	PromptInputHeader,
-	PromptInputSubmit,
 	PromptInputTextarea,
 	PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
 import { ModeSelector } from "@/components/mode-selector";
 import { ModelSelector } from "@/components/model-selector";
 import { Button } from "@/components/ui/button";
-import { Loader } from "@/components/ui/loader";
 import type {
 	ChatMessage,
 	Attachment as PendingAttachment,
 } from "@/lib/ai/types";
+import { transitions } from "@/lib/animations";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
+import { Spinner } from "./spinner";
 
 interface InputPanelProps {
 	chatId: string;
@@ -307,11 +309,11 @@ function PureInput({
 		recordingLabel = "Stop recording";
 	}
 
-	let recordingIcon: React.ReactNode = <MicIcon className="size-4" />;
+	let recordingIcon: React.ReactNode = <MicIcon className="size-3.5" />;
 	if (isTranscribing) {
-		recordingIcon = <Loader variant="secondary" />;
+		recordingIcon = <Spinner size="sm" />;
 	} else if (isRecording) {
-		recordingIcon = <StopCircleIcon className="size-4" />;
+		recordingIcon = <StopCircleIcon className="size-3.5" />;
 	}
 
 	return (
@@ -426,7 +428,7 @@ function PureInput({
 										className="flex items-center gap-2 rounded-full border bg-muted/20 px-3 py-2"
 										key={`upload-${fileName}`}
 									>
-										<Loader />
+										<Spinner size="sm" />
 										<span className="max-w-40 truncate text-sm">
 											{fileName}
 										</span>
@@ -436,11 +438,11 @@ function PureInput({
 						</PromptInputHeader>
 					) : null}
 
-					<PromptInputBody className="px-4 pt-3 pb-2">
+					<PromptInputBody className="px-4 py-1">
 						<PromptInputTextarea
 							aria-label="Chat input"
 							autoFocus
-							className="resize-none! min-h-18 border-0 bg-transparent! px-0 text-[15px] leading-6 focus-visible:ring-0"
+							className="resize-none! min-h-fit border-0 bg-transparent! px-0 text-[15px] leading-6 focus-visible:ring-0"
 							onChange={handleInput}
 							onKeyDown={(event) => {
 								if (
@@ -482,42 +484,28 @@ function PureInput({
 							}}
 							placeholder="Ask me anything..."
 							ref={textareaRef}
+							rows={1}
 							value={input}
 						/>
 					</PromptInputBody>
 
-					<PromptInputFooter className="flex items-center justify-between border-white/5 border-t px-4 py-3">
+					<PromptInputFooter className="flex items-center justify-between border-white/5 border-t px-4 py-2">
 						<PromptInputTools className="shrink-0 items-center gap-2">
 							<ModeSelector />
 						</PromptInputTools>
 
 						<div>
 							<PromptInputTools className="ml-auto flex shrink-0 items-center gap-2">
-								<PromptInputActionMenu>
-									<PromptInputActionMenuTrigger aria-label="Open attachment actions" />
-									<PromptInputActionMenuContent>
-										<PromptInputActionMenuItem
-											disabled={status !== "ready"}
-											onClick={(event) => {
-												event.preventDefault();
-												fileInputRef.current?.click();
-											}}
-										>
-											<PaperclipIcon className="size-4" />
-											Add attachments
-										</PromptInputActionMenuItem>
-									</PromptInputActionMenuContent>
-								</PromptInputActionMenu>
-
 								<PromptInputButton
-									aria-label={recordingLabel}
-									disabled={isTranscribing}
-									onClick={handleRecord}
-									variant={
-										isRecording ? "destructive" : "ghost"
-									}
+									disabled={status !== "ready"}
+									onClick={(event) => {
+										event.preventDefault();
+										fileInputRef.current?.click();
+									}}
+									size={"icon"}
+									variant={"ghost"}
 								>
-									{recordingIcon}
+									<PaperclipIcon className="size-3.5" />
 								</PromptInputButton>
 
 								<ModelSelector />
@@ -534,17 +522,20 @@ function PureInput({
 												) => currentMessages
 											);
 										}}
+										size={"sm"}
 										type="button"
 										variant="destructive"
 									>
 										<StopCircleIcon className="size-4" />
 									</Button>
 								) : (
-									<PromptInputSubmit
-										aria-label="Send message"
-										className="rounded-md px-3"
-										disabled={!input.trim()}
-										status={status}
+									<ComposerActionButton
+										handleRecord={handleRecord}
+										hasInput={input.trim().length > 0}
+										isRecording={isRecording}
+										isTranscribing={isTranscribing}
+										recordingIcon={recordingIcon}
+										recordingLabel={recordingLabel}
 									/>
 								)}
 							</PromptInputTools>
@@ -555,6 +546,72 @@ function PureInput({
 		</div>
 	);
 }
+
+const actionIconMotion = {
+	initial: { opacity: 0, y: 6 },
+	animate: { opacity: 1, y: 0 },
+	exit: { opacity: 0, y: -6 },
+};
+
+const ComposerActionButton = React.memo(function ComposerActionButton({
+	hasInput,
+	handleRecord,
+	isRecording,
+	isTranscribing,
+	recordingIcon,
+	recordingLabel,
+}: {
+	hasInput: boolean;
+	handleRecord: () => void;
+	isRecording: boolean;
+	isTranscribing: boolean;
+	recordingIcon: React.ReactNode;
+	recordingLabel: string;
+}) {
+	let recordingState = "idle";
+	if (isTranscribing) {
+		recordingState = "transcribing";
+	} else if (isRecording) {
+		recordingState = "recording";
+	}
+
+	return (
+		<Button
+			aria-label={hasInput ? "Send message" : recordingLabel}
+			className="overflow-hidden rounded-md px-3"
+			disabled={!hasInput && isTranscribing}
+			onClick={
+				hasInput
+					? undefined
+					: (event) => {
+							event.preventDefault();
+							handleRecord();
+						}
+			}
+			size={"sm"}
+			type={hasInput ? "submit" : "button"}
+			variant="default"
+		>
+			<AnimatePresence initial={false} mode="wait">
+				<motion.span
+					animate="animate"
+					className="flex items-center justify-center"
+					exit="exit"
+					initial="initial"
+					key={hasInput ? "send" : recordingState}
+					transition={transitions.smooth}
+					variants={actionIconMotion}
+				>
+					{hasInput ? (
+						<CornerDownLeftIcon className="size-4" />
+					) : (
+						recordingIcon
+					)}
+				</motion.span>
+			</AnimatePresence>
+		</Button>
+	);
+});
 
 export const Input = React.memo(PureInput);
 

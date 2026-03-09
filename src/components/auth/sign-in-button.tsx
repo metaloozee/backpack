@@ -2,8 +2,8 @@
 
 import { type ComponentPropsWithoutRef, type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader } from "@/components/ui/loader";
 import { authClient } from "@/lib/auth/client";
+import { Spinner } from "../spinner";
 
 type SignInButtonProps = Omit<
 	ComponentPropsWithoutRef<typeof Button>,
@@ -36,7 +36,7 @@ export function SignInButton({
 		>
 			{isLoading && (
 				<div className="absolute inset-0 flex items-center justify-center">
-					<Loader size="md" />
+					<Spinner size="sm" />
 				</div>
 			)}
 			<div

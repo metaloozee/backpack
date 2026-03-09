@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Spinner } from "@/components/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +35,7 @@ import {
 } from "@/components/ui/table";
 import { getMcpStatus } from "@/lib/mcp/status";
 import { useTRPC } from "@/lib/trpc/trpc";
-import { Loader } from "./ui/loader";
+import { Spinner } from "./spinner";
 
 interface McpServer {
 	id: string;
@@ -197,7 +196,7 @@ export function McpServerConfig() {
 			</div>
 			<Separator />
 
-			{isLoading ? <Loader /> : null}
+			{isLoading ? <Spinner size="sm" /> : null}
 			{!isLoading && servers.length === 0 ? (
 				<div className="flex h-24 items-center justify-center rounded-md border text-center text-muted-foreground text-sm">
 					No servers configured
@@ -540,7 +539,11 @@ function ServerDialog({
 									}
 									type="submit"
 								>
-									{isSubmitting ? <Spinner /> : submitLabel}
+									{isSubmitting ? (
+										<Spinner size="sm" />
+									) : (
+										submitLabel
+									)}
 								</Button>
 							)}
 						</form.Subscribe>

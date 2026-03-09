@@ -21,7 +21,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Loader } from "@/components/ui/loader";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	buttonVariants,
@@ -35,6 +34,7 @@ import {
 import type { Chat } from "@/lib/db/schema/app";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
+import { Spinner } from "../spinner";
 
 interface ChatCardProps {
 	chat: Chat;
@@ -166,10 +166,13 @@ function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 														initial="rest"
 														variants={iconVariants}
 													>
-														<Loader className="size-3 text-red-400" />
+														<Spinner size="sm" />
 													</motion.div>
 												) : (
-													<p>delete</p>
+													<>
+														<Trash2Icon className="size-3 text-muted-foreground" />
+														delete
+													</>
 												)}
 											</motion.div>
 										</Button>
@@ -307,9 +310,12 @@ export default function DisplayChats({ spaceId }: { spaceId?: string }) {
 							variants={fadeVariants}
 						>
 							{isFetchingNextPage ? (
-								<Loader />
+								<Spinner size="sm" />
 							) : (
-								<ChevronsDownIcon className="size-4 text-muted-foreground" />
+								<>
+									<ChevronsDownIcon className="size-4 text-muted-foreground" />
+									load more
+								</>
 							)}
 						</motion.div>
 					</Button>

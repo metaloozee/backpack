@@ -11,9 +11,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
-import { Loader } from "@/components/ui/loader";
 import type { AppRouter } from "@/lib/server/routers/_app";
 import { useTRPC } from "@/lib/trpc/trpc";
+import { Spinner } from "../spinner";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -200,7 +200,7 @@ function HeaderCreateSpaceForm({
 							type="submit"
 						>
 							{isSubmitting || mutation.isPending ? (
-								<Loader />
+								<Spinner size="sm" />
 							) : (
 								"Create Space"
 							)}

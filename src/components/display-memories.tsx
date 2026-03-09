@@ -30,7 +30,6 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Loader } from "@/components/ui/loader";
 import {
 	Table,
 	TableBody,
@@ -41,6 +40,7 @@ import {
 } from "@/components/ui/table";
 import type { Memory } from "@/lib/db/schema/app";
 import { useTRPC } from "@/lib/trpc/trpc";
+import { Spinner } from "./spinner";
 
 export function DisplayMemories() {
 	"use no memo";
@@ -211,7 +211,7 @@ export function DisplayMemories() {
 	});
 
 	if (isLoading) {
-		return <Loader />;
+		return <Spinner size="sm" />;
 	}
 
 	return (

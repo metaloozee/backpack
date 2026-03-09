@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { type ComponentPropsWithoutRef, type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader } from "@/components/ui/loader";
 import { authClient } from "@/lib/auth/client";
+import { Spinner } from "../spinner";
 
 type SignOutButtonProps = Omit<
 	ComponentPropsWithoutRef<typeof Button>,
@@ -38,7 +38,7 @@ export function SignOutButton({ children, ...props }: SignOutButtonProps) {
 		>
 			{isLoading && (
 				<div className="absolute inset-0 flex items-center justify-center">
-					<Loader size="md" />
+					<Spinner size="sm" />
 				</div>
 			)}
 			<div

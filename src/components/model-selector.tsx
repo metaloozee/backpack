@@ -3,7 +3,6 @@
 import {
 	BrainIcon,
 	Check,
-	ChevronDown,
 	ImageIcon,
 	MicIcon,
 	VideoIcon,
@@ -69,6 +68,7 @@ export function ModelSelector() {
 					aria-expanded={open}
 					className="w-auto justify-between font-normal"
 					role="combobox"
+					size={"sm"}
 					variant="outline"
 				>
 					<div className="flex items-center gap-2">
@@ -80,7 +80,6 @@ export function ModelSelector() {
 							width={20}
 						/>
 					</div>
-					<ChevronDown className="size-3 shrink-0 opacity-50" />
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className="w-[150px] p-1" id={listboxId}>

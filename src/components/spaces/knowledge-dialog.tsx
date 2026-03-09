@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { iconVariants } from "@/lib/animations";
 import type { Knowledge } from "@/lib/db/schema/app";
 import { useTRPC } from "@/lib/trpc/trpc";
+import { Spinner } from "../spinner";
 import { KnowledgeTable } from "./knowledge-table";
 
 interface KnowledgeDialogProps {
@@ -168,7 +169,7 @@ export function KnowledgeDialog({
 						variant={"secondary"}
 					>
 						{isUploadingPdf ? (
-							<Loader />
+							<Spinner size="sm" />
 						) : (
 							<>
 								<PlusIcon className="size-4" />

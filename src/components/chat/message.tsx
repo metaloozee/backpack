@@ -447,7 +447,7 @@ function renderTextPart(
 		<MessageResponse
 			className={cn(
 				message.role !== "user" &&
-					"w-full rounded-2xl bg-background/70 px-4 py-3"
+					"w-full rounded-2xl bg-background/70 py-3"
 			)}
 			key={`${message.id}-text-${index}`}
 		>
