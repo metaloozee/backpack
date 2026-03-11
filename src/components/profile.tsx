@@ -4,6 +4,7 @@ import { Avatar } from "@radix-ui/react-avatar";
 import { LogOutIcon, SettingsIcon, UserIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -30,6 +31,11 @@ interface UserProfileProps {
 export default function UserProfile({ state }: UserProfileProps) {
 	const { data: session, isPending } = authClient.useSession();
 	const router = useRouter();
+	const [isHydrated, setIsHydrated] = useState(false);
+
+	useEffect(() => {
+		setIsHydrated(true);
+	}, []);
 
 	const handleAccountSettings = () => {
 		router.push("/account");
@@ -45,7 +51,7 @@ export default function UserProfile({ state }: UserProfileProps) {
 		});
 	};
 
-	if (isPending) {
+	if (!isHydrated || isPending) {
 		return (
 			<motion.div
 				animate="visible"

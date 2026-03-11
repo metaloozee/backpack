@@ -21,7 +21,7 @@ import {
 } from "resumable-stream";
 import { z } from "zod";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
-import { getModel } from "@/lib/ai/models";
+import { getModel, normalizeModelId } from "@/lib/ai/models";
 import AgentModePrompt from "@/lib/ai/prompts/agent";
 import AskModePrompt from "@/lib/ai/prompts/ask";
 import { academicSearchTool } from "@/lib/ai/tools/academic-search";
@@ -62,6 +62,14 @@ interface McpServersState {
 	[serverId: string]: boolean;
 }
 
+interface UserPrefs {
+	modelId: string;
+	mode: string;
+	selectedAgent: string | null;
+	toolsState: ToolsState;
+	mcpServersState: McpServersState;
+}
+
 const DEFAULT_CHAT_TITLE = "Unnamed Chat";
 
 const createChatTitle = async (message: {
@@ -70,7 +78,7 @@ const createChatTitle = async (message: {
 	parts: unknown[];
 }) => {
 	const { object } = await generateObject({
-		model: google("gemini-2.5-flash-lite"),
+		model: google("gemini-flash-lite-latest"),
 		schema: z.object({
 			title: z.string().max(100),
 		}),
@@ -153,7 +161,7 @@ export async function POST(req: Request) {
 			const cookieStore = await cookies();
 			const raw = cookieStore.get("backpack-prefs")?.value;
 
-			let prefs = {
+			let prefs: UserPrefs = {
 				modelId: DEFAULT_MODEL_ID,
 				mode: "ask" as string,
 				selectedAgent: null as string | null,
@@ -166,7 +174,9 @@ export async function POST(req: Request) {
 					const parsed = JSON.parse(raw);
 					const state = parsed?.state ?? {};
 					prefs = {
-						modelId: state.modelId ?? DEFAULT_MODEL_ID,
+						modelId: normalizeModelId(
+							state.modelId ?? DEFAULT_MODEL_ID
+						),
 						mode: state.mode ?? "ask",
 						selectedAgent: state.selectedAgent ?? null,
 						toolsState: state.tools ?? {},
@@ -178,12 +188,13 @@ export async function POST(req: Request) {
 			}
 
 			const {
-				modelId,
+				modelId: requestedModelId,
 				mode,
 				selectedAgent,
 				toolsState,
 				mcpServersState,
 			} = prefs;
+			const modelId = normalizeModelId(requestedModelId);
 			const model = getModel(modelId);
 
 			if (!model) {

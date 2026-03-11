@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
+import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
+import { normalizeModelId } from "@/lib/ai/models";
 import { cookieStorage } from "./cookie-storage";
 import { createMcpSlice, type McpSlice } from "./slices/mcp.slice";
 import { createModeSlice, type ModeSlice } from "./slices/mode.slice";
@@ -23,14 +25,24 @@ export const usePrefsStore = create<BoundStore>()(
 				storage: createJSONStorage(() => cookieStorage),
 				version: 1,
 				partialize: (state) => ({
-					modelId: state.modelId,
+					modelId: normalizeModelId(state.modelId),
 					mode: state.mode,
 					selectedAgent: state.selectedAgent,
 					tools: state.tools,
 					mcpServers: state.mcpServers,
 				}),
 				migrate: (persisted: unknown, _version) => {
-					return persisted as BoundStore;
+					if (!persisted || typeof persisted !== "object") {
+						return persisted as BoundStore;
+					}
+
+					const normalizedStore = persisted as Partial<BoundStore>;
+					return {
+						...normalizedStore,
+						modelId: normalizeModelId(
+							normalizedStore.modelId ?? DEFAULT_MODEL_ID
+						),
+					} as BoundStore;
 				},
 				skipHydration: true,
 			}

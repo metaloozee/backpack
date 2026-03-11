@@ -1,5 +1,6 @@
 import type { StateCreator } from "zustand";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
+import { normalizeModelId } from "@/lib/ai/models";
 import type { BoundStore } from "../store";
 
 export interface ModelSlice {
@@ -13,9 +14,9 @@ export const createModelSlice: StateCreator<
 	[],
 	ModelSlice
 > = (set) => ({
-	modelId: DEFAULT_MODEL_ID,
+	modelId: normalizeModelId(DEFAULT_MODEL_ID),
 	setModelId: (id) =>
 		set((state) => {
-			state.modelId = id;
+			state.modelId = normalizeModelId(id);
 		}),
 });

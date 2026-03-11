@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
+import { normalizeModelId } from "@/lib/ai/models";
 import { getDefaultToolsState, type ToolsState } from "@/lib/ai/tools";
 import type { ModeType } from "./slices/mode.slice";
 
@@ -32,7 +33,7 @@ export async function getServerPrefs(): Promise<ServerPrefs> {
 		const state = parsed?.state ?? {};
 
 		return {
-			modelId: state.modelId ?? DEFAULTS.modelId,
+			modelId: normalizeModelId(state.modelId ?? DEFAULTS.modelId),
 			mode: state.mode ?? DEFAULTS.mode,
 			selectedAgent: state.selectedAgent ?? DEFAULTS.selectedAgent,
 			tools: state.tools ?? DEFAULTS.tools,
