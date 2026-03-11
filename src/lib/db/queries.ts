@@ -225,16 +225,28 @@ export async function saveMessages({
 	messages: InferInsertModel<typeof message>[];
 }): Promise<void> {
 	try {
-		await db.insert(message).values(
-			messages.map((msg) => ({
-				id: msg.id,
-				chatId: msg.chatId,
-				role: msg.role,
-				parts: msg.parts,
-				attachments: msg.attachments,
-				createdAt: msg.createdAt,
-			}))
-		);
+		await db
+			.insert(message)
+			.values(
+				messages.map((msg) => ({
+					id: msg.id,
+					chatId: msg.chatId,
+					role: msg.role,
+					parts: msg.parts,
+					attachments: msg.attachments,
+					createdAt: msg.createdAt,
+				}))
+			)
+			.onConflictDoUpdate({
+				target: message.id,
+				set: {
+					chatId: sql`excluded.chat_id`,
+					role: sql`excluded.role`,
+					parts: sql`excluded.parts`,
+					attachments: sql`excluded.attachments`,
+					createdAt: sql`excluded.created_at`,
+				},
+			});
 	} catch (error) {
 		throw BackpackError.database("Failed to save messages", error);
 	}

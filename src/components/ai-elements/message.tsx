@@ -10,7 +10,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { streamdownPlugins } from "@/lib/streamdown";
+import { normalizeCitationMarkup, streamdownPlugins } from "@/lib/streamdown";
 import { cn } from "@/lib/utils";
 
 type Options = React.ComponentPropsWithoutRef<typeof Streamdown>;
@@ -65,7 +65,14 @@ export function MessageResponse({
 	return (
 		<Streamdown
 			allowedTags={{
-				citation: ["id", "url", "title", "description", "quote"],
+				citation: [
+					"id",
+					"url",
+					"title",
+					"description",
+					"quote",
+					"items",
+				],
 			}}
 			className={cn(
 				"streamdown-content",
@@ -75,10 +82,11 @@ export function MessageResponse({
 			)}
 			components={{
 				...components,
-				citation: ({ id, url, title, description }) => (
+				citation: ({ id, url, title, description, items }) => (
 					<Citation
 						description={(description as string) ?? ""}
 						id={(id as string) ?? ""}
+						items={typeof items === "string" ? items : undefined}
 						title={(title as string) ?? ""}
 						url={(url as string) ?? ""}
 					/>
@@ -96,7 +104,7 @@ export function MessageResponse({
 			shikiTheme={["github-dark", "github-light"]}
 			{...props}
 		>
-			{children}
+			{normalizeCitationMarkup(children)}
 		</Streamdown>
 	);
 }

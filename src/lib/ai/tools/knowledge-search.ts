@@ -58,8 +58,10 @@ export const knowledgeSearchTool = ({
 					const contexts = await db
 						.select({
 							content: knowledgeEmbeddings.content,
+							knowledgeId: knowledge.id,
 							knowledgeName: knowledge.knowledgeName,
 							knowledgeType: knowledge.knowledgeType,
+							sourceUrl: knowledge.sourceUrl,
 							similarity,
 						})
 						.from(knowledgeEmbeddings)
