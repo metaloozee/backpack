@@ -14,8 +14,6 @@ export const env = createEnv({
 		MISTRAL_API_KEY: z.string().min(1),
 		OPENAI_API_KEY: z.string().min(1),
 
-		COMPOSIO_API_KEY: z.string().min(1),
-
 		REDIS_URL: z.string().url().min(1),
 		BLOB_READ_WRITE_TOKEN: z.string().min(1),
 		BETTER_AUTH_SECRET:
