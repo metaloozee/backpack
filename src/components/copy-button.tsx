@@ -22,11 +22,11 @@ interface CopyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	timeout?: number;
 }
 
-const sizeMap: Record<SizeVariant, { button: string; icon: string }> = {
-	xs: { button: "size-7", icon: "size-3" },
-	sm: { button: "size-8", icon: "size-3.5" },
-	default: { button: "size-9", icon: "size-4" },
-	lg: { button: "size-10", icon: "size-5" },
+const sizeMap: Record<SizeVariant, { icon: string }> = {
+	xs: { icon: "size-3" },
+	sm: { icon: "size-3.5" },
+	default: { icon: "size-4" },
+	lg: { icon: "size-5" },
 };
 
 const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(
@@ -101,7 +101,6 @@ const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(
 				className={cn(
 					buttonVariants({ size: "icon", variant: "ghost" }),
 					"relative overflow-hidden rounded-md text-foreground",
-					resolvedSize.button,
 					className
 				)}
 				onClick={handleCopy}

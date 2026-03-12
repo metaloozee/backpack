@@ -612,22 +612,25 @@ export function Message({
 				{message.role === "assistant" &&
 				isLatestAssistant &&
 				!isLoading ? (
-					<MessageToolbar>
-						<div />
+					<MessageToolbar className="flex w-full justify-end">
 						<MessageActions>
 							<MessageAction
 								label="Retry"
 								onClick={() => regenerate()}
+								size={"icon"}
 								tooltip="Regenerate response"
+								variant={"ghost"}
 							>
-								<RefreshCcwIcon className="size-4" />
+								<RefreshCcwIcon className="size-3.5" />
 							</MessageAction>
 							<MessageAction
 								asChild
 								label="Copy"
+								size={"icon"}
 								tooltip="Copy message content"
+								variant={"ghost"}
 							>
-								<CopyButton value={textContent} />
+								<CopyButton size="sm" value={textContent} />
 							</MessageAction>
 						</MessageActions>
 					</MessageToolbar>
