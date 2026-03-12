@@ -15,8 +15,8 @@ export const auth = betterAuth({
 			clientSecret: env.GOOGLE_CLIENT_SECRET,
 		},
 		github: {
-			clientId: env.GITHUB_CLIENT_ID as string,
-			clientSecret: env.GITHUB_CLIENT_SECRET as string,
+			clientId: env.GITHUB_CLIENT_ID,
+			clientSecret: env.GITHUB_CLIENT_SECRET,
 		},
 	},
 	session: {
@@ -29,8 +29,6 @@ export const auth = betterAuth({
 		user: {
 			create: {
 				before: async (user) => {
-					await Promise.resolve();
-
 					if (!(await hasConfiguredEmailAllowlist())) {
 						throw new APIError("FORBIDDEN", {
 							message:
