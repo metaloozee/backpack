@@ -24,6 +24,13 @@ export const usePrefsStore = create<BoundStore>()(
 				name: "backpack-prefs",
 				storage: createJSONStorage(() => cookieStorage),
 				version: 1,
+				onRehydrateStorage: () => (state) => {
+					if (!state) {
+						return;
+					}
+
+					state.setModelId(state.modelId);
+				},
 				partialize: (state) => ({
 					modelId: normalizeModelId(state.modelId),
 					mode: state.mode,

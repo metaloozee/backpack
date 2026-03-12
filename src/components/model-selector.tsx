@@ -28,10 +28,10 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { models } from "@/lib/ai/models";
+import { availableModels, getModel, normalizeModelId } from "@/lib/ai/models";
 import { usePrefsStore } from "@/lib/store/store";
 
-const groupedModels = models.reduce(
+const groupedModels = availableModels.reduce(
 	(acc, model) => {
 		if (!acc[model.provider]) {
 			acc[model.provider] = [];
@@ -39,7 +39,7 @@ const groupedModels = models.reduce(
 		acc[model.provider].push(model);
 		return acc;
 	},
-	{} as Record<string, typeof models>
+	{} as Record<string, typeof availableModels>
 );
 
 const providerNames: Record<string, string> = {
@@ -57,8 +57,8 @@ export function ModelSelector() {
 	const setModelId = usePrefsStore((s) => s.setModelId);
 	const [open] = useState(false);
 	const listboxId = useId();
-
-	const selectedModelData = models.find((m) => m.id === modelId);
+	const selectedModelId = normalizeModelId(modelId);
+	const selectedModelData = getModel(selectedModelId) ?? availableModels[0];
 
 	return (
 		<DropdownMenu>
@@ -117,7 +117,7 @@ export function ModelSelector() {
 												<div className="flex w-full items-center justify-between gap-5">
 													<div className="flex items-center gap-2">
 														{model.id ===
-															modelId && (
+															selectedModelId && (
 															<Check className="size-3" />
 														)}
 														<span>
