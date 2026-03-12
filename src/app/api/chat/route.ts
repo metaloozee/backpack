@@ -21,7 +21,11 @@ import {
 } from "resumable-stream";
 import { z } from "zod";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
-import { getModel, normalizeModelId } from "@/lib/ai/models";
+import {
+	getModel,
+	type ModelCapabilities,
+	normalizeModelId,
+} from "@/lib/ai/models";
 import AgentModePrompt from "@/lib/ai/prompts/agent";
 import AskModePrompt from "@/lib/ai/prompts/ask";
 import { academicSearchTool } from "@/lib/ai/tools/academic-search";
@@ -68,6 +72,38 @@ interface UserPrefs {
 	selectedAgent: string | null;
 	toolsState: ToolsState;
 	mcpServersState: McpServersState;
+}
+
+interface ChatRequestLogPayload {
+	chatId: string;
+	messageId: string;
+	userId: string;
+	mode: string;
+	selectedAgent: string | null;
+	query: string;
+	model: {
+		id: string;
+		name: string;
+		provider: string;
+		capabilities: ModelCapabilities;
+	};
+	request: {
+		inSpace: boolean;
+		spaceId: string | null;
+		partCount: number;
+		attachmentCount: number;
+	};
+	tools: {
+		toggles: Required<ToolsState>;
+		enabled: ActiveTool[];
+		mcp: {
+			configuredServerIds: string[];
+			connectedToolNames: string[];
+			totalConfiguredServers: number;
+			totalConnectedTools: number;
+		};
+		availableToModel: string[];
+	};
 }
 
 const DEFAULT_CHAT_TITLE = "Unnamed Chat";
@@ -136,6 +172,52 @@ const buildActiveTools = (toolsState: ToolsState): ActiveTool[] => {
 	return activeTools;
 };
 
+const getToolToggleSnapshot = (
+	toolsState: ToolsState
+): Required<ToolsState> => ({
+	webSearch: toolsState.webSearch ?? false,
+	knowledgeSearch: toolsState.knowledgeSearch ?? false,
+	academicSearch: toolsState.academicSearch ?? false,
+	financeSearch: toolsState.financeSearch ?? false,
+});
+
+const MAX_QUERY_LENGTH = 500;
+
+type MessagePart = { type: "text"; text: string } | { type: "file" };
+
+const extractQueryText = (parts: MessagePart[]): string => {
+	const hasFile = parts.some((part) => part.type === "file");
+	const textParts = parts
+		.filter(
+			(part): part is { type: "text"; text: string } =>
+				part.type === "text"
+		)
+		.map((part) => part.text);
+
+	if (hasFile && textParts.length === 0) {
+		return "<Document>";
+	}
+
+	const combined = textParts.join(" ");
+	return combined.length > MAX_QUERY_LENGTH
+		? `${combined.slice(0, MAX_QUERY_LENGTH)}...`
+		: combined;
+};
+
+const logChatRequestMetadata = (payload: ChatRequestLogPayload) => {
+	console.log(
+		JSON.stringify(
+			{
+				event: "chat.request.metadata",
+				timestamp: new Date().toISOString(),
+				...payload,
+			},
+			null,
+			2
+		)
+	);
+};
+
 type ActiveTool =
 	| "save_to_memories"
 	| "extract"
@@ -200,14 +282,6 @@ export async function POST(req: Request) {
 			if (!model) {
 				throw new Error("Invalid model selected");
 			}
-
-			console.log({
-				webSearch: toolsState.webSearch ?? false,
-				knowledgeSearch: toolsState.knowledgeSearch ?? false,
-				academicSearch: toolsState.academicSearch ?? false,
-				financeSearch: toolsState.financeSearch ?? false,
-				mcpServers: mcpServersState,
-			});
 
 			if (!(message && id)) {
 				throw new Error("Message and ID are required");
@@ -285,6 +359,7 @@ export async function POST(req: Request) {
 			const stream = createUIMessageStream({
 				execute: async ({ writer: dataStream }) => {
 					const activeTools = buildActiveTools(toolsState);
+					const toolToggles = getToolToggleSnapshot(toolsState);
 
 					// Create MCP tools if there are enabled servers
 					const mcpServersForTools: McpServerConfig[] =
@@ -310,10 +385,39 @@ export async function POST(req: Request) {
 					const mcpToolNames = Object.keys(mcpToolsResult.tools);
 					const allActiveTools = [...activeTools, ...mcpToolNames];
 
-					console.log({
-						activeTools,
-						mcpToolNames,
-						allActiveTools,
+					logChatRequestMetadata({
+						chatId: id,
+						messageId: message.id,
+						userId: session.userId,
+						mode,
+						selectedAgent,
+						query: extractQueryText(message.parts as MessagePart[]),
+						model: {
+							id: model.id,
+							name: model.name,
+							provider: model.provider,
+							capabilities: model.capabilities,
+						},
+						request: {
+							inSpace: requestEnv.inSpace,
+							spaceId: requestEnv.spaceId ?? null,
+							partCount: message.parts.length,
+							attachmentCount: message.parts.filter(
+								(part) => part.type === "file"
+							).length,
+						},
+						tools: {
+							toggles: toolToggles,
+							enabled: activeTools,
+							mcp: {
+								configuredServerIds: enabledMcpServerIds,
+								connectedToolNames: mcpToolNames,
+								totalConfiguredServers:
+									enabledMcpServerIds.length,
+								totalConnectedTools: mcpToolNames.length,
+							},
+							availableToModel: allActiveTools,
+						},
 					});
 
 					// Build provider-specific reasoning options based on model
