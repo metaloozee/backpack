@@ -42,7 +42,7 @@ export default async function SignInPage({
 				) : null}
 			</div>
 			<div className="mt-5 flex w-full max-w-sm flex-col gap-2">
-				<SignInButton disabled provider="google">
+				<SignInButton provider="google">
 					<Image
 						alt="Login with Google"
 						className="size-5 invert"
