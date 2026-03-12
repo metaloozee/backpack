@@ -22,7 +22,18 @@ export function SignInButton({
 
 	const handleSignIn = async () => {
 		setIsLoading(true);
-		await authClient.signIn.social({ provider });
+
+		try {
+			await authClient.signIn.social({
+				provider,
+				callbackURL: "/",
+				errorCallbackURL: "/sign-in?error=auth",
+			});
+		} catch (error) {
+			console.error("Failed to sign in", error);
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	return (

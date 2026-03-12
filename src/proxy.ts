@@ -1,14 +1,17 @@
-import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getAuthAccessState } from "@/lib/auth/utils";
 
 export async function proxy(request: NextRequest) {
-	const session = await auth.api.getSession({
-		headers: await headers(),
-	});
+	const accessState = await getAuthAccessState(request.headers);
 
-	if (!session) {
+	if (accessState.status === "anonymous") {
 		return NextResponse.redirect(new URL("/sign-in", request.url));
+	}
+
+	if (accessState.status === "unauthorized") {
+		return NextResponse.redirect(
+			new URL("/sign-in?error=unauthorized", request.url)
+		);
 	}
 
 	return NextResponse.next();
