@@ -7,7 +7,6 @@ import {
 	MessageCirclePlusIcon,
 	PanelLeftCloseIcon,
 	PanelLeftOpenIcon,
-	XIcon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
@@ -35,7 +34,7 @@ import {
 } from "@/lib/animations";
 import { cn } from "@/lib/utils";
 
-function DesktopSidebarBrand({ state }: { state: "expanded" | "collapsed" }) {
+function SidebarBrand({ state }: { state: "expanded" | "collapsed" }) {
 	return (
 		<SidebarHeader
 			className={cn(
@@ -92,7 +91,7 @@ function DesktopSidebarBrand({ state }: { state: "expanded" | "collapsed" }) {
 	);
 }
 
-function DesktopSidebarNavButton({
+function SidebarNavButton({
 	active,
 	href,
 	icon: Icon,
@@ -145,215 +144,6 @@ function DesktopSidebarNavButton({
 	);
 }
 
-function DesktopSidebarContent({
-	chatQuery,
-	isHome,
-	isSpaces,
-	open,
-	setChatQuery,
-	setOpen,
-	state,
-}: {
-	chatQuery: string;
-	isHome: boolean;
-	isSpaces: boolean;
-	open: boolean;
-	setChatQuery: (value: string) => void;
-	setOpen: (open: boolean) => void;
-	state: "expanded" | "collapsed";
-}) {
-	return (
-		<>
-			<DesktopSidebarBrand state={state} />
-			<SidebarContent>
-				<motion.div
-					animate="visible"
-					className={cn(
-						"flex h-full w-full flex-col gap-2",
-						state === "expanded"
-							? "px-4"
-							: "items-center justify-center"
-					)}
-					initial="hidden"
-					transition={transitions.smooth}
-					variants={slideVariants.left}
-				>
-					<DesktopSidebarNavButton
-						active={isHome}
-						href="/"
-						icon={MessageCirclePlusIcon}
-						label="New Chat"
-						state={state}
-					/>
-					<DesktopSidebarNavButton
-						active={isSpaces}
-						href="/s/"
-						icon={LibraryIcon}
-						label="Spaces"
-						state={state}
-					/>
-
-					{state === "expanded" ? (
-						<Input
-							autoComplete="off"
-							className="h-8 border-0 bg-background dark:bg-neutral-950"
-							onChange={(event) =>
-								setChatQuery(event.target.value)
-							}
-							placeholder="Search chats..."
-							value={chatQuery}
-						/>
-					) : null}
-
-					{state === "expanded" ? (
-						<ScrollArea className="h-full w-full flex-1 rounded-md bg-background">
-							<SidebarChatsList
-								limit={20}
-								query={chatQuery}
-								showMore={true}
-							/>
-							<ScrollBar orientation="vertical" />
-						</ScrollArea>
-					) : null}
-				</motion.div>
-			</SidebarContent>
-			<SidebarFooter
-				className={cn(
-					"w-full",
-					state === "collapsed"
-						? "flex items-center justify-center"
-						: "p-4"
-				)}
-			>
-				<motion.div
-					className="w-full"
-					initial="rest"
-					whileHover="hover"
-					whileTap="tap"
-				>
-					<Button
-						aria-label={
-							state === "expanded"
-								? "Close sidebar"
-								: "Open sidebar"
-						}
-						className="w-full"
-						onClick={() => setOpen(!open)}
-						size={state === "collapsed" ? "icon" : "default"}
-						variant="outline"
-					>
-						{state === "expanded" ? (
-							<>
-								<PanelLeftCloseIcon className="size-4 text-muted-foreground" />
-								<p className="text-muted-foreground text-xs">
-									Close Panel
-								</p>
-							</>
-						) : (
-							<PanelLeftOpenIcon className="size-3" />
-						)}
-					</Button>
-				</motion.div>
-
-				<Separator
-					className={cn(state === "expanded" ? "my-2" : "my-0")}
-				/>
-				<UserProfile state={state} />
-			</SidebarFooter>
-		</>
-	);
-}
-
-function MobileSidebarContent({
-	chatQuery,
-	isHome,
-	isSpaces,
-	setChatQuery,
-	setOpenMobile,
-}: {
-	chatQuery: string;
-	isHome: boolean;
-	isSpaces: boolean;
-	setChatQuery: (value: string) => void;
-	setOpenMobile: (open: boolean) => void;
-}) {
-	return (
-		<>
-			<SidebarHeader className="mobile-safe-top gap-4 border-sidebar-border border-b px-4 pt-4 pb-3">
-				<div className="flex items-center justify-between gap-3">
-					<Link className="min-w-0 flex-1" href="/">
-						<div className="flex items-center gap-2">
-							<BackpackIcon className="size-4 shrink-0" />
-							<div className="min-w-0">
-								<p className="truncate font-light text-lg">
-									backpack
-								</p>
-								<p className="truncate text-muted-foreground text-xs">
-									Conversations and spaces
-								</p>
-							</div>
-						</div>
-					</Link>
-					<Button
-						aria-label="Close sidebar"
-						className="size-9 shrink-0"
-						onClick={() => setOpenMobile(false)}
-						size="icon"
-						variant="ghost"
-					>
-						<XIcon className="size-4" />
-					</Button>
-				</div>
-				<div className="grid grid-cols-2 gap-2">
-					<Button
-						asChild
-						className="h-11 justify-start"
-						variant={isHome ? "default" : "outline"}
-					>
-						<Link aria-label="New Chat" href="/">
-							<MessageCirclePlusIcon className="size-4" />
-							<span className="text-sm">New Chat</span>
-						</Link>
-					</Button>
-					<Button
-						asChild
-						className="h-11 justify-start"
-						variant={isSpaces ? "default" : "outline"}
-					>
-						<Link aria-label="Spaces" href="/s/">
-							<LibraryIcon className="size-4" />
-							<span className="text-sm">Spaces</span>
-						</Link>
-					</Button>
-				</div>
-				<Input
-					autoComplete="off"
-					className="h-11 border-sidebar-border bg-background text-sm dark:bg-neutral-950"
-					onChange={(event) => setChatQuery(event.target.value)}
-					placeholder="Search chats..."
-					value={chatQuery}
-				/>
-			</SidebarHeader>
-			<SidebarContent className="px-4 pb-4">
-				<ScrollArea
-					className="h-full w-full flex-1 rounded-xl bg-background"
-					maskHeight={0}
-				>
-					<SidebarChatsList
-						limit={20}
-						query={chatQuery}
-						showMore={true}
-					/>
-					<ScrollBar orientation="vertical" />
-				</ScrollArea>
-			</SidebarContent>
-			<SidebarFooter className="mobile-safe-bottom border-sidebar-border border-t px-4 pt-3 pb-4">
-				<UserProfile state="expanded" />
-			</SidebarFooter>
-		</>
-	);
-}
-
 export function AppSidebar() {
 	const pathname = usePathname();
 	const isHome = pathname === "/";
@@ -363,6 +153,10 @@ export function AppSidebar() {
 		parseAsString.withDefault("")
 	);
 	const { isMobile, open, setOpen, setOpenMobile, state } = useSidebar();
+
+	// On mobile, the sidebar renders inside a Sheet (always full-width),
+	// so treat state as "expanded" to show labels, search, and chat list.
+	const effectiveState = isMobile ? "expanded" : state;
 
 	useEffect(() => {
 		if (!isMobile || pathname.length === 0) {
@@ -374,25 +168,111 @@ export function AppSidebar() {
 
 	return (
 		<Sidebar collapsible="icon" variant="floating">
-			{isMobile ? (
-				<MobileSidebarContent
-					chatQuery={chatQuery}
-					isHome={isHome}
-					isSpaces={isSpaces}
-					setChatQuery={setChatQuery}
-					setOpenMobile={setOpenMobile}
-				/>
-			) : (
-				<DesktopSidebarContent
-					chatQuery={chatQuery}
-					isHome={isHome}
-					isSpaces={isSpaces}
-					open={open}
-					setChatQuery={setChatQuery}
-					setOpen={setOpen}
-					state={state}
-				/>
-			)}
+			<SidebarBrand state={effectiveState} />
+			<SidebarContent>
+				<motion.div
+					animate="visible"
+					className={cn(
+						"flex h-full w-full flex-col gap-2",
+						effectiveState === "expanded"
+							? "px-4"
+							: "items-center justify-center"
+					)}
+					initial="hidden"
+					transition={transitions.smooth}
+					variants={slideVariants.left}
+				>
+					<SidebarNavButton
+						active={isHome}
+						href="/"
+						icon={MessageCirclePlusIcon}
+						label="New Chat"
+						state={effectiveState}
+					/>
+					<SidebarNavButton
+						active={isSpaces}
+						href="/s/"
+						icon={LibraryIcon}
+						label="Spaces"
+						state={effectiveState}
+					/>
+
+					{effectiveState === "expanded" ? (
+						<Input
+							autoComplete="off"
+							className="h-8 border-0 bg-background dark:bg-neutral-950"
+							onChange={(event) =>
+								setChatQuery(event.target.value)
+							}
+							placeholder="Search chats..."
+							value={chatQuery}
+						/>
+					) : null}
+
+					{effectiveState === "expanded" ? (
+						<ScrollArea className="h-full w-full flex-1 rounded-md bg-background">
+							<SidebarChatsList
+								limit={isMobile ? 10 : 20}
+								query={chatQuery}
+								showMore={!isMobile}
+							/>
+							<ScrollBar orientation="vertical" />
+						</ScrollArea>
+					) : null}
+				</motion.div>
+			</SidebarContent>
+			<SidebarFooter
+				className={cn(
+					"w-full",
+					effectiveState === "collapsed"
+						? "flex items-center justify-center"
+						: "p-4"
+				)}
+			>
+				{!isMobile && (
+					<>
+						<motion.div
+							className="w-full"
+							initial="rest"
+							whileHover="hover"
+							whileTap="tap"
+						>
+							<Button
+								aria-label={
+									effectiveState === "expanded"
+										? "Close sidebar"
+										: "Open sidebar"
+								}
+								className="w-full"
+								onClick={() => setOpen(!open)}
+								size={
+									effectiveState === "collapsed"
+										? "icon"
+										: "default"
+								}
+								variant="outline"
+							>
+								{effectiveState === "expanded" ? (
+									<>
+										<PanelLeftCloseIcon className="size-4 text-muted-foreground" />
+										<p className="text-muted-foreground text-xs">
+											Close Panel
+										</p>
+									</>
+								) : (
+									<PanelLeftOpenIcon className="size-3" />
+								)}
+							</Button>
+						</motion.div>
+						<Separator
+							className={cn(
+								effectiveState === "expanded" ? "my-2" : "my-0"
+							)}
+						/>
+					</>
+				)}
+				<UserProfile state={effectiveState} />
+			</SidebarFooter>
 		</Sidebar>
 	);
 }

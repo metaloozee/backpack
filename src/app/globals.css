@@ -183,6 +183,14 @@
 	contain-intrinsic-size: 0 100px;
 }
 
+/* Safe-area utility classes for mobile sidebar */
+.mobile-safe-top {
+	padding-top: max(var(--safe-area-top), 0px);
+}
+.mobile-safe-bottom {
+	padding-bottom: max(var(--safe-area-bottom), 0px);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,

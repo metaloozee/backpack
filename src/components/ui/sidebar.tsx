@@ -9,7 +9,12 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetTitle,
+} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Tooltip,
@@ -212,6 +217,10 @@ const Sidebar = React.forwardRef<
 							} as React.CSSProperties
 						}
 					>
+						<SheetTitle className="sr-only">Sidebar</SheetTitle>
+						<SheetDescription className="sr-only">
+							Navigation
+						</SheetDescription>
 						<div className="flex h-full w-full flex-col">
 							{children}
 						</div>
@@ -255,7 +264,7 @@ const Sidebar = React.forwardRef<
 					{...props}
 				>
 					<div
-						className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm dark:bg-neutral-900/50"
+						className="flex h-full w-full flex-col bg-sidebar backdrop-blur-sm group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm dark:bg-neutral-900/50"
 						data-sidebar="sidebar"
 					>
 						{children}

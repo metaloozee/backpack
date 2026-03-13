@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { MobileHeader } from "@/components/mobile-header";
 import { AppSidebar } from "@/components/sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export const metadata: Metadata = {
 	title: "Backpack",
@@ -15,7 +16,10 @@ export default function MainLayout({
 	return (
 		<SidebarProvider defaultOpen={false}>
 			<AppSidebar />
-			<div className="w-full">{children}</div>
+			<SidebarInset>
+				<MobileHeader />
+				{children}
+			</SidebarInset>
 		</SidebarProvider>
 	);
 }
