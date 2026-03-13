@@ -325,7 +325,7 @@ export function Chat({
 			/>
 
 			{showSpaceHistory && env.spaceId && (
-				<div className="mt-10 flex w-full max-w-3xl flex-col gap-2">
+				<div className="mt-6 flex w-full max-w-3xl flex-col gap-2 px-4 sm:mt-10 sm:px-0">
 					<DisplayChats spaceId={env.spaceId} />
 				</div>
 			)}

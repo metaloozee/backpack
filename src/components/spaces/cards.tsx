@@ -38,7 +38,7 @@ export function Cards({ spaces }: { spaces: Space[] }) {
 	return (
 		<motion.div
 			animate="visible"
-			className="mx-auto mt-5 grid w-full grid-cols-3 gap-5"
+			className="mx-auto mt-5 grid w-full grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 md:grid-cols-3"
 			initial="hidden"
 			variants={containerVariants}
 		>
@@ -56,7 +56,7 @@ export function Cards({ spaces }: { spaces: Space[] }) {
 							</CardHeader>
 							<CardFooter className="flex flex-row flex-wrap justify-between gap-2 text-muted-foreground text-xs">
 								{space.spaceDescription && (
-									<p className="w-[18vw] truncate">
+									<p className="max-w-full truncate md:max-w-[18vw]">
 										{space.spaceDescription}
 									</p>
 								)}

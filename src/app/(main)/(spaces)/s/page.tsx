@@ -9,7 +9,7 @@ export default async function SpacesPage() {
 	const { spaces } = await caller.space.getSpaces({});
 
 	return (
-		<div className="m-20 flex flex-col items-start justify-center gap-5">
+		<div className="flex flex-col items-start justify-center gap-5 px-4 py-6 sm:px-8 sm:py-10 md:p-20">
 			<Header userId={user?.id ?? ""} />
 			<Cards spaces={spaces} />
 		</div>

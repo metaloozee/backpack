@@ -175,7 +175,7 @@ export function McpServerConfig() {
 
 	return (
 		<div className="flex w-full flex-col gap-4">
-			<div className="flex w-full flex-row items-end justify-between">
+			<div className="flex w-full flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
 				<div className="flex flex-col gap-1">
 					<h2 className="font-medium text-lg">MCP Servers</h2>
 					<p className="text-muted-foreground text-xs">
@@ -203,7 +203,7 @@ export function McpServerConfig() {
 				</div>
 			) : null}
 			{!isLoading && servers.length > 0 ? (
-				<div className="overflow-hidden rounded-md border">
+				<div className="overflow-hidden overflow-x-auto rounded-md border">
 					<Table>
 						<TableHeader>
 							<TableRow className="hover:bg-transparent">

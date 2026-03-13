@@ -22,7 +22,7 @@ export function SpaceIntro({
 	knowledgeData = [],
 }: SpaceIntroProps) {
 	return (
-		<div className="mb-10 flex w-full max-w-3xl shrink-0 flex-row items-end justify-between gap-2">
+		<div className="mb-6 flex w-full max-w-3xl shrink-0 flex-col gap-4 px-4 sm:mb-10 sm:flex-row sm:items-end sm:justify-between sm:gap-2 sm:px-0">
 			<div className="flex flex-col items-start justify-start gap-2">
 				{spaceStatus === "pending" ? (
 					<>
