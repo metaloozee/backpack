@@ -22,6 +22,7 @@ import {
 	transitions,
 } from "@/lib/animations";
 import { authClient } from "@/lib/auth/client";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { AvatarFallback, AvatarImage } from "./ui/avatar";
 
@@ -29,101 +30,99 @@ interface UserProfileProps {
 	state: "expanded" | "collapsed";
 }
 
-export default function UserProfile({ state }: UserProfileProps) {
-	const { data: session, isPending } = authClient.useSession();
-	const router = useRouter();
-	const [isHydrated, setIsHydrated] = useState(false);
-
-	useEffect(() => {
-		setIsHydrated(true);
-	}, []);
-
-	const handleAccountSettings = () => {
-		router.push("/account");
-	};
-
-	const handleSignOut = () => {
-		authClient.signOut({
-			fetchOptions: {
-				onSuccess: () => {
-					router.push("/sign-in");
-				},
-			},
-		});
-	};
-
-	if (!isHydrated || isPending) {
-		return (
+function ProfileLoading({ state }: UserProfileProps) {
+	return (
+		<motion.div
+			animate="visible"
+			className={cn(
+				"flex items-center gap-2",
+				state === "collapsed"
+					? "justify-center"
+					: "w-full justify-start"
+			)}
+			initial="hidden"
+			variants={fadeVariants}
+		>
 			<motion.div
-				animate="visible"
-				className={cn(
-					"flex items-center gap-2",
-					state === "collapsed"
-						? "justify-center"
-						: "w-full justify-start"
-				)}
-				initial="hidden"
-				variants={fadeVariants}
+				animate="pulse"
+				className="h-8 w-8 rounded-full bg-muted"
+				initial="rest"
+				variants={iconVariants}
+			/>
+			{state === "expanded" ? (
+				<motion.div
+					animate="visible"
+					className="h-4 w-20 rounded bg-muted"
+					initial="hidden"
+					variants={slideVariants.right}
+				/>
+			) : null}
+		</motion.div>
+	);
+}
+
+function SignedOutProfile({
+	onSignIn,
+	state,
+}: UserProfileProps & {
+	onSignIn: () => void;
+}) {
+	return (
+		<motion.div
+			className={cn(state === "collapsed" ? "w-9" : "w-full")}
+			initial="rest"
+			variants={buttonVariants}
+			whileHover="hover"
+			whileTap="tap"
+		>
+			<Button
+				className={cn(state === "expanded" ? "w-full" : "")}
+				onClick={onSignIn}
+				size={state === "collapsed" ? "icon" : "default"}
+				variant="outline"
 			>
 				<motion.div
-					animate="pulse"
-					className="h-8 w-8 rounded-full bg-muted"
 					initial="rest"
 					variants={iconVariants}
-				/>
-				{state === "expanded" && (
-					<motion.div
-						animate="visible"
-						className="h-4 w-20 rounded bg-muted"
-						initial="hidden"
-						variants={slideVariants.right}
-					/>
-				)}
-			</motion.div>
-		);
-	}
-
-	if (!session) {
-		return (
-			<motion.div
-				className={cn(state === "collapsed" ? "w-9" : "w-full")}
-				initial="rest"
-				variants={buttonVariants}
-				whileHover="hover"
-				whileTap="tap"
-			>
-				<Button
-					className={cn(state === "expanded" ? "w-full" : "")}
-					onClick={() => router.push("/sign-in")}
-					size={state === "collapsed" ? "icon" : "default"}
-					variant="outline"
+					whileHover="hover"
 				>
-					<motion.div
-						initial="rest"
-						variants={iconVariants}
-						whileHover="hover"
-					>
-						<UserIcon className="size-4" />
-					</motion.div>
-					<AnimatePresence>
-						{state === "expanded" && (
-							<motion.span
-								animate="visible"
-								className="text-sm"
-								exit="exit"
-								initial="hidden"
-								transition={transitions.fast}
-								variants={fadeVariants}
-							>
-								Sign In
-							</motion.span>
-						)}
-					</AnimatePresence>
-				</Button>
-			</motion.div>
-		);
-	}
+					<UserIcon className="size-4" />
+				</motion.div>
+				<AnimatePresence>
+					{state === "expanded" ? (
+						<motion.span
+							animate="visible"
+							className="text-sm"
+							exit="exit"
+							initial="hidden"
+							transition={transitions.fast}
+							variants={fadeVariants}
+						>
+							Sign In
+						</motion.span>
+					) : null}
+				</AnimatePresence>
+			</Button>
+		</motion.div>
+	);
+}
 
+function SignedInProfile({
+	email,
+	image,
+	isMobile,
+	name,
+	onAccountSettings,
+	onSignOut,
+	state,
+}: UserProfileProps & {
+	email?: string | null;
+	image?: string | null;
+	isMobile: boolean;
+	name?: string | null;
+	onAccountSettings: () => void;
+	onSignOut: () => void;
+}) {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -153,7 +152,7 @@ export default function UserProfile({ state }: UserProfileProps) {
 							<Avatar>
 								<AvatarImage
 									className="rounded-sm"
-									src={session.user?.image || ""}
+									src={image || ""}
 								/>
 								<AvatarFallback>
 									<UserIcon className="size-4 text-primary" />
@@ -161,7 +160,7 @@ export default function UserProfile({ state }: UserProfileProps) {
 							</Avatar>
 						</motion.div>
 						<AnimatePresence>
-							{state === "expanded" && (
+							{state === "expanded" ? (
 								<motion.div
 									animate="visible"
 									className="flex flex-col"
@@ -171,53 +170,85 @@ export default function UserProfile({ state }: UserProfileProps) {
 									variants={fadeVariants}
 								>
 									<span className="max-w-[120px] truncate font-medium text-sm">
-										{session.user?.name || "User"}
+										{name || "User"}
 									</span>
 									<span className="max-w-[120px] truncate font-medium text-muted-foreground text-xs">
-										{session.user?.email || "User"}
+										{email || "User"}
 									</span>
 								</motion.div>
-							)}
+							) : null}
 						</AnimatePresence>
 					</motion.div>
 				</motion.div>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
-				align="end"
+				align={isMobile ? "start" : "end"}
 				className="w-48"
-				side="right"
-				sideOffset={10}
+				side={isMobile ? "top" : "right"}
+				sideOffset={isMobile ? 12 : 10}
 			>
 				<DropdownMenuItem
-					asChild
 					className="cursor-pointer"
-					onClick={handleAccountSettings}
+					onClick={onAccountSettings}
 				>
-					<Button
-						className="w-full justify-start p-0"
-						variant="ghost"
-					>
-						<SettingsIcon className="size-4" />
-						Account Settings
-					</Button>
+					<SettingsIcon className="size-4" />
+					Account Settings
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
 				<ThemeMenuItems showLabel={false} />
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
-					asChild
 					className="cursor-pointer"
-					onClick={handleSignOut}
+					onClick={onSignOut}
 				>
-					<Button
-						className="w-full justify-start p-0"
-						variant="ghost"
-					>
-						<LogOutIcon className="size-4" />
-						Sign Out
-					</Button>
+					<LogOutIcon className="size-4" />
+					Sign Out
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
+	);
+}
+
+export default function UserProfile({ state }: UserProfileProps) {
+	const { data: session, isPending } = authClient.useSession();
+	const isMobile = useIsMobile();
+	const router = useRouter();
+	const [isHydrated, setIsHydrated] = useState(false);
+
+	useEffect(() => {
+		setIsHydrated(true);
+	}, []);
+
+	if (!isHydrated || isPending) {
+		return <ProfileLoading state={state} />;
+	}
+
+	if (!session) {
+		return (
+			<SignedOutProfile
+				onSignIn={() => router.push("/sign-in")}
+				state={state}
+			/>
+		);
+	}
+
+	return (
+		<SignedInProfile
+			email={session.user?.email}
+			image={session.user?.image}
+			isMobile={isMobile}
+			name={session.user?.name}
+			onAccountSettings={() => router.push("/account")}
+			onSignOut={() =>
+				authClient.signOut({
+					fetchOptions: {
+						onSuccess: () => {
+							router.push("/sign-in");
+						},
+					},
+				})
+			}
+			state={state}
+		/>
 	);
 }

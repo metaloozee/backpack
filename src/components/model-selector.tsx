@@ -50,6 +50,7 @@ const providerNames: Record<string, string> = {
 	openrouter: "OpenRouter",
 	mistral: "Mistral",
 	cerebras: "Cerebras",
+	nvidia: "NVIDIA",
 };
 
 export function ModelSelector() {

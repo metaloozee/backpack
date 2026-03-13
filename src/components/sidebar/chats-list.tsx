@@ -6,11 +6,12 @@ import {
 	useQuery,
 	useQueryClient,
 } from "@tanstack/react-query";
-import { Trash2Icon, XIcon } from "lucide-react";
+import { CheckIcon, Trash2Icon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -19,6 +20,7 @@ import {
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Loader } from "@/components/ui/loader";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +39,7 @@ interface ChatItemProps {
 	onConfirmDelete: () => void;
 	onCancelDelete: () => void;
 	onDeleteClick: () => void;
+	isMobile: boolean;
 }
 
 function ChatItem({
@@ -47,7 +50,72 @@ function ChatItem({
 	onConfirmDelete,
 	onCancelDelete,
 	onDeleteClick,
+	isMobile,
 }: ChatItemProps) {
+	if (isMobile) {
+		return (
+			<div
+				className={cn(
+					"flex min-h-11 items-center gap-2 rounded-md px-1",
+					isActive &&
+						"bg-sidebar-accent text-sidebar-accent-foreground dark:bg-neutral-900"
+				)}
+			>
+				<Link
+					className={cn(
+						"min-w-0 flex-1 rounded-md px-3 py-3 text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+						isActive && "hover:bg-transparent"
+					)}
+					href={`/c/${chat.id}`}
+				>
+					<span className="block truncate">{chat.title}</span>
+				</Link>
+				<div className="flex shrink-0 items-center gap-1">
+					{isConfirming ? (
+						<>
+							<Button
+								aria-label={`Confirm delete ${chat.title}`}
+								className="size-9"
+								disabled={isPending}
+								onClick={onConfirmDelete}
+								size="icon"
+								type="button"
+								variant="destructive"
+							>
+								{isPending ? (
+									<Loader className="size-4" />
+								) : (
+									<CheckIcon className="size-4" />
+								)}
+							</Button>
+							<Button
+								aria-label={`Cancel deleting ${chat.title}`}
+								className="size-9"
+								onClick={onCancelDelete}
+								size="icon"
+								type="button"
+								variant="ghost"
+							>
+								<XIcon className="size-4" />
+							</Button>
+						</>
+					) : (
+						<Button
+							aria-label={`Delete ${chat.title}`}
+							className="size-9 text-muted-foreground"
+							onClick={onDeleteClick}
+							size="icon"
+							type="button"
+							variant="ghost"
+						>
+							<Trash2Icon className="size-4" />
+						</Button>
+					)}
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<ContextMenu onOpenChange={(open) => !open && onCancelDelete()}>
 			<ContextMenuTrigger asChild>
@@ -119,6 +187,7 @@ export function SidebarChatsList({
 	const pathname = usePathname();
 	const router = useRouter();
 	const trimmedQuery = query.trim().toLowerCase();
+	const isMobile = useIsMobile();
 
 	const loadMoreRef = useRef<HTMLDivElement | null>(null);
 	const [confirmingChatId, setConfirmingChatId] = useState<string | null>(
@@ -281,6 +350,7 @@ export function SidebarChatsList({
 					chat={c}
 					isActive={c.id === currentChatId}
 					isConfirming={confirmingChatId === c.id}
+					isMobile={isMobile}
 					isPending={
 						pendingChatId === c.id && deleteMutation.isPending
 					}

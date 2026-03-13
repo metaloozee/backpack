@@ -54,6 +54,8 @@
 }
 
 :root {
+	--safe-area-top: env(safe-area-inset-top, 0px);
+	--safe-area-bottom: env(safe-area-inset-bottom, 0px);
 	--card: oklch(1 0 0);
 	--card-foreground: oklch(0.14 0 0);
 	--popover: oklch(1 0 0);

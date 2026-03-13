@@ -6,7 +6,6 @@ import {
 	Conversation,
 	ConversationContent,
 	ConversationEmptyState,
-	ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message as PreviewMessage } from "@/components/chat/message";
 import { Loader } from "@/components/ui/loader";
@@ -58,7 +57,6 @@ function PureChatMessages({ status, messages, regenerate }: ChatMessageProps) {
 					</div>
 				) : null}
 			</ConversationContent>
-			<ConversationScrollButton />
 		</Conversation>
 	);
 }
