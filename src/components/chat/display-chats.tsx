@@ -25,7 +25,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
 	buttonVariants,
 	fadeVariants,
-	iconVariants,
 	messageVariants,
 	modalVariants,
 	staggerVariants,
@@ -161,18 +160,9 @@ function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 												variants={fadeVariants}
 											>
 												{isDeleting ? (
-													<motion.div
-														animate="spin"
-														initial="rest"
-														variants={iconVariants}
-													>
-														<Spinner size="sm" />
-													</motion.div>
+													<Spinner size="sm" />
 												) : (
-													<>
-														<Trash2Icon className="size-3 text-muted-foreground" />
-														delete
-													</>
+													<>delete</>
 												)}
 											</motion.div>
 										</Button>

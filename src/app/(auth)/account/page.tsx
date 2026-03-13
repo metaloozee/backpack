@@ -52,33 +52,26 @@ export default async function AccountPage() {
 				<McpServerConfig />
 			</div>
 
-			<div className="w-full overflow-hidden rounded-3xl border border-red-500/30 bg-red-50 shadow-sm dark:border-red-500/25 dark:bg-red-950/20">
+			<div className="w-full overflow-hidden rounded-md border border-red-500/30 bg-red-50 shadow-sm dark:border-red-500/25 dark:bg-red-950/20">
 				<div className="flex flex-col gap-5 p-5 sm:p-6">
 					<div className="space-y-2">
 						<h3 className="font-semibold text-base text-red-900 dark:text-red-100">
 							Delete Account
 						</h3>
-						<p className="max-w-xl text-red-950/90 text-sm leading-6 dark:text-red-100/85">
+						<p className="text-red-950/90 text-sm leading-6 dark:text-red-100/85">
 							Deleting your account removes your memories, files,
 							and access permanently. This action cannot be
 							undone.
 						</p>
 					</div>
-
-					<div className="flex flex-col gap-3 rounded-2xl border border-red-500/20 bg-background p-4 dark:border-red-500/20 dark:bg-neutral-950/70">
-						<p className="text-muted-foreground text-xs leading-5 dark:text-neutral-400">
-							Account deletion is currently disabled while we
-							finish the self-serve recovery and export flow.
-						</p>
-						<Button
-							className="w-fit border-red-500/25 bg-red-500/10 text-red-700 shadow-none hover:bg-red-500/15 hover:text-red-800 disabled:border-red-500/15 disabled:bg-red-500/8 disabled:text-red-700/60 dark:border-red-500/25 dark:bg-red-500/15 dark:text-red-200 dark:disabled:text-red-200/45 dark:hover:bg-red-500/20 dark:hover:text-red-100"
-							disabled
-							size="sm"
-							variant="outline"
-						>
-							Delete My Account
-						</Button>
-					</div>
+					<Button
+						className="w-fit border-red-500/25 bg-red-500/10 text-red-700 shadow-none hover:bg-red-500/15 hover:text-red-800 disabled:border-red-500/15 disabled:bg-red-500/8 disabled:text-red-700/60 dark:border-red-500/25 dark:bg-red-500/15 dark:text-red-200 dark:disabled:text-red-200/45 dark:hover:bg-red-500/20 dark:hover:text-red-100"
+						disabled
+						size="sm"
+						variant="outline"
+					>
+						Delete My Account
+					</Button>
 				</div>
 			</div>
 		</div>

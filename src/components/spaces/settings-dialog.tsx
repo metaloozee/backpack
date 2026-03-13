@@ -39,6 +39,7 @@ import {
 	transitions,
 } from "@/lib/animations";
 import { useTRPC } from "@/lib/trpc/trpc";
+import { Spinner } from "../spinner";
 
 interface SettingsDialogProps {
 	spaceId: string;
@@ -246,7 +247,7 @@ function SettingsDialogForm({
 								<h4 className="font-medium text-foreground text-sm dark:text-neutral-100">
 									Delete Space
 								</h4>
-								<p className="max-w-xl text-red-950/80 text-xs leading-5 dark:text-red-100/75">
+								<p className="text-red-950/80 text-xs leading-5 dark:text-red-100/75">
 									Once you delete a space, there is no going
 									back. This will permanently delete all
 									chats, messages, and data associated with
@@ -438,9 +439,11 @@ export function SettingsDialog({
 									type="button"
 									variant="outline"
 								>
-									{deleteMutation.isPending
-										? "deleting..."
-										: "delete space"}
+									{deleteMutation.isPending ? (
+										<Spinner size="sm" />
+									) : (
+										"delete space"
+									)}
 								</Button>
 								<Button
 									className="border-border bg-background text-xs hover:bg-muted dark:bg-neutral-950/70"
