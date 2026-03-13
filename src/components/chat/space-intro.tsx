@@ -26,9 +26,9 @@ export function SpaceIntro({
 			<div className="flex flex-col items-start justify-start gap-2">
 				{spaceStatus === "pending" ? (
 					<>
-						<div className="h-7 w-48 animate-pulse rounded bg-neutral-900" />
-						<div className="h-4 w-80 animate-pulse rounded bg-neutral-900" />
-						<div className="h-4 w-56 animate-pulse rounded bg-neutral-900" />
+						<div className="h-7 w-48 animate-pulse rounded bg-muted dark:bg-neutral-900" />
+						<div className="h-4 w-80 animate-pulse rounded bg-muted dark:bg-neutral-900" />
+						<div className="h-4 w-56 animate-pulse rounded bg-muted dark:bg-neutral-900" />
 					</>
 				) : (
 					<>
@@ -51,7 +51,7 @@ export function SpaceIntro({
 					spaceName={spaceTitle}
 				/>
 				{knowledgeStatus === "pending" ? (
-					<div className="h-8 w-24 animate-pulse rounded-md bg-neutral-900" />
+					<div className="h-8 w-24 animate-pulse rounded-md bg-muted dark:bg-neutral-900" />
 				) : (
 					<KnowledgeDialog
 						knowledgeData={knowledgeData ?? []}

@@ -32,7 +32,6 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
-	buttonVariants,
 	fadeVariants,
 	iconVariants,
 	modalVariants,
@@ -217,14 +216,16 @@ function SettingsDialogForm({
 					transition={transitions.smooth}
 				>
 					<DisclosureTrigger>
-						<div className="flex cursor-pointer items-center justify-between rounded-lg border border-red-900/30 bg-red-950/20 p-4 transition-colors hover:bg-red-950/30">
+						<div className="flex cursor-pointer items-center justify-between rounded-2xl border border-red-500/30 bg-red-50 p-4 shadow-sm transition-colors hover:border-red-500/40 hover:bg-red-50 dark:border-red-500/25 dark:bg-red-950/20 dark:hover:bg-red-950/30">
 							<div className="flex items-center gap-3">
-								<AlertTriangleIcon className="size-5 text-red-500" />
+								<div className="flex size-10 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10 dark:border-red-500/25 dark:bg-red-500/15">
+									<AlertTriangleIcon className="size-5 text-red-600 dark:text-red-300" />
+								</div>
 								<div>
-									<h3 className="font-semibold text-red-500 text-sm">
+									<h3 className="font-semibold text-red-700 text-sm dark:text-red-200">
 										Danger Zone
 									</h3>
-									<p className="text-neutral-400 text-xs">
+									<p className="text-red-950/70 text-xs dark:text-red-100/70">
 										Irreversible and destructive actions
 									</p>
 								</div>
@@ -235,37 +236,32 @@ function SettingsDialogForm({
 								}}
 								transition={transitions.smooth}
 							>
-								<ChevronDownIcon className="size-5 text-neutral-400" />
+								<ChevronDownIcon className="size-5 text-red-700/70 dark:text-red-200/70" />
 							</motion.div>
 						</div>
 					</DisclosureTrigger>
 					<DisclosureContent>
-						<div className="space-y-3 rounded-lg border border-red-900/30 bg-red-950/10 p-4">
+						<div className="space-y-4 rounded-2xl border border-red-500/25 bg-red-50 p-4 shadow-sm dark:border-red-500/20 dark:bg-red-950/18">
 							<div className="space-y-2">
-								<h4 className="font-medium text-neutral-200 text-sm">
+								<h4 className="font-medium text-foreground text-sm dark:text-neutral-100">
 									Delete Space
 								</h4>
-								<p className="text-neutral-400 text-xs">
+								<p className="max-w-xl text-red-950/80 text-xs leading-5 dark:text-red-100/75">
 									Once you delete a space, there is no going
 									back. This will permanently delete all
 									chats, messages, and data associated with
 									this space.
 								</p>
 							</div>
-							<motion.div
-								initial="rest"
-								whileHover="hover"
-								whileTap="tap"
+							<Button
+								className="border-red-500/35 bg-background text-red-700 shadow-none hover:bg-red-100 hover:text-red-800 dark:border-red-500/30 dark:bg-neutral-950/75 dark:text-red-200 dark:hover:bg-red-950/40 dark:hover:text-red-100"
+								onClick={() => setIsDeleteDialogOpen(true)}
+								type="button"
+								variant="outline"
 							>
-								<Button
-									onClick={() => setIsDeleteDialogOpen(true)}
-									type="button"
-									variant="destructive"
-								>
-									<Trash2Icon className="size-4" />
-									Delete Space
-								</Button>
-							</motion.div>
+								<Trash2Icon className="size-4" />
+								Delete Space
+							</Button>
 						</div>
 					</DisclosureContent>
 				</Disclosure>
@@ -277,52 +273,28 @@ function SettingsDialogForm({
 						]}
 					>
 						{([canSubmit, isSubmitting]) => (
-							<motion.div
-								animate="visible"
-								className="flex w-full min-w-0 justify-end gap-2"
-								initial="hidden"
-								transition={{
-									delay: 0.3,
-									...transitions.smooth,
-								}}
-								variants={fadeVariants}
-							>
-								<motion.div
-									initial="rest"
-									variants={buttonVariants}
-									whileHover="hover"
-									whileTap="tap"
+							<div className="flex w-full min-w-0 justify-end gap-2">
+								<Button
+									onClick={() => setIsOpen(false)}
+									type="button"
+									variant="outline"
 								>
-									<Button
-										onClick={() => setIsOpen(false)}
-										type="button"
-										variant="outline"
-									>
-										Cancel
-									</Button>
-								</motion.div>
-								<motion.div
-									initial="rest"
-									variants={buttonVariants}
-									whileHover="hover"
-									whileTap="tap"
-								>
-									<Button
-										disabled={
-											!canSubmit ||
-											isSubmitting ||
-											updateMutation.isPending
-										}
-										type="submit"
-										variant="secondary"
-									>
-										{isSubmitting ||
+									Cancel
+								</Button>
+								<Button
+									disabled={
+										!canSubmit ||
+										isSubmitting ||
 										updateMutation.isPending
-											? "Saving..."
-											: "Save Settings"}
-									</Button>
-								</motion.div>
-							</motion.div>
+									}
+									type="submit"
+									variant="secondary"
+								>
+									{isSubmitting || updateMutation.isPending
+										? "Saving..."
+										: "Save Settings"}
+								</Button>
+							</div>
 						)}
 					</form.Subscribe>
 				</DialogFooter>
@@ -406,7 +378,7 @@ export function SettingsDialog({
 						Settings
 					</Button>
 				</DialogTrigger>
-				<DialogContent className="w-full max-w-[calc(100%-2rem)] bg-neutral-950 sm:max-w-4xl">
+				<DialogContent className="w-full max-w-[calc(100%-2rem)] bg-background sm:max-w-4xl dark:bg-neutral-950">
 					<SettingsDialogForm
 						isDangerSectionOpen={isDangerSectionOpen}
 						key={dialogOpenKey}
@@ -426,7 +398,7 @@ export function SettingsDialog({
 				onOpenChange={setIsDeleteDialogOpen}
 				open={isDeleteDialogOpen}
 			>
-				<DialogContent className="bg-neutral-950">
+				<DialogContent className="bg-background dark:bg-neutral-950">
 					<motion.div
 						animate="visible"
 						className="w-full min-w-0"
@@ -457,42 +429,28 @@ export function SettingsDialog({
 							</motion.div>
 
 							<div className="flex w-full min-w-0 flex-row-reverse gap-2">
-								<motion.div
-									initial="rest"
-									whileHover="hover"
-									whileTap="tap"
+								<Button
+									className="border-red-500/35 bg-background text-red-700 text-xs shadow-none hover:bg-red-100 hover:text-red-800 dark:border-red-500/30 dark:bg-neutral-950/75 dark:text-red-200 dark:hover:bg-red-950/40 dark:hover:text-red-100"
+									disabled={deleteMutation.isPending}
+									onClick={() =>
+										deleteMutation.mutate({ spaceId })
+									}
+									type="button"
+									variant="outline"
 								>
-									<Button
-										className="text-xs"
-										disabled={deleteMutation.isPending}
-										onClick={() =>
-											deleteMutation.mutate({ spaceId })
-										}
-										type="button"
-										variant="destructive"
-									>
-										{deleteMutation.isPending
-											? "deleting..."
-											: "delete space"}
-									</Button>
-								</motion.div>
-								<motion.div
-									initial="rest"
-									whileHover="hover"
-									whileTap="tap"
+									{deleteMutation.isPending
+										? "deleting..."
+										: "delete space"}
+								</Button>
+								<Button
+									className="border-border bg-background text-xs hover:bg-muted dark:bg-neutral-950/70"
+									disabled={deleteMutation.isPending}
+									onClick={() => setIsDeleteDialogOpen(false)}
+									type="button"
+									variant="outline"
 								>
-									<Button
-										className="text-xs"
-										disabled={deleteMutation.isPending}
-										onClick={() =>
-											setIsDeleteDialogOpen(false)
-										}
-										type="button"
-										variant="link"
-									>
-										cancel
-									</Button>
-								</motion.div>
+									cancel
+								</Button>
 							</div>
 						</DialogHeader>
 					</motion.div>

@@ -235,7 +235,7 @@ export function KnowledgeDialog({
 					Knowledge Base
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="flex h-[min(85vh,56rem)] w-full max-w-[min(96vw,72rem)] flex-col bg-neutral-950 sm:max-w-[min(96vw,72rem)]">
+			<DialogContent className="flex h-[min(85vh,56rem)] w-full max-w-[min(96vw,72rem)] flex-col bg-background sm:max-w-[min(96vw,72rem)] dark:bg-neutral-950">
 				<DialogHeader>
 					<DialogTitle>Knowledge Base</DialogTitle>
 				</DialogHeader>
@@ -246,7 +246,7 @@ export function KnowledgeDialog({
 					}
 					value={activeTab}
 				>
-					<TabsList className="grid w-full grid-cols-2 bg-black">
+					<TabsList className="grid w-full grid-cols-2 bg-muted dark:bg-black">
 						<TabsTrigger value="webpage">Web Pages</TabsTrigger>
 						<TabsTrigger value="pdf">PDF Documents</TabsTrigger>
 					</TabsList>

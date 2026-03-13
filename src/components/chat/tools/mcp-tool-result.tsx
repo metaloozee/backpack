@@ -52,7 +52,7 @@ export function McpToolResult({
 
 	if (isLoading) {
 		return (
-			<div className="flex h-10 w-full items-center gap-2 rounded-md border bg-neutral-900 px-4 text-xs">
+			<div className="flex h-10 w-full items-center gap-2 rounded-md border bg-card px-4 text-xs dark:bg-neutral-900">
 				<Loader size="sm" />
 				<span className="text-muted-foreground">{serverName}</span>
 				<span className="text-muted-foreground">/</span>
@@ -64,7 +64,7 @@ export function McpToolResult({
 	return (
 		<Accordion className="w-full">
 			<AccordionItem
-				className="rounded-md border bg-neutral-900 px-4"
+				className="rounded-md border bg-card px-4 dark:bg-neutral-900"
 				value={toolCallId}
 			>
 				<AccordionTrigger className="flex h-10 w-full items-center justify-between gap-2 text-xs">
@@ -94,7 +94,7 @@ export function McpToolResult({
 								Input
 							</p>
 							<CodeBlock
-								className="overflow-auto rounded-sm bg-neutral-950 font-mono text-[10px] leading-4"
+								className="overflow-auto rounded-sm bg-background font-mono text-[10px] leading-4 dark:bg-neutral-950"
 								code={formattedInput}
 								language="json"
 							/>
@@ -106,7 +106,7 @@ export function McpToolResult({
 								Output
 							</p>
 							<CodeBlock
-								className="overflow-auto rounded-sm bg-neutral-950 font-mono text-[10px] leading-4"
+								className="overflow-auto rounded-sm bg-background font-mono text-[10px] leading-4 dark:bg-neutral-950"
 								code={formattedOutput}
 								language="json"
 							/>

@@ -49,7 +49,7 @@ export function Cards({ spaces }: { spaces: Space[] }) {
 					variants={itemVariants}
 				>
 					<Link href={`/s/${space.id}`}>
-						<Card className="h-full w-full bg-neutral-900/50 transition-all duration-200 hover:bg-neutral-900/70">
+						<Card className="h-full w-full border-border/80 bg-card transition-all duration-200 hover:bg-muted/70 dark:border-white/10 dark:bg-neutral-900/50 dark:hover:bg-neutral-900/70">
 							<CardHeader>
 								<LibraryIcon />
 								<CardTitle>{space.spaceTitle}</CardTitle>

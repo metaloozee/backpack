@@ -46,7 +46,7 @@ export function KnowledgeSearchTool({
 		return (
 			<Accordion className="w-full">
 				<AccordionItem
-					className="rounded-md border bg-neutral-900 px-4"
+					className="rounded-md border bg-card px-4 dark:bg-neutral-900"
 					value={toolCallId}
 				>
 					<AccordionTrigger className="flex h-10 w-full items-center justify-between gap-2 text-xs">
@@ -65,7 +65,7 @@ export function KnowledgeSearchTool({
 									>
 										<DisclosureTrigger className="w-full">
 											<div className="flex w-full flex-row justify-between">
-												<span className="flex items-center gap-2 truncate text-neutral-400 text-xs">
+												<span className="flex items-center gap-2 truncate text-muted-foreground text-xs">
 													<SearchIcon className="size-3" />
 													{searchResult.keyword}
 												</span>
@@ -80,7 +80,7 @@ export function KnowledgeSearchTool({
 															ctxIdx: number
 														) => (
 															<div
-																className="w-64 shrink-0 rounded-lg bg-neutral-950 p-3 shadow-sm transition-shadow duration-200 hover:shadow-md"
+																className="w-64 shrink-0 rounded-lg border border-border/60 bg-card p-3 shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-transparent dark:bg-neutral-950"
 																key={`${searchResult.keyword}-${ctxIdx}`}
 															>
 																<p className="line-clamp-2 font-medium text-primary text-sm">
@@ -117,14 +117,14 @@ export function KnowledgeSearchTool({
 										>
 											<DisclosureTrigger className="w-full">
 												<div className="flex w-full flex-row justify-between">
-													<span className="flex items-center gap-2 truncate text-neutral-400 text-xs">
+													<span className="flex items-center gap-2 truncate text-muted-foreground text-xs">
 														<BookCopyIcon className="size-3" />
 														{keyword}
 													</span>
 												</div>
 											</DisclosureTrigger>
 											<DisclosureContent>
-												<div className="rounded-md bg-card p-4 text-center text-muted-foreground">
+												<div className="rounded-md bg-card p-4 text-center text-muted-foreground dark:bg-neutral-950">
 													No results found.
 												</div>
 											</DisclosureContent>
@@ -140,7 +140,7 @@ export function KnowledgeSearchTool({
 	return (
 		<Accordion className="w-full">
 			<AccordionItem
-				className="rounded-md border bg-neutral-900 px-4"
+				className="rounded-md border bg-card px-4 dark:bg-neutral-900"
 				value={toolCallId}
 			>
 				<AccordionTrigger className="flex h-10 w-full items-center justify-between gap-2 text-xs">
@@ -159,7 +159,7 @@ export function KnowledgeSearchTool({
 							>
 								<DisclosureTrigger className="w-full">
 									<div className="flex w-full flex-row justify-between">
-										<span className="flex items-center gap-2 truncate text-neutral-400 text-xs">
+										<span className="flex items-center gap-2 truncate text-muted-foreground text-xs">
 											<Loader size="sm" />
 											{keyword}
 										</span>

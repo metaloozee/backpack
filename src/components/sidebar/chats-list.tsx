@@ -53,8 +53,9 @@ function ChatItem({
 			<ContextMenuTrigger asChild>
 				<Link
 					className={cn(
-						"rounded px-2 py-1 hover:bg-neutral-900",
-						isActive && "bg-neutral-900"
+						"rounded px-2 py-1 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-neutral-900",
+						isActive &&
+							"bg-sidebar-accent text-sidebar-accent-foreground dark:bg-neutral-900"
 					)}
 					href={`/c/${chat.id}`}
 				>

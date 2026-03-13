@@ -352,7 +352,7 @@ function MessageReasoning({ reasoning }: { reasoning: string }) {
 				}}
 				className="relative overflow-hidden"
 			>
-				<div className="text-neutral-600 dark:text-neutral-400">
+				<div className="text-muted-foreground dark:text-neutral-400">
 					<Streamdown
 						className="text-sm leading-7 sm:text-base"
 						plugins={streamdownPlugins}
@@ -368,7 +368,7 @@ function MessageReasoning({ reasoning }: { reasoning: string }) {
 			<div className="mt-2 flex items-center justify-center gap-2">
 				<DisclosureTrigger>
 					<Button
-						className="dark:!text-neutral-500 !text-neutral-600 overflow-hidden text-xs"
+						className="!text-muted-foreground dark:!text-neutral-500 overflow-hidden text-xs"
 						size="sm"
 						variant="ghost"
 					>
@@ -493,7 +493,7 @@ function renderAttachments(message: ChatMessage) {
 					<div className="flex flex-wrap gap-2">
 						{imageParts.map((part, index) => (
 							<div
-								className="relative aspect-video w-60 overflow-hidden rounded-2xl border border-white/10"
+								className="relative aspect-video w-60 overflow-hidden rounded-2xl border border-border/70 dark:border-white/10"
 								key={`${message.id}-img-${part.url}-${index}`}
 							>
 								<Image

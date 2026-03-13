@@ -23,7 +23,7 @@ export default async function AccountPage() {
 				</Link>
 			</Button>
 			<div className="flex w-full flex-col items-start justify-center gap-4">
-				<div className="flex w-full flex-row items-end justify-between rounded-lg border bg-neutral-900 p-3">
+				<div className="flex w-full flex-row items-end justify-between rounded-lg border bg-card p-3 dark:bg-neutral-900">
 					<div className="flex flex-row items-center justify-start gap-3">
 						<Avatar className="size-18 rounded-md">
 							<AvatarImage src={user.image ?? ""} />
@@ -52,26 +52,33 @@ export default async function AccountPage() {
 				<McpServerConfig />
 			</div>
 
-			<div className="flex w-full flex-row items-center justify-between rounded-lg border border-red-900 bg-red-950/50">
-				<div className="flex w-full flex-col gap-2 p-4">
-					<h3 className="font-semibold text-base text-red-200">
-						Danger Zone
-					</h3>
-					<p className="text-red-300 text-xs">
-						Deleting your account will permanently remove all your
-						data, memories, and files. <br />
-						<span className="font-semibold">
-							This action cannot be undone.
-						</span>
-					</p>
-					<Button
-						className="mt-2 w-fit"
-						disabled
-						size="sm"
-						variant="destructive"
-					>
-						Delete My Account
-					</Button>
+			<div className="w-full overflow-hidden rounded-3xl border border-red-500/30 bg-red-50 shadow-sm dark:border-red-500/25 dark:bg-red-950/20">
+				<div className="flex flex-col gap-5 p-5 sm:p-6">
+					<div className="space-y-2">
+						<h3 className="font-semibold text-base text-red-900 dark:text-red-100">
+							Delete Account
+						</h3>
+						<p className="max-w-xl text-red-950/90 text-sm leading-6 dark:text-red-100/85">
+							Deleting your account removes your memories, files,
+							and access permanently. This action cannot be
+							undone.
+						</p>
+					</div>
+
+					<div className="flex flex-col gap-3 rounded-2xl border border-red-500/20 bg-background p-4 dark:border-red-500/20 dark:bg-neutral-950/70">
+						<p className="text-muted-foreground text-xs leading-5 dark:text-neutral-400">
+							Account deletion is currently disabled while we
+							finish the self-serve recovery and export flow.
+						</p>
+						<Button
+							className="w-fit border-red-500/25 bg-red-500/10 text-red-700 shadow-none hover:bg-red-500/15 hover:text-red-800 disabled:border-red-500/15 disabled:bg-red-500/8 disabled:text-red-700/60 dark:border-red-500/25 dark:bg-red-500/15 dark:text-red-200 dark:disabled:text-red-200/45 dark:hover:bg-red-500/20 dark:hover:text-red-100"
+							disabled
+							size="sm"
+							variant="outline"
+						>
+							Delete My Account
+						</Button>
+					</div>
 				</div>
 			</div>
 		</div>

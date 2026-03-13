@@ -80,7 +80,7 @@ export function WebSearchTool({
 			<div className="flex w-full flex-col gap-2">
 				{flattenedImages.length > 0 && (
 					<div className="mt-2">
-						<ScrollArea className="bg-neutral-950 pb-2">
+						<ScrollArea className="rounded-lg bg-muted/30 pb-2 dark:bg-neutral-950">
 							<div className="flex w-max flex-row gap-3">
 								{flattenedImages.slice(0, 24).map((img) => (
 									<a
@@ -125,7 +125,7 @@ export function WebSearchTool({
 
 				<Accordion className="w-full">
 					<AccordionItem
-						className="rounded-md border bg-neutral-900 px-4"
+						className="rounded-md border bg-card px-4 dark:bg-neutral-900"
 						value={toolCallId}
 					>
 						<AccordionTrigger className="flex h-10 w-full items-center justify-between gap-2 text-xs">
@@ -144,7 +144,7 @@ export function WebSearchTool({
 									>
 										<DisclosureTrigger className="w-full">
 											<div className="flex w-full flex-row justify-between">
-												<span className="flex items-center gap-2 truncate text-neutral-400 text-xs">
+												<span className="flex items-center gap-2 truncate text-muted-foreground text-xs">
 													<SearchIcon className="size-3" />
 													{searchGroup.query}
 												</span>
@@ -160,7 +160,7 @@ export function WebSearchTool({
 															resIdx: number
 														) => (
 															<div
-																className="w-64 shrink-0 rounded-lg bg-neutral-950 p-3 shadow-sm transition-shadow duration-200 hover:shadow-md"
+																className="w-64 shrink-0 rounded-lg border border-border/60 bg-card p-3 shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-transparent dark:bg-neutral-950"
 																key={`${searchGroup.query}-${resIdx}`}
 															>
 																<Link
@@ -212,7 +212,7 @@ export function WebSearchTool({
 	return (
 		<Accordion className="w-full">
 			<AccordionItem
-				className="rounded-md border bg-neutral-900 px-4"
+				className="rounded-md border bg-card px-4 dark:bg-neutral-900"
 				value={toolCallId}
 			>
 				<AccordionTrigger className="flex h-10 w-full items-center justify-between gap-2 text-xs">
@@ -230,7 +230,7 @@ export function WebSearchTool({
 						>
 							<DisclosureTrigger className="w-full">
 								<div className="flex w-full flex-row justify-between">
-									<span className="flex items-center gap-2 truncate text-neutral-400 text-xs">
+									<span className="flex items-center gap-2 truncate text-muted-foreground text-xs">
 										<Loader size="sm" />
 										{query}
 									</span>

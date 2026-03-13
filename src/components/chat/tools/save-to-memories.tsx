@@ -17,7 +17,7 @@ interface SaveToMemoriesToolProps {
 export function SaveToMemoriesTool({ output }: SaveToMemoriesToolProps) {
 	if (output) {
 		return (
-			<div className="w-full rounded-md border bg-neutral-900 px-4 py-3">
+			<div className="w-full rounded-md border bg-card px-4 py-3 dark:bg-neutral-900">
 				<div className="flex w-full flex-row items-center gap-2">
 					<Brain className="size-3" />
 					<span className="truncate text-xs">
@@ -29,10 +29,10 @@ export function SaveToMemoriesTool({ output }: SaveToMemoriesToolProps) {
 	}
 
 	return (
-		<div className="w-full rounded-md border bg-neutral-900 px-4 py-3">
+		<div className="w-full rounded-md border bg-card px-4 py-3 dark:bg-neutral-900">
 			<div className="flex w-full flex-row items-center gap-2">
 				<Loader size="sm" />
-				<span className="text-neutral-400 text-xs">
+				<span className="text-muted-foreground text-xs">
 					Saving memories...
 				</span>
 			</div>

@@ -7,6 +7,7 @@ import { DataStreamProvider } from "@/components/data-stream-provider";
 import { Devtools } from "@/components/devtools";
 import { MotionProvider } from "@/components/motion-provider";
 import { StoreHydration } from "@/components/store-hydration";
+import { ThemeColorMeta } from "@/components/theme-color-meta";
 // import { ReactScan } from "@/components/react-scan";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -30,9 +31,6 @@ export default function RootLayout({
 	return (
 		<TrpcProvider>
 			<html lang="en" suppressHydrationWarning>
-				<head>
-					<meta content="#000000" name="theme-color" />
-				</head>
 				<body
 					className={cn(
 						"bg-background font-sans antialiased",
@@ -56,6 +54,7 @@ export default function RootLayout({
 									disableTransitionOnChange
 									enableSystem
 								>
+									<ThemeColorMeta />
 									{/* <ReactScan /> */}
 									<Devtools />
 									<Toaster position="top-center" richColors />

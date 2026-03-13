@@ -49,7 +49,7 @@ function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 		<motion.div
 			animate="visible"
 			className={cn(
-				"relative w-full rounded-md bg-card px-3 py-2 transition-colors duration-200 dark:bg-black",
+				"relative w-full rounded-md border border-border/80 bg-card px-3 py-2 transition-colors duration-200 dark:border-white/10 dark:bg-black",
 				"flex items-center justify-between"
 			)}
 			exit="exit"
@@ -262,7 +262,7 @@ export default function DisplayChats({ spaceId }: { spaceId?: string }) {
 				{Array.from({ length: spaceId ? 1 : 3 }).map((_, index) => (
 					<motion.div
 						animate="visible"
-						className="relative flex w-full items-center justify-between rounded-lg border border-border/50 bg-neutral-900/50 p-4"
+						className="relative flex w-full items-center justify-between rounded-lg border border-border/50 bg-card/70 p-4 dark:bg-neutral-900/50"
 						initial="hidden"
 						key={`skeleton-${index}`}
 						variants={messageVariants}

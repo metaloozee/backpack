@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import type * as React from "react";
 import { Streamdown } from "streamdown";
 import { Citation } from "@/components/chat/citation";
@@ -62,6 +63,9 @@ export function MessageResponse({
 	children: string;
 	components?: Components;
 }) {
+	const { resolvedTheme } = useTheme();
+	const mermaidTheme = resolvedTheme === "dark" ? "dark" : "default";
+
 	return (
 		<Streamdown
 			allowedTags={{
@@ -77,7 +81,7 @@ export function MessageResponse({
 			className={cn(
 				"streamdown-content",
 				"text-sm leading-7 sm:text-base",
-				"group-data-[message-from=user]/message:rounded-2xl group-data-[message-from=user]/message:bg-neutral-900 group-data-[message-from=user]/message:px-4 group-data-[message-from=user]/message:py-3 group-data-[message-from=user]/message:text-primary",
+				"group-data-[message-from=user]/message:rounded-2xl group-data-[message-from=user]/message:border group-data-[message-from=user]/message:border-border group-data-[message-from=user]/message:bg-card group-data-[message-from=user]/message:px-4 group-data-[message-from=user]/message:py-3 group-data-[message-from=user]/message:text-foreground dark:group-data-[message-from=user]/message:border-transparent dark:group-data-[message-from=user]/message:bg-neutral-900 dark:group-data-[message-from=user]/message:text-primary",
 				className
 			)}
 			components={{
@@ -97,7 +101,7 @@ export function MessageResponse({
 			}}
 			mermaid={{
 				config: {
-					theme: "dark",
+					theme: mermaidTheme,
 				},
 			}}
 			plugins={plugins}

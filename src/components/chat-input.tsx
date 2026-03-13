@@ -326,8 +326,8 @@ function PureInput({
 			)}
 		>
 			{isDragging ? (
-				<div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral-950/50 backdrop-blur-sm">
-					<div className="font-semibold text-2xl text-white">
+				<div className="absolute inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm dark:bg-neutral-950/50">
+					<div className="font-semibold text-2xl text-foreground dark:text-white">
 						Drop files to upload
 					</div>
 				</div>
@@ -348,7 +348,7 @@ function PureInput({
 
 			{messages.length === 0 && !isSpaceChat ? (
 				<div className="mb-6">
-					<h1 className="bg-linear-to-br from-white to-neutral-500 bg-clip-text text-3xl text-transparent">
+					<h1 className="bg-linear-to-br from-foreground to-muted-foreground bg-clip-text text-3xl text-transparent dark:from-white dark:to-neutral-500">
 						{greeting}
 					</h1>
 				</div>
@@ -356,7 +356,7 @@ function PureInput({
 
 			<div className="mx-auto w-full max-w-3xl">
 				<PromptInput
-					className="mb-2 rounded-2xl border border-white/10 bg-neutral-900/50 backdrop-blur"
+					className="mb-2 rounded-2xl border border-border bg-card shadow-xs dark:border-white/10 dark:bg-neutral-900/70"
 					onDragEnter={(event) => {
 						event.preventDefault();
 						event.stopPropagation();
@@ -425,7 +425,7 @@ function PureInput({
 
 								{uploadQueue.map((fileName) => (
 									<div
-										className="flex items-center gap-2 rounded-full border bg-muted/20 px-3 py-2"
+										className="flex items-center gap-2 rounded-full border border-border/80 bg-muted/60 px-3 py-2 dark:border-white/10 dark:bg-neutral-900/60"
 										key={`upload-${fileName}`}
 									>
 										<Spinner size="sm" />
@@ -489,7 +489,7 @@ function PureInput({
 						/>
 					</PromptInputBody>
 
-					<PromptInputFooter className="flex items-center justify-between border-white/5 border-t px-4 py-2">
+					<PromptInputFooter className="flex items-center justify-between border-border border-t px-4 py-2 dark:border-white/10">
 						<PromptInputTools className="shrink-0 items-center gap-2">
 							<ModeSelector />
 						</PromptInputTools>

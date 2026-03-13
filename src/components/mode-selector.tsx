@@ -98,7 +98,7 @@ export function ModeSelector() {
 				variants={slideVariants.up}
 			>
 				<Tabs onValueChange={handleModeChange} value={mode}>
-					<TabsList className="bg-neutral-950">
+					<TabsList className="bg-muted dark:bg-neutral-950">
 						{modeTypes.map((m) => (
 							<TabsTrigger
 								className="text-xs"
@@ -120,7 +120,7 @@ export function ModeSelector() {
 									<DropdownMenuTrigger asChild>
 										<Button
 											aria-label="Ask mode options"
-											className="ml-1 h-7 w-7 rounded-sm border-0 bg-transparent p-0 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+											className="ml-1 h-7 w-7 rounded-sm border-0 bg-transparent p-0 hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:hover:bg-neutral-800"
 											size="icon"
 											variant="ghost"
 										>
@@ -135,14 +135,14 @@ export function ModeSelector() {
 						</TooltipProvider>
 						<DropdownMenuContent
 							align="start"
-							className="w-xs border-neutral-800 bg-neutral-950"
+							className="w-xs border-border bg-popover dark:border-neutral-800 dark:bg-neutral-950"
 						>
 							{defaultTools.map((tool) => {
 								const IconComponent = tool.icon;
 								const isChecked = tools[tool.id];
 								return (
 									<DropdownMenuItem
-										className="flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800"
+										className="flex cursor-pointer items-center justify-between p-3 focus:bg-accent dark:focus:bg-neutral-800"
 										key={tool.id}
 										onClick={(e) => e.preventDefault()}
 									>
@@ -171,7 +171,7 @@ export function ModeSelector() {
 							{mcpServersData?.servers &&
 								mcpServersData.servers.length > 0 && (
 									<>
-										<DropdownMenuSeparator className="bg-neutral-800" />
+										<DropdownMenuSeparator className="dark:bg-neutral-800" />
 										<DropdownMenuLabel className="px-3 py-2 font-medium text-muted-foreground text-xs">
 											MCP Servers
 										</DropdownMenuLabel>
@@ -221,7 +221,7 @@ export function ModeSelector() {
 												return (
 													<DropdownMenuItem
 														className={cn(
-															"flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800",
+															"flex cursor-pointer items-center justify-between p-3 focus:bg-accent dark:focus:bg-neutral-800",
 															disabled &&
 																"cursor-not-allowed opacity-70"
 														)}
@@ -288,7 +288,7 @@ export function ModeSelector() {
 									<DropdownMenuTrigger asChild>
 										<Button
 											aria-label="Agent mode options"
-											className="ml-1 h-7 w-7 rounded-sm border-0 bg-transparent p-0 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+											className="ml-1 h-7 w-7 rounded-sm border-0 bg-transparent p-0 hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:hover:bg-neutral-800"
 											size="icon"
 											variant="ghost"
 										>
@@ -303,13 +303,13 @@ export function ModeSelector() {
 						</TooltipProvider>
 						<DropdownMenuContent
 							align="start"
-							className="w-xs border-neutral-800 bg-neutral-950"
+							className="w-xs border-border bg-popover dark:border-neutral-800 dark:bg-neutral-950"
 						>
 							{["research"].map((agentKey) => {
 								const isSelected = selectedAgent === agentKey;
 								return (
 									<DropdownMenuItem
-										className="flex cursor-pointer items-center justify-between p-3 hover:bg-neutral-800"
+										className="flex cursor-pointer items-center justify-between p-3 focus:bg-accent dark:focus:bg-neutral-800"
 										key={agentKey}
 										onSelect={(e) => {
 											e.preventDefault();

@@ -20,7 +20,7 @@ interface ExtractToolProps {
 export function ExtractTool({ toolCallId, input, output }: ExtractToolProps) {
 	if (output) {
 		return (
-			<div className="w-full rounded-md border bg-neutral-900 px-4 py-3">
+			<div className="w-full rounded-md border bg-card px-4 py-3 dark:bg-neutral-900">
 				<div className="flex w-full flex-col gap-2">
 					{output?.map((result) => (
 						<div
@@ -41,7 +41,7 @@ export function ExtractTool({ toolCallId, input, output }: ExtractToolProps) {
 	}
 
 	return (
-		<div className="w-full rounded-md border bg-neutral-900 px-4 py-3">
+		<div className="w-full rounded-md border bg-card px-4 py-3 dark:bg-neutral-900">
 			<div className="flex w-full flex-col gap-2">
 				{input?.urls?.map((url) => (
 					<div
@@ -50,7 +50,7 @@ export function ExtractTool({ toolCallId, input, output }: ExtractToolProps) {
 					>
 						<div className="flex w-full shrink-0 flex-row items-center justify-start gap-2">
 							<Loader size="sm" />
-							<span className="truncate text-neutral-400 text-xs">
+							<span className="truncate text-muted-foreground text-xs">
 								{url}
 							</span>
 						</div>

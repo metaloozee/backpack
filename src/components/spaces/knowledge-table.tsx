@@ -52,10 +52,10 @@ const baseColumns: ColumnDef<Knowledge>[] = [
 				Boolean(knowledge.sourceUrl) ||
 				knowledge.knowledgeType === "webpage";
 			return (
-				<p className="max-w-[22rem] truncate font-medium text-neutral-100 text-sm">
+				<p className="max-w-[22rem] truncate font-medium text-foreground text-sm dark:text-neutral-100">
 					{isLink ? (
 						<Link
-							className="text-neutral-100 underline-offset-4 transition-all duration-300 hover:text-neutral-50 hover:underline"
+							className="text-foreground underline-offset-4 transition-all duration-300 hover:text-primary hover:underline dark:text-neutral-100 dark:hover:text-neutral-50"
 							href={linkUrl}
 							rel="noopener noreferrer"
 							target="_blank"
@@ -339,13 +339,13 @@ export function DataTable<TData, TValue>({
 	});
 
 	return (
-		<div className="relative h-full min-h-0 w-full overflow-hidden rounded-2xl border border-neutral-800/70 bg-neutral-950/70">
+		<div className="relative h-full min-h-0 w-full overflow-hidden rounded-2xl border border-border bg-card dark:border-neutral-800 dark:bg-neutral-950/80">
 			<div className="h-full min-h-0 w-full overflow-x-auto">
 				<Table className="min-w-[760px] border-separate border-spacing-0">
-					<TableHeader className="sticky top-0 z-10 bg-neutral-950/95 backdrop-blur">
+					<TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur dark:bg-neutral-950/95">
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow
-								className="border-neutral-800/70 border-b"
+								className="border-border/70 border-b dark:border-neutral-800/70"
 								key={headerGroup.id}
 							>
 								{headerGroup.headers.map((header) => {
@@ -354,7 +354,7 @@ export function DataTable<TData, TValue>({
 									return (
 										<TableHead
 											className={
-												"px-4 py-3 font-semibold text-[11px] text-neutral-400 uppercase tracking-[0.22em]"
+												"px-4 py-3 font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.22em] dark:text-neutral-400"
 											}
 											key={header.id}
 											style={
@@ -376,14 +376,14 @@ export function DataTable<TData, TValue>({
 							</TableRow>
 						))}
 					</TableHeader>
-					<TableBody className="text-neutral-200">
+					<TableBody className="text-foreground dark:text-neutral-200">
 						{table.getRowModel().rows?.length ? (
 							table.getRowModel().rows.map((row, index) => (
 								<TableRow
 									className={
 										index % 2 === 0
-											? "border-neutral-800/60 border-b bg-neutral-950/40 transition-colors hover:bg-neutral-900/60 data-[state=selected]:bg-neutral-900/70"
-											: "border-neutral-800/60 border-b bg-neutral-950/20 transition-colors hover:bg-neutral-900/60 data-[state=selected]:bg-neutral-900/70"
+											? "border-border/70 border-b bg-background transition-colors hover:bg-muted/80 data-[state=selected]:bg-muted dark:border-neutral-800/60 dark:bg-neutral-950/40 dark:data-[state=selected]:bg-neutral-900/70 dark:hover:bg-neutral-900/60"
+											: "border-border/70 border-b bg-muted/35 transition-colors hover:bg-muted/80 data-[state=selected]:bg-muted dark:border-neutral-800/60 dark:bg-neutral-950/20 dark:data-[state=selected]:bg-neutral-900/70 dark:hover:bg-neutral-900/60"
 									}
 									data-state={
 										row.getIsSelected() && "selected"
@@ -415,7 +415,7 @@ export function DataTable<TData, TValue>({
 						) : (
 							<TableRow>
 								<TableCell
-									className="h-28 text-center text-neutral-400 text-sm"
+									className="h-28 text-center text-muted-foreground text-sm dark:text-neutral-400"
 									colSpan={columns.length}
 								>
 									No results.
@@ -425,14 +425,14 @@ export function DataTable<TData, TValue>({
 					</TableBody>
 				</Table>
 			</div>
-			<div className="flex items-center justify-between gap-3 border-neutral-800/70 border-t px-4 py-3 text-neutral-400 text-xs">
+			<div className="flex items-center justify-between gap-3 border-border border-t px-4 py-3 text-muted-foreground text-xs dark:border-neutral-800/70 dark:text-neutral-400">
 				<span className="tabular-nums">
 					Page {table.getState().pagination.pageIndex + 1} of{" "}
 					{Math.max(table.getPageCount(), 1)}
 				</span>
 				<div className="flex items-center gap-2">
 					<Button
-						className="h-8 rounded-lg border border-neutral-800/70 bg-neutral-900/30 px-3 text-neutral-200 text-xs hover:bg-neutral-900/70"
+						className="h-8 rounded-lg border border-border bg-background px-3 text-foreground text-xs hover:bg-muted dark:border-neutral-800/70 dark:bg-neutral-900/40 dark:text-neutral-200 dark:hover:bg-neutral-900/70"
 						disabled={!table.getCanPreviousPage()}
 						onClick={() => table.previousPage()}
 						type="button"
@@ -441,7 +441,7 @@ export function DataTable<TData, TValue>({
 						Previous
 					</Button>
 					<Button
-						className="h-8 rounded-lg border border-neutral-800/70 bg-neutral-900/30 px-3 text-neutral-200 text-xs hover:bg-neutral-900/70"
+						className="h-8 rounded-lg border border-border bg-background px-3 text-foreground text-xs hover:bg-muted dark:border-neutral-800/70 dark:bg-neutral-900/40 dark:text-neutral-200 dark:hover:bg-neutral-900/70"
 						disabled={!table.getCanNextPage()}
 						onClick={() => table.nextPage()}
 						type="button"
@@ -512,7 +512,7 @@ export function KnowledgeTable({
 						{canRetry ? (
 							<Button
 								aria-label={`Retry ${knowledge.knowledgeName}`}
-								className="h-8 w-8 rounded-lg border border-neutral-800/70 bg-neutral-900/40 text-neutral-200 shadow-sm transition hover:border-neutral-700 hover:bg-neutral-900/80"
+								className="h-8 w-8 rounded-lg border border-border/70 bg-background/80 text-foreground shadow-sm transition hover:bg-muted dark:border-neutral-800/70 dark:bg-neutral-900/40 dark:text-neutral-200 dark:hover:border-neutral-700 dark:hover:bg-neutral-900/80"
 								disabled={retryMutation.isPending}
 								onClick={() => {
 									retryMutation.mutate({
@@ -529,7 +529,7 @@ export function KnowledgeTable({
 						) : null}
 						<Button
 							aria-label={`Open ${knowledge.knowledgeName}`}
-							className="h-8 w-8 rounded-lg border border-neutral-800/70 bg-neutral-900/40 text-neutral-200 shadow-sm transition hover:border-neutral-700 hover:bg-neutral-900/80"
+							className="h-8 w-8 rounded-lg border border-border/70 bg-background/80 text-foreground shadow-sm transition hover:bg-muted dark:border-neutral-800/70 dark:bg-neutral-900/40 dark:text-neutral-200 dark:hover:border-neutral-700 dark:hover:bg-neutral-900/80"
 							disabled={!hasLink}
 							onClick={() => {
 								if (!linkUrl) {
@@ -549,7 +549,7 @@ export function KnowledgeTable({
 						</Button>
 						<Button
 							aria-label={`Rename ${knowledge.knowledgeName}`}
-							className="h-8 w-8 rounded-lg border border-neutral-800/70 bg-neutral-900/40 text-neutral-200 shadow-sm transition hover:border-neutral-700 hover:bg-neutral-900/80"
+							className="h-8 w-8 rounded-lg border border-border/70 bg-background/80 text-foreground shadow-sm transition hover:bg-muted dark:border-neutral-800/70 dark:bg-neutral-900/40 dark:text-neutral-200 dark:hover:border-neutral-700 dark:hover:bg-neutral-900/80"
 							onClick={() => {
 								setDeleteId(null);
 								setRenameId(knowledge.id);
@@ -571,7 +571,7 @@ export function KnowledgeTable({
 							type="button"
 							variant="destructive"
 						>
-							<Trash2Icon className="size-4 text-red-400" />
+							<Trash2Icon className="size-4" />
 						</Button>
 					</div>
 				);

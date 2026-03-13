@@ -26,7 +26,7 @@ export default async function SignInPage({
 	return (
 		<div className="mx-auto flex h-screen w-full flex-col items-center justify-center gap-7 px-4 py-4">
 			<div className="flex flex-col items-center justify-center gap-2">
-				<div className="flex size-16 items-center justify-center rounded-full bg-neutral-800">
+				<div className="flex size-16 items-center justify-center rounded-full border border-border/70 bg-muted text-foreground dark:border-transparent dark:bg-neutral-800">
 					<BackpackIcon className="size-8" />
 				</div>
 
@@ -45,7 +45,7 @@ export default async function SignInPage({
 				<SignInButton provider="google">
 					<Image
 						alt="Login with Google"
-						className="size-5 invert"
+						className="size-5 dark:invert"
 						src={Google}
 					/>
 					Continue with Google

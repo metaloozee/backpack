@@ -13,6 +13,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThemeMenuItems } from "@/components/ui/theme-toggle";
 import {
 	buttonVariants,
 	fadeVariants,
@@ -200,6 +201,8 @@ export default function UserProfile({ state }: UserProfileProps) {
 						Account Settings
 					</Button>
 				</DropdownMenuItem>
+				<DropdownMenuSeparator />
+				<ThemeMenuItems showLabel={false} />
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					asChild
