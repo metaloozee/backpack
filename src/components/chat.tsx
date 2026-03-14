@@ -110,7 +110,13 @@ export function Chat({
 	id,
 	env,
 	initialMessages,
+	session,
 	autoResume,
+	initialModel,
+	initialTools,
+	initialMode,
+	initialAgent,
+	initialMcpServers,
 }: {
 	id: string;
 	env: {
@@ -397,9 +403,15 @@ export function Chat({
 				<InputPanel
 					attachments={attachments}
 					chatId={id}
+					initialAgent={initialAgent}
+					initialMcpServers={initialMcpServers}
+					initialMode={initialMode}
+					initialModel={initialModel}
+					initialTools={initialTools}
 					input={input}
 					messages={messages}
 					sendMessage={sendMessage}
+					session={session}
 					setAttachments={setAttachments}
 					setInput={setInput}
 					setMessages={setMessages}
@@ -412,9 +424,15 @@ export function Chat({
 						<InputPanel
 							attachments={attachments}
 							chatId={id}
+							initialAgent={initialAgent}
+							initialMcpServers={initialMcpServers}
+							initialMode={initialMode}
+							initialModel={initialModel}
+							initialTools={initialTools}
 							input={input}
 							messages={messages}
 							sendMessage={sendMessage}
+							session={session}
 							setAttachments={setAttachments}
 							setInput={setInput}
 							setMessages={setMessages}

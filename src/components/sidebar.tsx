@@ -66,7 +66,7 @@ function SidebarBrand({ state }: { state: "expanded" | "collapsed" }) {
 						</motion.div>
 					</Link>
 				) : (
-					<Link href="/">
+					<Link aria-label="Home" href="/" title="Home">
 						<motion.div
 							animate="visible"
 							exit="exit"

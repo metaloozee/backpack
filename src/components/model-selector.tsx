@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { availableModels, getModel, normalizeModelId } from "@/lib/ai/models";
 import { usePrefsStore } from "@/lib/store/store";
+import { usePrefsHydrated } from "@/lib/store/use-prefs-hydrated";
 
 const groupedModels = availableModels.reduce(
 	(acc, model) => {
@@ -53,12 +54,15 @@ const providerNames: Record<string, string> = {
 	nvidia: "NVIDIA",
 };
 
-export function ModelSelector() {
+export function ModelSelector({ initialModelId }: { initialModelId?: string }) {
+	const hasHydrated = usePrefsHydrated();
 	const modelId = usePrefsStore((s) => s.modelId);
 	const setModelId = usePrefsStore((s) => s.setModelId);
 	const [open] = useState(false);
 	const listboxId = useId();
-	const selectedModelId = normalizeModelId(modelId);
+	const selectedModelId = normalizeModelId(
+		hasHydrated ? modelId : (initialModelId ?? modelId)
+	);
 	const selectedModelData = getModel(selectedModelId) ?? availableModels[0];
 
 	return (

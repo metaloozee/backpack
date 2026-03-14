@@ -56,7 +56,7 @@ export function Cards({ spaces }: { spaces: Space[] }) {
 							</CardHeader>
 							<CardFooter className="flex flex-row flex-wrap justify-between gap-2 text-muted-foreground text-xs">
 								{space.spaceDescription && (
-									<p className="max-w-full truncate md:max-w-[18vw]">
+									<p className="min-w-0 max-w-full flex-1 truncate md:max-w-[18vw]">
 										{space.spaceDescription}
 									</p>
 								)}

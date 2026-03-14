@@ -76,6 +76,7 @@ function SignedOutProfile({
 			whileTap="tap"
 		>
 			<Button
+				aria-label={state === "collapsed" ? "Sign in" : undefined}
 				className={cn(state === "expanded" ? "w-full" : "")}
 				onClick={onSignIn}
 				size={state === "collapsed" ? "icon" : "default"}
@@ -126,15 +127,21 @@ function SignedInProfile({
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<motion.div
+				<motion.button
 					animate="visible"
+					aria-label={
+						state === "collapsed"
+							? `${name || email || "User"} menu`
+							: undefined
+					}
 					className={cn(
-						"flex cursor-pointer items-center gap-2 rounded-md p-1 transition-colors hover:bg-accent hover:text-accent-foreground",
+						"flex items-center gap-2 rounded-md p-1 transition-colors hover:bg-accent hover:text-accent-foreground",
 						state === "collapsed"
 							? "justify-center"
 							: "w-full justify-start"
 					)}
 					initial="hidden"
+					type="button"
 					variants={fadeVariants}
 				>
 					<motion.div
@@ -179,7 +186,7 @@ function SignedInProfile({
 							) : null}
 						</AnimatePresence>
 					</motion.div>
-				</motion.div>
+				</motion.button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
 				align={isMobile ? "start" : "end"}

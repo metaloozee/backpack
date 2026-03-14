@@ -186,7 +186,7 @@
 /* Prevent message content from overflowing horizontally */
 .streamdown-content {
 	overflow-wrap: anywhere;
-	word-break: break-word;
+	word-break: normal;
 	min-width: 0;
 }
 

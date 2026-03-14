@@ -159,7 +159,7 @@ export function AcademicSearchTool({
 					</span>
 					<ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
 				</AccordionTrigger>
-				<AccordionContent className="space-y-1">
+				<AccordionContent className="space-y-1 overflow-hidden">
 					{input?.academic_search_queries?.map((query: string) => (
 						<Disclosure
 							className="flex w-full flex-col gap-2"

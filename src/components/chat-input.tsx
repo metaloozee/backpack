@@ -3,6 +3,7 @@
 
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
+import type { Session } from "better-auth";
 import {
 	CornerDownLeftIcon,
 	MicIcon,
@@ -39,6 +40,7 @@ import {
 import { ModeSelector } from "@/components/mode-selector";
 import { ModelSelector } from "@/components/model-selector";
 import { Button } from "@/components/ui/button";
+import type { ToolsState } from "@/lib/ai/tools";
 import type {
 	ChatMessage,
 	Attachment as PendingAttachment,
@@ -51,6 +53,7 @@ import { Spinner } from "./spinner";
 
 interface InputPanelProps {
 	chatId: string;
+	session: Session | null;
 	input: string;
 	setInput: Dispatch<SetStateAction<string>>;
 	status: UseChatHelpers<ChatMessage>["status"];
@@ -60,10 +63,16 @@ interface InputPanelProps {
 	messages: ChatMessage[];
 	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
 	sendMessage: UseChatHelpers<ChatMessage>["sendMessage"];
+	initialModel?: string;
+	initialTools?: ToolsState;
+	initialMode?: string;
+	initialAgent?: string;
+	initialMcpServers?: Record<string, boolean>;
 }
 
 function PureInput({
 	chatId,
+	session: _session,
 	input,
 	setInput,
 	status,
@@ -73,6 +82,11 @@ function PureInput({
 	messages,
 	setMessages,
 	sendMessage,
+	initialModel,
+	initialTools,
+	initialMode,
+	initialAgent,
+	initialMcpServers,
 }: InputPanelProps) {
 	const greeting = "How can I help you today?";
 	const trpc = useTRPC();
@@ -501,7 +515,12 @@ function PureInput({
 
 					<PromptInputFooter className="flex items-center justify-between border-border border-t px-4 py-2 dark:border-white/10">
 						<PromptInputTools className="shrink-0 items-center gap-2">
-							<ModeSelector />
+							<ModeSelector
+								initialMcpServers={initialMcpServers}
+								initialMode={initialMode}
+								initialSelectedAgent={initialAgent}
+								initialTools={initialTools}
+							/>
 						</PromptInputTools>
 
 						<div>
@@ -518,7 +537,7 @@ function PureInput({
 									<PaperclipIcon className="size-3.5" />
 								</PromptInputButton>
 
-								<ModelSelector />
+								<ModelSelector initialModelId={initialModel} />
 
 								{isLoading ? (
 									<Button

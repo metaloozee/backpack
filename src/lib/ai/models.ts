@@ -39,11 +39,12 @@ const legacyModelIdMap = {
 	"claude-opus-4-5": "claude-opus-4-6",
 	"claude-sonnet-4-5": "claude-sonnet-4-6",
 	"claude-sonnet-4-20250514": "claude-sonnet-4-6",
-	"gpt-5.2": "gpt-5.4",
+	"gpt-5.2": "gpt-5.4-pro",
 	"gpt-5.2-codex": "gpt-5.3-codex",
-	"gpt-5": "gpt-5.4",
-	"gpt-5-mini": "gpt-5.4",
-	"o4-mini": "gpt-5.4",
+	"gpt-5": "gpt-5.4-pro",
+	"gpt-5.4-pro": "gpt-5.4",
+	"gpt-5.3-codex": "gpt-5.4",
+	"o4-mini": "gpt-5-mini",
 } as const satisfies Record<string, string>;
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -196,7 +197,10 @@ export const models: Model[] = [
 ];
 
 export const availableModels = models.filter(
-	(model) => !isProduction || model.enabledInProduction
+	(model) =>
+		!isProduction ||
+		model.enabledInProduction ||
+		model.id === DEFAULT_MODEL_ID
 );
 
 const getFallbackModel = (): Model | undefined => {

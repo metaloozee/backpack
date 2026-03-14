@@ -50,8 +50,11 @@ export function useSetMobileHeader(
 
 	useEffect(() => {
 		setState({ title, subtitle });
+	}, [title, subtitle, setState]);
+
+	useEffect(() => {
 		return () => {
 			setState({ title: null, subtitle: null });
 		};
-	}, [title, subtitle, setState]);
+	}, [setState]);
 }

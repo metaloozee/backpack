@@ -92,7 +92,7 @@ export function DisplayMemories() {
 				return <p className="text-xs">CONTENT</p>;
 			},
 			cell: ({ row }) => (
-				<div className="wrap-break-word max-w-[200px] whitespace-pre-line sm:max-w-[400px]">
+				<div className="max-w-[200px] whitespace-pre-line break-words sm:max-w-[400px]">
 					{row.getValue("content")}
 				</div>
 			),
