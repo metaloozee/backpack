@@ -6,6 +6,7 @@ import {
 	Conversation,
 	ConversationContent,
 	ConversationEmptyState,
+	ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message as PreviewMessage } from "@/components/chat/message";
 import { Loader } from "@/components/ui/loader";
@@ -24,7 +25,7 @@ function PureChatMessages({ status, messages, regenerate }: ChatMessageProps) {
 		.find((message) => message.role === "assistant")?.id;
 
 	return (
-		<Conversation className="h-full w-full">
+		<Conversation className="w-full">
 			<ConversationContent>
 				{messages.length === 0 ? (
 					<ConversationEmptyState
@@ -57,6 +58,7 @@ function PureChatMessages({ status, messages, regenerate }: ChatMessageProps) {
 					</div>
 				) : null}
 			</ConversationContent>
+			<ConversationScrollButton />
 		</Conversation>
 	);
 }

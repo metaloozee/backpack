@@ -212,9 +212,9 @@ export function AppSidebar() {
 					{effectiveState === "expanded" ? (
 						<ScrollArea className="h-full w-full flex-1 rounded-md bg-background">
 							<SidebarChatsList
-								limit={isMobile ? 10 : 20}
+								limit={20}
 								query={chatQuery}
-								showMore={!isMobile}
+								showMore
 							/>
 							<ScrollBar orientation="vertical" />
 						</ScrollArea>

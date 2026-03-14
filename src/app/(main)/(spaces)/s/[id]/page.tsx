@@ -27,7 +27,7 @@ export default async function SpacePage({
 	}
 
 	return (
-		<div className="flex h-full w-full flex-col items-center justify-center">
+		<div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center">
 			<Chat
 				autoResume={true}
 				env={{

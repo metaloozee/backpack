@@ -44,7 +44,7 @@ export function MessageContent({
 	return (
 		<div
 			className={cn(
-				"flex w-full flex-col gap-4",
+				"flex w-full min-w-0 flex-col gap-4 overflow-hidden",
 				"group-data-[message-from=user]/message:w-auto group-data-[message-from=user]/message:max-w-[min(85%,42rem)]",
 				className
 			)}

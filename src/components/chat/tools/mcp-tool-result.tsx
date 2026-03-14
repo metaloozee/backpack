@@ -52,7 +52,7 @@ export function McpToolResult({
 
 	if (isLoading) {
 		return (
-			<div className="flex h-10 w-full items-center gap-2 rounded-md border bg-card px-4 text-xs dark:bg-neutral-900">
+			<div className="flex h-10 w-full min-w-0 items-center gap-2 rounded-md border bg-card px-4 text-xs dark:bg-neutral-900">
 				<Loader size="sm" />
 				<span className="text-muted-foreground">{serverName}</span>
 				<span className="text-muted-foreground">/</span>
@@ -64,7 +64,7 @@ export function McpToolResult({
 	return (
 		<Accordion className="w-full">
 			<AccordionItem
-				className="rounded-md border bg-card px-4 dark:bg-neutral-900"
+				className="min-w-0 rounded-md border bg-card px-4 dark:bg-neutral-900"
 				value={toolCallId}
 			>
 				<AccordionTrigger className="flex h-10 w-full items-center justify-between gap-2 text-xs">
@@ -87,7 +87,7 @@ export function McpToolResult({
 					</span>
 					<ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
 				</AccordionTrigger>
-				<AccordionContent className="space-y-1">
+				<AccordionContent className="space-y-1 overflow-hidden">
 					{formattedInput ? (
 						<div className="space-y-2 pt-2">
 							<p className="text-[10px] text-muted-foreground uppercase tracking-wide">

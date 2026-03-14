@@ -44,6 +44,7 @@ import type {
 	Attachment as PendingAttachment,
 } from "@/lib/ai/types";
 import { transitions } from "@/lib/animations";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 import { Spinner } from "./spinner";
@@ -316,15 +317,19 @@ function PureInput({
 		recordingIcon = <StopCircleIcon className="size-3.5" />;
 	}
 
+	const showGreeting = messages.length === 0 && !isSpaceChat;
+
+	const isMobile = useIsMobile();
+
+	let inputWrapperClasses = "right-0 bottom-0 left-0";
+	if (messages.length === 0) {
+		inputWrapperClasses = showGreeting
+			? "flex flex-1 flex-col items-center justify-between sm:justify-center"
+			: "flex flex-col items-center";
+	}
+
 	return (
-		<div
-			className={cn(
-				"sticky w-full bg-background",
-				messages.length > 0
-					? "right-0 bottom-0 left-0"
-					: "flex flex-col items-center justify-center"
-			)}
-		>
+		<div className={cn("sticky w-full bg-background", inputWrapperClasses)}>
 			{isDragging ? (
 				<div className="absolute inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm dark:bg-neutral-950/50">
 					<div className="font-semibold text-2xl text-foreground dark:text-white">
@@ -346,17 +351,22 @@ function PureInput({
 				type="file"
 			/>
 
-			{messages.length === 0 && !isSpaceChat ? (
-				<div className="mb-6">
-					<h1 className="bg-linear-to-br from-foreground to-muted-foreground bg-clip-text text-3xl text-transparent dark:from-white dark:to-neutral-500">
-						{greeting}
-					</h1>
+			{showGreeting ? (
+				<div className="flex flex-1 items-center justify-center">
+					<div className="mb-6">
+						<h1 className="bg-linear-to-br from-foreground to-muted-foreground bg-clip-text text-3xl text-transparent dark:from-white dark:to-neutral-500">
+							{greeting}
+						</h1>
+					</div>
 				</div>
 			) : null}
 
-			<div className="mx-auto w-full max-w-3xl">
+			<div className="mx-auto w-full max-w-3xl px-0 sm:px-0">
 				<PromptInput
-					className="mb-2 rounded-2xl border border-border bg-card shadow-xs dark:border-white/10 dark:bg-neutral-900/70"
+					className={cn(
+						"mb-0 border border-border border-x-0 bg-card shadow-xs sm:mb-2 sm:border-x dark:border-white/10 dark:bg-neutral-900/70",
+						isMobile ? "rounded-none" : "rounded-2xl"
+					)}
 					onDragEnter={(event) => {
 						event.preventDefault();
 						event.stopPropagation();
