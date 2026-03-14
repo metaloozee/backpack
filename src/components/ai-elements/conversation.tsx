@@ -37,7 +37,7 @@ export function ConversationContent({
 				"mx-auto flex min-h-full w-full max-w-3xl flex-col gap-6 px-4 pt-10 pb-6 sm:px-6",
 				className
 			)}
-			scrollClassName="h-full overflow-y-auto"
+			scrollClassName="h-full overflow-y-auto overflow-x-hidden"
 			{...props}
 		>
 			{children}
@@ -93,7 +93,7 @@ export function ConversationScrollButton(
 		<Button
 			{...rest}
 			className={cn(
-				"absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-background/90 backdrop-blur-sm",
+				"absolute bottom-2 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-background/40 backdrop-blur-sm",
 				propsClassName
 			)}
 			onClick={(event) => {
@@ -107,7 +107,7 @@ export function ConversationScrollButton(
 			type="button"
 			variant="secondary"
 		>
-			<span className="font-normal text-xs">Scroll to bottom</span>
+			<span className="font-normal text-xs">Scroll To Bottom</span>
 			<ChevronDownIcon className="size-3" />
 		</Button>
 	);

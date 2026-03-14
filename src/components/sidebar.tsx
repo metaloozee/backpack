@@ -1,5 +1,6 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import {
 	BackpackIcon,
 	LibraryIcon,
@@ -11,6 +12,7 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { parseAsString, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import UserProfile from "@/components/profile";
 import { SidebarChatsList } from "@/components/sidebar/chats-list";
 import { Button } from "@/components/ui/button";
@@ -32,80 +34,147 @@ import {
 } from "@/lib/animations";
 import { cn } from "@/lib/utils";
 
+function SidebarBrand({ state }: { state: "expanded" | "collapsed" }) {
+	return (
+		<SidebarHeader
+			className={cn(
+				"flex w-full justify-center py-4",
+				state === "expanded" ? "items-start px-4" : "items-center px-2"
+			)}
+		>
+			<AnimatePresence mode="wait">
+				{state === "expanded" ? (
+					<Link className="w-full" href="/">
+						<motion.div
+							animate="visible"
+							className="flex w-full items-center justify-center gap-2"
+							exit="exit"
+							initial="hidden"
+							key="expanded"
+							transition={transitions.smooth}
+							variants={fadeVariants}
+						>
+							<motion.div
+								initial="rest"
+								variants={iconVariants}
+								whileHover="hover"
+								whileTap="tap"
+							>
+								<BackpackIcon className="size-4" />
+							</motion.div>
+							<h2 className="font-light text-lg">backpack</h2>
+						</motion.div>
+					</Link>
+				) : (
+					<Link aria-label="Home" href="/" title="Home">
+						<motion.div
+							animate="visible"
+							exit="exit"
+							initial="hidden"
+							key="collapsed"
+							transition={transitions.smooth}
+							variants={fadeVariants}
+						>
+							<motion.div
+								initial="rest"
+								variants={iconVariants}
+								whileHover="hover"
+								whileTap="tap"
+							>
+								<BackpackIcon className="size-4" />
+							</motion.div>
+						</motion.div>
+					</Link>
+				)}
+			</AnimatePresence>
+		</SidebarHeader>
+	);
+}
+
+function SidebarNavButton({
+	active,
+	href,
+	icon: Icon,
+	label,
+	state,
+}: {
+	active: boolean;
+	href: string;
+	icon: LucideIcon;
+	label: string;
+	state: "expanded" | "collapsed";
+}) {
+	return (
+		<motion.div
+			className={cn(state === "expanded" ? "w-full" : "")}
+			initial="rest"
+			whileHover="hover"
+			whileTap="tap"
+		>
+			<Button
+				asChild
+				className={cn(state === "expanded" ? "w-full" : "")}
+				size={state === "expanded" ? "default" : "icon"}
+				variant={active ? "default" : "outline"}
+			>
+				<Link aria-label={label} href={href}>
+					{state === "expanded" ? (
+						<>
+							<motion.div
+								initial="rest"
+								variants={iconVariants}
+								whileHover="hover"
+							>
+								<Icon />
+							</motion.div>
+							<p className="font-light">{label}</p>
+						</>
+					) : (
+						<motion.div
+							initial="rest"
+							variants={iconVariants}
+							whileHover="hover"
+						>
+							<Icon />
+						</motion.div>
+					)}
+				</Link>
+			</Button>
+		</motion.div>
+	);
+}
+
 export function AppSidebar() {
 	const pathname = usePathname();
-
 	const isHome = pathname === "/";
 	const isSpaces = pathname.startsWith("/s");
 	const [chatQuery, setChatQuery] = useQueryState(
 		"chatQuery",
 		parseAsString.withDefault("")
 	);
+	const { isMobile, open, setOpen, setOpenMobile, state } = useSidebar();
 
-	const { state, open, setOpen } = useSidebar();
+	// On mobile, the sidebar renders inside a Sheet (always full-width),
+	// so treat state as "expanded" to show labels, search, and chat list.
+	const effectiveState = isMobile ? "expanded" : state;
+
+	useEffect(() => {
+		if (!isMobile || pathname.length === 0) {
+			return;
+		}
+
+		setOpenMobile(false);
+	}, [isMobile, pathname, setOpenMobile]);
 
 	return (
 		<Sidebar collapsible="icon" variant="floating">
-			<SidebarHeader
-				className={cn(
-					"flex w-full justify-center py-4",
-					state === "expanded"
-						? "items-start px-4"
-						: "items-center px-2"
-				)}
-			>
-				<AnimatePresence mode="wait">
-					{state === "expanded" ? (
-						<Link className="w-full" href={"/"}>
-							<motion.div
-								animate="visible"
-								className="flex w-full items-center justify-center gap-2"
-								exit="exit"
-								initial="hidden"
-								key="expanded"
-								transition={transitions.smooth}
-								variants={fadeVariants}
-							>
-								<motion.div
-									initial="rest"
-									variants={iconVariants}
-									whileHover="hover"
-									whileTap="tap"
-								>
-									<BackpackIcon className="size-4" />
-								</motion.div>
-								<h2 className="font-light text-lg">backpack</h2>
-							</motion.div>
-						</Link>
-					) : (
-						<Link href={"/"}>
-							<motion.div
-								animate="visible"
-								exit="exit"
-								initial="hidden"
-								key="collapsed"
-								transition={transitions.smooth}
-								variants={fadeVariants}
-							>
-								<motion.div
-									initial="rest"
-									variants={iconVariants}
-									whileHover="hover"
-									whileTap="tap"
-								>
-									<BackpackIcon className="size-4" />
-								</motion.div>
-							</motion.div>
-						</Link>
-					)}
-				</AnimatePresence>
-			</SidebarHeader>
+			<SidebarBrand state={effectiveState} />
 			<SidebarContent>
 				<motion.div
 					animate="visible"
 					className={cn(
 						"flex h-full w-full flex-col gap-2",
-						state === "expanded"
+						effectiveState === "expanded"
 							? "px-4"
 							: "items-center justify-center"
 					)}
@@ -113,144 +182,96 @@ export function AppSidebar() {
 					transition={transitions.smooth}
 					variants={slideVariants.left}
 				>
-					<motion.div
-						className={cn(state === "expanded" ? "w-full" : "")}
-						initial="rest"
-						whileHover="hover"
-						whileTap="tap"
-					>
-						<Button
-							asChild
-							className={cn(state === "expanded" ? "w-full" : "")}
-							size={state === "expanded" ? "default" : "icon"}
-							variant={isHome ? "default" : "outline"}
-						>
-							<Link aria-label="New Chat" href={"/"}>
-								{state === "expanded" ? (
-									<>
-										<motion.div
-											initial="rest"
-											variants={iconVariants}
-											whileHover="hover"
-										>
-											<MessageCirclePlusIcon />
-										</motion.div>
-										<p className="font-light">New Chat</p>
-									</>
-								) : (
-									<motion.div
-										initial="rest"
-										variants={iconVariants}
-										whileHover="hover"
-									>
-										<MessageCirclePlusIcon />
-									</motion.div>
-								)}
-							</Link>
-						</Button>
-					</motion.div>
+					<SidebarNavButton
+						active={isHome}
+						href="/"
+						icon={MessageCirclePlusIcon}
+						label="New Chat"
+						state={effectiveState}
+					/>
+					<SidebarNavButton
+						active={isSpaces}
+						href="/s/"
+						icon={LibraryIcon}
+						label="Spaces"
+						state={effectiveState}
+					/>
 
-					<motion.div
-						className={cn(state === "expanded" ? "w-full" : "")}
-						initial="rest"
-						whileHover="hover"
-						whileTap="tap"
-					>
-						<Button
-							asChild
-							className={cn(state === "expanded" ? "w-full" : "")}
-							size={state === "expanded" ? "default" : "icon"}
-							variant={isSpaces ? "default" : "outline"}
-						>
-							<Link aria-label="Spaces" href={"/s/"}>
-								{state === "expanded" ? (
-									<>
-										<motion.div
-											initial="rest"
-											variants={iconVariants}
-											whileHover="hover"
-										>
-											<LibraryIcon />
-										</motion.div>
-										<p className="font-light">Spaces</p>
-									</>
-								) : (
-									<motion.div
-										initial="rest"
-										variants={iconVariants}
-										whileHover="hover"
-									>
-										<LibraryIcon />
-									</motion.div>
-								)}
-							</Link>
-						</Button>
-					</motion.div>
-
-					{state === "expanded" && (
+					{effectiveState === "expanded" ? (
 						<Input
 							autoComplete="off"
 							className="h-8 border-0 bg-background dark:bg-neutral-950"
-							onChange={(e) => setChatQuery(e.target.value)}
+							onChange={(event) =>
+								setChatQuery(event.target.value)
+							}
 							placeholder="Search chats..."
 							value={chatQuery}
 						/>
-					)}
+					) : null}
 
-					{state === "expanded" && (
+					{effectiveState === "expanded" ? (
 						<ScrollArea className="h-full w-full flex-1 rounded-md bg-background">
 							<SidebarChatsList
 								limit={20}
 								query={chatQuery}
-								showMore={true}
+								showMore
 							/>
 							<ScrollBar orientation="vertical" />
 						</ScrollArea>
-					)}
+					) : null}
 				</motion.div>
 			</SidebarContent>
 			<SidebarFooter
 				className={cn(
 					"w-full",
-					state === "collapsed"
+					effectiveState === "collapsed"
 						? "flex items-center justify-center"
 						: "p-4"
 				)}
 			>
-				<motion.div
-					className="w-full"
-					initial="rest"
-					whileHover="hover"
-					whileTap="tap"
-				>
-					<Button
-						aria-label={
-							state === "expanded"
-								? "Close sidebar"
-								: "Open sidebar"
-						}
-						className="w-full"
-						onClick={() => setOpen(!open)}
-						size={state === "collapsed" ? "icon" : "default"}
-						variant={"outline"}
-					>
-						{state === "expanded" ? (
-							<>
-								<PanelLeftCloseIcon className="size-4 text-muted-foreground" />
-								<p className="text-muted-foreground text-xs">
-									Close Panel
-								</p>
-							</>
-						) : (
-							<PanelLeftOpenIcon className="size-3" />
-						)}
-					</Button>
-				</motion.div>
-
-				<Separator
-					className={cn(state === "expanded" ? "my-2" : "my-0")}
-				/>
-				<UserProfile state={state} />
+				{!isMobile && (
+					<>
+						<motion.div
+							className="w-full"
+							initial="rest"
+							whileHover="hover"
+							whileTap="tap"
+						>
+							<Button
+								aria-label={
+									effectiveState === "expanded"
+										? "Close sidebar"
+										: "Open sidebar"
+								}
+								className="w-full"
+								onClick={() => setOpen(!open)}
+								size={
+									effectiveState === "collapsed"
+										? "icon"
+										: "default"
+								}
+								variant="outline"
+							>
+								{effectiveState === "expanded" ? (
+									<>
+										<PanelLeftCloseIcon className="size-4 text-muted-foreground" />
+										<p className="text-muted-foreground text-xs">
+											Close Panel
+										</p>
+									</>
+								) : (
+									<PanelLeftOpenIcon className="size-3" />
+								)}
+							</Button>
+						</motion.div>
+						<Separator
+							className={cn(
+								effectiveState === "expanded" ? "my-2" : "my-0"
+							)}
+						/>
+					</>
+				)}
+				<UserProfile state={effectiveState} />
 			</SidebarFooter>
 		</Sidebar>
 	);

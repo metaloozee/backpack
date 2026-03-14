@@ -25,7 +25,7 @@ function PureChatMessages({ status, messages, regenerate }: ChatMessageProps) {
 		.find((message) => message.role === "assistant")?.id;
 
 	return (
-		<Conversation className="h-full w-full">
+		<Conversation className="w-full">
 			<ConversationContent>
 				{messages.length === 0 ? (
 					<ConversationEmptyState

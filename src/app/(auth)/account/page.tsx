@@ -16,7 +16,7 @@ export default async function AccountPage() {
 	}
 
 	return (
-		<div className="mx-auto my-20 flex w-full max-w-3xl flex-col items-start justify-center gap-10 md:px-20">
+		<div className="mx-auto my-8 flex w-full max-w-3xl flex-col items-start justify-center gap-6 px-4 sm:my-14 sm:gap-8 sm:px-8 md:my-20 md:gap-10 md:px-20">
 			<Button asChild size={"sm"} variant={"outline"}>
 				<Link className="text-xs" href="/">
 					<ArrowLeftIcon className="size-3" /> Back to Home

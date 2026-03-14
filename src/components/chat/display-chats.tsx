@@ -70,13 +70,13 @@ function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 
 			<motion.div
 				animate="visible"
-				className="pointer-events-none relative flex w-full flex-col items-start justify-start gap-1"
+				className="pointer-events-none relative flex min-w-0 flex-1 flex-col items-start justify-start gap-1"
 				initial="hidden"
 				variants={fadeVariants}
 			>
-				<p className="max-w-md truncate">{chat.title}</p>
+				<p className="w-full truncate">{chat.title}</p>
 
-				<p className="max-w-md truncate text-muted-foreground text-xs">
+				<p className="w-full truncate text-muted-foreground text-xs">
 					Created {format(chat.createdAt)}
 				</p>
 			</motion.div>

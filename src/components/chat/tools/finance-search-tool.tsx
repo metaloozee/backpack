@@ -48,7 +48,7 @@ export function FinanceSearchTool({
 		return (
 			<Accordion className="w-full">
 				<AccordionItem
-					className="rounded-md border bg-card px-4 dark:bg-neutral-900"
+					className="min-w-0 rounded-md border bg-card px-4 dark:bg-neutral-900"
 					value={toolCallId}
 				>
 					<AccordionTrigger className="flex h-10 w-full items-center justify-between gap-2 text-xs">
@@ -58,7 +58,7 @@ export function FinanceSearchTool({
 						</span>
 						<ChevronDownIcon className="size-3 transition-transform duration-200 group-data-[expanded]:rotate-180" />
 					</AccordionTrigger>
-					<AccordionContent className="space-y-1">
+					<AccordionContent className="space-y-1 overflow-hidden">
 						{output?.searches?.map((searchGroup: SearchGroup) => (
 							<Disclosure
 								className="flex w-full flex-col gap-2"
@@ -125,7 +125,7 @@ export function FinanceSearchTool({
 	return (
 		<Accordion className="w-full">
 			<AccordionItem
-				className="rounded-md border bg-card px-4 dark:bg-neutral-900"
+				className="min-w-0 rounded-md border bg-card px-4 dark:bg-neutral-900"
 				value={toolCallId}
 			>
 				<AccordionTrigger className="flex h-10 w-full items-center justify-between gap-2 text-xs">

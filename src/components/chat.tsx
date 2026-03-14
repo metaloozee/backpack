@@ -19,6 +19,7 @@ import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/ai/utils";
 import type { Chat as ChatType, Knowledge } from "@/lib/db/schema/app";
 import { useAutoResume } from "@/lib/hooks/use-auto-resume";
+import { useSetMobileHeader } from "@/lib/mobile-header-context";
 import {
 	type ChatInfiniteData,
 	prependChatToInfiniteData,
@@ -49,11 +50,73 @@ function useQueryAppend({
 	}, [query, sendMessage, setQuery]);
 }
 
+function SpaceLandingView({
+	spaceId,
+	spaceTitle,
+	spaceDescription,
+	spaceCustomInstructions,
+	spaceStatus,
+	knowledgeStatus,
+	knowledgeData,
+	showSpaceHistory,
+}: {
+	spaceId: string;
+	spaceTitle: string;
+	spaceDescription?: string;
+	spaceCustomInstructions?: string;
+	spaceStatus: "pending" | "error" | "success";
+	knowledgeStatus: "pending" | "error" | "success";
+	knowledgeData?: Knowledge[];
+	showSpaceHistory: boolean;
+}) {
+	return (
+		<>
+			<div className="flex w-full min-w-0 flex-1 flex-col items-center overflow-y-auto overflow-x-hidden sm:hidden">
+				<div className="w-full max-w-3xl px-4 pt-6">
+					<SpaceIntro
+						knowledgeData={knowledgeData}
+						knowledgeStatus={knowledgeStatus}
+						spaceCustomInstructions={spaceCustomInstructions}
+						spaceDescription={spaceDescription}
+						spaceId={spaceId}
+						spaceStatus={spaceStatus}
+						spaceTitle={spaceTitle}
+					/>
+				</div>
+				{showSpaceHistory && (
+					<div className="mt-4 flex w-full max-w-3xl flex-col gap-2 px-4 pb-4">
+						<DisplayChats spaceId={spaceId} />
+					</div>
+				)}
+			</div>
+
+			<div className="hidden w-full max-w-3xl sm:block sm:px-0">
+				<SpaceIntro
+					knowledgeData={knowledgeData}
+					knowledgeStatus={knowledgeStatus}
+					spaceCustomInstructions={spaceCustomInstructions}
+					spaceDescription={spaceDescription}
+					spaceId={spaceId}
+					spaceStatus={spaceStatus}
+					spaceTitle={spaceTitle}
+				/>
+			</div>
+		</>
+	);
+}
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: complex chat component
 export function Chat({
 	id,
 	env,
 	initialMessages,
+	session,
 	autoResume,
+	initialModel,
+	initialTools,
+	initialMode,
+	initialAgent,
+	initialMcpServers,
 }: {
 	id: string;
 	env: {
@@ -279,15 +342,39 @@ export function Chat({
 		resumeStream,
 		setMessages,
 	});
+	const firstUserMessage = messages.find((m) => m.role === "user");
+	const chatTitle =
+		firstUserMessage?.parts
+			?.find((p) => p.type === "text" && "text" in p)
+			?.text?.slice(0, 50) ?? null;
+	let headerTitle: string | null = null;
+	let headerSubtitle: string | null = null;
+
+	if (isSpaceChat) {
+		headerTitle = spaceTitle;
+		headerSubtitle = chatTitle;
+	} else if (chatTitle) {
+		headerTitle = chatTitle;
+		headerSubtitle = null;
+	}
+
+	const showMobileTitle = isSpaceChat || messages.length > 0;
+	useSetMobileHeader(
+		showMobileTitle ? headerTitle : null,
+		messages.length > 0 ? headerSubtitle : null
+	);
+
+	const hasActiveContent = messages.length > 0 || isSpaceChat;
+	let layoutClasses = "container my-0 items-center justify-center sm:my-10";
+	if (showSpaceIntro) {
+		layoutClasses = "items-center justify-center";
+	} else if (hasActiveContent) {
+		layoutClasses = "items-center justify-between";
+	}
 
 	return (
 		<div
-			className={cn(
-				"flex h-full w-full flex-col",
-				messages.length > 0
-					? "items-center justify-between"
-					: "container my-10 items-center justify-center"
-			)}
+			className={cn("flex min-h-0 w-full flex-1 flex-col", layoutClasses)}
 			suppressHydrationWarning
 		>
 			{messages.length > 0 && (
@@ -300,9 +387,10 @@ export function Chat({
 			)}
 
 			{showSpaceIntro && (
-				<SpaceIntro
+				<SpaceLandingView
 					knowledgeData={knowledgeData}
 					knowledgeStatus={knowledgeStatus}
+					showSpaceHistory={showSpaceHistory}
 					spaceCustomInstructions={spaceCustomInstructions}
 					spaceDescription={spaceDescription}
 					spaceId={spaceOverview?.spaceData.id ?? env.spaceId ?? ""}
@@ -311,21 +399,52 @@ export function Chat({
 				/>
 			)}
 
-			<InputPanel
-				attachments={attachments}
-				chatId={id}
-				input={input}
-				messages={messages}
-				sendMessage={sendMessage}
-				setAttachments={setAttachments}
-				setInput={setInput}
-				setMessages={setMessages}
-				status={status}
-				stop={stop}
-			/>
+			{showSpaceIntro || hasActiveContent ? (
+				<InputPanel
+					attachments={attachments}
+					chatId={id}
+					initialAgent={initialAgent}
+					initialMcpServers={initialMcpServers}
+					initialMode={initialMode}
+					initialModel={initialModel}
+					initialTools={initialTools}
+					input={input}
+					messages={messages}
+					sendMessage={sendMessage}
+					session={session}
+					setAttachments={setAttachments}
+					setInput={setInput}
+					setMessages={setMessages}
+					status={status}
+					stop={stop}
+				/>
+			) : (
+				<div className="flex w-full flex-1 items-center justify-center">
+					<div className="flex w-full max-w-3xl flex-1 flex-col items-center px-4 sm:px-6">
+						<InputPanel
+							attachments={attachments}
+							chatId={id}
+							initialAgent={initialAgent}
+							initialMcpServers={initialMcpServers}
+							initialMode={initialMode}
+							initialModel={initialModel}
+							initialTools={initialTools}
+							input={input}
+							messages={messages}
+							sendMessage={sendMessage}
+							session={session}
+							setAttachments={setAttachments}
+							setInput={setInput}
+							setMessages={setMessages}
+							status={status}
+							stop={stop}
+						/>
+					</div>
+				</div>
+			)}
 
 			{showSpaceHistory && env.spaceId && (
-				<div className="mt-10 flex w-full max-w-3xl flex-col gap-2">
+				<div className="mt-4 hidden w-full max-w-3xl flex-col gap-2 overflow-y-auto overflow-x-hidden px-4 pb-4 sm:mt-6 sm:flex sm:max-h-[40vh] sm:px-0">
 					<DisplayChats spaceId={env.spaceId} />
 				</div>
 			)}

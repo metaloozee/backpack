@@ -54,6 +54,8 @@
 }
 
 :root {
+	--safe-area-top: env(safe-area-inset-top, 0px);
+	--safe-area-bottom: env(safe-area-inset-bottom, 0px);
 	--card: oklch(1 0 0);
 	--card-foreground: oklch(0.14 0 0);
 	--popover: oklch(1 0 0);
@@ -179,6 +181,43 @@
 .message-item {
 	content-visibility: auto;
 	contain-intrinsic-size: 0 100px;
+}
+
+/* Prevent message content from overflowing horizontally */
+.streamdown-content {
+	overflow-wrap: anywhere;
+	word-break: normal;
+	min-width: 0;
+}
+
+.streamdown-content pre {
+	overflow-x: auto;
+	max-width: 100%;
+}
+
+.streamdown-content .katex-display {
+	overflow-x: auto;
+	overflow-y: hidden;
+	max-width: 100%;
+}
+
+.streamdown-content table {
+	display: block;
+	overflow-x: auto;
+	max-width: 100%;
+}
+
+.streamdown-content img {
+	max-width: 100%;
+	height: auto;
+}
+
+/* Safe-area utility classes for mobile sidebar */
+.mobile-safe-top {
+	padding-top: max(var(--safe-area-top), 0px);
+}
+.mobile-safe-bottom {
+	padding-bottom: max(var(--safe-area-bottom), 0px);
 }
 
 @media (prefers-reduced-motion: reduce) {

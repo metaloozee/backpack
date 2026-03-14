@@ -92,7 +92,7 @@ export function DisplayMemories() {
 				return <p className="text-xs">CONTENT</p>;
 			},
 			cell: ({ row }) => (
-				<div className="wrap-break-word max-w-[400px] whitespace-pre-line">
+				<div className="max-w-[200px] whitespace-pre-line break-words sm:max-w-[400px]">
 					{row.getValue("content")}
 				</div>
 			),
@@ -224,7 +224,7 @@ export function DisplayMemories() {
 					value={globalFilter ?? ""}
 				/>
 			</div>
-			<div className="overflow-hidden rounded-md border">
+			<div className="overflow-hidden overflow-x-auto rounded-md border">
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (

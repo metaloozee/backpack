@@ -2,8 +2,11 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { groq } from "@ai-sdk/groq";
 import { openai } from "@ai-sdk/openai";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
+
+const openrouter = createOpenRouter({});
 
 export type InputModality = "text" | "image" | "audio" | "video" | "pdf";
 export type OutputModality = "text" | "image" | "audio";
@@ -36,11 +39,12 @@ const legacyModelIdMap = {
 	"claude-opus-4-5": "claude-opus-4-6",
 	"claude-sonnet-4-5": "claude-sonnet-4-6",
 	"claude-sonnet-4-20250514": "claude-sonnet-4-6",
-	"gpt-5.2": "gpt-5.4",
+	"gpt-5.2": "gpt-5.4-pro",
 	"gpt-5.2-codex": "gpt-5.3-codex",
-	"gpt-5": "gpt-5.4",
-	"gpt-5-mini": "gpt-5.4",
-	"o4-mini": "gpt-5.4",
+	"gpt-5": "gpt-5.4-pro",
+	"gpt-5.4-pro": "gpt-5.4",
+	"gpt-5.3-codex": "gpt-5.4",
+	"o4-mini": "gpt-5-mini",
 } as const satisfies Record<string, string>;
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -74,7 +78,7 @@ export const models: Model[] = [
 		name: "Gemini Flash Latest",
 		id: "gemini-flash-latest",
 		provider: "google",
-		enabledInProduction: true,
+		enabledInProduction: false,
 		instance: google.chat("gemini-flash-latest"),
 		modalities: {
 			input: ["text", "image", "audio", "video", "pdf"],
@@ -119,18 +123,6 @@ export const models: Model[] = [
 		capabilities: { reasoning: true, toolCall: true, attachment: true },
 	},
 	{
-		name: "GPT-5.4 Pro",
-		id: "gpt-5.4-pro",
-		provider: "openai",
-		enabledInProduction: false,
-		instance: openai.responses("gpt-5.4-pro"),
-		modalities: {
-			input: ["text", "image", "pdf"],
-			output: ["text"],
-		},
-		capabilities: { reasoning: true, toolCall: true, attachment: true },
-	},
-	{
 		name: "GPT-5.4",
 		id: "gpt-5.4",
 		provider: "openai",
@@ -143,13 +135,25 @@ export const models: Model[] = [
 		capabilities: { reasoning: true, toolCall: true, attachment: true },
 	},
 	{
-		name: "GPT-5.3 Codex",
-		id: "gpt-5.3-codex",
+		name: "GPT-5 Mini",
+		id: "gpt-5-mini",
 		provider: "openai",
 		enabledInProduction: false,
-		instance: openai.responses("gpt-5.3-codex"),
+		instance: openai.responses("gpt-5-mini"),
 		modalities: {
-			input: ["text", "image", "pdf"],
+			input: ["text", "image"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: true },
+	},
+	{
+		name: "GPT-5 Nano",
+		id: "gpt-5-nano",
+		provider: "openai",
+		enabledInProduction: true,
+		instance: openai.responses("gpt-5-nano"),
+		modalities: {
+			input: ["text", "image"],
 			output: ["text"],
 		},
 		capabilities: { reasoning: true, toolCall: true, attachment: true },
@@ -167,21 +171,36 @@ export const models: Model[] = [
 		capabilities: { reasoning: true, toolCall: true, attachment: false },
 	},
 	{
-		name: "Kimi K2 Instruct 0905",
-		id: "moonshotai/kimi-k2-instruct-0905",
-		provider: "groq",
+		name: "NVIDIA: Nemotron 3 Super",
+		id: "nvidia/nemotron-3-super-120b-a12b:free",
+		provider: "nvidia",
+		instance: openrouter("nvidia/nemotron-3-super-120b-a12b:free"),
 		enabledInProduction: true,
-		instance: groq("moonshotai/kimi-k2-instruct-0905"),
 		modalities: {
 			input: ["text"],
 			output: ["text"],
 		},
-		capabilities: { reasoning: false, toolCall: true, attachment: false },
+		capabilities: { reasoning: true, toolCall: true, attachment: false },
+	},
+	{
+		name: "Hunter Alpha",
+		id: "openrouter/hunter-alpha",
+		provider: "openrouter",
+		instance: openrouter("openrouter/hunter-alpha"),
+		enabledInProduction: true,
+		modalities: {
+			input: ["text"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: false },
 	},
 ];
 
 export const availableModels = models.filter(
-	(model) => !isProduction || model.enabledInProduction
+	(model) =>
+		!isProduction ||
+		model.enabledInProduction ||
+		model.id === DEFAULT_MODEL_ID
 );
 
 const getFallbackModel = (): Model | undefined => {

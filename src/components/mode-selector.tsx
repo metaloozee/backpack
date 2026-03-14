@@ -31,6 +31,7 @@ import { slideVariants, transitions } from "@/lib/animations";
 import { getMcpStatus, isMcpServerDisabled } from "@/lib/mcp/status";
 import type { ModeType } from "@/lib/store/slices/mode.slice";
 import { usePrefsStore } from "@/lib/store/store";
+import { usePrefsHydrated } from "@/lib/store/use-prefs-hydrated";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +40,18 @@ const modeTypes = [
 	{ value: "agent", label: "Agent", disabled: false },
 ] as const;
 
-export function ModeSelector() {
+export function ModeSelector({
+	initialMcpServers,
+	initialMode,
+	initialSelectedAgent,
+	initialTools,
+}: {
+	initialMcpServers?: Record<string, boolean>;
+	initialMode?: string;
+	initialSelectedAgent?: string;
+	initialTools?: Record<string, boolean>;
+}) {
+	const hasHydrated = usePrefsHydrated();
 	// All state from the store — no local useState
 	const mode = usePrefsStore((s) => s.mode);
 	const setMode = usePrefsStore((s) => s.setMode);
@@ -51,17 +63,28 @@ export function ModeSelector() {
 	const resetTools = usePrefsStore((s) => s.resetTools);
 	const mcpServers = usePrefsStore((s) => s.mcpServers);
 	const setMcpServer = usePrefsStore((s) => s.setMcpServer);
+	let activeMode: ModeType = mode;
+	if (!hasHydrated) {
+		activeMode = initialMode === "agent" ? "agent" : "ask";
+	}
+	const activeSelectedAgent = hasHydrated
+		? selectedAgent
+		: (initialSelectedAgent ?? selectedAgent);
+	const activeTools = hasHydrated ? tools : (initialTools ?? tools);
+	const activeMcpServers = hasHydrated
+		? mcpServers
+		: (initialMcpServers ?? mcpServers);
 
 	const trpc = useTRPC();
 	const { data: mcpServersData } = useQuery(
 		trpc.mcp.getServers.queryOptions(undefined, {
-			enabled: mode === "ask",
+			enabled: activeMode === "ask",
 		})
 	);
 
 	const handleModeChange = (value: string) => {
 		const newMode = value as ModeType;
-		if (newMode === mode) {
+		if (newMode === activeMode) {
 			return;
 		}
 
@@ -80,7 +103,7 @@ export function ModeSelector() {
 	};
 
 	const handleAgentSelect = (agentKey: string) => {
-		const newAgent = selectedAgent === agentKey ? null : agentKey;
+		const newAgent = activeSelectedAgent === agentKey ? null : agentKey;
 		setSelectedAgent(newAgent);
 	};
 
@@ -97,7 +120,7 @@ export function ModeSelector() {
 				transition={transitions.smooth}
 				variants={slideVariants.up}
 			>
-				<Tabs onValueChange={handleModeChange} value={mode}>
+				<Tabs onValueChange={handleModeChange} value={activeMode}>
 					<TabsList className="bg-muted dark:bg-neutral-950">
 						{modeTypes.map((m) => (
 							<TabsTrigger
@@ -112,7 +135,7 @@ export function ModeSelector() {
 					</TabsList>
 				</Tabs>
 
-				{mode === "ask" && (
+				{activeMode === "ask" && (
 					<DropdownMenu>
 						<TooltipProvider>
 							<Tooltip>
@@ -139,7 +162,7 @@ export function ModeSelector() {
 						>
 							{defaultTools.map((tool) => {
 								const IconComponent = tool.icon;
-								const isChecked = tools[tool.id];
+								const isChecked = activeTools[tool.id];
 								return (
 									<DropdownMenuItem
 										className="flex cursor-pointer items-center justify-between p-3 focus:bg-accent dark:focus:bg-neutral-800"
@@ -178,8 +201,9 @@ export function ModeSelector() {
 										{mcpServersData.servers.map(
 											(server) => {
 												const isChecked =
-													mcpServers[server.id] ??
-													false;
+													activeMcpServers[
+														server.id
+													] ?? false;
 												const status = getMcpStatus({
 													lastConnectedAt:
 														server.lastConnectedAt,
@@ -280,7 +304,7 @@ export function ModeSelector() {
 					</DropdownMenu>
 				)}
 
-				{mode === "agent" && (
+				{activeMode === "agent" && (
 					<DropdownMenu>
 						<TooltipProvider>
 							<Tooltip>
@@ -306,7 +330,8 @@ export function ModeSelector() {
 							className="w-xs border-border bg-popover dark:border-neutral-800 dark:bg-neutral-950"
 						>
 							{["research"].map((agentKey) => {
-								const isSelected = selectedAgent === agentKey;
+								const isSelected =
+									activeSelectedAgent === agentKey;
 								return (
 									<DropdownMenuItem
 										className="flex cursor-pointer items-center justify-between p-3 focus:bg-accent dark:focus:bg-neutral-800"

@@ -3,6 +3,7 @@
 
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
+import type { Session } from "better-auth";
 import {
 	CornerDownLeftIcon,
 	MicIcon,
@@ -39,17 +40,20 @@ import {
 import { ModeSelector } from "@/components/mode-selector";
 import { ModelSelector } from "@/components/model-selector";
 import { Button } from "@/components/ui/button";
+import type { ToolsState } from "@/lib/ai/tools";
 import type {
 	ChatMessage,
 	Attachment as PendingAttachment,
 } from "@/lib/ai/types";
 import { transitions } from "@/lib/animations";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 import { Spinner } from "./spinner";
 
 interface InputPanelProps {
 	chatId: string;
+	session: Session | null;
 	input: string;
 	setInput: Dispatch<SetStateAction<string>>;
 	status: UseChatHelpers<ChatMessage>["status"];
@@ -59,10 +63,16 @@ interface InputPanelProps {
 	messages: ChatMessage[];
 	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
 	sendMessage: UseChatHelpers<ChatMessage>["sendMessage"];
+	initialModel?: string;
+	initialTools?: ToolsState;
+	initialMode?: string;
+	initialAgent?: string;
+	initialMcpServers?: Record<string, boolean>;
 }
 
 function PureInput({
 	chatId,
+	session: _session,
 	input,
 	setInput,
 	status,
@@ -72,6 +82,11 @@ function PureInput({
 	messages,
 	setMessages,
 	sendMessage,
+	initialModel,
+	initialTools,
+	initialMode,
+	initialAgent,
+	initialMcpServers,
 }: InputPanelProps) {
 	const greeting = "How can I help you today?";
 	const trpc = useTRPC();
@@ -316,15 +331,19 @@ function PureInput({
 		recordingIcon = <StopCircleIcon className="size-3.5" />;
 	}
 
+	const showGreeting = messages.length === 0 && !isSpaceChat;
+
+	const isMobile = useIsMobile();
+
+	let inputWrapperClasses = "right-0 bottom-0 left-0";
+	if (messages.length === 0) {
+		inputWrapperClasses = showGreeting
+			? "flex flex-1 flex-col items-center justify-between sm:justify-center"
+			: "flex flex-col items-center";
+	}
+
 	return (
-		<div
-			className={cn(
-				"sticky w-full bg-background",
-				messages.length > 0
-					? "right-0 bottom-0 left-0"
-					: "flex flex-col items-center justify-center"
-			)}
-		>
+		<div className={cn("sticky w-full bg-background", inputWrapperClasses)}>
 			{isDragging ? (
 				<div className="absolute inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm dark:bg-neutral-950/50">
 					<div className="font-semibold text-2xl text-foreground dark:text-white">
@@ -346,17 +365,22 @@ function PureInput({
 				type="file"
 			/>
 
-			{messages.length === 0 && !isSpaceChat ? (
-				<div className="mb-6">
-					<h1 className="bg-linear-to-br from-foreground to-muted-foreground bg-clip-text text-3xl text-transparent dark:from-white dark:to-neutral-500">
-						{greeting}
-					</h1>
+			{showGreeting ? (
+				<div className="flex flex-1 items-center justify-center">
+					<div className="mb-6">
+						<h1 className="bg-linear-to-br from-foreground to-muted-foreground bg-clip-text text-3xl text-transparent dark:from-white dark:to-neutral-500">
+							{greeting}
+						</h1>
+					</div>
 				</div>
 			) : null}
 
-			<div className="mx-auto w-full max-w-3xl">
+			<div className="mx-auto w-full max-w-3xl px-0 sm:px-0">
 				<PromptInput
-					className="mb-2 rounded-2xl border border-border bg-card shadow-xs dark:border-white/10 dark:bg-neutral-900/70"
+					className={cn(
+						"mb-0 border border-border border-x-0 bg-card shadow-xs sm:mb-2 sm:border-x dark:border-white/10 dark:bg-neutral-900/70",
+						isMobile ? "rounded-none" : "rounded-2xl"
+					)}
 					onDragEnter={(event) => {
 						event.preventDefault();
 						event.stopPropagation();
@@ -491,7 +515,12 @@ function PureInput({
 
 					<PromptInputFooter className="flex items-center justify-between border-border border-t px-4 py-2 dark:border-white/10">
 						<PromptInputTools className="shrink-0 items-center gap-2">
-							<ModeSelector />
+							<ModeSelector
+								initialMcpServers={initialMcpServers}
+								initialMode={initialMode}
+								initialSelectedAgent={initialAgent}
+								initialTools={initialTools}
+							/>
 						</PromptInputTools>
 
 						<div>
@@ -508,7 +537,7 @@ function PureInput({
 									<PaperclipIcon className="size-3.5" />
 								</PromptInputButton>
 
-								<ModelSelector />
+								<ModelSelector initialModelId={initialModel} />
 
 								{isLoading ? (
 									<Button
