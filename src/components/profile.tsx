@@ -13,7 +13,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ToggleTheme } from "@/components/ui/theme-toggle";
 import {
 	buttonVariants,
 	fadeVariants,
@@ -190,7 +190,6 @@ function SignedInProfile({
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
 				align={isMobile ? "start" : "end"}
-				className="w-48"
 				side={isMobile ? "top" : "right"}
 				sideOffset={isMobile ? 12 : 10}
 			>
@@ -199,10 +198,10 @@ function SignedInProfile({
 					onClick={onAccountSettings}
 				>
 					<SettingsIcon className="size-4" />
-					Account Settings
+					Settings
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
-				<ThemeToggle />
+				<ToggleTheme />
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					className="cursor-pointer"

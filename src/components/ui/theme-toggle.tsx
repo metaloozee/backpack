@@ -1,72 +1,79 @@
+/** biome-ignore-all lint/a11y/useButtonType: false positive */
+/** biome-ignore-all lint/a11y/useSemanticElements: false positive */
+/** biome-ignore-all lint/correctness/useJsxKeyInIterable: false positive */
 "use client";
 
-import { Moon, Sun } from "lucide-react";
+import { motion } from "framer-motion";
+import { MonitorCogIcon, MoonStarIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
+import React from "react";
 import { cn } from "@/lib/utils";
 
-interface ThemeToggleProps {
-	className?: string;
-}
+const THEME_OPTIONS = [
+	{
+		icon: MonitorCogIcon,
+		value: "system",
+	},
+	{
+		icon: SunIcon,
+		value: "light",
+	},
+	{
+		icon: MoonStarIcon,
+		value: "dark",
+	},
+];
 
-export function ThemeToggle({ className }: ThemeToggleProps) {
-	const { resolvedTheme, setTheme } = useTheme();
-	const isDark = resolvedTheme === "dark";
+export function ToggleTheme() {
+	const { theme, setTheme } = useTheme();
+
+	const [isMounted, setIsMounted] = React.useState(false);
+
+	React.useEffect(() => {
+		setIsMounted(true);
+	}, []);
+
+	if (!isMounted) {
+		return <div className="flex h-8 w-24" />;
+	}
 
 	return (
-		// biome-ignore lint/a11y/useKeyWithClickEvents: this is a theme toggle
-		// biome-ignore lint/a11y/useSemanticElements: this is a theme toggle
-		<div
-			className={cn(
-				"flex h-8 w-16 cursor-pointer rounded-full p-1 transition-all duration-300",
-				isDark
-					? "border border-zinc-800 bg-zinc-950"
-					: "border border-zinc-200 bg-white",
-				className
-			)}
-			onClick={() => setTheme(isDark ? "light" : "dark")}
-			role="button"
-			tabIndex={0}
+		<motion.div
+			animate={{ opacity: 1 }}
+			className="inline-flex w-full items-center justify-between overflow-hidden rounded border bg-neutral-100 dark:bg-neutral-900"
+			initial={{ opacity: 0 }}
+			key={String(isMounted)}
+			role="radiogroup"
+			transition={{ duration: 0.3 }}
 		>
-			<div className="flex w-full items-center justify-between">
-				<div
+			{THEME_OPTIONS.map((option) => (
+				<button
+					aria-checked={theme === option.value}
+					aria-label={`Switch to ${option.value} theme`}
 					className={cn(
-						"flex h-6 w-6 items-center justify-center rounded-full transition-transform duration-300",
-						isDark
-							? "translate-x-0 transform bg-zinc-800"
-							: "translate-x-8 transform bg-gray-200"
+						"relative flex size-7 cursor-pointer items-center justify-center rounded-md transition-all",
+						theme === option.value
+							? "text-foreground"
+							: "text-muted-foreground hover:text-foreground"
 					)}
+					key={option.value}
+					onClick={() => setTheme(option.value)}
+					role="radio"
 				>
-					{isDark ? (
-						<Moon
-							className="h-4 w-4 text-white"
-							strokeWidth={1.5}
-						/>
-					) : (
-						<Sun
-							className="h-4 w-4 text-gray-700"
-							strokeWidth={1.5}
-						/>
-					)}
-				</div>
-				<div
-					className={cn(
-						"flex h-6 w-6 items-center justify-center rounded-full transition-transform duration-300",
-						isDark ? "bg-transparent" : "-translate-x-8 transform"
-					)}
-				>
-					{isDark ? (
-						<Sun
-							className="h-4 w-4 text-gray-500"
-							strokeWidth={1.5}
-						/>
-					) : (
-						<Moon
-							className="h-4 w-4 text-black"
-							strokeWidth={1.5}
+					{theme === option.value && (
+						<motion.div
+							className="absolute inset-0 rounded border border-neutral-300 dark:border-neutral-700"
+							layoutId="theme-option"
+							transition={{
+								type: "spring",
+								bounce: 0.1,
+								duration: 0.75,
+							}}
 						/>
 					)}
-				</div>
-			</div>
-		</div>
+					<option.icon className="size-3.5" />
+				</button>
+			))}
+		</motion.div>
 	);
 }

@@ -71,7 +71,7 @@ function SpaceLandingView({
 }) {
 	return (
 		<>
-			<div className="flex w-full min-w-0 flex-1 flex-col items-center overflow-y-auto sm:hidden">
+			<div className="flex w-full min-w-0 flex-1 flex-col items-center overflow-y-auto overflow-x-hidden sm:hidden">
 				<div className="w-full max-w-3xl px-4 pt-6">
 					<SpaceIntro
 						knowledgeData={knowledgeData}
@@ -374,7 +374,7 @@ export function Chat({
 
 	return (
 		<div
-			className={cn("flex w-full flex-1 flex-col", layoutClasses)}
+			className={cn("flex min-h-0 w-full flex-1 flex-col", layoutClasses)}
 			suppressHydrationWarning
 		>
 			{messages.length > 0 && (
@@ -443,9 +443,11 @@ export function Chat({
 				</div>
 			)}
 
-			<div className="mt-4 flex w-3xl flex-col gap-2 overflow-y-auto px-2 pb-4">
-				<DisplayChats spaceId={env.spaceId ?? ""} />
-			</div>
+			{isSpaceChat && showSpaceHistory && (
+				<div className="mt-4 flex w-3xl flex-col gap-2 px-2 pb-4">
+					<DisplayChats spaceId={env.spaceId ?? ""} />
+				</div>
+			)}
 		</div>
 	);
 }
