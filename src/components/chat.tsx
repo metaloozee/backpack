@@ -71,7 +71,7 @@ function SpaceLandingView({
 }) {
 	return (
 		<>
-			<div className="flex w-full min-w-0 flex-1 flex-col items-center overflow-y-auto overflow-x-hidden sm:hidden">
+			<div className="flex w-full min-w-0 flex-1 flex-col items-center overflow-y-auto sm:hidden">
 				<div className="w-full max-w-3xl px-4 pt-6">
 					<SpaceIntro
 						knowledgeData={knowledgeData}
@@ -84,7 +84,7 @@ function SpaceLandingView({
 					/>
 				</div>
 				{showSpaceHistory && (
-					<div className="mt-4 flex w-full max-w-3xl flex-col gap-2 px-4 pb-4">
+					<div className="mt-4 flex w-sm flex-col gap-2 px-4 pb-4 md:w-3xl">
 						<DisplayChats spaceId={spaceId} />
 					</div>
 				)}
@@ -374,7 +374,7 @@ export function Chat({
 
 	return (
 		<div
-			className={cn("flex min-h-0 w-full flex-1 flex-col", layoutClasses)}
+			className={cn("flex w-full flex-1 flex-col", layoutClasses)}
 			suppressHydrationWarning
 		>
 			{messages.length > 0 && (
@@ -443,11 +443,9 @@ export function Chat({
 				</div>
 			)}
 
-			{showSpaceHistory && env.spaceId && (
-				<div className="mt-4 hidden w-full max-w-3xl flex-col gap-2 overflow-y-auto overflow-x-hidden px-4 pb-4 sm:mt-6 sm:flex sm:max-h-[40vh] sm:px-0">
-					<DisplayChats spaceId={env.spaceId} />
-				</div>
-			)}
+			<div className="mt-4 flex w-3xl flex-col gap-2 overflow-y-auto px-2 pb-4">
+				<DisplayChats spaceId={env.spaceId ?? ""} />
+			</div>
 		</div>
 	);
 }

@@ -43,7 +43,7 @@ export function SpaceIntro({
 					</>
 				)}
 			</div>
-			<div className="flex flex-row items-end justify-center gap-2 md:justify-start">
+			<div className="flex flex-row items-end justify-start gap-2">
 				<SettingsDialog
 					spaceCustomInstructions={spaceCustomInstructions}
 					spaceDescription={spaceDescription}

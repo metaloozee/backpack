@@ -13,7 +13,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ThemeMenuItems } from "@/components/ui/theme-toggle";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
 	buttonVariants,
 	fadeVariants,
@@ -170,7 +170,7 @@ function SignedInProfile({
 							{state === "expanded" ? (
 								<motion.div
 									animate="visible"
-									className="flex flex-col"
+									className="flex flex-col items-start"
 									exit="exit"
 									initial="hidden"
 									transition={transitions.fast}
@@ -202,7 +202,7 @@ function SignedInProfile({
 					Account Settings
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
-				<ThemeMenuItems showLabel={false} />
+				<ThemeToggle />
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					className="cursor-pointer"
