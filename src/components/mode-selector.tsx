@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
 import { motion } from "framer-motion";
 import {
 	CheckIcon,
@@ -8,8 +9,18 @@ import {
 	Settings2Icon,
 	TelescopeIcon,
 } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	Drawer,
+	DrawerClose,
+	DrawerContent,
+	DrawerDescription,
+	DrawerHeader,
+	DrawerTitle,
+	DrawerTrigger,
+} from "@/components/ui/drawer";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -26,9 +37,11 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { defaultTools } from "@/lib/ai/tools";
+import { defaultTools, type ToolsState } from "@/lib/ai/tools";
 import { slideVariants, transitions } from "@/lib/animations";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { getMcpStatus, isMcpServerDisabled } from "@/lib/mcp/status";
+import type { AppRouter } from "@/lib/server/routers/_app";
 import type { ModeType } from "@/lib/store/slices/mode.slice";
 import { usePrefsStore } from "@/lib/store/store";
 import { usePrefsHydrated } from "@/lib/store/use-prefs-hydrated";
@@ -39,6 +52,212 @@ const modeTypes = [
 	{ value: "ask", label: "Ask", disabled: false },
 	{ value: "agent", label: "Agent", disabled: false },
 ] as const;
+
+const drawerSurface =
+	"border-border bg-popover dark:border-neutral-800 dark:bg-neutral-950";
+
+type McpServersQuery = inferRouterOutputs<AppRouter>["mcp"]["getServers"];
+
+function AskToolsList({
+	activeTools,
+	setTool,
+	mcpServersData,
+	activeMcpServers,
+	setMcpServer,
+	compact,
+}: {
+	activeTools: ToolsState;
+	setTool: (id: string, checked: boolean) => void;
+	mcpServersData: McpServersQuery | undefined;
+	activeMcpServers: Record<string, boolean>;
+	setMcpServer: (id: string, checked: boolean) => void;
+	compact: boolean;
+}) {
+	const rowPad = compact ? "py-2.5 pl-3 pr-2" : "p-3";
+
+	return (
+		<>
+			{defaultTools.map((tool) => {
+				const IconComponent = tool.icon;
+				const isChecked = activeTools[tool.id];
+				return (
+					<div
+						className={cn(
+							"flex items-center justify-between rounded-md focus-within:bg-accent dark:focus-within:bg-neutral-800",
+							rowPad
+						)}
+						key={tool.id}
+					>
+						<div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+							<IconComponent className="size-4 shrink-0 text-muted-foreground" />
+							<div className="flex min-w-0 flex-1 flex-col">
+								<span className="font-medium text-sm leading-tight">
+									{tool.name}
+								</span>
+								<span
+									className={cn(
+										"text-muted-foreground text-xs leading-snug",
+										compact && "line-clamp-2"
+									)}
+								>
+									{tool.description}
+								</span>
+							</div>
+						</div>
+						<Switch
+							checked={isChecked}
+							className="shrink-0"
+							key={`tool-switch-${tool.id}-${isChecked}`}
+							onCheckedChange={(checked) =>
+								setTool(tool.id, checked)
+							}
+						/>
+					</div>
+				);
+			})}
+
+			{mcpServersData?.servers && mcpServersData.servers.length > 0 && (
+				<>
+					<div
+						className={cn(
+							"my-1 h-px bg-border dark:bg-neutral-800",
+							compact && "my-2"
+						)}
+					/>
+					<p className="px-3 py-1.5 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+						MCP Servers
+					</p>
+					{mcpServersData.servers.map((server) => {
+						const isChecked = activeMcpServers[server.id] ?? false;
+						const status = getMcpStatus({
+							lastConnectedAt: server.lastConnectedAt,
+							lastError: server.lastError,
+							hasApiKey: server.hasApiKey,
+						});
+						const disabled = isMcpServerDisabled(status);
+						const toolCount =
+							server.toolsCache &&
+							Array.isArray(server.toolsCache)
+								? server.toolsCache.length
+								: 0;
+
+						const subtitle = (() => {
+							if (disabled) {
+								if (status === "needs_auth") {
+									return "Authenticate to connect";
+								}
+								if (status === "failed") {
+									return "Connection failed";
+								}
+								return "Connection unknown";
+							}
+							if (status === "degraded") {
+								return "Retry recommended";
+							}
+							return server.url;
+						})();
+
+						return (
+							<div
+								className={cn(
+									"flex items-center justify-between rounded-md focus-within:bg-accent dark:focus-within:bg-neutral-800",
+									rowPad,
+									disabled && "opacity-70"
+								)}
+								key={server.id}
+							>
+								<div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+									<ServerIcon className="size-4 shrink-0 text-muted-foreground" />
+									<div className="flex min-w-0 flex-1 flex-col">
+										<div className="flex flex-wrap items-center gap-2">
+											<span className="font-medium text-sm leading-tight">
+												{server.name}
+											</span>
+											{toolCount > 0 && (
+												<Badge
+													className="h-4 px-1 text-[10px]"
+													variant="secondary"
+												>
+													{toolCount}
+												</Badge>
+											)}
+										</div>
+										<span
+											className={cn(
+												"text-muted-foreground text-xs leading-snug",
+												compact &&
+													"line-clamp-1 break-all"
+											)}
+										>
+											{subtitle}
+										</span>
+									</div>
+								</div>
+								<Switch
+									checked={isChecked}
+									className="shrink-0"
+									disabled={disabled}
+									key={`mcp-switch-${server.id}-${isChecked}`}
+									onCheckedChange={(checked) =>
+										setMcpServer(server.id, checked)
+									}
+								/>
+							</div>
+						);
+					})}
+				</>
+			)}
+		</>
+	);
+}
+
+function AgentList({
+	activeSelectedAgent,
+	onSelect,
+	compact,
+}: {
+	activeSelectedAgent: string | null;
+	onSelect: (key: string) => void;
+	compact: boolean;
+}) {
+	const rowPad = compact ? "py-2.5 pl-3 pr-2" : "p-3";
+
+	return (
+		<>
+			{["research"].map((agentKey) => {
+				const isSelected = activeSelectedAgent === agentKey;
+				const label =
+					agentKey.charAt(0).toUpperCase() + agentKey.slice(1);
+				return (
+					<button
+						className={cn(
+							"flex w-full cursor-pointer items-center justify-between rounded-md text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:hover:bg-neutral-800",
+							rowPad
+						)}
+						key={agentKey}
+						onClick={() => onSelect(agentKey)}
+						type="button"
+					>
+						<div className="flex items-center gap-2.5 sm:gap-3">
+							<TelescopeIcon className="size-4 shrink-0 text-muted-foreground" />
+							<div className="flex flex-col">
+								<span className="font-medium text-sm leading-tight">
+									{label}
+								</span>
+								<span className="text-muted-foreground text-xs">
+									{label} agent
+								</span>
+							</div>
+						</div>
+						{isSelected && (
+							<CheckIcon className="size-4 shrink-0 text-primary" />
+						)}
+					</button>
+				);
+			})}
+		</>
+	);
+}
 
 export function ModeSelector({
 	initialMcpServers,
@@ -51,8 +270,10 @@ export function ModeSelector({
 	initialSelectedAgent?: string;
 	initialTools?: Record<string, boolean>;
 }) {
+	const isMobile = useIsMobile();
+	const [askDrawerOpen, setAskDrawerOpen] = useState(false);
+	const [agentDrawerOpen, setAgentDrawerOpen] = useState(false);
 	const hasHydrated = usePrefsHydrated();
-	// All state from the store — no local useState
 	const mode = usePrefsStore((s) => s.mode);
 	const setMode = usePrefsStore((s) => s.setMode);
 	const selectedAgent = usePrefsStore((s) => s.selectedAgent);
@@ -88,16 +309,16 @@ export function ModeSelector({
 			return;
 		}
 
+		setAskDrawerOpen(false);
+		setAgentDrawerOpen(false);
 		setMode(newMode);
 
 		if (newMode === "agent") {
-			// Clear all tools when switching to agent mode
 			const cleared = Object.fromEntries(
 				defaultTools.map((t) => [t.id, false])
 			);
 			setAllTools(cleared as typeof tools);
 		} else {
-			// Restore defaults when switching back to ask
 			resetTools();
 		}
 	};
@@ -105,7 +326,13 @@ export function ModeSelector({
 	const handleAgentSelect = (agentKey: string) => {
 		const newAgent = activeSelectedAgent === agentKey ? null : agentKey;
 		setSelectedAgent(newAgent);
+		if (isMobile) {
+			setAgentDrawerOpen(false);
+		}
 	};
+
+	const settingsTriggerClass =
+		"ml-1 h-7 w-7 shrink-0 rounded-sm border-0 bg-transparent p-0 hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:hover:bg-neutral-800";
 
 	return (
 		<motion.div
@@ -135,239 +362,350 @@ export function ModeSelector({
 					</TabsList>
 				</Tabs>
 
-				{activeMode === "ask" && (
-					<DropdownMenu>
-						<TooltipProvider>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<DropdownMenuTrigger asChild>
-										<Button
-											aria-label="Ask mode options"
-											className="ml-1 h-7 w-7 rounded-sm border-0 bg-transparent p-0 hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:hover:bg-neutral-800"
-											size="icon"
-											variant="ghost"
-										>
-											<Settings2Icon className="size-3.5" />
-										</Button>
-									</DropdownMenuTrigger>
-								</TooltipTrigger>
-								<TooltipContent>
-									<p>Configure Tools</p>
-								</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
-						<DropdownMenuContent
-							align="start"
-							className="w-xs border-border bg-popover dark:border-neutral-800 dark:bg-neutral-950"
+				{activeMode === "ask" &&
+					(isMobile ? (
+						<Drawer
+							direction="bottom"
+							onOpenChange={setAskDrawerOpen}
+							open={askDrawerOpen}
+							shouldScaleBackground={false}
 						>
-							{defaultTools.map((tool) => {
-								const IconComponent = tool.icon;
-								const isChecked = activeTools[tool.id];
-								return (
-									<DropdownMenuItem
-										className="flex cursor-pointer items-center justify-between p-3 focus:bg-accent dark:focus:bg-neutral-800"
-										key={tool.id}
-										onClick={(e) => e.preventDefault()}
-									>
-										<div className="flex items-center gap-3">
-											<IconComponent className="size-4 text-muted-foreground" />
-											<div className="flex flex-col">
-												<span className="font-medium text-sm">
-													{tool.name}
-												</span>
-												<span className="text-muted-foreground text-xs">
-													{tool.description}
-												</span>
+							<DrawerTrigger asChild>
+								<Button
+									aria-expanded={askDrawerOpen}
+									aria-label="Configure tools"
+									className={settingsTriggerClass}
+									size="icon"
+									type="button"
+									variant="ghost"
+								>
+									<Settings2Icon className="size-3.5" />
+								</Button>
+							</DrawerTrigger>
+							<DrawerContent
+								className={cn(
+									"max-h-[min(78vh,560px)]",
+									drawerSurface
+								)}
+							>
+								<DrawerHeader className="space-y-1 px-4 pt-2 pb-3 text-left">
+									<DrawerTitle className="font-semibold text-base tracking-tight">
+										Tools &amp; MCP
+									</DrawerTitle>
+								</DrawerHeader>
+								<div className="max-h-[55vh] overflow-y-auto overscroll-contain px-1 pt-1 pb-[max(1rem,var(--safe-area-bottom))]">
+									<AskToolsList
+										activeMcpServers={activeMcpServers}
+										activeTools={activeTools}
+										compact
+										mcpServersData={mcpServersData}
+										setMcpServer={setMcpServer}
+										setTool={setTool}
+									/>
+								</div>
+								<div className="flex justify-end px-3 py-2">
+									<DrawerClose asChild>
+										<Button size="sm" variant="secondary">
+											Done
+										</Button>
+									</DrawerClose>
+								</div>
+							</DrawerContent>
+						</Drawer>
+					) : (
+						<DropdownMenu>
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<DropdownMenuTrigger asChild>
+											<Button
+												aria-label="Ask mode options"
+												className={settingsTriggerClass}
+												size="icon"
+												variant="ghost"
+											>
+												<Settings2Icon className="size-3.5" />
+											</Button>
+										</DropdownMenuTrigger>
+									</TooltipTrigger>
+									<TooltipContent>
+										<p>Configure Tools</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+							<DropdownMenuContent
+								align="start"
+								className={cn("w-xs", drawerSurface)}
+							>
+								{defaultTools.map((tool) => {
+									const IconComponent = tool.icon;
+									const isChecked = activeTools[tool.id];
+									return (
+										<DropdownMenuItem
+											className="flex cursor-pointer items-center justify-between p-3 focus:bg-accent dark:focus:bg-neutral-800"
+											key={tool.id}
+											onClick={(e) => e.preventDefault()}
+										>
+											<div className="flex items-center gap-3">
+												<IconComponent className="size-4 text-muted-foreground" />
+												<div className="flex flex-col">
+													<span className="font-medium text-sm">
+														{tool.name}
+													</span>
+													<span className="text-muted-foreground text-xs">
+														{tool.description}
+													</span>
+												</div>
 											</div>
-										</div>
-										<Switch
-											checked={isChecked}
-											key={`tool-switch-${tool.id}-${isChecked}`}
-											onCheckedChange={(checked) =>
-												setTool(tool.id, checked)
-											}
-										/>
-									</DropdownMenuItem>
-								);
-							})}
+											<Switch
+												checked={isChecked}
+												key={`tool-switch-${tool.id}-${isChecked}`}
+												onCheckedChange={(checked) =>
+													setTool(tool.id, checked)
+												}
+											/>
+										</DropdownMenuItem>
+									);
+								})}
 
-							{mcpServersData?.servers &&
-								mcpServersData.servers.length > 0 && (
-									<>
-										<DropdownMenuSeparator className="dark:bg-neutral-800" />
-										<DropdownMenuLabel className="px-3 py-2 font-medium text-muted-foreground text-xs">
-											MCP Servers
-										</DropdownMenuLabel>
-										{mcpServersData.servers.map(
-											(server) => {
-												const isChecked =
-													activeMcpServers[
-														server.id
-													] ?? false;
-												const status = getMcpStatus({
-													lastConnectedAt:
-														server.lastConnectedAt,
-													lastError: server.lastError,
-													hasApiKey: server.hasApiKey,
-												});
-												const disabled =
-													isMcpServerDisabled(status);
-												const toolCount =
-													server.toolsCache &&
-													Array.isArray(
-														server.toolsCache
-													)
-														? server.toolsCache
-																.length
-														: 0;
+								{mcpServersData?.servers &&
+									mcpServersData.servers.length > 0 && (
+										<>
+											<DropdownMenuSeparator className="dark:bg-neutral-800" />
+											<DropdownMenuLabel className="px-3 py-2 font-medium text-muted-foreground text-xs">
+												MCP Servers
+											</DropdownMenuLabel>
+											{mcpServersData.servers.map(
+												(server) => {
+													const isChecked =
+														activeMcpServers[
+															server.id
+														] ?? false;
+													const status = getMcpStatus(
+														{
+															lastConnectedAt:
+																server.lastConnectedAt,
+															lastError:
+																server.lastError,
+															hasApiKey:
+																server.hasApiKey,
+														}
+													);
+													const disabled =
+														isMcpServerDisabled(
+															status
+														);
+													const toolCount =
+														server.toolsCache &&
+														Array.isArray(
+															server.toolsCache
+														)
+															? server.toolsCache
+																	.length
+															: 0;
 
-												const subtitle = (() => {
-													if (disabled) {
+													const subtitle = (() => {
+														if (disabled) {
+															if (
+																status ===
+																"needs_auth"
+															) {
+																return "Authenticate to connect";
+															}
+															if (
+																status ===
+																"failed"
+															) {
+																return "Connection failed";
+															}
+															return "Connection unknown";
+														}
 														if (
 															status ===
-															"needs_auth"
+															"degraded"
 														) {
-															return "Authenticate to connect";
+															return "Retry recommended";
 														}
-														if (
-															status === "failed"
-														) {
-															return "Connection failed";
-														}
-														return "Connection unknown";
-													}
-													if (status === "degraded") {
-														return "Retry recommended";
-													}
-													return server.url;
-												})();
+														return server.url;
+													})();
 
-												return (
-													<DropdownMenuItem
-														className={cn(
-															"flex cursor-pointer items-center justify-between p-3 focus:bg-accent dark:focus:bg-neutral-800",
-															disabled &&
-																"cursor-not-allowed opacity-70"
-														)}
-														disabled={disabled}
-														key={server.id}
-														onClick={(e) =>
-															e.preventDefault()
-														}
-													>
-														<div className="flex items-center gap-3">
-															<ServerIcon className="size-4 text-muted-foreground" />
-															<div className="flex flex-col">
-																<div className="flex items-center gap-2">
-																	<span className="font-medium text-sm">
+													return (
+														<DropdownMenuItem
+															className={cn(
+																"flex cursor-pointer items-center justify-between p-3 focus:bg-accent dark:focus:bg-neutral-800",
+																disabled &&
+																	"cursor-not-allowed opacity-70"
+															)}
+															disabled={disabled}
+															key={server.id}
+															onClick={(e) =>
+																e.preventDefault()
+															}
+														>
+															<div className="flex items-center gap-3">
+																<ServerIcon className="size-4 text-muted-foreground" />
+																<div className="flex flex-col">
+																	<div className="flex items-center gap-2">
+																		<span className="font-medium text-sm">
+																			{
+																				server.name
+																			}
+																		</span>
+																		{toolCount >
+																			0 && (
+																			<Badge
+																				className="h-4 px-1 text-[10px]"
+																				variant="secondary"
+																			>
+																				{
+																					toolCount
+																				}
+																			</Badge>
+																		)}
+																	</div>
+																	<span className="text-muted-foreground text-xs">
 																		{
-																			server.name
+																			subtitle
 																		}
 																	</span>
-																	{toolCount >
-																		0 && (
-																		<Badge
-																			className="h-4 px-1 text-[10px]"
-																			variant="secondary"
-																		>
-																			{
-																				toolCount
-																			}
-																		</Badge>
-																	)}
 																</div>
-																<span className="text-muted-foreground text-xs">
-																	{subtitle}
-																</span>
 															</div>
-														</div>
-														<Switch
-															checked={isChecked}
-															disabled={disabled}
-															key={`mcp-switch-${server.id}-${isChecked}`}
-															onCheckedChange={(
-																checked
-															) =>
-																setMcpServer(
-																	server.id,
+															<Switch
+																checked={
+																	isChecked
+																}
+																disabled={
+																	disabled
+																}
+																key={`mcp-switch-${server.id}-${isChecked}`}
+																onCheckedChange={(
 																	checked
-																)
-															}
-														/>
-													</DropdownMenuItem>
-												);
-											}
-										)}
-									</>
-								)}
-						</DropdownMenuContent>
-					</DropdownMenu>
-				)}
+																) =>
+																	setMcpServer(
+																		server.id,
+																		checked
+																	)
+																}
+															/>
+														</DropdownMenuItem>
+													);
+												}
+											)}
+										</>
+									)}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					))}
 
-				{activeMode === "agent" && (
-					<DropdownMenu>
-						<TooltipProvider>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<DropdownMenuTrigger asChild>
-										<Button
-											aria-label="Agent mode options"
-											className="ml-1 h-7 w-7 rounded-sm border-0 bg-transparent p-0 hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:hover:bg-neutral-800"
-											size="icon"
-											variant="ghost"
-										>
-											<Settings2Icon className="size-3.5" />
-										</Button>
-									</DropdownMenuTrigger>
-								</TooltipTrigger>
-								<TooltipContent>
-									<p>Select Agent</p>
-								</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
-						<DropdownMenuContent
-							align="start"
-							className="w-xs border-border bg-popover dark:border-neutral-800 dark:bg-neutral-950"
+				{activeMode === "agent" &&
+					(isMobile ? (
+						<Drawer
+							direction="bottom"
+							onOpenChange={setAgentDrawerOpen}
+							open={agentDrawerOpen}
+							shouldScaleBackground={false}
 						>
-							{["research"].map((agentKey) => {
-								const isSelected =
-									activeSelectedAgent === agentKey;
-								return (
-									<DropdownMenuItem
-										className="flex cursor-pointer items-center justify-between p-3 focus:bg-accent dark:focus:bg-neutral-800"
-										key={agentKey}
-										onSelect={(e) => {
-											e.preventDefault();
-											handleAgentSelect(agentKey);
-										}}
-									>
-										<div className="flex items-center gap-3">
-											<TelescopeIcon className="size-4 text-muted-foreground" />
-											<div className="flex flex-col">
-												<span className="font-medium text-sm">
-													{agentKey
-														.charAt(0)
-														.toUpperCase() +
-														agentKey.slice(1)}
-												</span>
-												<span className="text-muted-foreground text-xs">
-													{agentKey
-														.charAt(0)
-														.toUpperCase() +
-														agentKey.slice(1)}{" "}
-													agent
-												</span>
+							<DrawerTrigger asChild>
+								<Button
+									aria-expanded={agentDrawerOpen}
+									aria-label="Agent mode options"
+									className={settingsTriggerClass}
+									size="icon"
+									type="button"
+									variant="ghost"
+								>
+									<Settings2Icon className="size-3.5" />
+								</Button>
+							</DrawerTrigger>
+							<DrawerContent
+								className={cn("max-h-[50vh]", drawerSurface)}
+							>
+								<DrawerHeader className="space-y-1 px-4 pt-2 pb-3 text-left">
+									<DrawerTitle className="font-semibold text-base tracking-tight">
+										Agent
+									</DrawerTitle>
+									<DrawerDescription className="text-left text-muted-foreground text-xs">
+										Choose an agent profile for this
+										conversation.
+									</DrawerDescription>
+								</DrawerHeader>
+								<div className="px-1 pt-1 pb-[max(1rem,var(--safe-area-bottom))]">
+									<AgentList
+										activeSelectedAgent={
+											activeSelectedAgent
+										}
+										compact
+										onSelect={handleAgentSelect}
+									/>
+								</div>
+							</DrawerContent>
+						</Drawer>
+					) : (
+						<DropdownMenu>
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<DropdownMenuTrigger asChild>
+											<Button
+												aria-label="Agent mode options"
+												className={settingsTriggerClass}
+												size="icon"
+												variant="ghost"
+											>
+												<Settings2Icon className="size-3.5" />
+											</Button>
+										</DropdownMenuTrigger>
+									</TooltipTrigger>
+									<TooltipContent>
+										<p>Select Agent</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+							<DropdownMenuContent
+								align="start"
+								className={cn("w-xs", drawerSurface)}
+							>
+								{["research"].map((agentKey) => {
+									const isSelected =
+										activeSelectedAgent === agentKey;
+									return (
+										<DropdownMenuItem
+											className="flex cursor-pointer items-center justify-between p-3 focus:bg-accent dark:focus:bg-neutral-800"
+											key={agentKey}
+											onSelect={(e) => {
+												e.preventDefault();
+												handleAgentSelect(agentKey);
+											}}
+										>
+											<div className="flex items-center gap-3">
+												<TelescopeIcon className="size-4 text-muted-foreground" />
+												<div className="flex flex-col">
+													<span className="font-medium text-sm">
+														{agentKey
+															.charAt(0)
+															.toUpperCase() +
+															agentKey.slice(1)}
+													</span>
+													<span className="text-muted-foreground text-xs">
+														{agentKey
+															.charAt(0)
+															.toUpperCase() +
+															agentKey.slice(
+																1
+															)}{" "}
+														agent
+													</span>
+												</div>
 											</div>
-										</div>
-										{isSelected && (
-											<CheckIcon className="size-4 text-primary" />
-										)}
-									</DropdownMenuItem>
-								);
-							})}
-						</DropdownMenuContent>
-					</DropdownMenu>
-				)}
+											{isSelected && (
+												<CheckIcon className="size-4 text-primary" />
+											)}
+										</DropdownMenuItem>
+									);
+								})}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					))}
 			</motion.div>
 		</motion.div>
 	);
