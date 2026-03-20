@@ -4,12 +4,13 @@ import {
 	BrainIcon,
 	Check,
 	ImageIcon,
+	type LucideIcon,
 	MicIcon,
 	VideoIcon,
 	WrenchIcon,
 } from "lucide-react";
 import Image from "next/image";
-import { useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Command, CommandList } from "@/components/ui/command";
@@ -71,72 +72,119 @@ const providerNames: Record<string, string> = {
 const drawerSurface =
 	"border-border bg-popover dark:border-neutral-800 dark:bg-neutral-950";
 
+function providerDisplayName(providerKey: string): string {
+	return providerNames[providerKey] ?? providerKey;
+}
+
+const capabilityBadgeDefs: {
+	when: (model: Model) => boolean;
+	Icon: LucideIcon;
+	label: string;
+}[] = [
+	{
+		when: (m) => m.capabilities.reasoning,
+		Icon: BrainIcon,
+		label: "Reasoning",
+	},
+	{
+		when: (m) => m.capabilities.toolCall,
+		Icon: WrenchIcon,
+		label: "Tool Use",
+	},
+	{
+		when: (m) => m.modalities.input.includes("image"),
+		Icon: ImageIcon,
+		label: "Vision",
+	},
+	{
+		when: (m) => m.modalities.input.includes("audio"),
+		Icon: MicIcon,
+		label: "Audio",
+	},
+	{
+		when: (m) => m.modalities.input.includes("video"),
+		Icon: VideoIcon,
+		label: "Video",
+	},
+];
+
 function ModelCapabilityBadges({ model }: { model: Model }) {
 	return (
 		<TooltipProvider>
 			<div className="flex shrink-0 flex-row gap-1">
-				{model.capabilities.reasoning && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Badge className="px-1" variant="secondary">
-								<BrainIcon className="size-3" />
-							</Badge>
-						</TooltipTrigger>
-						<TooltipContent>
-							<span className="text-xs">Reasoning</span>
-						</TooltipContent>
-					</Tooltip>
-				)}
-				{model.capabilities.toolCall && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Badge className="px-1" variant="secondary">
-								<WrenchIcon className="size-3" />
-							</Badge>
-						</TooltipTrigger>
-						<TooltipContent>
-							<span className="text-xs">Tool Use</span>
-						</TooltipContent>
-					</Tooltip>
-				)}
-				{model.modalities.input.includes("image") && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Badge className="px-1" variant="secondary">
-								<ImageIcon className="size-3" />
-							</Badge>
-						</TooltipTrigger>
-						<TooltipContent>
-							<span className="text-xs">Vision</span>
-						</TooltipContent>
-					</Tooltip>
-				)}
-				{model.modalities.input.includes("audio") && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Badge className="px-1" variant="secondary">
-								<MicIcon className="size-3" />
-							</Badge>
-						</TooltipTrigger>
-						<TooltipContent>
-							<span className="text-xs">Audio</span>
-						</TooltipContent>
-					</Tooltip>
-				)}
-				{model.modalities.input.includes("video") && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Badge className="px-1" variant="secondary">
-								<VideoIcon className="size-3" />
-							</Badge>
-						</TooltipTrigger>
-						<TooltipContent>
-							<span className="text-xs">Video</span>
-						</TooltipContent>
-					</Tooltip>
+				{capabilityBadgeDefs.map(({ Icon, label, when }) =>
+					when(model) ? (
+						<Tooltip key={label}>
+							<TooltipTrigger asChild>
+								<Badge className="px-1" variant="secondary">
+									<Icon className="size-3" />
+								</Badge>
+							</TooltipTrigger>
+							<TooltipContent>
+								<span className="text-xs">{label}</span>
+							</TooltipContent>
+						</Tooltip>
+					) : null
 				)}
 			</div>
 		</TooltipProvider>
+	);
+}
+
+function ModelOptionBody({
+	model,
+	selected,
+	layout,
+}: {
+	model: Model;
+	selected: boolean;
+	layout: "mobile" | "desktop";
+}) {
+	let checkOrSpacer: ReactNode = null;
+	if (layout === "mobile") {
+		checkOrSpacer = selected ? (
+			<Check className="size-3.5 shrink-0 text-primary" />
+		) : (
+			<span className="inline-block size-3.5 shrink-0" />
+		);
+	} else if (selected) {
+		checkOrSpacer = <Check className="size-3 shrink-0" />;
+	}
+
+	const leading = (
+		<>
+			{checkOrSpacer}
+			<code
+				className={cn(
+					"truncate font-mono text-[11px] text-foreground/90",
+					layout === "mobile" && "leading-tight"
+				)}
+			>
+				{model.id}
+			</code>
+		</>
+	);
+
+	const badges = <ModelCapabilityBadges model={model} />;
+
+	if (layout === "desktop") {
+		return (
+			<div className="flex w-full min-w-0 items-center justify-between gap-3">
+				<div className="flex min-w-0 flex-1 items-center gap-2">
+					{leading}
+				</div>
+				{badges}
+			</div>
+		);
+	}
+
+	return (
+		<>
+			<div className="flex min-w-0 flex-1 items-center gap-2">
+				{leading}
+			</div>
+			{badges}
+		</>
 	);
 }
 
@@ -227,8 +275,7 @@ export function ModelSelector({ initialModelId }: { initialModelId?: string }) {
 											size={18}
 										/>
 										<span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-											{providerNames[providerKey] ??
-												providerKey}
+											{providerDisplayName(providerKey)}
 										</span>
 									</div>
 									<div className="mt-1 flex flex-col gap-0.5">
@@ -249,18 +296,10 @@ export function ModelSelector({ initialModelId }: { initialModelId?: string }) {
 													}
 													type="button"
 												>
-													<div className="flex min-w-0 flex-1 items-center gap-2">
-														{selected ? (
-															<Check className="size-3.5 shrink-0 text-primary" />
-														) : (
-															<span className="inline-block size-3.5 shrink-0" />
-														)}
-														<code className="truncate font-mono text-[11px] text-foreground/90 leading-tight">
-															{model.id}
-														</code>
-													</div>
-													<ModelCapabilityBadges
+													<ModelOptionBody
+														layout="mobile"
 														model={model}
+														selected={selected}
 													/>
 												</button>
 											);
@@ -290,7 +329,7 @@ export function ModelSelector({ initialModelId }: { initialModelId?: string }) {
 									<DropdownMenuSubTrigger className="gap-2">
 										<ProviderLogo provider={providerKey} />
 										<span>
-											{providerNames[providerKey]}
+											{providerDisplayName(providerKey)}
 										</span>
 									</DropdownMenuSubTrigger>
 									<DropdownMenuSubContent
@@ -306,20 +345,14 @@ export function ModelSelector({ initialModelId }: { initialModelId?: string }) {
 													selectModel(model.id)
 												}
 											>
-												<div className="flex w-full min-w-0 items-center justify-between gap-3">
-													<div className="flex min-w-0 flex-1 items-center gap-2">
-														{model.id ===
-															selectedModelId && (
-															<Check className="size-3 shrink-0" />
-														)}
-														<code className="truncate font-mono text-[11px] text-foreground/90">
-															{model.id}
-														</code>
-													</div>
-													<ModelCapabilityBadges
-														model={model}
-													/>
-												</div>
+												<ModelOptionBody
+													layout="desktop"
+													model={model}
+													selected={
+														model.id ===
+														selectedModelId
+													}
+												/>
 											</DropdownMenuItem>
 										))}
 									</DropdownMenuSubContent>
