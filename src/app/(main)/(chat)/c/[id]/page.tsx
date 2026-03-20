@@ -40,27 +40,29 @@ export default async function ChatPage({
 	const messages = await getMessagesByChatId({ id: chatData.id });
 
 	return (
-		<PreviewChat
-			autoResume={true}
-			env={{
-				inSpace: !!spaceData,
-				spaceId: spaceData ? spaceData.id : undefined,
-				spaceName: spaceData ? spaceData.spaceTitle : undefined,
-				spaceDescription: spaceData
-					? (spaceData.spaceDescription ?? undefined)
-					: undefined,
-				spaceCustomInstructions: spaceData
-					? (spaceData.spaceCustomInstructions ?? undefined)
-					: undefined,
-			}}
-			id={chatId}
-			initialAgent={selectedAgent ?? undefined}
-			initialMcpServers={mcpServers}
-			initialMessages={convertToUIMessages(messages)}
-			initialMode={mode}
-			initialModel={modelId}
-			initialTools={tools}
-			session={session}
-		/>
+		<div className="flex min-h-0 w-full flex-1 flex-col">
+			<PreviewChat
+				autoResume={true}
+				env={{
+					inSpace: !!spaceData,
+					spaceId: spaceData ? spaceData.id : undefined,
+					spaceName: spaceData ? spaceData.spaceTitle : undefined,
+					spaceDescription: spaceData
+						? (spaceData.spaceDescription ?? undefined)
+						: undefined,
+					spaceCustomInstructions: spaceData
+						? (spaceData.spaceCustomInstructions ?? undefined)
+						: undefined,
+				}}
+				id={chatId}
+				initialAgent={selectedAgent ?? undefined}
+				initialMcpServers={mcpServers}
+				initialMessages={convertToUIMessages(messages)}
+				initialMode={mode}
+				initialModel={modelId}
+				initialTools={tools}
+				session={session}
+			/>
+		</div>
 	);
 }

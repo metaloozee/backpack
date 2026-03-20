@@ -51,6 +51,8 @@ import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 import { Spinner } from "./spinner";
 
+type ComposerLayout = "stickyFooter" | "inline" | "home";
+
 interface InputPanelProps {
 	chatId: string;
 	session: Session | null;
@@ -68,8 +70,10 @@ interface InputPanelProps {
 	initialMode?: string;
 	initialAgent?: string;
 	initialMcpServers?: Record<string, boolean>;
+	composerLayout?: ComposerLayout;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This is a pure component that is used to render the input panel.
 function PureInput({
 	chatId,
 	session: _session,
@@ -87,6 +91,7 @@ function PureInput({
 	initialMode,
 	initialAgent,
 	initialMcpServers,
+	composerLayout = "stickyFooter",
 }: InputPanelProps) {
 	const greeting = "How can I help you today?";
 	const trpc = useTRPC();
@@ -335,15 +340,37 @@ function PureInput({
 
 	const isMobile = useIsMobile();
 
-	let inputWrapperClasses = "right-0 bottom-0 left-0";
-	if (messages.length === 0) {
+	let inputWrapperClasses = "right-0 left-0";
+	if (composerLayout === "home") {
 		inputWrapperClasses = showGreeting
-			? "flex flex-1 flex-col items-center justify-between sm:justify-center"
-			: "flex flex-col items-center";
+			? cn(
+					inputWrapperClasses,
+					"flex flex-1 flex-col items-center justify-center sm:justify-center"
+				)
+			: cn(inputWrapperClasses, "flex flex-col items-center");
+	} else if (composerLayout === "inline") {
+		inputWrapperClasses = cn(
+			inputWrapperClasses,
+			"mt-6 flex w-full shrink-0 flex-col sm:mt-8"
+		);
+	} else if (composerLayout === "stickyFooter" && messages.length === 0) {
+		inputWrapperClasses = cn(
+			inputWrapperClasses,
+			"flex shrink-0 flex-col items-center"
+		);
 	}
 
+	const positionClasses =
+		composerLayout === "inline" ? "relative" : "sticky bottom-0";
+
 	return (
-		<div className={cn("sticky w-full bg-background", inputWrapperClasses)}>
+		<div
+			className={cn(
+				"w-full bg-background",
+				positionClasses,
+				inputWrapperClasses
+			)}
+		>
 			{isDragging ? (
 				<div className="absolute inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm dark:bg-neutral-950/50">
 					<div className="font-semibold text-2xl text-foreground dark:text-white">
@@ -366,7 +393,12 @@ function PureInput({
 			/>
 
 			{showGreeting ? (
-				<div className="flex flex-1 items-center justify-center">
+				<div
+					className={cn(
+						"flex items-center justify-center",
+						isMobile ? "flex-1" : ""
+					)}
+				>
 					<div className="mb-6">
 						<h1 className="bg-linear-to-br from-foreground to-muted-foreground bg-clip-text text-3xl text-transparent dark:from-white dark:to-neutral-500">
 							{greeting}
@@ -375,7 +407,7 @@ function PureInput({
 				</div>
 			) : null}
 
-			<div className="mx-auto w-full max-w-3xl px-0 sm:px-0">
+			<div className="mx-auto w-full max-w-3xl px-0">
 				<PromptInput
 					className={cn(
 						"mb-0 border border-border border-x-0 bg-card shadow-xs sm:mb-2 sm:border-x dark:border-white/10 dark:bg-neutral-900/70",
