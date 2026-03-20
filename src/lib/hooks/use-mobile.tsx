@@ -14,6 +14,7 @@ const getSnapshot = () => window.innerWidth < MOBILE_BREAKPOINT;
 
 const getServerSnapshot = () => false;
 
+/** True when viewport width is under 768px. Matches Tailwind `md` and e.g. `md:hidden` on the mobile header. */
 export function useIsMobile() {
 	return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

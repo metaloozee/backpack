@@ -19,13 +19,13 @@ import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/ai/utils";
 import type { Chat as ChatType, Knowledge } from "@/lib/db/schema/app";
 import { useAutoResume } from "@/lib/hooks/use-auto-resume";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useSetMobileHeader } from "@/lib/mobile-header-context";
 import {
 	type ChatInfiniteData,
 	prependChatToInfiniteData,
 } from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
-import { cn } from "@/lib/utils";
 
 function useQueryAppend({
 	sendMessage,
@@ -48,61 +48,6 @@ function useQueryAppend({
 			setQuery(null);
 		}
 	}, [query, sendMessage, setQuery]);
-}
-
-function SpaceLandingView({
-	spaceId,
-	spaceTitle,
-	spaceDescription,
-	spaceCustomInstructions,
-	spaceStatus,
-	knowledgeStatus,
-	knowledgeData,
-	showSpaceHistory,
-}: {
-	spaceId: string;
-	spaceTitle: string;
-	spaceDescription?: string;
-	spaceCustomInstructions?: string;
-	spaceStatus: "pending" | "error" | "success";
-	knowledgeStatus: "pending" | "error" | "success";
-	knowledgeData?: Knowledge[];
-	showSpaceHistory: boolean;
-}) {
-	return (
-		<>
-			<div className="flex w-full min-w-0 flex-1 flex-col items-center overflow-y-auto overflow-x-hidden sm:hidden">
-				<div className="w-full max-w-3xl px-4 pt-6">
-					<SpaceIntro
-						knowledgeData={knowledgeData}
-						knowledgeStatus={knowledgeStatus}
-						spaceCustomInstructions={spaceCustomInstructions}
-						spaceDescription={spaceDescription}
-						spaceId={spaceId}
-						spaceStatus={spaceStatus}
-						spaceTitle={spaceTitle}
-					/>
-				</div>
-				{showSpaceHistory && (
-					<div className="mt-4 flex w-full max-w-3xl flex-col gap-2 px-4 pb-4">
-						<DisplayChats spaceId={spaceId} />
-					</div>
-				)}
-			</div>
-
-			<div className="hidden w-full max-w-3xl sm:block sm:px-0">
-				<SpaceIntro
-					knowledgeData={knowledgeData}
-					knowledgeStatus={knowledgeStatus}
-					spaceCustomInstructions={spaceCustomInstructions}
-					spaceDescription={spaceDescription}
-					spaceId={spaceId}
-					spaceStatus={spaceStatus}
-					spaceTitle={spaceTitle}
-				/>
-			</div>
-		</>
-	);
 }
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: complex chat component
@@ -364,88 +309,106 @@ export function Chat({
 		messages.length > 0 ? headerSubtitle : null
 	);
 
-	const hasActiveContent = messages.length > 0 || isSpaceChat;
-	let layoutClasses = "container my-0 items-center justify-center sm:my-10";
-	if (showSpaceIntro) {
-		layoutClasses = "items-center justify-center";
-	} else if (hasActiveContent) {
-		layoutClasses = "items-center justify-between";
-	}
+	const isMobile = useIsMobile();
+	const resolvedSpaceId = spaceOverview?.spaceData.id ?? env.spaceId ?? "";
+
+	const inputPanelProps = {
+		attachments,
+		chatId: id,
+		initialAgent,
+		initialMcpServers,
+		initialMode,
+		initialModel,
+		initialTools,
+		input,
+		messages,
+		sendMessage,
+		session,
+		setAttachments,
+		setInput,
+		setMessages,
+		status,
+		stop,
+	};
+
+	const spaceIntroEl = (
+		<SpaceIntro
+			knowledgeData={knowledgeData}
+			knowledgeStatus={knowledgeStatus}
+			spaceCustomInstructions={spaceCustomInstructions}
+			spaceDescription={spaceDescription}
+			spaceId={resolvedSpaceId}
+			spaceStatus={spaceStatus}
+			spaceTitle={spaceTitle}
+		/>
+	);
 
 	return (
 		<div
-			className={cn("flex min-h-0 w-full flex-1 flex-col", layoutClasses)}
+			className="flex min-h-0 w-full flex-1 flex-col"
 			suppressHydrationWarning
 		>
-			{messages.length > 0 && (
-				<ChatMessages
-					chatId={id}
-					messages={messages}
-					regenerate={regenerate}
-					status={status}
-				/>
-			)}
+			{messages.length > 0 ? (
+				<>
+					<ChatMessages
+						chatId={id}
+						messages={messages}
+						regenerate={regenerate}
+						status={status}
+					/>
+					<InputPanel
+						{...inputPanelProps}
+						composerLayout="stickyFooter"
+					/>
+				</>
+			) : null}
 
-			{showSpaceIntro && (
-				<SpaceLandingView
-					knowledgeData={knowledgeData}
-					knowledgeStatus={knowledgeStatus}
-					showSpaceHistory={showSpaceHistory}
-					spaceCustomInstructions={spaceCustomInstructions}
-					spaceDescription={spaceDescription}
-					spaceId={spaceOverview?.spaceData.id ?? env.spaceId ?? ""}
-					spaceStatus={spaceStatus}
-					spaceTitle={spaceTitle}
-				/>
-			)}
+			{showSpaceIntro && isMobile ? (
+				<div className="flex min-h-0 w-full flex-1 flex-col">
+					<div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+						<div className="mx-auto w-full max-w-3xl px-4 pt-6">
+							{spaceIntroEl}
+						</div>
+						{showSpaceHistory ? (
+							<div className="mt-4 flex w-full flex-col gap-2 overflow-x-hidden px-4 pb-4">
+								<DisplayChats spaceId={resolvedSpaceId} />
+							</div>
+						) : null}
+					</div>
+					<InputPanel
+						{...inputPanelProps}
+						composerLayout="stickyFooter"
+					/>
+				</div>
+			) : null}
 
-			{showSpaceIntro || hasActiveContent ? (
-				<InputPanel
-					attachments={attachments}
-					chatId={id}
-					initialAgent={initialAgent}
-					initialMcpServers={initialMcpServers}
-					initialMode={initialMode}
-					initialModel={initialModel}
-					initialTools={initialTools}
-					input={input}
-					messages={messages}
-					sendMessage={sendMessage}
-					session={session}
-					setAttachments={setAttachments}
-					setInput={setInput}
-					setMessages={setMessages}
-					status={status}
-					stop={stop}
-				/>
-			) : (
-				<div className="flex w-full flex-1 items-center justify-center">
-					<div className="flex w-full max-w-3xl flex-1 flex-col items-center px-4 sm:px-6">
-						<InputPanel
-							attachments={attachments}
-							chatId={id}
-							initialAgent={initialAgent}
-							initialMcpServers={initialMcpServers}
-							initialMode={initialMode}
-							initialModel={initialModel}
-							initialTools={initialTools}
-							input={input}
-							messages={messages}
-							sendMessage={sendMessage}
-							session={session}
-							setAttachments={setAttachments}
-							setInput={setInput}
-							setMessages={setMessages}
-							status={status}
-							stop={stop}
-						/>
+			{showSpaceIntro && !isMobile ? (
+				<div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-y-auto">
+					<div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+						<div className="mx-auto flex w-full max-w-3xl flex-col px-4 pt-24 pb-8 sm:px-6">
+							{spaceIntroEl}
+							<InputPanel
+								{...inputPanelProps}
+								composerLayout="inline"
+							/>
+							{showSpaceHistory ? (
+								<div className="mt-6 flex w-full flex-col gap-2">
+									<DisplayChats spaceId={resolvedSpaceId} />
+								</div>
+							) : null}
+						</div>
 					</div>
 				</div>
-			)}
+			) : null}
 
-			{showSpaceHistory && env.spaceId && (
-				<div className="mt-4 hidden w-full max-w-3xl flex-col gap-2 overflow-y-auto overflow-x-hidden px-4 pb-4 sm:mt-6 sm:flex sm:max-h-[40vh] sm:px-0">
-					<DisplayChats spaceId={env.spaceId} />
+			{messages.length > 0 || showSpaceIntro ? null : (
+				<div className="container my-0 flex flex-1 flex-col items-center justify-center sm:my-10">
+					<div className="flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-0 md:px-6">
+						<InputPanel
+							{...inputPanelProps}
+							composerLayout="home"
+						/>
+					</div>
 				</div>
 			)}
 		</div>

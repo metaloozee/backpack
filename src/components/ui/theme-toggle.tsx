@@ -1,82 +1,79 @@
+/** biome-ignore-all lint/a11y/useButtonType: false positive */
+/** biome-ignore-all lint/a11y/useSemanticElements: false positive */
+/** biome-ignore-all lint/correctness/useJsxKeyInIterable: false positive */
 "use client";
 
-import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
+import { motion } from "framer-motion";
+import { MonitorCogIcon, MoonStarIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import React from "react";
+import { cn } from "@/lib/utils";
 
-import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuLabel,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-const themeOptions = [
+const THEME_OPTIONS = [
+	{
+		icon: MonitorCogIcon,
+		value: "system",
+	},
 	{
 		icon: SunIcon,
-		label: "Light",
 		value: "light",
 	},
 	{
-		icon: MoonIcon,
-		label: "Dark",
+		icon: MoonStarIcon,
 		value: "dark",
 	},
-	{
-		icon: MonitorIcon,
-		label: "System",
-		value: "system",
-	},
-] as const;
+];
 
-export function ThemeMenuItems({ showLabel = true }: { showLabel?: boolean }) {
-	const { setTheme, theme } = useTheme();
-	const [mounted, setMounted] = useState(false);
+export function ToggleTheme() {
+	const { theme, setTheme } = useTheme();
 
-	useEffect(() => {
-		setMounted(true);
+	const [isMounted, setIsMounted] = React.useState(false);
+
+	React.useEffect(() => {
+		setIsMounted(true);
 	}, []);
 
-	const selectedTheme = mounted ? (theme ?? "system") : "system";
+	if (!isMounted) {
+		return <div className="flex h-8 w-24" />;
+	}
 
 	return (
-		<>
-			{showLabel ? <DropdownMenuLabel>Theme</DropdownMenuLabel> : null}
-			<DropdownMenuRadioGroup
-				onValueChange={(value) => setTheme(value)}
-				value={selectedTheme}
-			>
-				{themeOptions.map(({ icon: Icon, label, value }) => (
-					<DropdownMenuRadioItem
-						className="gap-2"
-						key={value}
-						value={value}
-					>
-						<Icon className="size-4" />
-						{label}
-					</DropdownMenuRadioItem>
-				))}
-			</DropdownMenuRadioGroup>
-		</>
-	);
-}
-
-export function ModeToggle() {
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button size="icon" variant="ghost">
-					<SunIcon className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-					<MoonIcon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-					<span className="sr-only">Toggle theme</span>
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end">
-				<ThemeMenuItems />
-			</DropdownMenuContent>
-		</DropdownMenu>
+		<motion.div
+			animate={{ opacity: 1 }}
+			className="inline-flex w-full items-center justify-between overflow-hidden rounded border bg-neutral-100 dark:bg-neutral-900"
+			initial={{ opacity: 0 }}
+			key={String(isMounted)}
+			role="radiogroup"
+			transition={{ duration: 0.3 }}
+		>
+			{THEME_OPTIONS.map((option) => (
+				<button
+					aria-checked={theme === option.value}
+					aria-label={`Switch to ${option.value} theme`}
+					className={cn(
+						"relative flex size-7 cursor-pointer items-center justify-center rounded-md transition-all",
+						theme === option.value
+							? "text-foreground"
+							: "text-muted-foreground hover:text-foreground"
+					)}
+					key={option.value}
+					onClick={() => setTheme(option.value)}
+					role="radio"
+				>
+					{theme === option.value && (
+						<motion.div
+							className="absolute inset-0 rounded border border-neutral-300 dark:border-neutral-700"
+							layoutId="theme-option"
+							transition={{
+								type: "spring",
+								bounce: 0.1,
+								duration: 0.75,
+							}}
+						/>
+					)}
+					<option.icon className="size-3.5" />
+				</button>
+			))}
+		</motion.div>
 	);
 }
