@@ -2,6 +2,7 @@
 - [ ] Daytona
 - [ ] Research Agent
 - [ ] Artifacts
+- [ ] Skill Support
 - [x] MCP Support
 - [x] Vercel Workflows
 - [x] fix: Image Display

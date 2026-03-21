@@ -173,7 +173,7 @@ export const models: Model[] = [
 	{
 		name: "NVIDIA: Nemotron 3 Super",
 		id: "nvidia/nemotron-3-super-120b-a12b:free",
-		provider: "nvidia",
+		provider: "openrouter",
 		instance: openrouter("nvidia/nemotron-3-super-120b-a12b:free"),
 		enabledInProduction: true,
 		modalities: {
@@ -183,10 +183,22 @@ export const models: Model[] = [
 		capabilities: { reasoning: true, toolCall: true, attachment: false },
 	},
 	{
-		name: "Hunter Alpha",
-		id: "openrouter/hunter-alpha",
+		name: "StepFun: Step 3.5 Flash",
+		id: "stepfun/step-3.5-flash:free",
 		provider: "openrouter",
-		instance: openrouter("openrouter/hunter-alpha"),
+		instance: openrouter("stepfun/step-3.5-flash:free"),
+		enabledInProduction: true,
+		modalities: {
+			input: ["text"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: false },
+	},
+	{
+		name: "Arcee AI: Trinity Large Preview",
+		id: "arcee-ai/trinity-large-preview:free",
+		provider: "openrouter",
+		instance: openrouter("arcee-ai/trinity-large-preview:free"),
 		enabledInProduction: true,
 		modalities: {
 			input: ["text"],
