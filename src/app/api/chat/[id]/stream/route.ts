@@ -1,7 +1,7 @@
 import { createUIMessageStream, JsonToSseTransformStream } from "ai";
 import { differenceInSeconds } from "date-fns";
 import type { ChatMessage } from "@/lib/ai/types";
-import { getSession } from "@/lib/auth/utils";
+import { createAuthErrorResponse, getAuthAccessState } from "@/lib/auth/utils";
 import {
 	getChatByIdAndUserId,
 	getLatestMessageByChatId,
@@ -12,7 +12,7 @@ import { getStreamContext } from "../../route";
 const SECONDS_PER_MINUTE = 60;
 
 export async function GET(
-	_: Request,
+	request: Request,
 	{ params }: { params: Promise<{ id: string }> }
 ) {
 	const { id: chatId } = await params;
@@ -36,15 +36,11 @@ export async function GET(
 		);
 	}
 
-	const session = await getSession();
-	if (!session) {
-		return new Response(
-			JSON.stringify({ code: "UNAUTHORIZED", cause: "Unauthorized" }),
-			{
-				status: 401,
-			}
-		);
+	const accessState = await getAuthAccessState(request.headers);
+	if (accessState.status !== "approved") {
+		return createAuthErrorResponse(accessState);
 	}
+	const { session } = accessState.authSession;
 
 	let chat: Awaited<ReturnType<typeof getChatByIdAndUserId>>;
 

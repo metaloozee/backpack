@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Chat as PreviewChat } from "@/components/chat";
 import { convertToUIMessages } from "@/lib/ai/utils";
-import { getSession, getUser } from "@/lib/auth/utils";
+import { requireApprovedAuthSession } from "@/lib/auth/utils";
 import {
 	getChatByIdAndUserId,
 	getMessagesByChatId,
@@ -13,8 +13,7 @@ export default async function ChatPage({
 }: {
 	params: Promise<{ id: string }>;
 }) {
-	const session = await getSession();
-	const user = await getUser();
+	const { session, user } = await requireApprovedAuthSession();
 
 	const { id: chatId } = await params;
 
@@ -23,7 +22,7 @@ export default async function ChatPage({
 
 	const chatData = await getChatByIdAndUserId({
 		id: chatId,
-		userId: user?.id ?? "",
+		userId: user.id,
 	});
 
 	if (!chatData) {
@@ -33,7 +32,7 @@ export default async function ChatPage({
 	const spaceData = chatData.spaceId
 		? await getSpaceByIdAndUserId({
 				spaceId: chatData.spaceId ?? "",
-				userId: user?.id ?? "",
+				userId: user.id,
 			})
 		: undefined;
 

@@ -3,7 +3,8 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env.mjs";
-import { hasConfiguredEmailAllowlist, isEmailAllowlisted } from "./allowlist";
+import { isEmailAllowlisted } from "./allowlist";
+import { UNAPPROVED_AUTH_ERROR_MESSAGE } from "./messages";
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
@@ -29,17 +30,9 @@ export const auth = betterAuth({
 		user: {
 			create: {
 				before: async (user) => {
-					if (!(await hasConfiguredEmailAllowlist())) {
-						throw new APIError("FORBIDDEN", {
-							message:
-								"No approved accounts have been configured.",
-						});
-					}
-
 					if (!(await isEmailAllowlisted(user.email))) {
 						throw new APIError("FORBIDDEN", {
-							message:
-								"Your account is not approved for this release.",
+							message: UNAPPROVED_AUTH_ERROR_MESSAGE,
 						});
 					}
 				},

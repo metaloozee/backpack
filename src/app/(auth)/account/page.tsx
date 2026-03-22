@@ -1,19 +1,15 @@
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { format } from "timeago.js";
 import { DisplayMemories } from "@/components/display-memories";
 import { McpServerConfig } from "@/components/mcp-server-config";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { getUser } from "@/lib/auth/utils";
+import { requireApprovedAuthSession } from "@/lib/auth/utils";
 
 export default async function AccountPage() {
-	const user = await getUser();
-	if (!user) {
-		return redirect("/sign-in");
-	}
+	const { user } = await requireApprovedAuthSession();
 
 	return (
 		<div className="mx-auto my-8 flex w-full max-w-3xl flex-col items-start justify-center gap-6 px-4 sm:my-14 sm:gap-8 sm:px-8 md:my-20 md:gap-10 md:px-20">

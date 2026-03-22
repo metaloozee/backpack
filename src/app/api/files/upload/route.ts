@@ -1,7 +1,7 @@
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getSession } from "@/lib/auth/utils";
+import { createAuthErrorResponse, getAuthAccessState } from "@/lib/auth/utils";
 import { sanitizeFileName } from "@/lib/utils/sanitization";
 
 const MAX_FILE_SIZE_MB = 5;
@@ -26,10 +26,11 @@ const FileSchema = z.object({
 
 export async function POST(request: Request) {
 	try {
-		const session = await getSession();
-		if (!session) {
-			throw new Error("Access denied");
+		const accessState = await getAuthAccessState(request.headers);
+		if (accessState.status !== "approved") {
+			return createAuthErrorResponse(accessState);
 		}
+		const { session } = accessState.authSession;
 
 		if (request.body === null) {
 			throw new Error("Request body is empty");

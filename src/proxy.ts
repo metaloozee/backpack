@@ -1,16 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getAuthAccessState } from "@/lib/auth/utils";
+import { getAuthAccessState, getAuthRedirectPath } from "@/lib/auth/utils";
 
 export async function proxy(request: NextRequest) {
 	const accessState = await getAuthAccessState(request.headers);
 
-	if (accessState.status === "anonymous") {
-		return NextResponse.redirect(new URL("/sign-in", request.url));
-	}
-
-	if (accessState.status === "unauthorized") {
+	if (accessState.status !== "approved") {
 		return NextResponse.redirect(
-			new URL("/sign-in?error=unauthorized", request.url)
+			new URL(getAuthRedirectPath(accessState.status), request.url)
 		);
 	}
 

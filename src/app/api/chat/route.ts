@@ -35,7 +35,7 @@ import { knowledgeSearchTool } from "@/lib/ai/tools/knowledge-search";
 import { saveToMemoriesTool } from "@/lib/ai/tools/save-to-memories";
 import { webSearchTool } from "@/lib/ai/tools/web-search";
 import { convertToUIMessages } from "@/lib/ai/utils";
-import { getSession } from "@/lib/auth/utils";
+import { createAuthErrorResponse, getAuthAccessState } from "@/lib/auth/utils";
 import {
 	createStream,
 	getChatByIdAndUserId,
@@ -229,10 +229,11 @@ type ActiveTool =
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: too complex to refactor
 export async function POST(req: Request) {
 	try {
-		const session = await getSession();
-		if (!session) {
-			throw new Error("Access denied");
+		const accessState = await getAuthAccessState(req.headers);
+		if (accessState.status !== "approved") {
+			return createAuthErrorResponse(accessState);
 		}
+		const { session } = accessState.authSession;
 
 		const json = await req.json();
 		const requestBody = requestBodySchema.parse(json);

@@ -1,10 +1,15 @@
-import { getAuthorizedSession } from "@/lib/auth/utils";
+import { getAuthAccessState } from "@/lib/auth/utils";
 import { db } from "@/lib/db/index";
 
 export async function createTRPCContext() {
-	const res = await getAuthorizedSession();
-
-	const session = res?.session ? { ...res.session, user: res.user } : null;
+	const accessState = await getAuthAccessState();
+	const session =
+		accessState.status === "approved"
+			? {
+					...accessState.authSession.session,
+					user: accessState.authSession.user,
+				}
+			: null;
 
 	return {
 		db,

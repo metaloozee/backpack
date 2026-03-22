@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { Chat } from "@/components/chat";
-import { getSession, getUser } from "@/lib/auth/utils";
+import { requireApprovedAuthSession } from "@/lib/auth/utils";
 import { getSpaceByIdAndUserId } from "@/lib/db/queries";
 import { getServerPrefs } from "@/lib/store/server-prefs";
 export default async function SpacePage({
@@ -8,8 +8,7 @@ export default async function SpacePage({
 }: {
 	params: Promise<{ id: string }>;
 }) {
-	const session = await getSession();
-	const user = await getUser();
+	const { session, user } = await requireApprovedAuthSession();
 
 	const { id: spaceId } = await params;
 	const chatId = crypto.randomUUID();
@@ -19,7 +18,7 @@ export default async function SpacePage({
 
 	const spaceData = await getSpaceByIdAndUserId({
 		spaceId,
-		userId: user?.id ?? "",
+		userId: user.id,
 	});
 
 	if (!spaceData) {

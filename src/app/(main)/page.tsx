@@ -1,10 +1,10 @@
 import { Chat } from "@/components/chat";
-import { getSession } from "@/lib/auth/utils";
+import { requireApprovedAuthSession } from "@/lib/auth/utils";
 
 import { getServerPrefs } from "@/lib/store/server-prefs";
 
 export default async function IndexPage() {
-	const session = await getSession();
+	const { session } = await requireApprovedAuthSession();
 
 	const id = crypto.randomUUID();
 	const { modelId, mode, selectedAgent, tools, mcpServers } =

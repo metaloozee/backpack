@@ -27,7 +27,7 @@ export function SignInButton({
 			await authClient.signIn.social({
 				provider,
 				callbackURL: "/",
-				errorCallbackURL: "/sign-in?error=auth",
+				errorCallbackURL: "/sign-in",
 			});
 		} catch (error) {
 			console.error("Failed to sign in", error);
