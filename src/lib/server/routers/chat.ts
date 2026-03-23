@@ -10,12 +10,17 @@ import { db } from "@/lib/db";
 import {
 	createStream,
 	deleteChatById,
+	getChatByIdAndUserId,
 	getChatsByUserId,
+	getMcpServerConfigsByIds,
+	getMemoriesByUserId,
+	getMessagesByChatIdAndUserId,
 	getVotesByChatId,
 	saveChat,
 	saveMessages as saveMessagesQuery,
 	searchChatsByUserId,
 	setChatActiveStreamId,
+	updateChatTitleIfDefault,
 	voteMessage as voteMessageQuery,
 } from "@/lib/db/queries";
 import { chat, type Message, message } from "@/lib/db/schema/app";
@@ -23,6 +28,44 @@ import { BackpackError } from "@/lib/errors";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 
 export const chatRouter = router({
+	getChatRuntimeData: protectedProcedure
+		.input(
+			z.object({
+				chatId: z.string().uuid(),
+				mcpServerIds: z.array(z.string().uuid()).default([]),
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			const [
+				selectedChat,
+				previousMessages,
+				userMemories,
+				mcpServerConfigs,
+			] = await Promise.all([
+				getChatByIdAndUserId({
+					chatId: input.chatId,
+					userId: ctx.session.user.id,
+				}),
+				getMessagesByChatIdAndUserId({
+					chatId: input.chatId,
+					userId: ctx.session.user.id,
+				}),
+				getMemoriesByUserId({ userId: ctx.session.user.id }),
+				input.mcpServerIds.length > 0
+					? getMcpServerConfigsByIds({
+							ids: input.mcpServerIds,
+							userId: ctx.session.user.id,
+						})
+					: Promise.resolve([]),
+			]);
+
+			return {
+				chat: selectedChat,
+				previousMessages,
+				userMemories,
+				mcpServerConfigs,
+			};
+		}),
 	getChats: protectedProcedure
 		.input(
 			z.object({
@@ -47,18 +90,10 @@ export const chatRouter = router({
 		)
 		.mutation(async ({ ctx, input }) => {
 			try {
-				const [selectedChat] = await db
-					.select()
-					.from(chat)
-					.where(
-						and(
-							eq(chat.id, input.chatId),
-							eq(chat.userId, ctx.session.userId)
-						)
-					)
-					.limit(1);
-
-				return selectedChat;
+				return await getChatByIdAndUserId({
+					chatId: input.chatId,
+					userId: ctx.session.user.id,
+				});
 			} catch (_) {
 				throw BackpackError.api("not_found", "Chat not found");
 			}
@@ -105,7 +140,6 @@ export const chatRouter = router({
 		.input(
 			z.object({
 				id: z.string().uuid(),
-				userId: z.string(),
 				spaceId: z.string().uuid().optional(),
 				title: z.string().max(100),
 			})
@@ -123,7 +157,6 @@ export const chatRouter = router({
 		.input(
 			z.object({
 				chatId: z.string().uuid(),
-				userId: z.string().uuid(),
 				activeStreamId: z.string().nullable(),
 			})
 		)
@@ -141,15 +174,32 @@ export const chatRouter = router({
 			z.object({
 				chatId: z.string().uuid(),
 				streamId: z.string().uuid(),
-				createdAt: z.date(),
 			})
 		)
 		.mutation(async ({ ctx: _ctx, input }) => {
 			await createStream({
 				id: input.streamId,
 				chatId: input.chatId,
-				createdAt: input.createdAt,
+				createdAt: new Date(),
 			});
+			return { success: true };
+		}),
+	updateChatTitleIfDefault: protectedProcedure
+		.input(
+			z.object({
+				chatId: z.string().uuid(),
+				defaultTitle: z.string().min(1).max(100),
+				newTitle: z.string().min(1).max(100),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			await updateChatTitleIfDefault({
+				chatId: input.chatId,
+				userId: ctx.session.user.id,
+				defaultTitle: input.defaultTitle,
+				newTitle: input.newTitle,
+			});
+
 			return { success: true };
 		}),
 	deleteChat: protectedProcedure

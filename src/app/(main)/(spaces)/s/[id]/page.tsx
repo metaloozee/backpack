@@ -28,7 +28,6 @@ export default async function SpacePage({
 	return (
 		<div className="flex h-full min-h-0 w-full flex-1 flex-col">
 			<Chat
-				autoResume={false}
 				env={{
 					inSpace: true,
 					spaceId: spaceData.id,

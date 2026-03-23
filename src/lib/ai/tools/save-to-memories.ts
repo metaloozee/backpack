@@ -1,6 +1,5 @@
 import { google } from "@ai-sdk/google";
 import { embedMany, tool, type UIMessageStreamWriter } from "ai";
-import type { Session } from "better-auth";
 import { z } from "zod";
 import {
 	GOOGLE_EMBEDDING_DIMENSIONS,
@@ -9,10 +8,10 @@ import {
 import { getClosestMemorySimilarity, insertMemories } from "@/lib/db/queries";
 
 export const saveToMemoriesTool = ({
-	session,
+	userId,
 	dataStream,
 }: {
-	session: Session;
+	userId: string;
 	dataStream: UIMessageStreamWriter;
 }) =>
 	tool({
@@ -52,13 +51,13 @@ export const saveToMemoriesTool = ({
 					const embedding = embeddings[i];
 
 					const similarity = await getClosestMemorySimilarity({
-						userId: session.userId,
+						userId,
 						embedding,
 					});
 
 					if (similarity === null || similarity <= 0.85) {
 						newMemories.push({
-							userId: session.userId,
+							userId,
 							content,
 							embedding,
 							createdAt: new Date(),

@@ -18,7 +18,6 @@ import type { ToolsState } from "@/lib/ai/tools";
 import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/ai/utils";
 import type { Chat as ChatType, Knowledge } from "@/lib/db/schema/app";
-import { useAutoResume } from "@/lib/hooks/use-auto-resume";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useSetMobileHeader } from "@/lib/mobile-header-context";
 import {
@@ -56,7 +55,6 @@ export function Chat({
 	env,
 	initialMessages,
 	session,
-	autoResume,
 	initialModel,
 	initialTools,
 	initialMode,
@@ -73,7 +71,6 @@ export function Chat({
 	};
 	initialMessages: ChatMessage[];
 	session: Session | null;
-	autoResume: boolean;
 	initialModel?: string;
 	initialTools?: ToolsState;
 	initialMode?: string;
@@ -177,11 +174,9 @@ export function Chat({
 		status,
 		stop,
 		regenerate,
-		resumeStream,
 	} = useChat<ChatMessage>({
 		id,
 		messages: initialMessages,
-		resume: autoResume,
 		generateId: () => crypto.randomUUID(),
 		experimental_throttle: 100,
 		transport: new DefaultChatTransport({
@@ -283,12 +278,6 @@ export function Chat({
 
 	useQueryAppend({ sendMessage });
 
-	useAutoResume({
-		autoResume,
-		initialMessages,
-		resumeStream,
-		setMessages,
-	});
 	const firstUserMessage = messages.find((m) => m.role === "user");
 	const chatTitle =
 		firstUserMessage?.parts
@@ -430,7 +419,11 @@ export function useKnowledgeOverview(spaceId?: string) {
 		enabled: !!spaceId,
 		staleTime: 30_000,
 		refetchInterval: (queryState) => {
-			const data = queryState.state.data as Knowledge[] | undefined;
+			if (!queryState) {
+				return false;
+			}
+
+			const data = queryState.state?.data as Knowledge[] | undefined;
 			const hasInProgress = data?.some(
 				(item) =>
 					item.status === "pending" || item.status === "processing"

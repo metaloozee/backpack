@@ -37,7 +37,6 @@ export default async function ChatPage({
 	return (
 		<div className="flex min-h-0 w-full flex-1 flex-col">
 			<PreviewChat
-				autoResume={true}
 				env={{
 					inSpace: !!spaceData,
 					spaceId: spaceData ? spaceData.id : undefined,

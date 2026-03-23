@@ -51,6 +51,28 @@ export async function getChatById({
 	}
 }
 
+export async function getChatByIdAndUserId({
+	chatId,
+	userId,
+}: {
+	chatId: string;
+	userId: string;
+}): Promise<Chat | undefined> {
+	try {
+		const [selectedChat] = await db
+			.select()
+			.from(chat)
+			.where(and(eq(chat.id, chatId), eq(chat.userId, userId)))
+			.limit(1);
+		return selectedChat;
+	} catch (error) {
+		throw BackpackError.database(
+			"Failed to get chat by id and user",
+			error
+		);
+	}
+}
+
 export async function saveChat({
 	id,
 	userId,

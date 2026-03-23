@@ -63,7 +63,6 @@ interface InputPanelProps {
 	attachments: PendingAttachment[];
 	setAttachments: Dispatch<SetStateAction<PendingAttachment[]>>;
 	messages: ChatMessage[];
-	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
 	sendMessage: UseChatHelpers<ChatMessage>["sendMessage"];
 	initialModel?: string;
 	initialTools?: ToolsState;
@@ -73,7 +72,37 @@ interface InputPanelProps {
 	composerLayout?: ComposerLayout;
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This is a pure component that is used to render the input panel.
+function getInputWrapperClasses({
+	composerLayout,
+	showGreeting,
+	messageCount,
+}: {
+	composerLayout: ComposerLayout;
+	showGreeting: boolean;
+	messageCount: number;
+}): string {
+	const baseClasses = "right-0 left-0";
+
+	if (composerLayout === "home") {
+		return showGreeting
+			? cn(
+					baseClasses,
+					"flex flex-1 flex-col items-center justify-center sm:justify-center"
+				)
+			: cn(baseClasses, "flex flex-col items-center");
+	}
+
+	if (composerLayout === "inline") {
+		return cn(baseClasses, "mt-6 flex w-full shrink-0 flex-col sm:mt-8");
+	}
+
+	if (composerLayout === "stickyFooter" && messageCount === 0) {
+		return cn(baseClasses, "flex shrink-0 flex-col items-center");
+	}
+
+	return baseClasses;
+}
+
 function PureInput({
 	chatId,
 	session: _session,
@@ -84,7 +113,6 @@ function PureInput({
 	attachments,
 	setAttachments,
 	messages,
-	setMessages,
 	sendMessage,
 	initialModel,
 	initialTools,
@@ -97,7 +125,6 @@ function PureInput({
 	const trpc = useTRPC();
 	const pathname = usePathname();
 	const isSpaceChat = pathname.startsWith("/s/");
-	const isLoading = status === "submitted" || status === "streaming";
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isDragging, setIsDragging] = useState(false);
@@ -329,6 +356,8 @@ function PureInput({
 		recordingLabel = "Stop recording";
 	}
 
+	const isLoading = status === "submitted" || status === "streaming";
+
 	let recordingIcon: React.ReactNode = <MicIcon className="size-3.5" />;
 	if (isTranscribing) {
 		recordingIcon = <Spinner size="sm" />;
@@ -340,25 +369,11 @@ function PureInput({
 
 	const isMobile = useIsMobile();
 
-	let inputWrapperClasses = "right-0 left-0";
-	if (composerLayout === "home") {
-		inputWrapperClasses = showGreeting
-			? cn(
-					inputWrapperClasses,
-					"flex flex-1 flex-col items-center justify-center sm:justify-center"
-				)
-			: cn(inputWrapperClasses, "flex flex-col items-center");
-	} else if (composerLayout === "inline") {
-		inputWrapperClasses = cn(
-			inputWrapperClasses,
-			"mt-6 flex w-full shrink-0 flex-col sm:mt-8"
-		);
-	} else if (composerLayout === "stickyFooter" && messages.length === 0) {
-		inputWrapperClasses = cn(
-			inputWrapperClasses,
-			"flex shrink-0 flex-col items-center"
-		);
-	}
+	const inputWrapperClasses = getInputWrapperClasses({
+		composerLayout,
+		showGreeting,
+		messageCount: messages.length,
+	});
 
 	const positionClasses =
 		composerLayout === "inline" ? "relative" : "sticky bottom-0";
@@ -570,18 +585,12 @@ function PureInput({
 								</PromptInputButton>
 
 								<ModelSelector initialModelId={initialModel} />
-
 								{isLoading ? (
 									<Button
 										aria-label="Stop generating"
 										onClick={(event) => {
 											event.preventDefault();
 											stop();
-											setMessages(
-												(
-													currentMessages: ChatMessage[]
-												) => currentMessages
-											);
 										}}
 										size={"sm"}
 										type="button"

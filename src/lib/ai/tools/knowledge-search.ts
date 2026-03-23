@@ -1,6 +1,5 @@
 import { google } from "@ai-sdk/google";
 import { embedMany, tool, type UIMessageStreamWriter } from "ai";
-import type { Session } from "better-auth";
 import { and, cosineDistance, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -11,11 +10,11 @@ import { db } from "@/lib/db";
 import { knowledge, knowledgeEmbeddings } from "@/lib/db/schema/app";
 
 export const knowledgeSearchTool = ({
-	session,
+	userId,
 	dataStream,
 	env,
 }: {
-	session: Session;
+	userId: string;
 	dataStream: UIMessageStreamWriter;
 	env: { inSpace: boolean; spaceId?: string };
 }) =>
@@ -71,7 +70,7 @@ export const knowledgeSearchTool = ({
 						)
 						.where(
 							and(
-								eq(knowledge.userId, session.userId),
+								eq(knowledge.userId, userId),
 								eq(knowledge.status, "ready"),
 								env.inSpace
 									? eq(knowledge.spaceId, env.spaceId || "")
