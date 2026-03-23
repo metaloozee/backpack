@@ -2,12 +2,9 @@ import { notFound } from "next/navigation";
 import { Chat as PreviewChat } from "@/components/chat";
 import { convertToUIMessages } from "@/lib/ai/utils";
 import { requireApprovedAuthSession } from "@/lib/auth/utils";
-import {
-	getChatByIdAndUserId,
-	getMessagesByChatId,
-	getSpaceByIdAndUserId,
-} from "@/lib/db/queries";
+import { getMessagesByChatId, getSpaceByIdAndUserId } from "@/lib/db/queries";
 import { getServerPrefs } from "@/lib/store/server-prefs";
+import { caller } from "@/lib/trpc/server";
 export default async function ChatPage({
 	params,
 }: {
@@ -20,9 +17,8 @@ export default async function ChatPage({
 	const { modelId, mode, selectedAgent, tools, mcpServers } =
 		await getServerPrefs();
 
-	const chatData = await getChatByIdAndUserId({
-		id: chatId,
-		userId: user.id,
+	const chatData = await caller.chat.getChatById({
+		chatId,
 	});
 
 	if (!chatData) {

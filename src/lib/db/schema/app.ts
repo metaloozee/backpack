@@ -204,6 +204,7 @@ export const chat = pgTable(
 			onDelete: "cascade",
 			onUpdate: "cascade",
 		}),
+		activeStreamId: text("active_stream_id"),
 	},
 	(table) => ({
 		userSpaceIdx: index("chat_user_space_idx").on(

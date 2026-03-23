@@ -116,6 +116,7 @@ export function Chat({
 				spaceId: env.spaceId || null,
 				title: tempTitle,
 				createdAt: new Date(),
+				activeStreamId: null,
 			};
 
 			queryClient.setQueryData(
@@ -180,6 +181,7 @@ export function Chat({
 	} = useChat<ChatMessage>({
 		id,
 		messages: initialMessages,
+		resume: autoResume,
 		generateId: () => crypto.randomUUID(),
 		experimental_throttle: 100,
 		transport: new DefaultChatTransport({

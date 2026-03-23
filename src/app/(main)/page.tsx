@@ -13,7 +13,7 @@ export default async function IndexPage() {
 	return (
 		<div className="flex min-h-0 w-full flex-1 flex-col">
 			<Chat
-				autoResume={true}
+				autoResume={false}
 				env={{ inSpace: false }}
 				id={id}
 				initialAgent={selectedAgent ?? undefined}

@@ -51,28 +51,6 @@ export async function getChatById({
 	}
 }
 
-export async function getChatByIdAndUserId({
-	id,
-	userId,
-}: {
-	id: string;
-	userId: string;
-}): Promise<Chat | undefined> {
-	try {
-		const [selectedChat] = await db
-			.select()
-			.from(chat)
-			.where(and(eq(chat.id, id), eq(chat.userId, userId)))
-			.limit(1);
-		return selectedChat;
-	} catch (error) {
-		throw BackpackError.database(
-			"Failed to get chat by id and user",
-			error
-		);
-	}
-}
-
 export async function saveChat({
 	id,
 	userId,
@@ -94,6 +72,28 @@ export async function saveChat({
 		});
 	} catch (error) {
 		throw BackpackError.database("Failed to save chat", error);
+	}
+}
+
+export async function setChatActiveStreamId({
+	chatId,
+	userId,
+	activeStreamId,
+}: {
+	chatId: string;
+	userId: string;
+	activeStreamId: string | null;
+}): Promise<void> {
+	try {
+		await db
+			.update(chat)
+			.set({ activeStreamId })
+			.where(and(eq(chat.id, chatId), eq(chat.userId, userId)));
+	} catch (error) {
+		throw BackpackError.database(
+			"Failed to set chat active stream id",
+			error
+		);
 	}
 }
 

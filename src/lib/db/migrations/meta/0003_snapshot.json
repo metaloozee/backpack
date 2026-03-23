@@ -1,6 +1,6 @@
 {
-  "id": "77d1de6c-99a7-4ddb-81fe-cdeffa53c5a4",
-  "prevId": "e7bfc26d-bcc0-40aa-b2cc-313058efc5b2",
+  "id": "dbe98c7e-71ac-4823-9177-875fc525966a",
+  "prevId": "77d1de6c-99a7-4ddb-81fe-cdeffa53c5a4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -35,6 +35,12 @@
         },
         "space_id": {
           "name": "space_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active_stream_id": {
+          "name": "active_stream_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false

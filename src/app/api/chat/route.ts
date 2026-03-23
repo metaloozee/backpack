@@ -7,6 +7,7 @@ import {
 	convertToModelMessages,
 	createUIMessageStream,
 	createUIMessageStreamResponse,
+	generateId,
 	generateObject,
 	type LanguageModel,
 	smoothStream,
@@ -15,10 +16,7 @@ import {
 } from "ai";
 import { cookies } from "next/headers";
 import { after } from "next/server";
-import {
-	createResumableStreamContext,
-	type ResumableStreamContext,
-} from "resumable-stream";
+import { createResumableStreamContext } from "resumable-stream";
 import { z } from "zod";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
 import {
@@ -37,13 +35,13 @@ import { webSearchTool } from "@/lib/ai/tools/web-search";
 import { convertToUIMessages } from "@/lib/ai/utils";
 import { createAuthErrorResponse, getAuthAccessState } from "@/lib/auth/utils";
 import {
-	createStream,
-	getChatByIdAndUserId,
 	getMcpServerConfigsByIds,
 	getMemoriesByUserId,
 	getMessagesByChatIdAndUserId,
 	updateChatTitleIfDefault,
 } from "@/lib/db/queries";
+import { env } from "@/lib/env.mjs";
+import { BackpackError } from "@/lib/errors";
 import {
 	closeMcpClients,
 	createMcpToolsForServers,
@@ -52,8 +50,6 @@ import {
 import { caller } from "@/lib/trpc/server";
 
 export const maxDuration = 60;
-
-let globalStreamContext: ResumableStreamContext | null = null;
 
 interface ToolsState {
 	webSearch?: boolean;
@@ -298,7 +294,7 @@ export async function POST(req: Request) {
 
 			const [chat, previousMessages, userMemories, mcpServerConfigs] =
 				await Promise.all([
-					getChatByIdAndUserId({ id, userId: session.userId }),
+					caller.chat.getChatById({ chatId: id }),
 					getMessagesByChatIdAndUserId({
 						chatId: id,
 						userId: session.userId,
@@ -348,13 +344,6 @@ export async function POST(req: Request) {
 						createdAt: new Date(),
 					},
 				],
-			});
-
-			const streamId = crypto.randomUUID();
-			await createStream({
-				id: streamId,
-				chatId: id,
-				createdAt: new Date(),
 			});
 
 			const stream = createUIMessageStream({
@@ -543,23 +532,39 @@ export async function POST(req: Request) {
 				},
 			});
 
-			// Currently disabled
-			// const streamContext = getStreamContext();
-			// if (streamContext) {
-			// 	return createUIMessageStreamResponse({
-			// 		stream,
-			// 		headers: {
-			// 			"Cache-Control": "no-cache, no-transform",
-			// 			"X-Accel-Buffering": "no",
-			// 		},
-			// 	});
-			// }
-
 			return createUIMessageStreamResponse({
 				stream,
-				headers: {
-					"Cache-Control": "no-cache, no-transform",
-					"X-Accel-Buffering": "no",
+				async consumeSseStream({ stream: sseStream }) {
+					if (!env.REDIS_URL) {
+						return;
+					}
+
+					try {
+						const streamContext = getStreamContext();
+						if (streamContext) {
+							const streamId = generateId();
+							await caller.chat.createStream({
+								streamId,
+								chatId: id,
+								createdAt: new Date(),
+							});
+
+							await streamContext.createNewResumableStream(
+								streamId,
+								() => sseStream
+							);
+
+							caller.chat.saveChatActiveStreamId({
+								chatId: id,
+								userId: session.userId,
+								activeStreamId: streamId,
+							});
+						}
+					} catch (_) {
+						throw BackpackError.stream(
+							"Failed to create a new resumable stream"
+						);
+					}
 				},
 			});
 		} catch (error) {
@@ -583,17 +588,11 @@ export async function POST(req: Request) {
 }
 
 export const getStreamContext = () => {
-	if (!globalStreamContext) {
-		try {
-			globalStreamContext = createResumableStreamContext({
-				waitUntil: after,
-			});
-		} catch (error: unknown) {
-			console.error(error);
-		}
+	try {
+		return createResumableStreamContext({ waitUntil: after });
+	} catch (_) {
+		return null;
 	}
-
-	return globalStreamContext;
 };
 
 const textPartSchema = z.object({

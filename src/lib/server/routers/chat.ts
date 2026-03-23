@@ -8,15 +8,18 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import {
+	createStream,
 	deleteChatById,
 	getChatsByUserId,
 	getVotesByChatId,
 	saveChat,
 	saveMessages as saveMessagesQuery,
 	searchChatsByUserId,
+	setChatActiveStreamId,
 	voteMessage as voteMessageQuery,
 } from "@/lib/db/queries";
 import { chat, type Message, message } from "@/lib/db/schema/app";
+import { BackpackError } from "@/lib/errors";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 
 export const chatRouter = router({
@@ -35,6 +38,30 @@ export const chatRouter = router({
 				cursor: input.cursor,
 				spaceId: input.spaceId,
 			});
+		}),
+	getChatById: protectedProcedure
+		.input(
+			z.object({
+				chatId: z.string().uuid(),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				const [selectedChat] = await db
+					.select()
+					.from(chat)
+					.where(
+						and(
+							eq(chat.id, input.chatId),
+							eq(chat.userId, ctx.session.userId)
+						)
+					)
+					.limit(1);
+
+				return selectedChat;
+			} catch (_) {
+				throw BackpackError.api("not_found", "Chat not found");
+			}
 		}),
 	searchChats: protectedProcedure
 		.input(
@@ -89,6 +116,39 @@ export const chatRouter = router({
 				userId: ctx.session.user.id,
 				title: input.title,
 				spaceId: input.spaceId,
+			});
+			return { success: true };
+		}),
+	saveChatActiveStreamId: protectedProcedure
+		.input(
+			z.object({
+				chatId: z.string().uuid(),
+				userId: z.string().uuid(),
+				activeStreamId: z.string().nullable(),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			await setChatActiveStreamId({
+				chatId: input.chatId,
+				userId: ctx.session.user.id,
+				activeStreamId: input.activeStreamId,
+			});
+
+			return { success: true };
+		}),
+	createStream: protectedProcedure
+		.input(
+			z.object({
+				chatId: z.string().uuid(),
+				streamId: z.string().uuid(),
+				createdAt: z.date(),
+			})
+		)
+		.mutation(async ({ ctx: _ctx, input }) => {
+			await createStream({
+				id: input.streamId,
+				chatId: input.chatId,
+				createdAt: input.createdAt,
 			});
 			return { success: true };
 		}),
