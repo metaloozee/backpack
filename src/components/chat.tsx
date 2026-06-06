@@ -393,7 +393,7 @@ export function Chat({
 			) : null}
 
 			{messages.length > 0 || showSpaceIntro ? null : (
-				<div className="container my-0 flex flex-1 flex-col items-center justify-center sm:my-10">
+				<div className="container mx-auto my-0 flex flex-1 flex-col items-center justify-center sm:my-10">
 					<div className="flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-0 md:px-6">
 						<InputPanel
 							{...inputPanelProps}
