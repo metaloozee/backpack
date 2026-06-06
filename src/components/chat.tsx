@@ -14,7 +14,7 @@ import { ChatMessages } from "@/components/chat/messages";
 import { SpaceIntro } from "@/components/chat/space-intro";
 import { Input as InputPanel } from "@/components/chat-input";
 import { useDataStream } from "@/components/data-stream-provider";
-import type { ToolsState } from "@/lib/ai/tools";
+import type { ToolsState } from "@/lib/ai/tool-registry";
 import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/ai/utils";
 import type { Chat as ChatType, Knowledge } from "@/lib/db/schema/app";
@@ -201,6 +201,7 @@ export function Chat({
 				};
 			},
 		}),
+		resume: initialMessages.length > 0,
 		onData: (dataPart) => {
 			setDataStream((ds) =>
 				ds

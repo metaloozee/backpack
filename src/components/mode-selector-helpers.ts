@@ -1,4 +1,4 @@
-import { defaultTools, type ToolsState } from "@/lib/ai/tools";
+import { defaultTools, type ToolsState } from "@/lib/ai/tool-registry";
 import { isMcpServerDisabled, type McpStatus } from "@/lib/mcp/status";
 import type { ModeType } from "@/lib/store/slices/mode.slice";
 

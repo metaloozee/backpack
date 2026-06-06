@@ -4,7 +4,7 @@ import {
 	deleteMemoriesByIdsAndUserId,
 	deleteMemoryByIdAndUserId,
 	getMemoriesByUserId,
-} from "@/lib/db/queries";
+} from "@/lib/db/queries/memories";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 
 export const memoriesRouter = router({

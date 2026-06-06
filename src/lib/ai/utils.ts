@@ -1,7 +1,7 @@
-import type { ModelMessage, UIMessage, UIMessagePart } from "ai";
+import type { ModelMessage, UIMessage } from "ai";
 import { formatISO } from "date-fns";
 import type { Message } from "@/lib/db/schema/app";
-import type { ChatMessage, ChatTools, CustomUIDataTypes } from "./types";
+import type { ChatMessage } from "./types";
 
 type ResponseMessageWithoutId = ModelMessage | UIMessage;
 type ResponseMessage = ResponseMessageWithoutId & { id: string };
@@ -33,7 +33,7 @@ export function convertToUIMessages(messages: Message[]): ChatMessage[] {
 	return messages.map((message) => ({
 		id: message.id,
 		role: message.role as "user" | "assistant" | "system",
-		parts: message.parts as UIMessagePart<CustomUIDataTypes, ChatTools>[],
+		parts: message.parts as ChatMessage["parts"],
 		metadata: {
 			createdAt: formatISO(message.createdAt),
 		},

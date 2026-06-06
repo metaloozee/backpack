@@ -1,15 +1,12 @@
-export interface ToolsState {
-	webSearch?: boolean;
-	knowledgeSearch?: boolean;
-	academicSearch?: boolean;
-	financeSearch?: boolean;
-}
+import type { ToolsState as RegistryToolsState } from "@/lib/ai/tool-registry";
+
+export type { ToolsState } from "@/lib/ai/tool-registry";
 
 export interface UserPrefs {
 	modelId: string;
-	mode: string;
+	mode: "ask" | "agent";
 	selectedAgent: string | null;
-	toolsState: ToolsState;
+	toolsState: RegistryToolsState;
 	mcpServersState: Record<string, boolean>;
 }
 

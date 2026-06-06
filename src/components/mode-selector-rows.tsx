@@ -8,7 +8,11 @@ import {
 	DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
-import { defaultTools, type ToolsState } from "@/lib/ai/tools";
+import {
+	type BuiltInToolId,
+	defaultTools,
+	type ToolsState,
+} from "@/lib/ai/tool-registry";
 import { getMcpStatus, isMcpServerDisabled } from "@/lib/mcp/status";
 import type { AppRouter } from "@/lib/server/routers/_app";
 import { cn } from "@/lib/utils";
@@ -34,7 +38,7 @@ function ToolToggleRow({
 	tool: (typeof defaultTools)[number];
 	layout: AskToolsLayout;
 	isChecked: boolean;
-	setTool: (id: string, checked: boolean) => void;
+	setTool: (id: BuiltInToolId, checked: boolean) => void;
 }) {
 	const IconComponent = tool.icon;
 	const rowPad = toolRowPadding(layout);
@@ -202,7 +206,7 @@ export function AskToolsSection({
 }: {
 	layout: AskToolsLayout;
 	activeTools: ToolsState;
-	setTool: (id: string, checked: boolean) => void;
+	setTool: (id: BuiltInToolId, checked: boolean) => void;
 	mcpServersData: McpServersQuery | undefined;
 	activeMcpServers: Record<string, boolean>;
 	setMcpServer: (id: string, checked: boolean) => void;

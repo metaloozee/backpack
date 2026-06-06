@@ -13,6 +13,7 @@ import {
 } from "@/components/mode-selector-rows";
 import { ResponsiveSettingsMenuShell } from "@/components/responsive-settings-shell";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { ToolsState } from "@/lib/ai/tool-registry";
 import { slideVariants, transitions } from "@/lib/animations";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import type { ModeType } from "@/lib/store/slices/mode.slice";
@@ -38,7 +39,7 @@ export function ModeSelector({
 	initialMcpServers?: Record<string, boolean>;
 	initialMode?: string;
 	initialSelectedAgent?: string;
-	initialTools?: Record<string, boolean>;
+	initialTools?: ToolsState;
 }) {
 	const isMobile = useIsMobile();
 	const [askDrawerOpen, setAskDrawerOpen] = useState(false);

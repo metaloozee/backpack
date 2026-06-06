@@ -1,4 +1,5 @@
 import type { UIMessageStreamWriter } from "ai";
+import { buildActiveBuiltInRuntimeTools } from "@/lib/ai/tool-registry";
 import { academicSearchTool } from "@/lib/ai/tools/academic-search";
 import { extractTool } from "@/lib/ai/tools/extract";
 import { financeSearchTool } from "@/lib/ai/tools/finance-search";
@@ -11,22 +12,7 @@ import { closeMcpClients, createMcpToolsForServers } from "@/lib/mcp/client";
 import type { ActiveTool, ToolsState } from "./types";
 
 const buildActiveTools = (toolsState: ToolsState): ActiveTool[] => {
-	const activeTools: ActiveTool[] = ["extract"];
-
-	if (toolsState.webSearch) {
-		activeTools.push("web_search");
-	}
-	if (toolsState.knowledgeSearch) {
-		activeTools.push("knowledge_search");
-	}
-	if (toolsState.academicSearch) {
-		activeTools.push("academic_search");
-	}
-	if (toolsState.financeSearch) {
-		activeTools.push("finance_search");
-	}
-
-	return activeTools;
+	return buildActiveBuiltInRuntimeTools(toolsState) as ActiveTool[];
 };
 
 export const buildToolRuntime = async ({

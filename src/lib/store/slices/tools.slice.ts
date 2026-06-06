@@ -1,10 +1,14 @@
 import type { StateCreator } from "zustand";
-import { getDefaultToolsState, type ToolsState } from "@/lib/ai/tools";
+import {
+	type BuiltInToolId,
+	getDefaultToolsState,
+	type ToolsState,
+} from "@/lib/ai/tool-registry";
 import type { BoundStore } from "../store";
 
 export interface ToolsSlice {
 	tools: ToolsState;
-	setTool: (id: string, value: boolean) => void;
+	setTool: (id: BuiltInToolId, value: boolean) => void;
 	setAllTools: (tools: ToolsState) => void;
 	resetTools: () => void;
 }

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Chat } from "@/components/chat";
 import { requireApprovedAuthSession } from "@/lib/auth/utils";
-import { getSpaceByIdAndUserId } from "@/lib/db/queries";
+import { getSpaceByIdAndUserId } from "@/lib/db/queries/spaces";
 import { getServerPrefs } from "@/lib/store/server-prefs";
 export default async function SpacePage({
 	params,

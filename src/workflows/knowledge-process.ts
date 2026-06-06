@@ -9,7 +9,7 @@ import {
 	markKnowledgeFailed,
 	markKnowledgeProcessing,
 	markKnowledgeReady,
-} from "@/lib/db/queries";
+} from "@/lib/db/queries/knowledge";
 
 const SUMMARY_LIMIT = 500;
 const MAX_ERROR_LENGTH = 500;

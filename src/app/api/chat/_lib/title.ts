@@ -1,7 +1,7 @@
 import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { caller } from "@/lib/trpc/server";
+import { updateChatTitleIfDefault } from "@/lib/db/queries/chat";
 
 export const DEFAULT_CHAT_TITLE = "Unnamed Chat";
 
@@ -26,6 +26,7 @@ const createChatTitle = async (message: {
 
 export const updateChatTitleInBackground = (params: {
 	chatId: string;
+	userId: string;
 	message: {
 		id: string;
 		role: string;
@@ -38,8 +39,9 @@ export const updateChatTitleInBackground = (params: {
 				return;
 			}
 
-			await caller.chat.updateChatTitleIfDefault({
+			await updateChatTitleIfDefault({
 				chatId: params.chatId,
+				userId: params.userId,
 				defaultTitle: DEFAULT_CHAT_TITLE,
 				newTitle: title,
 			});

@@ -171,10 +171,10 @@ export const models: Model[] = [
 		capabilities: { reasoning: true, toolCall: true, attachment: false },
 	},
 	{
-		name: "NVIDIA: Nemotron 3 Super",
-		id: "nvidia/nemotron-3-super-120b-a12b:free",
+		name: "NVIDIA: Nemotron 3 Ultra",
+		id: "nvidia/nemotron-3-ultra-550b-a55b:free",
 		provider: "openrouter",
-		instance: openrouter("nvidia/nemotron-3-super-120b-a12b:free"),
+		instance: openrouter("nvidia/nemotron-3-ultra-550b-a55b:free"),
 		enabledInProduction: true,
 		modalities: {
 			input: ["text"],
@@ -183,28 +183,36 @@ export const models: Model[] = [
 		capabilities: { reasoning: true, toolCall: true, attachment: false },
 	},
 	{
-		name: "StepFun: Step 3.5 Flash",
-		id: "stepfun/step-3.5-flash:free",
+		name: "Owl Alpha",
+		id: "openrouter/owl-alpha",
 		provider: "openrouter",
-		instance: openrouter("stepfun/step-3.5-flash:free"),
+		instance: openrouter("openrouter/owl-alpha"),
 		enabledInProduction: true,
 		modalities: {
 			input: ["text"],
 			output: ["text"],
 		},
-		capabilities: { reasoning: true, toolCall: true, attachment: false },
+		capabilities: {
+			reasoning: true,
+			toolCall: true,
+			attachment: false,
+		},
 	},
 	{
-		name: "Arcee AI: Trinity Large Preview",
-		id: "arcee-ai/trinity-large-preview:free",
+		name: "MoonshotAI: Kimi K2.6 (free)",
+		id: "moonshotai/kimi-k2.6:free",
 		provider: "openrouter",
-		instance: openrouter("arcee-ai/trinity-large-preview:free"),
+		instance: openrouter("moonshotai/kimi-k2.6:free"),
 		enabledInProduction: true,
 		modalities: {
-			input: ["text"],
+			input: ["text", "image"],
 			output: ["text"],
 		},
-		capabilities: { reasoning: true, toolCall: true, attachment: false },
+		capabilities: {
+			reasoning: true,
+			toolCall: true,
+			attachment: true,
+		},
 	},
 ];
 

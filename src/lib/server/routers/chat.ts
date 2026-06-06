@@ -12,8 +12,6 @@ import {
 	deleteChatById,
 	getChatByIdAndUserId,
 	getChatsByUserId,
-	getMcpServerConfigsByIds,
-	getMemoriesByUserId,
 	getMessagesByChatIdAndUserId,
 	getVotesByChatId,
 	saveChat,
@@ -22,7 +20,9 @@ import {
 	setChatActiveStreamId,
 	updateChatTitleIfDefault,
 	voteMessage as voteMessageQuery,
-} from "@/lib/db/queries";
+} from "@/lib/db/queries/chat";
+import { getMcpServerConfigsByIds } from "@/lib/db/queries/mcp";
+import { getMemoriesByUserId } from "@/lib/db/queries/memories";
 import { chat, type Message, message } from "@/lib/db/schema/app";
 import { BackpackError } from "@/lib/errors";
 import { protectedProcedure, router } from "@/lib/server/trpc";

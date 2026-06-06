@@ -40,7 +40,7 @@ import {
 import { ModeSelector } from "@/components/mode-selector";
 import { ModelSelector } from "@/components/model-selector";
 import { Button } from "@/components/ui/button";
-import type { ToolsState } from "@/lib/ai/tools";
+import type { ToolsState } from "@/lib/ai/tool-registry";
 import type {
 	ChatMessage,
 	Attachment as PendingAttachment,
