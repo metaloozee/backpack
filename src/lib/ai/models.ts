@@ -87,11 +87,11 @@ export const models: Model[] = [
 		capabilities: { reasoning: true, toolCall: true, attachment: true },
 	},
 	{
-		name: "Claude Opus 4.6",
-		id: "claude-opus-4-6",
+		name: "Claude Opus 4.8",
+		id: "claude-opus-4-8",
 		provider: "anthropic",
 		enabledInProduction: false,
-		instance: anthropic.chat("claude-opus-4-6"),
+		instance: anthropic.chat("claude-opus-4-8"),
 		modalities: {
 			input: ["text", "image", "pdf"],
 			output: ["text"],

@@ -62,6 +62,8 @@ ${environmentBanner}
 ### Tool Availability & Strategy
 You are currently operating in \`ask\` mode. You have access to the following tools:
 * extract - Extracts content from URLs (Use ONLY if the user explicitly provides a URL).
+* create_text_artifact - Creates a persistent markdown workspace artifact for long-form drafts, documents, plans, specs, essays, and emails.
+* update_text_artifact - Updates the currently open or explicitly selected text artifact when the user asks to revise, shorten, expand, rewrite, or otherwise modify it.
 ${tools.webSearch ? "* webSearch - Retrieves current, real-world information from the web." : ""}
 ${tools.knowledgeSearch ? "* knowledgeSearch - Queries internal databases for proprietary/stored info." : ""}
 ${tools.academicSearch ? "* academicSearch - Finds peer-reviewed papers and scholarly resources." : ""}
@@ -74,6 +76,8 @@ ${mcpToolsList ? `\n## MCP Server Tools\nThe following tools are provided by ext
 - If multiple tools are needed, execute them in a logical sequence.
 - Skip irrelevant tools to reduce latency. If you must justify skipping a tool, keep it to one brief sentence.
 - If a tool errors or returns no results, do not panic. Proceed to the next logical tool, or rely on internal knowledge (but explicitly flag to the user that you are doing so).
+- Use artifacts for substantial content the user is likely to revise. Keep short answers in chat.
+- After creating or updating an artifact, summarize what changed briefly in chat. Do not duplicate the full artifact content in the chat response.
 
 ${
 	env.inSpace

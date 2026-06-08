@@ -20,6 +20,7 @@ import {
 	MessageResponse,
 	MessageToolbar,
 } from "@/components/ai-elements/message";
+import { ArtifactCard } from "@/components/artifacts/artifact-card";
 import { AcademicSearchTool } from "@/components/chat/tools/academic-search-tool";
 import { ExtractTool } from "@/components/chat/tools/extract";
 import { FinanceSearchTool } from "@/components/chat/tools/finance-search-tool";
@@ -303,6 +304,77 @@ function renderFinanceSearchToolPart(
 	);
 }
 
+function getArtifactToolOutput(output: unknown): {
+	artifactId: string;
+	title: string;
+	versionNumber?: number;
+} | null {
+	if (!output) {
+		return null;
+	}
+
+	const value = typeof output === "string" ? JSON.parse(output) : output;
+
+	if (
+		typeof value === "object" &&
+		value !== null &&
+		"artifactId" in value &&
+		"title" in value &&
+		typeof value.artifactId === "string" &&
+		typeof value.title === "string"
+	) {
+		return {
+			artifactId: value.artifactId,
+			title: value.title,
+			versionNumber:
+				"versionNumber" in value &&
+				typeof value.versionNumber === "number"
+					? value.versionNumber
+					: undefined,
+		};
+	}
+
+	return null;
+}
+
+function renderArtifactToolPart({
+	tool,
+	onOpenArtifact,
+}: {
+	tool: NonNullable<ReturnType<typeof getNormalizedToolData>>;
+	onOpenArtifact?: (artifactId: string) => void;
+}) {
+	if (tool.state !== "output-available") {
+		return (
+			<div
+				className="w-full rounded-md border bg-card px-4 py-3 text-muted-foreground text-sm dark:bg-neutral-900"
+				key={`${tool.toolCallId}-${tool.type}`}
+			>
+				Preparing artifact...
+			</div>
+		);
+	}
+
+	try {
+		const artifactOutput = getArtifactToolOutput(tool.output);
+		if (!(artifactOutput && onOpenArtifact)) {
+			return null;
+		}
+
+		return (
+			<ArtifactCard
+				artifactId={artifactOutput.artifactId}
+				key={`${tool.toolCallId}-${tool.type}`}
+				onOpen={onOpenArtifact}
+				title={artifactOutput.title}
+				versionNumber={artifactOutput.versionNumber}
+			/>
+		);
+	} catch {
+		return null;
+	}
+}
+
 function renderMcpToolPart(
 	tool: NonNullable<ReturnType<typeof getNormalizedToolData>>
 ) {
@@ -407,7 +479,8 @@ function MessageReasoning({ reasoning }: { reasoning: string }) {
 function renderToolPart(
 	part: MessagePart,
 	message: ChatMessage,
-	partIndex: number
+	partIndex: number,
+	onOpenArtifact?: (artifactId: string) => void
 ): ReactNode {
 	const fallbackId = `${message.id}-${partIndex}`;
 	const tool = getNormalizedToolData(part, fallbackId);
@@ -429,6 +502,9 @@ function renderToolPart(
 			return renderAcademicSearchToolPart(tool);
 		case "tool-finance_search":
 			return renderFinanceSearchToolPart(tool);
+		case "tool-create_text_artifact":
+		case "tool-update_text_artifact":
+			return renderArtifactToolPart({ tool, onOpenArtifact });
 		default:
 			return renderMcpToolPart(tool);
 	}
@@ -459,7 +535,8 @@ function renderTextPart(
 function renderMessagePart(
 	part: MessagePart,
 	message: ChatMessage,
-	index: number
+	index: number,
+	onOpenArtifact?: (artifactId: string) => void
 ) {
 	if (part.type === "reasoning" || part.type === "file") {
 		return null;
@@ -469,7 +546,7 @@ function renderMessagePart(
 		return renderTextPart(part, message, index);
 	}
 
-	return renderToolPart(part, message, index);
+	return renderToolPart(part, message, index, onOpenArtifact);
 }
 
 function renderAttachments(message: ChatMessage) {
@@ -575,11 +652,13 @@ export function Message({
 	isLoading,
 	regenerate,
 	isLatestAssistant,
+	onOpenArtifact,
 }: {
 	message: ChatMessage;
 	isLoading: boolean;
 	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
 	isLatestAssistant: boolean;
+	onOpenArtifact?: (artifactId: string) => void;
 }) {
 	const reasoningParts = message.parts.filter(
 		(part) => part.type === "reasoning"
@@ -605,7 +684,7 @@ export function Message({
 					) : null}
 
 					{message.parts.map((part, index) =>
-						renderMessagePart(part, message, index)
+						renderMessagePart(part, message, index, onOpenArtifact)
 					)}
 				</MessageContent>
 

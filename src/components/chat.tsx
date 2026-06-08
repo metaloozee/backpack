@@ -7,16 +7,28 @@ import { DefaultChatTransport } from "ai";
 import type { Session } from "better-auth";
 import { usePathname } from "next/navigation";
 import { parseAsString, useQueryState } from "nuqs";
+import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+	type ArtifactSnapshot,
+	ArtifactWorkspace,
+} from "@/components/artifacts/artifact-workspace";
 import DisplayChats from "@/components/chat/display-chats";
 import { ChatMessages } from "@/components/chat/messages";
 import { SpaceIntro } from "@/components/chat/space-intro";
 import { Input as InputPanel } from "@/components/chat-input";
 import { useDataStream } from "@/components/data-stream-provider";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import type { ToolsState } from "@/lib/ai/tool-registry";
 import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/ai/utils";
+import type { ArtifactStreamEvent } from "@/lib/artifacts/types";
 import type { Chat as ChatType, Knowledge } from "@/lib/db/schema/app";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useSetMobileHeader } from "@/lib/mobile-header-context";
@@ -25,6 +37,7 @@ import {
 	prependChatToInfiniteData,
 } from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
+import { cn } from "@/lib/utils";
 
 function useQueryAppend({
 	sendMessage,
@@ -47,6 +60,159 @@ function useQueryAppend({
 			setQuery(null);
 		}
 	}, [query, sendMessage, setQuery]);
+}
+
+type SetArtifactSnapshots = React.Dispatch<
+	React.SetStateAction<Record<string, ArtifactSnapshot>>
+>;
+
+function openArtifactSnapshot({
+	event,
+	setOpenArtifactId,
+	setArtifactSnapshots,
+}: {
+	event: Extract<ArtifactStreamEvent, { event: "open" }>;
+	setOpenArtifactId: React.Dispatch<React.SetStateAction<string | null>>;
+	setArtifactSnapshots: SetArtifactSnapshots;
+}) {
+	setOpenArtifactId(event.artifactId);
+	setArtifactSnapshots((current) => ({
+		...current,
+		[event.artifactId]: {
+			artifactId: event.artifactId,
+			chatId: event.chatId,
+			kind: event.kind,
+			title: event.title,
+			content: event.content,
+			status: event.status,
+			versionNumber: event.versionNumber,
+		},
+	}));
+}
+
+function appendArtifactDelta({
+	event,
+	setArtifactSnapshots,
+}: {
+	event: Extract<ArtifactStreamEvent, { event: "delta" }>;
+	setArtifactSnapshots: SetArtifactSnapshots;
+}) {
+	setArtifactSnapshots((current) => {
+		const existing = current[event.artifactId];
+		if (!existing) {
+			return current;
+		}
+
+		return {
+			...current,
+			[event.artifactId]: {
+				...existing,
+				content: `${existing.content}${event.delta}`,
+				status: "streaming",
+			},
+		};
+	});
+}
+
+function finishArtifactSnapshot({
+	event,
+	setArtifactSnapshots,
+}: {
+	event: Extract<ArtifactStreamEvent, { event: "finish" }>;
+	setArtifactSnapshots: SetArtifactSnapshots;
+}) {
+	setArtifactSnapshots((current) => {
+		const existing = current[event.artifactId];
+		if (!existing) {
+			return current;
+		}
+
+		return {
+			...current,
+			[event.artifactId]: {
+				...existing,
+				content: event.content,
+				status: "idle",
+				versionNumber: event.versionNumber,
+			},
+		};
+	});
+}
+
+function markArtifactIdle({
+	artifactId,
+	setArtifactSnapshots,
+}: {
+	artifactId: string;
+	setArtifactSnapshots: SetArtifactSnapshots;
+}) {
+	setArtifactSnapshots((current) => {
+		const existing = current[artifactId];
+		if (!existing) {
+			return current;
+		}
+
+		return {
+			...current,
+			[artifactId]: {
+				...existing,
+				status: "idle",
+			},
+		};
+	});
+}
+
+function ignoreAsyncError(error: unknown) {
+	if (error instanceof Error) {
+		return undefined;
+	}
+	return undefined;
+}
+
+function handleArtifactStreamEvent({
+	event,
+	invalidateArtifactQueries,
+	setArtifactSnapshots,
+	setOpenArtifactId,
+}: {
+	event: ArtifactStreamEvent;
+	invalidateArtifactQueries: (artifactId: string) => void;
+	setArtifactSnapshots: SetArtifactSnapshots;
+	setOpenArtifactId: React.Dispatch<React.SetStateAction<string | null>>;
+}) {
+	switch (event.event) {
+		case "open":
+			openArtifactSnapshot({
+				event,
+				setOpenArtifactId,
+				setArtifactSnapshots,
+			});
+			return;
+		case "delta":
+			appendArtifactDelta({
+				event,
+				setArtifactSnapshots,
+			});
+			return;
+		case "finish":
+			finishArtifactSnapshot({
+				event,
+				setArtifactSnapshots,
+			});
+			invalidateArtifactQueries(event.artifactId);
+			return;
+		case "error":
+			toast.error(event.message);
+			if (event.artifactId) {
+				markArtifactIdle({
+					artifactId: event.artifactId,
+					setArtifactSnapshots,
+				});
+			}
+			return;
+		default:
+			return;
+	}
 }
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: complex chat component
@@ -88,10 +254,15 @@ export function Chat({
 
 	const [input, setInput] = useState<string>("");
 	const [attachments, setAttachments] = useState<Attachment[]>([]);
+	const [openArtifactId, setOpenArtifactId] = useState<string | null>(null);
+	const [artifactSnapshots, setArtifactSnapshots] = useState<
+		Record<string, ArtifactSnapshot>
+	>({});
 
-	const { setDataStream } = useDataStream();
+	const { dataStream, setDataStream } = useDataStream();
 	const queryClient = useQueryClient();
 	const trpc = useTRPC();
+	const processedDataStreamLengthRef = useRef(0);
 
 	const generateTempTitle = useCallback((message: ChatMessage): string => {
 		const firstTextPart = message.parts.find(
@@ -196,6 +367,9 @@ export function Chat({
 						id,
 						env,
 						message: messages.at(-1),
+						artifactContext: {
+							activeArtifactId: openArtifactId ?? undefined,
+						},
 						...body,
 					},
 				};
@@ -260,6 +434,50 @@ export function Chat({
 		},
 		[]
 	);
+
+	useEffect(() => {
+		setDataStream([]);
+		processedDataStreamLengthRef.current = 0;
+	}, [setDataStream]);
+
+	const invalidateArtifactQueries = useCallback(
+		(artifactId: string) => {
+			queryClient
+				.invalidateQueries({
+					queryKey: trpc.artifact.getById.queryOptions({
+						artifactId,
+					}).queryKey,
+				})
+				.catch(ignoreAsyncError);
+			queryClient
+				.invalidateQueries({
+					queryKey: trpc.artifact.listByChat.queryOptions({
+						chatId: id,
+					}).queryKey,
+				})
+				.catch(ignoreAsyncError);
+		},
+		[id, queryClient, trpc]
+	);
+
+	useEffect(() => {
+		const newParts = dataStream.slice(processedDataStreamLengthRef.current);
+		processedDataStreamLengthRef.current = dataStream.length;
+
+		for (const part of newParts) {
+			if (part.type !== "data-artifact") {
+				continue;
+			}
+
+			const event = part.data as ArtifactStreamEvent;
+			handleArtifactStreamEvent({
+				event,
+				invalidateArtifactQueries,
+				setArtifactSnapshots,
+				setOpenArtifactId,
+			});
+		}
+	}, [dataStream, invalidateArtifactQueries]);
 
 	// Computed values
 	const showSpaceIntro = isSpaceChat && messages.length === 0;
@@ -335,16 +553,18 @@ export function Chat({
 		/>
 	);
 
-	return (
-		<div
-			className="flex min-h-0 w-full flex-1 flex-col"
-			suppressHydrationWarning
-		>
+	const openArtifactSnapshot = openArtifactId
+		? artifactSnapshots[openArtifactId]
+		: undefined;
+
+	const chatContent = (
+		<div className="flex min-h-0 w-full flex-1 flex-col">
 			{messages.length > 0 ? (
 				<>
 					<ChatMessages
 						chatId={id}
 						messages={messages}
+						onOpenArtifact={setOpenArtifactId}
 						regenerate={regenerate}
 						status={status}
 					/>
@@ -403,6 +623,64 @@ export function Chat({
 					</div>
 				</div>
 			)}
+		</div>
+	);
+
+	return (
+		<div
+			className="flex min-h-0 w-full flex-1 overflow-hidden"
+			suppressHydrationWarning
+		>
+			<div
+				className={cn(
+					"flex min-h-0 flex-1 flex-col",
+					openArtifactId && "lg:max-w-[52%]"
+				)}
+			>
+				{chatContent}
+			</div>
+
+			{openArtifactId ? (
+				<ArtifactWorkspace
+					chatId={id}
+					className="hidden lg:flex lg:w-[48%]"
+					onClose={() => setOpenArtifactId(null)}
+					onOpenArtifact={setOpenArtifactId}
+					openArtifactId={openArtifactId}
+					snapshot={openArtifactSnapshot}
+				/>
+			) : null}
+
+			<Dialog
+				onOpenChange={(open) => {
+					if (!open) {
+						setOpenArtifactId(null);
+					}
+				}}
+				open={Boolean(openArtifactId && isMobile)}
+			>
+				<DialogContent
+					className="h-dvh max-h-dvh w-screen max-w-none rounded-none border-0 p-0"
+					showCloseButton={false}
+				>
+					<DialogTitle className="sr-only">
+						Artifact workspace
+					</DialogTitle>
+					<DialogDescription className="sr-only">
+						Edit, preview, and compare artifact versions.
+					</DialogDescription>
+					{openArtifactId ? (
+						<ArtifactWorkspace
+							chatId={id}
+							className="border-l-0"
+							onClose={() => setOpenArtifactId(null)}
+							onOpenArtifact={setOpenArtifactId}
+							openArtifactId={openArtifactId}
+							snapshot={openArtifactSnapshot}
+						/>
+					) : null}
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

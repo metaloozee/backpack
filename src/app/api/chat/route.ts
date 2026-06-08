@@ -67,7 +67,12 @@ export async function POST(request: Request) {
 
 		const { session } = accessState.authSession;
 		const userId = session.userId;
-		const { message, id: chatId, env: requestEnv } = requestBody;
+		const {
+			message,
+			id: chatId,
+			env: requestEnv,
+			artifactContext,
+		} = requestBody;
 		const enabledMcpServerIds = toUuidList(prefs.mcpServersState);
 
 		const model = getModel(prefs.modelId);
@@ -130,9 +135,12 @@ export async function POST(request: Request) {
 				const toolRuntime = await buildToolRuntime({
 					toolsState: prefs.toolsState,
 					userId,
+					chatId,
 					requestEnv,
 					dataStream,
 					mcpServerConfigs,
+					artifactModel: model.instance as LanguageModel,
+					artifactContext,
 				});
 
 				logChatRequestMetadata(

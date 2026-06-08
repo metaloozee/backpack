@@ -17,9 +17,15 @@ interface ChatMessageProps {
 	status: UseChatHelpers<ChatMessage>["status"];
 	messages: ChatMessage[];
 	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
+	onOpenArtifact?: (artifactId: string) => void;
 }
 
-function PureChatMessages({ status, messages, regenerate }: ChatMessageProps) {
+function PureChatMessages({
+	status,
+	messages,
+	regenerate,
+	onOpenArtifact,
+}: ChatMessageProps) {
 	const latestAssistantId = [...messages]
 		.reverse()
 		.find((message) => message.role === "assistant")?.id;
@@ -45,6 +51,7 @@ function PureChatMessages({ status, messages, regenerate }: ChatMessageProps) {
 							}
 							key={message.id}
 							message={message}
+							onOpenArtifact={onOpenArtifact}
 							regenerate={regenerate}
 						/>
 					))

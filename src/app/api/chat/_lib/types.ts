@@ -16,4 +16,6 @@ export type ActiveTool =
 	| "web_search"
 	| "knowledge_search"
 	| "academic_search"
-	| "finance_search";
+	| "finance_search"
+	| "create_text_artifact"
+	| "update_text_artifact";
