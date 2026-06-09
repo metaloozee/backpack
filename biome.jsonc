@@ -1,4 +1,7 @@
 {
+  "linter": {
+    "includes": ["!.agents/**", "!.claude/**"]
+  },
   "extends": [
     "ultracite/biome/core",
     "ultracite/biome/next",
