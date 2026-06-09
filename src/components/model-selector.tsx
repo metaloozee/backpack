@@ -67,6 +67,7 @@ const providerNames: Record<string, string> = {
 	mistral: "Mistral",
 	cerebras: "Cerebras",
 	nvidia: "NVIDIA",
+	"cloudflare-workers-ai": "Cloudflare",
 };
 
 const drawerSurface =

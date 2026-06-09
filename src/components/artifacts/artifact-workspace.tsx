@@ -13,6 +13,10 @@ import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 import { Spinner } from "../spinner";
 
+const EMPTY_UUID = "00000000-0000-0000-0000-000000000000";
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 interface ArtifactWorkspaceProps {
 	chatId: string;
 	openArtifactId: string | null;
@@ -54,16 +58,24 @@ export function ArtifactWorkspace({
 	className,
 }: ArtifactWorkspaceProps) {
 	const trpc = useTRPC();
+	const effectiveChatId =
+		snapshot?.chatId && UUID_PATTERN.test(snapshot.chatId)
+			? snapshot.chatId
+			: chatId;
+	const canListArtifacts = Boolean(
+		openArtifactId && UUID_PATTERN.test(effectiveChatId)
+	);
 
 	const { data: artifactList } = useQuery({
-		...trpc.artifact.listByChat.queryOptions({ chatId }),
-		enabled: Boolean(chatId && openArtifactId),
+		...trpc.artifact.listByChat.queryOptions({
+			chatId: canListArtifacts ? effectiveChatId : EMPTY_UUID,
+		}),
+		enabled: canListArtifacts,
 	});
 
 	const { data: artifactData, isLoading: isArtifactLoading } = useQuery({
 		...trpc.artifact.getById.queryOptions({
-			artifactId:
-				openArtifactId ?? "00000000-0000-0000-0000-000000000000",
+			artifactId: openArtifactId ?? EMPTY_UUID,
 		}),
 		enabled: Boolean(openArtifactId),
 	});
@@ -121,7 +133,7 @@ export function ArtifactWorkspace({
 			{artifact ? (
 				<ArtifactWorkspaceSession
 					artifact={artifact}
-					chatId={chatId}
+					chatId={effectiveChatId}
 					key={openArtifactId}
 					latestVersion={latestVersion}
 					onClose={onClose}

@@ -127,9 +127,9 @@ export async function getArtifactsByChatIdAndUserId({
 		const latestVersionNumbers = db
 			.select({
 				artifactId: artifactVersion.artifactId,
-				versionNumber:
+				latestVersionNumber:
 					sql<number>`max(${artifactVersion.versionNumber})`.as(
-						"version_number"
+						"latest_version_number"
 					),
 			})
 			.from(artifactVersion)
@@ -152,7 +152,7 @@ export async function getArtifactsByChatIdAndUserId({
 					eq(artifactVersion.artifactId, artifact.id),
 					eq(
 						artifactVersion.versionNumber,
-						latestVersionNumbers.versionNumber
+						latestVersionNumbers.latestVersionNumber
 					)
 				)
 			)

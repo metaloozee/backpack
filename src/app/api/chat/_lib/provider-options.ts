@@ -11,7 +11,7 @@ export const getReasoningProviderOptions = (model: Model) => {
 	const isGemini3 = model.id.startsWith("gemini-3");
 	const googleThinkingConfig = isGemini3
 		? {
-				thinkingLevel: "high" as const,
+				thinkingLevel: "low" as const,
 				includeThoughts: true,
 			}
 		: { thinkingBudget: 8192, includeThoughts: true };
@@ -27,7 +27,7 @@ export const getReasoningProviderOptions = (model: Model) => {
 			thinkingConfig: googleThinkingConfig,
 		} as GoogleGenerativeAIProviderOptions,
 		openai: {
-			reasoningEffort: "medium",
+			reasoningEffort: "low",
 			reasoningSummary: "detailed",
 		} satisfies OpenAIResponsesProviderOptions,
 	};

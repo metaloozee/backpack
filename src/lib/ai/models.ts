@@ -1,12 +1,18 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { groq } from "@ai-sdk/groq";
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI, openai } from "@ai-sdk/openai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
 
 const openrouter = createOpenRouter({});
+
+const cloudflare = createOpenAI({
+	apiKey: process.env.CLOUDFLARE_API_KEY,
+	baseURL:
+		"https://api.cloudflare.com/client/v4/accounts/2e5cce40462386c5f581522c6ad5160c/ai/v1",
+});
 
 export type InputModality = "text" | "image" | "audio" | "video" | "pdf";
 export type OutputModality = "text" | "image" | "audio";
@@ -50,6 +56,18 @@ const legacyModelIdMap = {
 const isProduction = process.env.NODE_ENV === "production";
 
 export const models: Model[] = [
+	{
+		name: "GLM 4.7 Flash",
+		id: "@cf/zai-org/glm-4.7-flash",
+		provider: "cloudflare-workers-ai",
+		enabledInProduction: true,
+		instance: cloudflare.chat("@cf/zai-org/glm-4.7-flash"),
+		modalities: {
+			input: ["text"],
+			output: ["text"],
+		},
+		capabilities: { reasoning: true, toolCall: true, attachment: false },
+	},
 	{
 		name: "Gemini 3.1 Pro Preview",
 		id: "gemini-3.1-pro-preview",

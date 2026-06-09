@@ -8,6 +8,7 @@ export const env = createEnv({
 			.default("development"),
 		DATABASE_URL: z.string().min(1),
 
+		CLOUDFLARE_API_KEY: z.string().min(1),
 		GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
 		OPENROUTER_API_KEY: z.string().min(1).startsWith("sk-"),
 		TAVILY_API_KEY: z.string().min(1).startsWith("tvly-"),

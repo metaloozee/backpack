@@ -1,4 +1,4 @@
-import { google } from "@ai-sdk/google";
+import { groq } from "@ai-sdk/groq";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { updateChatTitleIfDefault } from "@/lib/db/queries/chat";
@@ -11,7 +11,7 @@ const createChatTitle = async (message: {
 	parts: unknown[];
 }) => {
 	const { object } = await generateObject({
-		model: google("gemini-flash-lite-latest"),
+		model: groq("openai/gpt-oss-120b"),
 		schema: z.object({
 			title: z.string().max(100),
 		}),
