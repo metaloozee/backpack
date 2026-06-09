@@ -3,11 +3,11 @@ import type { ToolsState as RegistryToolsState } from "@/lib/ai/tool-registry";
 export type { ToolsState } from "@/lib/ai/tool-registry";
 
 export interface UserPrefs {
-	modelId: string;
+	mcpServersState: Record<string, boolean>;
 	mode: "ask" | "agent";
+	modelId: string;
 	selectedAgent: string | null;
 	toolsState: RegistryToolsState;
-	mcpServersState: Record<string, boolean>;
 }
 
 export type ActiveTool =

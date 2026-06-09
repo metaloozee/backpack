@@ -40,14 +40,14 @@ export interface ArtifactWithVersions {
 }
 
 export interface ArtifactVersionSummary {
-	id: string;
 	artifactId: string;
-	versionNumber: number;
-	source: ArtifactVersionSource;
+	contentLength: number;
 	createdAt: Date;
+	id: string;
 	messageId: string | null;
 	restoredFromVersionId: string | null;
-	contentLength: number;
+	source: ArtifactVersionSource;
+	versionNumber: number;
 }
 
 export interface ArtifactWorkspaceData {

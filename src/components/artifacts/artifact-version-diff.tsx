@@ -7,8 +7,8 @@ import { useIsMobile } from "@/lib/hooks/use-mobile";
 
 interface ArtifactVersionDiffProps {
 	fromVersion: ArtifactVersion;
-	toVersion: ArtifactVersion;
 	title: string;
+	toVersion: ArtifactVersion;
 }
 
 export function ArtifactVersionDiff({

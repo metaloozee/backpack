@@ -19,9 +19,9 @@ import { Loader } from "@/components/ui/loader";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface SearchResult {
+	content: string;
 	title: string;
 	url: string;
-	content: string;
 }
 
 interface SearchGroup {
@@ -30,13 +30,13 @@ interface SearchGroup {
 }
 
 interface FinanceSearchToolProps {
-	toolCallId: string;
 	input?: {
 		search_queries?: string[];
 	};
 	output?: {
 		searches?: SearchGroup[];
 	};
+	toolCallId: string;
 }
 
 export function FinanceSearchTool({
@@ -78,12 +78,11 @@ export function FinanceSearchTool({
 										<div className="flex w-max flex-row gap-2">
 											{searchGroup.results.map(
 												(
-													searchResult: SearchResult,
-													resIdx: number
+													searchResult: SearchResult
 												) => (
 													<div
 														className="w-64 shrink-0 rounded-lg border border-border/60 bg-card p-3 shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-transparent dark:bg-neutral-950"
-														key={`${searchGroup.query}-${resIdx}`}
+														key={`${searchGroup.query}`}
 													>
 														<Link
 															className="line-clamp-2 font-medium text-primary text-sm hover:underline"

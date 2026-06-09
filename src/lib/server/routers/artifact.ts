@@ -160,11 +160,12 @@ export const artifactRouter = router({
 				versionId: z.string().uuid(),
 			})
 		)
-		.mutation(async ({ ctx, input }) => {
-			return await restoreArtifactVersion({
-				artifactId: input.artifactId,
-				versionId: input.versionId,
-				userId: ctx.session.user.id,
-			});
-		}),
+		.mutation(
+			async ({ ctx, input }) =>
+				await restoreArtifactVersion({
+					artifactId: input.artifactId,
+					versionId: input.versionId,
+					userId: ctx.session.user.id,
+				})
+		),
 });

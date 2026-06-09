@@ -7,10 +7,10 @@ import {
 import type { BoundStore } from "../store";
 
 export interface ToolsSlice {
-	tools: ToolsState;
-	setTool: (id: BuiltInToolId, value: boolean) => void;
-	setAllTools: (tools: ToolsState) => void;
 	resetTools: () => void;
+	setAllTools: (tools: ToolsState) => void;
+	setTool: (id: BuiltInToolId, value: boolean) => void;
+	tools: ToolsState;
 }
 
 export const createToolsSlice: StateCreator<

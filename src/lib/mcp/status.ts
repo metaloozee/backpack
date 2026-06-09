@@ -6,9 +6,9 @@ export type McpStatus =
 	| "unknown";
 
 export interface McpStatusInput {
+	hasApiKey?: boolean;
 	lastConnectedAt?: Date | null;
 	lastError?: string | null;
-	hasApiKey?: boolean;
 }
 
 export function getMcpStatus(server: McpStatusInput): McpStatus {

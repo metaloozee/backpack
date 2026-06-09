@@ -6,9 +6,8 @@ import { Separator } from "@/components/ui/separator";
 
 type SearchParamValue = string | string[] | undefined;
 
-const getFirstQueryValue = (value: SearchParamValue): string | undefined => {
-	return Array.isArray(value) ? value[0] : value;
-};
+const getFirstQueryValue = (value: SearchParamValue): string | undefined =>
+	Array.isArray(value) ? value[0] : value;
 
 const normalizeRedirectMessage = (
 	value: SearchParamValue
@@ -16,7 +15,7 @@ const normalizeRedirectMessage = (
 	const rawValue = getFirstQueryValue(value)?.trim();
 
 	if (!rawValue) {
-		return undefined;
+		return;
 	}
 
 	const decodedValue = (() => {

@@ -7,11 +7,11 @@ export const PREFS_COOKIE_NAME = "backpack-prefs" as const;
 export type PrefsMode = "ask" | "agent";
 
 export interface BackpackPrefs {
-	modelId: string;
+	mcpServers: Record<string, boolean>;
 	mode: PrefsMode;
+	modelId: string;
 	selectedAgent: string | null;
 	tools: ToolsState;
-	mcpServers: Record<string, boolean>;
 }
 
 type PersistedPrefsState = Partial<{
@@ -22,15 +22,14 @@ type PersistedPrefsState = Partial<{
 	mcpServers: unknown;
 }>;
 
-const isRecord = (value: unknown): value is Record<string, unknown> => {
-	return typeof value === "object" && value !== null;
-};
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === "object" && value !== null;
 
 const parseBooleanRecord = (
 	value: unknown
 ): Record<string, boolean> | undefined => {
 	if (!isRecord(value)) {
-		return undefined;
+		return;
 	}
 
 	const entries = Object.entries(value).filter(
@@ -40,31 +39,24 @@ const parseBooleanRecord = (
 	return Object.fromEntries(entries);
 };
 
-const parseMode = (value: unknown): PrefsMode => {
-	return value === "agent" ? "agent" : "ask";
-};
+const parseMode = (value: unknown): PrefsMode =>
+	value === "agent" ? "agent" : "ask";
 
-const toPrefs = (state: PersistedPrefsState): BackpackPrefs => {
-	return {
-		modelId: normalizeModelId(
-			typeof state.modelId === "string" ? state.modelId : DEFAULT_MODEL_ID
-		),
-		mode: parseMode(state.mode),
-		selectedAgent:
-			typeof state.selectedAgent === "string"
-				? state.selectedAgent
-				: null,
-		tools: {
-			...getDefaultToolsState(),
-			...(parseBooleanRecord(state.tools) ?? {}),
-		},
-		mcpServers: parseBooleanRecord(state.mcpServers) ?? {},
-	};
-};
+const toPrefs = (state: PersistedPrefsState): BackpackPrefs => ({
+	modelId: normalizeModelId(
+		typeof state.modelId === "string" ? state.modelId : DEFAULT_MODEL_ID
+	),
+	mode: parseMode(state.mode),
+	selectedAgent:
+		typeof state.selectedAgent === "string" ? state.selectedAgent : null,
+	tools: {
+		...getDefaultToolsState(),
+		...(parseBooleanRecord(state.tools) ?? {}),
+	},
+	mcpServers: parseBooleanRecord(state.mcpServers) ?? {},
+});
 
-export const getDefaultPrefs = (): BackpackPrefs => {
-	return toPrefs({});
-};
+export const getDefaultPrefs = (): BackpackPrefs => toPrefs({});
 
 export const parsePrefsCookie = (
 	raw: string | null | undefined
@@ -84,15 +76,13 @@ export const parsePrefsCookie = (
 	}
 };
 
-export const serializePrefsState = (prefs: BackpackPrefs) => {
-	return {
-		modelId: normalizeModelId(prefs.modelId),
-		mode: prefs.mode,
-		selectedAgent: prefs.selectedAgent,
-		tools: prefs.tools,
-		mcpServers: prefs.mcpServers,
-	};
-};
+export const serializePrefsState = (prefs: BackpackPrefs) => ({
+	modelId: normalizeModelId(prefs.modelId),
+	mode: prefs.mode,
+	selectedAgent: prefs.selectedAgent,
+	tools: prefs.tools,
+	mcpServers: prefs.mcpServers,
+});
 
 export const migratePersistedPrefs = (persisted: unknown): BackpackPrefs => {
 	if (!isRecord(persisted)) {

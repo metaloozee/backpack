@@ -42,17 +42,21 @@ import { useTRPC } from "@/lib/trpc/trpc";
 import { Spinner } from "../spinner";
 
 interface SettingsDialogProps {
+	spaceCustomInstructions?: string;
+	spaceDescription?: string;
 	spaceId: string;
 	spaceName?: string;
-	spaceDescription?: string;
-	spaceCustomInstructions?: string;
 }
 
 interface SettingsDialogFormProps {
+	isDangerSectionOpen: boolean;
+	setIsDangerSectionOpen: (open: boolean) => void;
+	setIsDeleteDialogOpen: (open: boolean) => void;
+	setIsOpen: (open: boolean) => void;
+	spaceCustomInstructions?: string;
+	spaceDescription?: string;
 	spaceId: string;
 	spaceName?: string;
-	spaceDescription?: string;
-	spaceCustomInstructions?: string;
 	updateMutation: {
 		mutate: (variables: {
 			spaceId: string;
@@ -62,10 +66,6 @@ interface SettingsDialogFormProps {
 		}) => void;
 		isPending: boolean;
 	};
-	setIsOpen: (open: boolean) => void;
-	setIsDeleteDialogOpen: (open: boolean) => void;
-	isDangerSectionOpen: boolean;
-	setIsDangerSectionOpen: (open: boolean) => void;
 }
 
 function SettingsDialogForm({

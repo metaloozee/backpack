@@ -16,9 +16,9 @@ interface ArtifactSelectorItem {
 
 interface ArtifactSelectorProps {
 	artifacts: ArtifactSelectorItem[];
-	value: string;
-	onValueChange: (artifactId: string) => void;
 	className?: string;
+	onValueChange: (artifactId: string) => void;
+	value: string;
 }
 
 export function ArtifactSelector({

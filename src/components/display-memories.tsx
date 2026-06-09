@@ -88,9 +88,7 @@ export function DisplayMemories() {
 	const columns: ColumnDef<Memory>[] = [
 		{
 			accessorKey: "content",
-			header: () => {
-				return <p className="text-xs">CONTENT</p>;
-			},
+			header: () => <p className="text-xs">CONTENT</p>,
 			cell: ({ row }) => (
 				<div className="max-w-[200px] whitespace-pre-line break-words sm:max-w-[400px]">
 					{row.getValue("content")}
@@ -100,9 +98,7 @@ export function DisplayMemories() {
 		},
 		{
 			accessorKey: "createdAt",
-			header: () => {
-				return <p className="text-xs">CREATED AT</p>;
-			},
+			header: () => <p className="text-xs">CREATED AT</p>,
 			cell: ({ row }) => (
 				<div className="capitalize">
 					{row.original.createdAt
@@ -229,19 +225,17 @@ export function DisplayMemories() {
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow key={headerGroup.id}>
-								{headerGroup.headers.map((header) => {
-									return (
-										<TableHead key={header.id}>
-											{header.isPlaceholder
-												? null
-												: flexRender(
-														header.column.columnDef
-															.header,
-														header.getContext()
-													)}
-										</TableHead>
-									);
-								})}
+								{headerGroup.headers.map((header) => (
+									<TableHead key={header.id}>
+										{header.isPlaceholder
+											? null
+											: flexRender(
+													header.column.columnDef
+														.header,
+													header.getContext()
+												)}
+									</TableHead>
+								))}
 							</TableRow>
 						))}
 					</TableHeader>

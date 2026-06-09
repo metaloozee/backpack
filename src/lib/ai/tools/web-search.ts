@@ -7,9 +7,8 @@ const tvly = tavily({ apiKey: env.TAVILY_API_KEY });
 
 const urlPattern = /^https?:\/\/([^/?#]+)(?:[/?#]|$)/i;
 
-export const extractDomain = (url: string): string => {
-	return url.match(urlPattern)?.[1] || url;
-};
+export const extractDomain = (url: string): string =>
+	url.match(urlPattern)?.[1] || url;
 
 export const deduplicateByDomainAndUrl = <T extends { url: string }>(
 	items: T[]
@@ -50,6 +49,10 @@ export const webSearchTool = ({
 			});
 
 			interface SearchGroup {
+				images: {
+					url: string;
+					description: string;
+				}[];
 				query: string;
 				results: {
 					url: string;
@@ -57,10 +60,6 @@ export const webSearchTool = ({
 					content: string;
 					raw_content: string | undefined;
 					published_date: string | null;
-				}[];
-				images: {
-					url: string;
-					description: string;
 				}[];
 			}
 

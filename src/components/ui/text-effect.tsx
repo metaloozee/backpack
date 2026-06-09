@@ -23,25 +23,25 @@ export type PresetType =
 export type PerType = "word" | "char" | "line";
 
 export interface TextEffectProps {
-	children: string;
-	per?: PerType;
 	as?: keyof React.JSX.IntrinsicElements;
+	children: string;
+	className?: string;
+	containerTransition?: Transition;
+	delay?: number;
+	onAnimationComplete?: () => void;
+	onAnimationStart?: () => void;
+	per?: PerType;
+	preset?: PresetType;
+	segmentTransition?: Transition;
+	segmentWrapperClassName?: string;
+	speedReveal?: number;
+	speedSegment?: number;
+	style?: React.CSSProperties;
+	trigger?: boolean;
 	variants?: {
 		container?: Variants;
 		item?: Variants;
 	};
-	className?: string;
-	preset?: PresetType;
-	delay?: number;
-	speedReveal?: number;
-	speedSegment?: number;
-	trigger?: boolean;
-	onAnimationComplete?: () => void;
-	onAnimationStart?: () => void;
-	segmentWrapperClassName?: string;
-	containerTransition?: Transition;
-	segmentTransition?: Transition;
-	style?: React.CSSProperties;
 }
 
 const defaultStaggerTimes: Record<PerType, number> = {
@@ -191,13 +191,8 @@ const splitText = (text: string, per: "line" | "word" | "char") => {
 
 const hasTransition = (
 	variant: Variant
-): variant is TargetAndTransition & { transition?: Transition } => {
-	return (
-		typeof variant === "object" &&
-		variant !== null &&
-		"transition" in variant
-	);
-};
+): variant is TargetAndTransition & { transition?: Transition } =>
+	typeof variant === "object" && variant !== null && "transition" in variant;
 
 const createVariantsWithTransition = (
 	baseVariants: Variants,
@@ -307,9 +302,9 @@ export function TextEffect({
 					style={style}
 					variants={computedVariants.container}
 				>
-					{per !== "line" ? (
+					{per === "line" ? null : (
 						<span className="sr-only">{children}</span>
-					) : null}
+					)}
 					{segments.map((segment, index) => (
 						<AnimationComponent
 							key={`${per}-${index}-${segment}`}

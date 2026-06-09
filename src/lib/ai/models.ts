@@ -1,39 +1,32 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { groq } from "@ai-sdk/groq";
-import { createOpenAI, openai } from "@ai-sdk/openai";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { openai } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
 
-const openrouter = createOpenRouter({});
-
-const cloudflare = createOpenAI({
-	apiKey: process.env.CLOUDFLARE_API_KEY,
-	baseURL:
-		"https://api.cloudflare.com/client/v4/accounts/2e5cce40462386c5f581522c6ad5160c/ai/v1",
-});
+import { cloudflare, openrouter } from "@/lib/ai/providers";
 
 export type InputModality = "text" | "image" | "audio" | "video" | "pdf";
 export type OutputModality = "text" | "image" | "audio";
 
 export interface ModelCapabilities {
+	attachment: boolean;
 	reasoning: boolean;
 	toolCall: boolean;
-	attachment: boolean;
 }
 
 export interface Model {
-	name: string;
-	id: string;
-	provider: string;
+	capabilities: ModelCapabilities;
 	enabledInProduction: boolean;
+	id: string;
 	instance: LanguageModel;
 	modalities: {
 		input: InputModality[];
 		output: OutputModality[];
 	};
-	capabilities: ModelCapabilities;
+	name: string;
+	provider: string;
 }
 
 const legacyModelIdMap = {
@@ -241,12 +234,9 @@ export const availableModels = models.filter(
 		model.id === DEFAULT_MODEL_ID
 );
 
-const getFallbackModel = (): Model | undefined => {
-	return (
-		availableModels.find((model) => model.id === DEFAULT_MODEL_ID) ??
-		availableModels[0]
-	);
-};
+const getFallbackModel = (): Model | undefined =>
+	availableModels.find((model) => model.id === DEFAULT_MODEL_ID) ??
+	availableModels[0];
 
 export const normalizeModelId = (modelId: string): string => {
 	const normalizedModelId =

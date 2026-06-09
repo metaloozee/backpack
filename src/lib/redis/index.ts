@@ -7,11 +7,10 @@ declare global {
 	var __backpackRedisConnectPromise: Promise<RedisClientType> | undefined;
 }
 
-const createRedisSingleton = (): RedisClientType => {
-	return createClient({
+const createRedisSingleton = (): RedisClientType =>
+	createClient({
 		url: env.REDIS_URL,
 	});
-};
 
 const redisClient = globalThis.__backpackRedisClient ?? createRedisSingleton();
 

@@ -30,8 +30,8 @@ import {
 import { cn } from "@/lib/utils";
 
 export interface PromptInputMessage {
-	text?: string;
 	files?: File[];
+	text?: string;
 }
 
 interface PromptInputTooltipConfig {

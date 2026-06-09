@@ -15,9 +15,8 @@ import type { McpServerConfig as DbMcpServerConfig } from "@/lib/db/schema/mcp";
 import { closeMcpClients, createMcpToolsForServers } from "@/lib/mcp/client";
 import type { ActiveTool, ToolsState } from "./types";
 
-const buildActiveTools = (toolsState: ToolsState): ActiveTool[] => {
-	return buildActiveBuiltInRuntimeTools(toolsState) as ActiveTool[];
-};
+const buildActiveTools = (toolsState: ToolsState): ActiveTool[] =>
+	buildActiveBuiltInRuntimeTools(toolsState) as ActiveTool[];
 
 export const buildToolRuntime = async ({
 	toolsState,

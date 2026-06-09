@@ -36,9 +36,9 @@ const speedMap = {
 
 interface LoaderProps extends VariantProps<typeof loaderVariants> {
 	className?: string;
+	"data-testid"?: string;
 	show?: boolean;
 	speed?: keyof typeof speedMap;
-	"data-testid"?: string;
 }
 
 function Loader({
@@ -62,4 +62,4 @@ function Loader({
 	);
 }
 
-export { Loader, loaderVariants, type LoaderProps };
+export { Loader, type LoaderProps, loaderVariants };

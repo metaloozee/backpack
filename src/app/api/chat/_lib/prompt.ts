@@ -4,8 +4,8 @@ import type { McpToolInfo } from "@/lib/mcp/client";
 import type { ToolsState } from "./types";
 
 interface BuildSystemPromptParams {
+	mcpToolInfos: McpToolInfo[];
 	mode: string;
-	selectedAgent: string | null;
 	requestEnv: {
 		inSpace: boolean;
 		spaceId?: string;
@@ -13,9 +13,9 @@ interface BuildSystemPromptParams {
 		spaceDescription?: string;
 		spaceCustomInstructions?: string;
 	};
-	userMemories: Array<{ content: string; createdAt: Date }>;
+	selectedAgent: string | null;
 	toolsState: ToolsState;
-	mcpToolInfos: McpToolInfo[];
+	userMemories: Array<{ content: string; createdAt: Date }>;
 }
 
 export const buildSystemPrompt = ({

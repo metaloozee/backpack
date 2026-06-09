@@ -19,11 +19,11 @@ const UUID_PATTERN =
 
 interface ArtifactWorkspaceProps {
 	chatId: string;
+	className?: string;
+	onClose: () => void;
+	onOpenArtifact: (artifactId: string) => void;
 	openArtifactId: string | null;
 	snapshot?: ArtifactSnapshot;
-	onOpenArtifact: (artifactId: string) => void;
-	onClose: () => void;
-	className?: string;
 }
 
 const createSnapshotArtifact = (snapshot: ArtifactSnapshot): Artifact => ({

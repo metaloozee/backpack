@@ -74,14 +74,15 @@ export const chatRouter = router({
 				cursor: z.date().optional(),
 			})
 		)
-		.query(async ({ ctx, input }) => {
-			return await getChatsByUserId({
-				userId: ctx.session.user.id,
-				limit: input.limit,
-				cursor: input.cursor,
-				spaceId: input.spaceId,
-			});
-		}),
+		.query(
+			async ({ ctx, input }) =>
+				await getChatsByUserId({
+					userId: ctx.session.user.id,
+					limit: input.limit,
+					cursor: input.cursor,
+					spaceId: input.spaceId,
+				})
+		),
 	getChatById: protectedProcedure
 		.input(
 			z.object({
@@ -94,7 +95,7 @@ export const chatRouter = router({
 					chatId: input.chatId,
 					userId: ctx.session.user.id,
 				});
-			} catch (_) {
+			} catch {
 				throw BackpackError.api("not_found", "Chat not found");
 			}
 		}),
@@ -208,12 +209,13 @@ export const chatRouter = router({
 				chatId: z.string().uuid(),
 			})
 		)
-		.mutation(async ({ ctx, input }) => {
-			return await deleteChatById({
-				id: input.chatId,
-				userId: ctx.session.user.id,
-			});
-		}),
+		.mutation(
+			async ({ ctx, input }) =>
+				await deleteChatById({
+					id: input.chatId,
+					userId: ctx.session.user.id,
+				})
+		),
 	deleteTrailingMessages: protectedProcedure
 		.input(
 			z.object({

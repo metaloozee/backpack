@@ -30,14 +30,14 @@ export function getAllToolsDisabled(): ToolsState {
 
 export interface ActivePrefsInput {
 	hasHydrated: boolean;
-	mode: ModeType;
-	selectedAgent: string | null;
-	tools: ToolsState;
-	mcpServers: Record<string, boolean>;
+	initialMcpServers?: Record<string, boolean>;
 	initialMode?: string;
 	initialSelectedAgent?: string;
 	initialTools?: ToolsState;
-	initialMcpServers?: Record<string, boolean>;
+	mcpServers: Record<string, boolean>;
+	mode: ModeType;
+	selectedAgent: string | null;
+	tools: ToolsState;
 }
 
 export function getActivePrefs(input: ActivePrefsInput): {

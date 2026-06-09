@@ -33,9 +33,8 @@ export const usePrefsStore = create<BoundStore>()(
 				partialize: (state) => ({
 					...serializePrefsState(state),
 				}),
-				migrate: (persisted: unknown) => {
-					return migratePersistedPrefs(persisted) as BoundStore;
-				},
+				migrate: (persisted: unknown) =>
+					migratePersistedPrefs(persisted) as BoundStore,
 				skipHydration: true,
 			}
 		),

@@ -35,11 +35,11 @@ interface ChatItemProps {
 	};
 	isActive: boolean;
 	isConfirming: boolean;
-	isPending: boolean;
-	onConfirmDelete: () => void;
-	onCancelDelete: () => void;
-	onDeleteClick: () => void;
 	isMobile: boolean;
+	isPending: boolean;
+	onCancelDelete: () => void;
+	onConfirmDelete: () => void;
+	onDeleteClick: () => void;
 }
 
 function ChatItem({

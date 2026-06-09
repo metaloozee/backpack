@@ -5,7 +5,7 @@ import type { Model } from "@/lib/ai/models";
 
 export const getReasoningProviderOptions = (model: Model) => {
 	if (!model.capabilities.reasoning) {
-		return undefined;
+		return;
 	}
 
 	const isGemini3 = model.id.startsWith("gemini-3");

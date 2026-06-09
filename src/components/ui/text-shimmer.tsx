@@ -5,8 +5,8 @@ import type { JSX } from "react";
 import { cn } from "@/lib/utils";
 
 export interface TextShimmerProps {
-	children: string;
 	as?: React.ElementType;
+	children: string;
 	className?: string;
 	duration?: number;
 	spread?: number;

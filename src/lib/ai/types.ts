@@ -9,13 +9,13 @@ export const messageMetadataSchema = z.object({
 export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 
 export interface CustomUIDataTypes {
-	[key: string]: unknown; // Required by UIDataTypes constraint
 	"data-artifact": ArtifactStreamEvent;
+	[key: string]: unknown; // Required by UIDataTypes constraint
 }
 
 export type ChatMessage = UIMessage<MessageMetadata, CustomUIDataTypes>;
 export interface Attachment {
+	contentType: string;
 	name: string;
 	url: string;
-	contentType: string;
 }

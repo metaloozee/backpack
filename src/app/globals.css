@@ -142,10 +142,10 @@
 
 @layer base {
 	* {
-		@apply border-border outline-ring/50;
+		scrollbar-color: var(--border) transparent;
 
 		scrollbar-width: thin;
-		scrollbar-color: var(--border) transparent;
+		@apply border-border outline-ring/50;
 	}
 	body {
 		@apply bg-background text-foreground;
@@ -166,8 +166,8 @@
 	background: var(--background);
 }
 ::-webkit-scrollbar-thumb {
-	border-radius: 100vw;
 	background: color-mix(in oklab, var(--primary) 25%, transparent);
+	border-radius: 100vw;
 	transition: background 0.15s ease-in-out;
 	&:hover {
 		background: color-mix(in oklab, var(--primary) 30%, transparent);
@@ -179,32 +179,32 @@
 
 /* Performance: defer rendering of off-screen message items */
 .message-item {
-	content-visibility: auto;
 	contain-intrinsic-size: 0 100px;
+	content-visibility: auto;
 }
 
 /* Prevent message content from overflowing horizontally */
 .streamdown-content {
-	overflow-wrap: anywhere;
-	word-break: normal;
 	min-width: 0;
+	word-break: normal;
+	overflow-wrap: anywhere;
 }
 
 .streamdown-content pre {
-	overflow-x: auto;
 	max-width: 100%;
+	overflow-x: auto;
 }
 
 .streamdown-content .katex-display {
+	max-width: 100%;
 	overflow-x: auto;
 	overflow-y: hidden;
-	max-width: 100%;
 }
 
 .streamdown-content table {
 	display: block;
-	overflow-x: auto;
 	max-width: 100%;
+	overflow-x: auto;
 }
 
 .streamdown-content img {
@@ -224,8 +224,8 @@
 	*,
 	*::before,
 	*::after {
+		transition-duration: 0.01ms !important;
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
-		transition-duration: 0.01ms !important;
 	}
 }

@@ -16,6 +16,5 @@ const subscribe = (onStoreChange: () => void) => {
 
 const getSnapshot = () => usePrefsStore.persist.hasHydrated();
 
-export const usePrefsHydrated = () => {
-	return useSyncExternalStore(subscribe, getSnapshot, () => false);
-};
+export const usePrefsHydrated = () =>
+	useSyncExternalStore(subscribe, getSnapshot, () => false);

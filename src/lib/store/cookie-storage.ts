@@ -8,9 +8,7 @@ const COOKIE_OPTIONS: Cookies.CookieAttributes = {
 };
 
 export const cookieStorage: StateStorage = {
-	getItem: (key) => {
-		return Cookies.get(key) ?? null;
-	},
+	getItem: (key) => Cookies.get(key) ?? null,
 	setItem: (key, value) => {
 		Cookies.set(key, value, COOKIE_OPTIONS);
 	},

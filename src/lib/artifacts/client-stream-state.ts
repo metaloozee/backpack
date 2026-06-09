@@ -5,23 +5,23 @@ export const ARTIFACT_STREAM_FLUSH_MS = 100;
 export interface ArtifactSnapshot {
 	artifactId: string;
 	chatId: string;
-	kind: "text";
-	title: string;
 	content: string;
+	kind: "text";
 	status: "idle" | "streaming";
+	title: string;
 	versionNumber?: number;
 }
 
 export interface ArtifactStreamState {
 	openArtifactId: string | null;
-	snapshots: Record<string, ArtifactSnapshot>;
 	processedDataStreamLength: number;
+	snapshots: Record<string, ArtifactSnapshot>;
 }
 
 export interface ArtifactStreamUpdateResult {
-	state: ArtifactStreamState;
-	finishedArtifactIds: string[];
 	errorMessages: string[];
+	finishedArtifactIds: string[];
+	state: ArtifactStreamState;
 }
 
 export function createInitialArtifactStreamState(): ArtifactStreamState {

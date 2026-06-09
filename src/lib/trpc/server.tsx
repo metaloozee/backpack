@@ -8,9 +8,7 @@ import { makeQueryClient } from "./query-client";
 
 export const getQueryClient = cache(makeQueryClient);
 
-const createServerContext = cache(() => {
-	return createTRPCContext();
-});
+const createServerContext = cache(() => createTRPCContext());
 
 export const trpc = createTRPCOptionsProxy({
 	ctx: createServerContext,

@@ -8,35 +8,33 @@ const mistral = new Mistral({
 });
 
 interface OcrPage {
+	content?: string;
 	markdown?: string;
 	text?: string;
-	content?: string;
 }
 
 interface OcrResult {
-	pages?: OcrPage[];
+	content?: string;
 	document?: {
 		pages?: OcrPage[];
 	};
-	text?: string;
 	markdown?: string;
-	content?: string;
+	pages?: OcrPage[];
+	text?: string;
 }
 
-const normalizeText = (value: string) => {
-	return value
+const normalizeText = (value: string) =>
+	value
 		.replace(/\r\n/g, "\n")
 		.replace(/[ \t]+\n/g, "\n")
 		.replace(/\n{3,}/g, "\n\n")
 		.replace(/[ \t]{2,}/g, " ")
 		.trim();
-};
 
-const extractPageText = (pages: OcrPage[]) => {
-	return pages
+const extractPageText = (pages: OcrPage[]) =>
+	pages
 		.map((page) => page.markdown ?? page.text ?? page.content ?? "")
 		.filter((text) => text.trim().length > 0);
-};
 
 export async function extractTextFromPdfUrl(documentUrl: string) {
 	if (!documentUrl) {

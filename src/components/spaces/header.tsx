@@ -21,10 +21,6 @@ import { Separator } from "../ui/separator";
 import { Textarea } from "../ui/textarea";
 
 interface HeaderCreateSpaceFormProps {
-	userId: string;
-	trpc: ReturnType<typeof useTRPC>;
-	router: ReturnType<typeof useRouter>;
-	queryClient: ReturnType<typeof useQueryClient>;
 	mutation: UseMutationResult<
 		{ id: string },
 		TRPCClientErrorLike<AppRouter>,
@@ -35,7 +31,11 @@ interface HeaderCreateSpaceFormProps {
 			spaceCustomInstructions?: string;
 		}
 	>;
+	queryClient: ReturnType<typeof useQueryClient>;
+	router: ReturnType<typeof useRouter>;
 	setIsOpen: (open: boolean) => void;
+	trpc: ReturnType<typeof useTRPC>;
+	userId: string;
 }
 
 function HeaderCreateSpaceForm({

@@ -202,9 +202,8 @@ export async function POST(request: Request) {
 				);
 			},
 			generateId: () => crypto.randomUUID(),
-			onError: () => {
-				return "Oops, an error occurred while processing your request.";
-			},
+			onError: () =>
+				"Oops, an error occurred while processing your request.",
 			onFinish: async ({ messages }) => {
 				await saveMessages({
 					messages: messages.map((msg) => ({

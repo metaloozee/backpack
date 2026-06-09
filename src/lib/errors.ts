@@ -112,17 +112,17 @@ const trpcErrorMap: Record<ErrorCodeType, TRPCErrorCode> = {
 };
 
 interface BackpackErrorOptions {
+	cause?: unknown;
 	code: ErrorCodeType;
 	message: string;
-	cause?: unknown;
 	userMessage?: string;
 }
 
 interface SurfaceErrorOptions {
-	type: ErrorTypeValue;
-	surface: SurfaceValue;
-	message: string;
 	cause?: unknown;
+	message: string;
+	surface: SurfaceValue;
+	type: ErrorTypeValue;
 	userMessage?: string;
 }
 

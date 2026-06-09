@@ -18,7 +18,6 @@ import { Loader } from "@/components/ui/loader";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface AcademicSearchToolProps {
-	toolCallId: string;
 	input?: {
 		academic_search_queries?: string[];
 	};
@@ -26,13 +25,14 @@ interface AcademicSearchToolProps {
 		query: string;
 		results: Paper[];
 	}>;
+	toolCallId: string;
 }
 
 interface Paper {
-	title: string;
-	authors?: string;
-	url: string;
 	abstract?: string;
+	authors?: string;
+	title: string;
+	url: string;
 }
 
 export function AcademicSearchTool({
@@ -73,13 +73,10 @@ export function AcademicSearchTool({
 											<ScrollArea className="px-3 pb-3">
 												<div className="flex w-max flex-row gap-2">
 													{searchGroup.results.map(
-														(
-															paper: Paper,
-															resIdx: number
-														) => (
+														(paper: Paper) => (
 															<div
 																className="w-64 shrink-0 rounded-lg border border-border/60 bg-card p-3 shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-transparent dark:bg-neutral-950"
-																key={`${searchGroup.query}-${resIdx}`}
+																key={`${searchGroup.query}`}
 															>
 																<Link
 																	className="line-clamp-2 font-medium text-primary text-sm hover:underline"

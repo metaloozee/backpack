@@ -5,9 +5,7 @@ import { env } from "@/lib/env.mjs";
 import { appRouter } from "@/lib/server/routers/_app";
 import { createTRPCContext } from "@/lib/trpc/context";
 
-const createContext = () => {
-	return createTRPCContext();
-};
+const createContext = () => createTRPCContext();
 
 const handler = (req: NextRequest) =>
 	fetchRequestHandler({

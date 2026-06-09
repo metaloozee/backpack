@@ -54,22 +54,22 @@ import { Spinner } from "./spinner";
 type ComposerLayout = "stickyFooter" | "inline" | "home";
 
 interface InputPanelProps {
+	attachments: PendingAttachment[];
 	chatId: string;
-	session: Session | null;
+	composerLayout?: ComposerLayout;
+	initialAgent?: string;
+	initialMcpServers?: Record<string, boolean>;
+	initialMode?: string;
+	initialModel?: string;
+	initialTools?: ToolsState;
 	input: string;
+	messages: ChatMessage[];
+	sendMessage: UseChatHelpers<ChatMessage>["sendMessage"];
+	session: Session | null;
+	setAttachments: Dispatch<SetStateAction<PendingAttachment[]>>;
 	setInput: Dispatch<SetStateAction<string>>;
 	status: UseChatHelpers<ChatMessage>["status"];
 	stop: () => void;
-	attachments: PendingAttachment[];
-	setAttachments: Dispatch<SetStateAction<PendingAttachment[]>>;
-	messages: ChatMessage[];
-	sendMessage: UseChatHelpers<ChatMessage>["sendMessage"];
-	initialModel?: string;
-	initialTools?: ToolsState;
-	initialMode?: string;
-	initialAgent?: string;
-	initialMcpServers?: Record<string, boolean>;
-	composerLayout?: ComposerLayout;
 }
 
 function getInputWrapperClasses({
@@ -478,7 +478,7 @@ function PureInput({
 											mediaType: attachment.contentType,
 											url: attachment.url,
 										}}
-										key={`${attachment.url}-${index}`}
+										key={`${attachment.url}`}
 										onRemove={() => {
 											setAttachments((current) =>
 												current.filter(

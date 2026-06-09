@@ -12,18 +12,18 @@ import {
 import { Loader } from "@/components/ui/loader";
 
 export interface McpToolResultProps {
-	serverName: string;
-	toolName: string;
 	input?: unknown;
-	output?: unknown;
 	isError?: boolean;
+	isOpen?: boolean;
+	output?: unknown;
+	serverName: string;
 	state?:
 		| "input-streaming"
 		| "input-available"
 		| "output-available"
 		| "output-error";
 	toolCallId: string;
-	isOpen?: boolean;
+	toolName: string;
 }
 
 function formatToolPayload(payload: unknown) {

@@ -320,12 +320,13 @@ export const spaceRouter = router({
 				spaceId: z.string().uuid(),
 			})
 		)
-		.query(async ({ ctx, input }) => {
-			return await getKnowledgeBySpaceIdAndUserId({
-				spaceId: input.spaceId,
-				userId: ctx.session.user.id,
-			});
-		}),
+		.query(
+			async ({ ctx, input }) =>
+				await getKnowledgeBySpaceIdAndUserId({
+					spaceId: input.spaceId,
+					userId: ctx.session.user.id,
+				})
+		),
 	retryKnowledge: protectedProcedure
 		.input(
 			z.object({

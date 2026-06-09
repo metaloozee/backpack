@@ -50,12 +50,10 @@ export const createTextArtifactPrompt = ({
 }: {
 	title: string;
 	instructions: string;
-}): string => {
-	return `Create a markdown text artifact titled "${title}".
+}): string => `Create a markdown text artifact titled "${title}".
 
 User instructions:
 ${instructions}`;
-};
 
 export const updateTextArtifactPrompt = ({
 	currentContent,
@@ -63,8 +61,7 @@ export const updateTextArtifactPrompt = ({
 }: {
 	currentContent: string;
 	instructions: string;
-}): string => {
-	return `Revise the existing markdown text artifact.
+}): string => `Revise the existing markdown text artifact.
 
 User instructions:
 ${instructions}
@@ -73,7 +70,6 @@ Current artifact content:
 ${currentContent}
 
 Return the complete revised artifact content.`;
-};
 
 export const writeArtifactData = (
 	dataStream: UIMessageStreamWriter<ChatMessage>,

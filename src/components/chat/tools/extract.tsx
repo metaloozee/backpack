@@ -4,17 +4,17 @@ import { PickaxeIcon } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
 
 interface ExtractResult {
-	url: string;
-	images?: string[];
 	content: string;
+	images?: string[];
+	url: string;
 }
 
 interface ExtractToolProps {
-	toolCallId: string;
 	input?: {
 		urls?: string[];
 	};
 	output?: ExtractResult[];
+	toolCallId: string;
 }
 
 export function ExtractTool({ toolCallId, input, output }: ExtractToolProps) {

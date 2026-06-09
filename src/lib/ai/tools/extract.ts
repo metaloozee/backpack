@@ -6,9 +6,9 @@ import { env } from "@/lib/env.mjs";
 const tvly = tavily({ apiKey: env.TAVILY_API_KEY });
 
 interface ExtractResult {
-	url: string;
-	images: string[] | undefined;
 	content: string;
+	images: string[] | undefined;
+	url: string;
 }
 
 export const extractTool = ({

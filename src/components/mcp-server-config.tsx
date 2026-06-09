@@ -38,14 +38,14 @@ import { useTRPC } from "@/lib/trpc/trpc";
 import { Spinner } from "./spinner";
 
 interface McpServer {
-	id: string;
-	name: string;
-	url: string;
-	hasApiKey: boolean;
 	apiKeyLast4?: string | null;
 	enabled: boolean;
+	hasApiKey: boolean;
+	id: string;
 	lastConnectedAt?: Date | null;
 	lastError?: string | null;
+	name: string;
+	url: string;
 }
 
 export function McpServerConfig() {

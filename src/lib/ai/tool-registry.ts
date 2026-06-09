@@ -21,12 +21,12 @@ export type RuntimeToolName =
 	| "finance_search";
 
 export interface Tool {
-	id: BuiltInToolId;
-	runtimeName: RuntimeToolName;
-	name: string;
 	description: string;
-	icon: LucideIcon;
 	enabled: boolean;
+	icon: LucideIcon;
+	id: BuiltInToolId;
+	name: string;
+	runtimeName: RuntimeToolName;
 }
 
 export type ToolsState = Record<BuiltInToolId, boolean>;
@@ -68,15 +68,13 @@ export const builtInToolRegistry = [
 
 export const defaultTools = builtInToolRegistry;
 
-export const getDefaultToolsState = (): ToolsState => {
-	return Object.fromEntries(
+export const getDefaultToolsState = (): ToolsState =>
+	Object.fromEntries(
 		builtInToolRegistry.map((tool) => [tool.id, tool.enabled])
 	) as ToolsState;
-};
 
-export const getToolById = (toolId: string): Tool | undefined => {
-	return builtInToolRegistry.find((tool) => tool.id === toolId);
-};
+export const getToolById = (toolId: string): Tool | undefined =>
+	builtInToolRegistry.find((tool) => tool.id === toolId);
 
 export const buildActiveBuiltInRuntimeTools = (
 	toolsState: ToolsState

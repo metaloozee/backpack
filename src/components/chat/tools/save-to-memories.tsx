@@ -4,7 +4,6 @@ import { Brain } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
 
 interface SaveToMemoriesToolProps {
-	toolCallId: string;
 	input?: {
 		contents?: string[];
 	};
@@ -12,6 +11,7 @@ interface SaveToMemoriesToolProps {
 		saved_count: number;
 		total_count: number;
 	};
+	toolCallId: string;
 }
 
 export function SaveToMemoriesTool({ output }: SaveToMemoriesToolProps) {

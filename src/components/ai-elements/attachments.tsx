@@ -10,11 +10,11 @@ import { cn } from "@/lib/utils";
 type AttachmentVariant = "grid" | "inline" | "list";
 
 interface AttachmentData {
-	id?: string;
-	url?: string;
-	mediaType?: string;
 	filename?: string;
+	id?: string;
+	mediaType?: string;
 	name?: string;
+	url?: string;
 }
 
 interface AttachmentContextValue {

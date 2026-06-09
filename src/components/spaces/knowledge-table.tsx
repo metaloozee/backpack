@@ -106,18 +106,16 @@ const baseColumns: ColumnDef<Knowledge>[] = [
 	{
 		accessorKey: "uploadedAt",
 		header: "Uploaded",
-		cell: ({ row }) => {
-			return (
-				<p className="text-xs">{format(row.getValue("uploadedAt"))}</p>
-			);
-		},
+		cell: ({ row }) => (
+			<p className="text-xs">{format(row.getValue("uploadedAt"))}</p>
+		),
 	},
 ];
 
 interface RenameKnowledgeDialogProps {
 	knowledge: Knowledge | null;
-	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	open: boolean;
 	spaceId: string;
 }
 
@@ -246,8 +244,8 @@ function RenameKnowledgeDialog({
 
 interface DeleteKnowledgeDialogProps {
 	knowledge: Knowledge | null;
-	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	open: boolean;
 	spaceId: string;
 }
 

@@ -14,10 +14,10 @@ import type { ChatMessage } from "@/lib/ai/types";
 
 interface ChatMessageProps {
 	chatId: string;
-	status: UseChatHelpers<ChatMessage>["status"];
 	messages: ChatMessage[];
-	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
 	onOpenArtifact?: (artifactId: string) => void;
+	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
+	status: UseChatHelpers<ChatMessage>["status"];
 }
 
 function PureChatMessages({

@@ -60,9 +60,9 @@ function useQueryAppend({
 
 function ignoreAsyncError(error: unknown) {
 	if (error instanceof Error) {
-		return undefined;
+		return;
 	}
-	return undefined;
+	return;
 }
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: complex chat component

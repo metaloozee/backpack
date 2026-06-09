@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 
 export interface BorderTrailProps {
 	className?: string;
-	size?: number;
-	transition?: Transition;
 	onAnimationComplete?: () => void;
+	size?: number;
 	style?: React.CSSProperties;
+	transition?: Transition;
 }
 
 export function BorderTrail({

@@ -12,8 +12,8 @@ import {
 import type { ArtifactStreamEvent } from "@/lib/artifacts/types";
 
 interface ArtifactDataPart {
-	type: string;
 	data?: unknown;
+	type: string;
 }
 
 export function useArtifactStreamState({

@@ -25,14 +25,14 @@ import { cn } from "@/lib/utils";
 type ArtifactStatus = "idle" | "streaming";
 
 interface TextArtifactState {
-	tab: string;
-	renameDraft: string | null;
-	isSaving: boolean;
-	isRestoring: boolean;
 	diffSelection: {
 		fromVersionId?: string;
 		toVersionId?: string;
 	};
+	isRestoring: boolean;
+	isSaving: boolean;
+	renameDraft: string | null;
+	tab: string;
 }
 
 type TextArtifactAction =
@@ -87,15 +87,15 @@ const textArtifactReducer = (
 
 interface TextArtifactProps {
 	artifact: Artifact;
-	versions: ArtifactVersionSummary[];
-	latestVersion: ArtifactVersion | null;
 	content: string;
-	status: ArtifactStatus;
+	latestVersion: ArtifactVersion | null;
 	onChangeContent: (content: string) => void;
-	onSave: (content: string, baseVersionNumber?: number) => Promise<void>;
+	onClose: () => void;
 	onRename: (title: string) => Promise<void>;
 	onRestore: (versionId: string) => Promise<void>;
-	onClose: () => void;
+	onSave: (content: string, baseVersionNumber?: number) => Promise<void>;
+	status: ArtifactStatus;
+	versions: ArtifactVersionSummary[];
 }
 
 const sanitizeFilename = (value: string): string => {

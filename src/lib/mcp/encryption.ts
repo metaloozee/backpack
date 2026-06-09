@@ -8,9 +8,9 @@ const IV_LENGTH = 12;
 const MASTER_KEY = Buffer.from(env.MCP_ENCRYPTION_KEY, "base64");
 
 export interface EncryptedKeyPayload {
+	ct_b64: string;
 	iv_b64: string;
 	tag_b64: string;
-	ct_b64: string;
 	v: number;
 }
 

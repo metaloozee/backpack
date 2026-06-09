@@ -11,8 +11,8 @@ import {
 } from "react";
 
 interface MobileHeaderState {
-	title: string | null;
 	subtitle: string | null;
+	title: string | null;
 }
 
 const MobileHeaderContext = createContext<{
@@ -52,9 +52,10 @@ export function useSetMobileHeader(
 		setState({ title, subtitle });
 	}, [title, subtitle, setState]);
 
-	useEffect(() => {
-		return () => {
+	useEffect(
+		() => () => {
 			setState({ title: null, subtitle: null });
-		};
-	}, [setState]);
+		},
+		[setState]
+	);
 }

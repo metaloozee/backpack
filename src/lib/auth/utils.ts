@@ -14,13 +14,13 @@ interface AuthSession {
 }
 
 interface ApprovedAuthAccess {
-	status: "approved";
 	authSession: AuthSession;
+	status: "approved";
 }
 
 interface UnapprovedAuthAccess {
-	status: "authenticated_unapproved";
 	authSession: AuthSession;
+	status: "authenticated_unapproved";
 }
 
 interface AnonymousAuthAccess {
@@ -92,11 +92,10 @@ export const getAuthAccessState = async (
 
 export const getAuthRedirectPath = (
 	status: NonApprovedAuthAccessState["status"]
-): string => {
-	return status === "authenticated_unapproved"
+): string =>
+	status === "authenticated_unapproved"
 		? createSignInRedirectPath(UNAPPROVED_AUTH_ERROR_MESSAGE)
 		: SIGN_IN_PATH;
-};
 
 export const createAuthErrorResponse = (
 	accessState: NonApprovedAuthAccessState

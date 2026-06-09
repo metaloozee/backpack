@@ -24,8 +24,8 @@ const DisclosureContext = createContext<DisclosureContextType | undefined>(
 
 export interface DisclosureProviderProps {
 	children: React.ReactNode;
-	open: boolean;
 	onOpenChange?: (open: boolean) => void;
+	open: boolean;
 	variants?: { expanded: Variant; collapsed: Variant };
 }
 
@@ -72,12 +72,12 @@ function useDisclosure() {
 }
 
 export interface DisclosureProps {
-	open?: boolean;
-	onOpenChange?: (open: boolean) => void;
 	children: React.ReactNode;
 	className?: string;
-	variants?: { expanded: Variant; collapsed: Variant };
+	onOpenChange?: (open: boolean) => void;
+	open?: boolean;
 	transition?: Transition;
+	variants?: { expanded: Variant; collapsed: Variant };
 }
 
 export function Disclosure({

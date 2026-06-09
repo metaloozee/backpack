@@ -8,9 +8,10 @@ import {
 import { protectedProcedure, router } from "@/lib/server/trpc";
 
 export const memoriesRouter = router({
-	getMemories: protectedProcedure.query(async ({ ctx }) => {
-		return await getMemoriesByUserId({ userId: ctx.session.user.id });
-	}),
+	getMemories: protectedProcedure.query(
+		async ({ ctx }) =>
+			await getMemoriesByUserId({ userId: ctx.session.user.id })
+	),
 	deleteMemory: protectedProcedure
 		.input(
 			z.object({

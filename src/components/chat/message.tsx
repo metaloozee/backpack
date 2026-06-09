@@ -571,7 +571,7 @@ function renderAttachments(message: ChatMessage) {
 						{imageParts.map((part, index) => (
 							<div
 								className="relative aspect-video w-60 overflow-hidden rounded-2xl border border-border/70 dark:border-white/10"
-								key={`${message.id}-img-${part.url}-${index}`}
+								key={`${message.id}-img-${part.url}`}
 							>
 								<Image
 									alt={getAttachmentFilename(part, index)}
@@ -597,7 +597,7 @@ function renderAttachments(message: ChatMessage) {
 									mediaType: part.mediaType,
 									url: part.url,
 								}}
-								key={`${message.id}-file-${part.url}-${index}`}
+								key={`${message.id}-file-${part.url}`}
 								variant="inline"
 							>
 								<AttachmentPreview />
@@ -619,7 +619,7 @@ function renderAttachments(message: ChatMessage) {
 						mediaType: part.mediaType,
 						url: part.url,
 					}}
-					key={`${message.id}-file-${part.url}-${index}`}
+					key={`${message.id}-file-${part.url}`}
 					variant="grid"
 				>
 					<AttachmentPreview />

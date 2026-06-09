@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 
 interface ArtifactCardProps {
 	artifactId: string;
+	onOpen: (artifactId: string) => void;
 	title: string;
 	versionNumber?: number;
-	onOpen: (artifactId: string) => void;
 }
 
 export function ArtifactCard({
