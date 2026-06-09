@@ -2,7 +2,6 @@
 
 import { parseDiffFromFile } from "@pierre/diffs";
 import { FileDiff } from "@pierre/diffs/react";
-import { useMemo } from "react";
 import type { ArtifactVersion } from "@/lib/db/schema/app";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 
@@ -18,28 +17,20 @@ export function ArtifactVersionDiff({
 	title,
 }: ArtifactVersionDiffProps) {
 	const isMobile = useIsMobile();
-	const fileDiff = useMemo(() => {
-		return parseDiffFromFile(
-			{
-				name: `${title}.md`,
-				contents: fromVersion.content,
-				lang: "markdown",
-				cacheKey: `${fromVersion.id}-${title}`,
-			},
-			{
-				name: `${title}.md`,
-				contents: toVersion.content,
-				lang: "markdown",
-				cacheKey: `${toVersion.id}-${title}`,
-			}
-		);
-	}, [
-		fromVersion.content,
-		fromVersion.id,
-		title,
-		toVersion.content,
-		toVersion.id,
-	]);
+	const fileDiff = parseDiffFromFile(
+		{
+			name: `${title}.md`,
+			contents: fromVersion.content,
+			lang: "markdown",
+			cacheKey: `${fromVersion.id}-${title}`,
+		},
+		{
+			name: `${title}.md`,
+			contents: toVersion.content,
+			lang: "markdown",
+			cacheKey: `${toVersion.id}-${title}`,
+		}
+	);
 
 	return (
 		<section

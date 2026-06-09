@@ -3,6 +3,7 @@ import type { Artifact, ArtifactVersion } from "@/lib/db/schema/app";
 export const artifactKinds = ["text"] as const;
 
 export type ArtifactKind = (typeof artifactKinds)[number];
+export type ArtifactVersionSource = ArtifactVersion["source"];
 
 export type ArtifactStreamEvent =
 	| {
@@ -36,4 +37,21 @@ export type ArtifactStreamEvent =
 export interface ArtifactWithVersions {
 	artifact: Artifact;
 	versions: ArtifactVersion[];
+}
+
+export interface ArtifactVersionSummary {
+	id: string;
+	artifactId: string;
+	versionNumber: number;
+	source: ArtifactVersionSource;
+	createdAt: Date;
+	messageId: string | null;
+	restoredFromVersionId: string | null;
+	contentLength: number;
+}
+
+export interface ArtifactWorkspaceData {
+	artifact: Artifact;
+	latestVersion: ArtifactVersion | null;
+	versions: ArtifactVersionSummary[];
 }

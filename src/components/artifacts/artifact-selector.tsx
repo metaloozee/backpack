@@ -7,6 +7,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface ArtifactSelectorItem {
 	id: string;
@@ -17,12 +18,14 @@ interface ArtifactSelectorProps {
 	artifacts: ArtifactSelectorItem[];
 	value: string;
 	onValueChange: (artifactId: string) => void;
+	className?: string;
 }
 
 export function ArtifactSelector({
 	artifacts,
 	value,
 	onValueChange,
+	className,
 }: ArtifactSelectorProps) {
 	if (artifacts.length <= 1) {
 		return null;
@@ -30,7 +33,10 @@ export function ArtifactSelector({
 
 	return (
 		<Select onValueChange={onValueChange} value={value}>
-			<SelectTrigger className="max-w-48" size="sm">
+			<SelectTrigger
+				className={cn("w-full min-w-0 max-w-64", className)}
+				size="sm"
+			>
 				<SelectValue placeholder="Select artifact" />
 			</SelectTrigger>
 			<SelectContent>

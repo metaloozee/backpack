@@ -1,7 +1,8 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { DownloadIcon, RotateCcwIcon, SaveIcon, XIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useReducer } from "react";
 import { Streamdown } from "streamdown";
 import { ArtifactVersionDiff } from "@/components/artifacts/artifact-version-diff";
 import { CopyButton } from "@/components/copy-button";
@@ -15,15 +16,79 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import type { ArtifactVersionSummary } from "@/lib/artifacts/types";
 import type { Artifact, ArtifactVersion } from "@/lib/db/schema/app";
 import { streamdownPlugins } from "@/lib/streamdown";
+import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils";
 
 type ArtifactStatus = "idle" | "streaming";
 
+interface TextArtifactState {
+	tab: string;
+	renameDraft: string | null;
+	isSaving: boolean;
+	isRestoring: boolean;
+	diffSelection: {
+		fromVersionId?: string;
+		toVersionId?: string;
+	};
+}
+
+type TextArtifactAction =
+	| { type: "setTab"; tab: string }
+	| { type: "setRenameDraft"; renameDraft: string | null }
+	| { type: "setIsSaving"; isSaving: boolean }
+	| { type: "setIsRestoring"; isRestoring: boolean }
+	| { type: "setFromVersionId"; fromVersionId: string }
+	| { type: "setToVersionId"; toVersionId: string };
+
+const initialTextArtifactState: TextArtifactState = {
+	tab: "edit",
+	renameDraft: null,
+	isSaving: false,
+	isRestoring: false,
+	diffSelection: {},
+};
+
+const textArtifactReducer = (
+	state: TextArtifactState,
+	action: TextArtifactAction
+): TextArtifactState => {
+	switch (action.type) {
+		case "setTab":
+			return { ...state, tab: action.tab };
+		case "setRenameDraft":
+			return { ...state, renameDraft: action.renameDraft };
+		case "setIsSaving":
+			return { ...state, isSaving: action.isSaving };
+		case "setIsRestoring":
+			return { ...state, isRestoring: action.isRestoring };
+		case "setFromVersionId":
+			return {
+				...state,
+				diffSelection: {
+					...state.diffSelection,
+					fromVersionId: action.fromVersionId,
+				},
+			};
+		case "setToVersionId":
+			return {
+				...state,
+				diffSelection: {
+					...state.diffSelection,
+					toVersionId: action.toVersionId,
+				},
+			};
+		default:
+			return state;
+	}
+};
+
 interface TextArtifactProps {
 	artifact: Artifact;
-	versions: ArtifactVersion[];
+	versions: ArtifactVersionSummary[];
+	latestVersion: ArtifactVersion | null;
 	content: string;
 	status: ArtifactStatus;
 	onChangeContent: (content: string) => void;
@@ -64,6 +129,7 @@ const downloadMarkdown = ({
 export function TextArtifact({
 	artifact,
 	versions,
+	latestVersion,
 	content,
 	status,
 	onChangeContent,
@@ -72,45 +138,33 @@ export function TextArtifact({
 	onRestore,
 	onClose,
 }: TextArtifactProps) {
-	const [tab, setTab] = useState("edit");
-	const [titleDraft, setTitleDraft] = useState(artifact.title);
-	const [isRenaming, setIsRenaming] = useState(false);
-	const [isSaving, setIsSaving] = useState(false);
-	const [isRestoring, setIsRestoring] = useState(false);
-	const sortedVersions = useMemo(
-		() => [...versions].sort((a, b) => b.versionNumber - a.versionNumber),
-		[versions]
+	const [state, dispatch] = useReducer(
+		textArtifactReducer,
+		initialTextArtifactState
 	);
-	const latestVersion = sortedVersions[0];
+	const { diffSelection, isRestoring, isSaving, renameDraft, tab } = state;
+	const sortedVersions = versions.toSorted(
+		(a, b) => b.versionNumber - a.versionNumber
+	);
 	const previousVersion = sortedVersions[1] ?? latestVersion;
-	const [fromVersionId, setFromVersionId] = useState<string | undefined>(
-		previousVersion?.id
-	);
-	const [toVersionId, setToVersionId] = useState<string | undefined>(
-		latestVersion?.id
-	);
+	const fromVersionId = versionExists(
+		sortedVersions,
+		diffSelection.fromVersionId
+	)
+		? diffSelection.fromVersionId
+		: previousVersion?.id;
+	const toVersionId = versionExists(sortedVersions, diffSelection.toVersionId)
+		? diffSelection.toVersionId
+		: latestVersion?.id;
 	const isDirty = latestVersion
 		? content !== latestVersion.content
 		: content.trim().length > 0;
-	let versionStatusLabel = "Draft";
-	if (status === "streaming") {
-		versionStatusLabel = "Streaming";
-	} else if (latestVersion) {
-		versionStatusLabel = `Version ${latestVersion.versionNumber}`;
-	}
-
-	useEffect(() => {
-		setTitleDraft(artifact.title);
-	}, [artifact.title]);
-
-	useEffect(() => {
-		if (!fromVersionId && previousVersion) {
-			setFromVersionId(previousVersion.id);
-		}
-		if (!toVersionId && latestVersion) {
-			setToVersionId(latestVersion.id);
-		}
-	}, [fromVersionId, latestVersion, previousVersion, toVersionId]);
+	const isRenaming = renameDraft !== null;
+	const visibleTitleDraft = renameDraft ?? artifact.title;
+	const versionStatusLabel = getVersionStatusLabel({
+		latestVersion,
+		status,
+	});
 
 	const fromVersion = sortedVersions.find(
 		(item) => item.id === fromVersionId
@@ -118,51 +172,45 @@ export function TextArtifact({
 	const toVersion = sortedVersions.find((item) => item.id === toVersionId);
 
 	const handleSave = async () => {
-		setIsSaving(true);
-		try {
-			await onSave(content, latestVersion?.versionNumber);
-		} finally {
-			setIsSaving(false);
-		}
+		dispatch({ type: "setIsSaving", isSaving: true });
+		await onSave(content, latestVersion?.versionNumber).finally(() => {
+			dispatch({ type: "setIsSaving", isSaving: false });
+		});
 	};
 
 	const handleRename = async () => {
-		const nextTitle = titleDraft.trim();
+		const nextTitle = visibleTitleDraft.trim();
 		if (!nextTitle || nextTitle === artifact.title) {
-			setIsRenaming(false);
-			setTitleDraft(artifact.title);
+			dispatch({ type: "setRenameDraft", renameDraft: null });
 			return;
 		}
 
 		await onRename(nextTitle);
-		setIsRenaming(false);
+		dispatch({ type: "setRenameDraft", renameDraft: null });
 	};
 
 	const handleRestore = async () => {
 		if (!fromVersion) {
 			return;
 		}
-		setIsRestoring(true);
-		try {
-			await onRestore(fromVersion.id);
-		} finally {
-			setIsRestoring(false);
-		}
+		dispatch({ type: "setIsRestoring", isRestoring: true });
+		await onRestore(fromVersion.id).finally(() => {
+			dispatch({ type: "setIsRestoring", isRestoring: false });
+		});
 	};
 	const requestRename = () => {
 		handleRename().catch(() => {
-			setIsRenaming(false);
-			setTitleDraft(artifact.title);
+			dispatch({ type: "setRenameDraft", renameDraft: null });
 		});
 	};
 	const requestSave = () => {
 		handleSave().catch(() => {
-			setIsSaving(false);
+			dispatch({ type: "setIsSaving", isSaving: false });
 		});
 	};
 	const requestRestore = () => {
 		handleRestore().catch(() => {
-			setIsRestoring(false);
+			dispatch({ type: "setIsRestoring", isRestoring: false });
 		});
 	};
 
@@ -176,23 +224,34 @@ export function TextArtifact({
 							className="w-full rounded-md border bg-background px-2 py-1 font-medium text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
 							onBlur={requestRename}
 							onChange={(event) =>
-								setTitleDraft(event.target.value)
+								dispatch({
+									type: "setRenameDraft",
+									renameDraft: event.target.value,
+								})
 							}
 							onKeyDown={(event) => {
 								if (event.key === "Enter") {
+									event.preventDefault();
 									requestRename();
 								}
 								if (event.key === "Escape") {
-									setIsRenaming(false);
-									setTitleDraft(artifact.title);
+									dispatch({
+										type: "setRenameDraft",
+										renameDraft: null,
+									});
 								}
 							}}
-							value={titleDraft}
+							value={visibleTitleDraft}
 						/>
 					) : (
 						<button
 							className="block max-w-full truncate text-left font-medium text-sm"
-							onClick={() => setIsRenaming(true)}
+							onClick={() =>
+								dispatch({
+									type: "setRenameDraft",
+									renameDraft: artifact.title,
+								})
+							}
 							type="button"
 						>
 							{artifact.title}
@@ -245,7 +304,9 @@ export function TextArtifact({
 
 			<Tabs
 				className="min-h-0 flex-1 overflow-hidden px-4 pt-3 pb-4"
-				onValueChange={setTab}
+				onValueChange={(nextTab) =>
+					dispatch({ type: "setTab", tab: nextTab })
+				}
 				value={tab}
 			>
 				<div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
@@ -258,13 +319,23 @@ export function TextArtifact({
 						<div className="flex flex-wrap items-center gap-2">
 							<VersionSelect
 								label="From"
-								onValueChange={setFromVersionId}
+								onValueChange={(value) =>
+									dispatch({
+										type: "setFromVersionId",
+										fromVersionId: value,
+									})
+								}
 								value={fromVersionId}
 								versions={sortedVersions}
 							/>
 							<VersionSelect
 								label="To"
-								onValueChange={setToVersionId}
+								onValueChange={(value) =>
+									dispatch({
+										type: "setToVersionId",
+										toVersionId: value,
+									})
+								}
 								value={toVersionId}
 								versions={sortedVersions}
 							/>
@@ -311,21 +382,92 @@ export function TextArtifact({
 					className="mt-3 min-h-0 flex-1 overflow-hidden"
 					value="diff"
 				>
-					{fromVersion && toVersion ? (
-						<ArtifactVersionDiff
-							fromVersion={fromVersion}
-							title={artifact.title}
-							toVersion={toVersion}
-						/>
-					) : (
-						<div className="flex h-full min-h-0 items-center justify-center rounded-md border text-muted-foreground text-sm">
-							Save at least one version to compare changes.
-						</div>
-					)}
+					<DiffContent
+						artifactId={artifact.id}
+						fromVersion={fromVersion}
+						isActive={tab === "diff"}
+						title={artifact.title}
+						toVersion={toVersion}
+					/>
 				</TabsContent>
 			</Tabs>
 		</div>
 	);
+}
+
+function getVersionStatusLabel({
+	latestVersion,
+	status,
+}: {
+	latestVersion: ArtifactVersion | null;
+	status: ArtifactStatus;
+}): string {
+	if (status === "streaming") {
+		return "Streaming";
+	}
+	if (latestVersion) {
+		return `Version ${latestVersion.versionNumber}`;
+	}
+	return "Draft";
+}
+
+function DiffContent({
+	artifactId,
+	fromVersion,
+	isActive,
+	title,
+	toVersion,
+}: {
+	artifactId: string;
+	fromVersion?: ArtifactVersionSummary;
+	isActive: boolean;
+	title: string;
+	toVersion?: ArtifactVersionSummary;
+}) {
+	const trpc = useTRPC();
+	const { data: versionPairData, isError: isVersionPairError } = useQuery({
+		...trpc.artifact.getVersionPair.queryOptions({
+			artifactId,
+			fromVersionId:
+				fromVersion?.id ?? "00000000-0000-0000-0000-000000000000",
+			toVersionId:
+				toVersion?.id ?? "00000000-0000-0000-0000-000000000000",
+		}),
+		enabled: isActive && Boolean(fromVersion && toVersion),
+	});
+
+	if (!(fromVersion && toVersion)) {
+		return (
+			<div className="flex h-full min-h-0 items-center justify-center rounded-md border text-muted-foreground text-sm">
+				Save at least one version to compare changes.
+			</div>
+		);
+	}
+
+	if (!versionPairData) {
+		return (
+			<div className="flex h-full min-h-0 items-center justify-center rounded-md border text-muted-foreground text-sm">
+				{isVersionPairError
+					? "Unable to load diff."
+					: "Loading diff..."}
+			</div>
+		);
+	}
+
+	return (
+		<ArtifactVersionDiff
+			fromVersion={versionPairData.fromVersion}
+			title={title}
+			toVersion={versionPairData.toVersion}
+		/>
+	);
+}
+
+function versionExists(
+	versions: ArtifactVersionSummary[],
+	versionId?: string
+): versionId is string {
+	return Boolean(versionId && versions.some((item) => item.id === versionId));
 }
 
 function VersionSelect({
@@ -336,7 +478,7 @@ function VersionSelect({
 }: {
 	label: string;
 	value?: string;
-	versions: ArtifactVersion[];
+	versions: ArtifactVersionSummary[];
 	onValueChange: (value: string) => void;
 }) {
 	return (

@@ -10,7 +10,7 @@ export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 
 export interface CustomUIDataTypes {
 	[key: string]: unknown; // Required by UIDataTypes constraint
-	artifact: ArtifactStreamEvent;
+	"data-artifact": ArtifactStreamEvent;
 }
 
 export type ChatMessage = UIMessage<MessageMetadata, CustomUIDataTypes>;

@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
 	appendArtifactVersion,
 	getArtifactsByChatIdAndUserId,
+	getArtifactVersionPairByIdAndUserId,
 	getArtifactWithVersionsByIdAndUserId,
 	renameArtifact,
 	restoreArtifactVersion,
@@ -69,6 +70,31 @@ export const artifactRouter = router({
 
 			return result;
 		}),
+	getVersionPair: protectedProcedure
+		.input(
+			z.object({
+				artifactId: z.string().uuid(),
+				fromVersionId: z.string().uuid(),
+				toVersionId: z.string().uuid(),
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			const result = await getArtifactVersionPairByIdAndUserId({
+				artifactId: input.artifactId,
+				fromVersionId: input.fromVersionId,
+				toVersionId: input.toVersionId,
+				userId: ctx.session.user.id,
+			});
+
+			if (!result) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Artifact versions not found",
+				});
+			}
+
+			return result;
+		}),
 	saveVersion: protectedProcedure
 		.input(
 			z.object({
@@ -90,10 +116,10 @@ export const artifactRouter = router({
 				});
 			}
 
-			const latestVersion = current.versions[0];
 			const staleBase =
 				typeof input.baseVersionNumber === "number" &&
-				latestVersion?.versionNumber !== input.baseVersionNumber;
+				current.latestVersion?.versionNumber !==
+					input.baseVersionNumber;
 
 			const version = await appendArtifactVersion({
 				artifactId: input.artifactId,

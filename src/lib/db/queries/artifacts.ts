@@ -1,6 +1,10 @@
 import "server-only";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import type {
+	ArtifactVersionSummary,
+	ArtifactWorkspaceData,
+} from "@/lib/artifacts/types";
 import { db } from "@/lib/db";
 import {
 	type Artifact,
@@ -120,24 +124,47 @@ export async function getArtifactsByChatIdAndUserId({
 	userId: string;
 }): Promise<ArtifactWithLatestVersion[]> {
 	try {
-		const artifacts = await db
-			.select()
+		const latestVersionNumbers = db
+			.select({
+				artifactId: artifactVersion.artifactId,
+				versionNumber:
+					sql<number>`max(${artifactVersion.versionNumber})`.as(
+						"version_number"
+					),
+			})
+			.from(artifactVersion)
+			.groupBy(artifactVersion.artifactId)
+			.as("latest_version_numbers");
+
+		const rows = await db
+			.select({
+				item: artifact,
+				latestVersion: artifactVersion,
+			})
 			.from(artifact)
+			.leftJoin(
+				latestVersionNumbers,
+				eq(latestVersionNumbers.artifactId, artifact.id)
+			)
+			.leftJoin(
+				artifactVersion,
+				and(
+					eq(artifactVersion.artifactId, artifact.id),
+					eq(
+						artifactVersion.versionNumber,
+						latestVersionNumbers.versionNumber
+					)
+				)
+			)
 			.where(
 				and(eq(artifact.chatId, chatId), eq(artifact.userId, userId))
 			)
 			.orderBy(desc(artifact.updatedAt));
 
-		const items: ArtifactWithLatestVersion[] = [];
-		for (const item of artifacts) {
-			const latestVersion = await getLatestArtifactVersion({
-				artifactId: item.id,
-				userId,
-			});
-			items.push({ ...item, latestVersion });
-		}
-
-		return items;
+		return rows.map(({ item, latestVersion }) => ({
+			...item,
+			latestVersion,
+		}));
 	} catch (error) {
 		throw BackpackError.database("Failed to get artifacts", error);
 	}
@@ -149,7 +176,7 @@ export async function getArtifactWithVersionsByIdAndUserId({
 }: {
 	artifactId: string;
 	userId: string;
-}): Promise<{ artifact: Artifact; versions: ArtifactVersion[] } | null> {
+}): Promise<ArtifactWorkspaceData | null> {
 	try {
 		const [selectedArtifact] = await db
 			.select()
@@ -163,16 +190,86 @@ export async function getArtifactWithVersionsByIdAndUserId({
 			return null;
 		}
 
-		const versions = await db
+		const [latestVersion] = await db
 			.select()
+			.from(artifactVersion)
+			.where(eq(artifactVersion.artifactId, artifactId))
+			.orderBy(desc(artifactVersion.versionNumber))
+			.limit(1);
+
+		const versions = await db
+			.select({
+				id: artifactVersion.id,
+				artifactId: artifactVersion.artifactId,
+				versionNumber: artifactVersion.versionNumber,
+				source: artifactVersion.source,
+				createdAt: artifactVersion.createdAt,
+				messageId: artifactVersion.messageId,
+				restoredFromVersionId: artifactVersion.restoredFromVersionId,
+				contentLength:
+					sql<number>`length(${artifactVersion.content})`.as(
+						"content_length"
+					),
+			})
 			.from(artifactVersion)
 			.where(eq(artifactVersion.artifactId, artifactId))
 			.orderBy(desc(artifactVersion.versionNumber));
 
-		return { artifact: selectedArtifact, versions };
+		return {
+			artifact: selectedArtifact,
+			latestVersion: latestVersion ?? null,
+			versions: versions as ArtifactVersionSummary[],
+		};
 	} catch (error) {
 		throw BackpackError.database(
 			"Failed to get artifact with versions",
+			error
+		);
+	}
+}
+
+export async function getArtifactVersionPairByIdAndUserId({
+	artifactId,
+	fromVersionId,
+	toVersionId,
+	userId,
+}: {
+	artifactId: string;
+	fromVersionId: string;
+	toVersionId: string;
+	userId: string;
+}): Promise<{
+	fromVersion: ArtifactVersion;
+	toVersion: ArtifactVersion;
+} | null> {
+	try {
+		const rows = await db
+			.select({ version: artifactVersion })
+			.from(artifactVersion)
+			.innerJoin(artifact, eq(artifactVersion.artifactId, artifact.id))
+			.where(
+				and(
+					eq(artifact.id, artifactId),
+					eq(artifact.userId, userId),
+					inArray(artifactVersion.id, [fromVersionId, toVersionId])
+				)
+			);
+
+		const fromVersion = rows.find(
+			(row) => row.version.id === fromVersionId
+		)?.version;
+		const toVersion = rows.find(
+			(row) => row.version.id === toVersionId
+		)?.version;
+
+		if (!(fromVersion && toVersion)) {
+			return null;
+		}
+
+		return { fromVersion, toVersion };
+	} catch (error) {
+		throw BackpackError.database(
+			"Failed to get artifact version pair",
 			error
 		);
 	}

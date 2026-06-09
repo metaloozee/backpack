@@ -7,13 +7,10 @@ import { DefaultChatTransport } from "ai";
 import type { Session } from "better-auth";
 import { usePathname } from "next/navigation";
 import { parseAsString, useQueryState } from "nuqs";
-import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-	type ArtifactSnapshot,
-	ArtifactWorkspace,
-} from "@/components/artifacts/artifact-workspace";
+import { ArtifactWorkspace } from "@/components/artifacts/artifact-workspace";
+import { useArtifactStreamState } from "@/components/artifacts/use-artifact-stream-state";
 import DisplayChats from "@/components/chat/display-chats";
 import { ChatMessages } from "@/components/chat/messages";
 import { SpaceIntro } from "@/components/chat/space-intro";
@@ -28,7 +25,6 @@ import {
 import type { ToolsState } from "@/lib/ai/tool-registry";
 import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import { fetchWithErrorHandlers } from "@/lib/ai/utils";
-import type { ArtifactStreamEvent } from "@/lib/artifacts/types";
 import type { Chat as ChatType, Knowledge } from "@/lib/db/schema/app";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useSetMobileHeader } from "@/lib/mobile-header-context";
@@ -62,157 +58,11 @@ function useQueryAppend({
 	}, [query, sendMessage, setQuery]);
 }
 
-type SetArtifactSnapshots = React.Dispatch<
-	React.SetStateAction<Record<string, ArtifactSnapshot>>
->;
-
-function openArtifactSnapshot({
-	event,
-	setOpenArtifactId,
-	setArtifactSnapshots,
-}: {
-	event: Extract<ArtifactStreamEvent, { event: "open" }>;
-	setOpenArtifactId: React.Dispatch<React.SetStateAction<string | null>>;
-	setArtifactSnapshots: SetArtifactSnapshots;
-}) {
-	setOpenArtifactId(event.artifactId);
-	setArtifactSnapshots((current) => ({
-		...current,
-		[event.artifactId]: {
-			artifactId: event.artifactId,
-			chatId: event.chatId,
-			kind: event.kind,
-			title: event.title,
-			content: event.content,
-			status: event.status,
-			versionNumber: event.versionNumber,
-		},
-	}));
-}
-
-function appendArtifactDelta({
-	event,
-	setArtifactSnapshots,
-}: {
-	event: Extract<ArtifactStreamEvent, { event: "delta" }>;
-	setArtifactSnapshots: SetArtifactSnapshots;
-}) {
-	setArtifactSnapshots((current) => {
-		const existing = current[event.artifactId];
-		if (!existing) {
-			return current;
-		}
-
-		return {
-			...current,
-			[event.artifactId]: {
-				...existing,
-				content: `${existing.content}${event.delta}`,
-				status: "streaming",
-			},
-		};
-	});
-}
-
-function finishArtifactSnapshot({
-	event,
-	setArtifactSnapshots,
-}: {
-	event: Extract<ArtifactStreamEvent, { event: "finish" }>;
-	setArtifactSnapshots: SetArtifactSnapshots;
-}) {
-	setArtifactSnapshots((current) => {
-		const existing = current[event.artifactId];
-		if (!existing) {
-			return current;
-		}
-
-		return {
-			...current,
-			[event.artifactId]: {
-				...existing,
-				content: event.content,
-				status: "idle",
-				versionNumber: event.versionNumber,
-			},
-		};
-	});
-}
-
-function markArtifactIdle({
-	artifactId,
-	setArtifactSnapshots,
-}: {
-	artifactId: string;
-	setArtifactSnapshots: SetArtifactSnapshots;
-}) {
-	setArtifactSnapshots((current) => {
-		const existing = current[artifactId];
-		if (!existing) {
-			return current;
-		}
-
-		return {
-			...current,
-			[artifactId]: {
-				...existing,
-				status: "idle",
-			},
-		};
-	});
-}
-
 function ignoreAsyncError(error: unknown) {
 	if (error instanceof Error) {
 		return undefined;
 	}
 	return undefined;
-}
-
-function handleArtifactStreamEvent({
-	event,
-	invalidateArtifactQueries,
-	setArtifactSnapshots,
-	setOpenArtifactId,
-}: {
-	event: ArtifactStreamEvent;
-	invalidateArtifactQueries: (artifactId: string) => void;
-	setArtifactSnapshots: SetArtifactSnapshots;
-	setOpenArtifactId: React.Dispatch<React.SetStateAction<string | null>>;
-}) {
-	switch (event.event) {
-		case "open":
-			openArtifactSnapshot({
-				event,
-				setOpenArtifactId,
-				setArtifactSnapshots,
-			});
-			return;
-		case "delta":
-			appendArtifactDelta({
-				event,
-				setArtifactSnapshots,
-			});
-			return;
-		case "finish":
-			finishArtifactSnapshot({
-				event,
-				setArtifactSnapshots,
-			});
-			invalidateArtifactQueries(event.artifactId);
-			return;
-		case "error":
-			toast.error(event.message);
-			if (event.artifactId) {
-				markArtifactIdle({
-					artifactId: event.artifactId,
-					setArtifactSnapshots,
-				});
-			}
-			return;
-		default:
-			return;
-	}
 }
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: complex chat component
@@ -254,15 +104,35 @@ export function Chat({
 
 	const [input, setInput] = useState<string>("");
 	const [attachments, setAttachments] = useState<Attachment[]>([]);
-	const [openArtifactId, setOpenArtifactId] = useState<string | null>(null);
-	const [artifactSnapshots, setArtifactSnapshots] = useState<
-		Record<string, ArtifactSnapshot>
-	>({});
 
 	const { dataStream, setDataStream } = useDataStream();
 	const queryClient = useQueryClient();
 	const trpc = useTRPC();
-	const processedDataStreamLengthRef = useRef(0);
+
+	const invalidateArtifactQueries = (artifactId: string) => {
+		queryClient
+			.invalidateQueries({
+				queryKey: trpc.artifact.getById.queryOptions({
+					artifactId,
+				}).queryKey,
+			})
+			.catch(ignoreAsyncError);
+		queryClient
+			.invalidateQueries({
+				queryKey: trpc.artifact.listByChat.queryOptions({
+					chatId: id,
+				}).queryKey,
+			})
+			.catch(ignoreAsyncError);
+	};
+
+	const { openArtifactId, openArtifactSnapshot, setOpenArtifactId } =
+		useArtifactStreamState({
+			chatId: id,
+			dataStream,
+			onArtifactError: toast.error,
+			onArtifactFinished: invalidateArtifactQueries,
+		});
 
 	const generateTempTitle = useCallback((message: ChatMessage): string => {
 		const firstTextPart = message.parts.find(
@@ -437,47 +307,7 @@ export function Chat({
 
 	useEffect(() => {
 		setDataStream([]);
-		processedDataStreamLengthRef.current = 0;
 	}, [setDataStream]);
-
-	const invalidateArtifactQueries = useCallback(
-		(artifactId: string) => {
-			queryClient
-				.invalidateQueries({
-					queryKey: trpc.artifact.getById.queryOptions({
-						artifactId,
-					}).queryKey,
-				})
-				.catch(ignoreAsyncError);
-			queryClient
-				.invalidateQueries({
-					queryKey: trpc.artifact.listByChat.queryOptions({
-						chatId: id,
-					}).queryKey,
-				})
-				.catch(ignoreAsyncError);
-		},
-		[id, queryClient, trpc]
-	);
-
-	useEffect(() => {
-		const newParts = dataStream.slice(processedDataStreamLengthRef.current);
-		processedDataStreamLengthRef.current = dataStream.length;
-
-		for (const part of newParts) {
-			if (part.type !== "data-artifact") {
-				continue;
-			}
-
-			const event = part.data as ArtifactStreamEvent;
-			handleArtifactStreamEvent({
-				event,
-				invalidateArtifactQueries,
-				setArtifactSnapshots,
-				setOpenArtifactId,
-			});
-		}
-	}, [dataStream, invalidateArtifactQueries]);
 
 	// Computed values
 	const showSpaceIntro = isSpaceChat && messages.length === 0;
@@ -552,10 +382,6 @@ export function Chat({
 			spaceTitle={spaceTitle}
 		/>
 	);
-
-	const openArtifactSnapshot = openArtifactId
-		? artifactSnapshots[openArtifactId]
-		: undefined;
 
 	const chatContent = (
 		<div className="flex min-h-0 w-full flex-1 flex-col">
