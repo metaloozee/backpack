@@ -4,7 +4,7 @@ import { ChevronDownIcon, DownloadIcon, MessageSquareIcon } from "lucide-react";
 import type * as React from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 export function Conversation({
 	children,

@@ -1,7 +1,7 @@
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createAuthErrorResponse, getAuthAccessState } from "@/lib/auth/utils";
+import { createAuthErrorResponse, getAuthAccessState } from "@/lib/utils/auth";
 import { sanitizeFileName } from "@/lib/utils/sanitization";
 
 const MAX_FILE_SIZE_MB = 5;

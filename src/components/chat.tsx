@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/dialog";
 import type { ToolsState } from "@/lib/ai/tool-registry";
 import type { Attachment, ChatMessage } from "@/lib/ai/types";
-import { fetchWithErrorHandlers } from "@/lib/ai/utils";
 import type { Chat as ChatType, Knowledge } from "@/lib/db/schema/app";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useSetMobileHeader } from "@/lib/mobile-header-context";
@@ -33,7 +32,8 @@ import {
 	prependChatToInfiniteData,
 } from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
+import { fetchWithErrorHandlers } from "@/lib/utils/fetch";
 
 function useQueryAppend({
 	sendMessage,

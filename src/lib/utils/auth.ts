@@ -1,12 +1,12 @@
 import type { Session, User } from "better-auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from ".";
-import { isEmailAllowlisted } from "./allowlist";
+import { auth } from "@/lib/auth";
+import { isEmailAllowlisted } from "@/lib/auth/allowlist";
 import {
 	AUTH_REQUIRED_ERROR_MESSAGE,
 	UNAPPROVED_AUTH_ERROR_MESSAGE,
-} from "./messages";
+} from "@/lib/auth/messages";
 
 interface AuthSession {
 	session: Session;

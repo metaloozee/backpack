@@ -5,7 +5,7 @@
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import * as React from "react";
 import { useTouchPrimary } from "@/lib/hooks/use-has-primary-touch";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const ScrollAreaContext = React.createContext<boolean>(false);
 interface Mask {

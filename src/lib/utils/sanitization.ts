@@ -3,6 +3,10 @@ import { z } from "zod";
 const MAX_CHARACTERS = 10_000;
 const MAX_FILENAME_LENGTH = 255;
 
+export function sanitizeText(text: string) {
+	return text.replace("<has_function_call>", "");
+}
+
 export function sanitizeHtml(input: string): string {
 	if (!input || typeof input !== "string") {
 		return "";

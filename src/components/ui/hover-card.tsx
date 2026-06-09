@@ -8,7 +8,7 @@ import {
 } from "@radix-ui/react-hover-card";
 import type { ComponentProps } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 function HoverCard({ ...props }: ComponentProps<typeof HoverCardRoot>) {
 	return <HoverCardRoot data-slot="hover-card" {...props} />;

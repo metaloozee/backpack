@@ -20,7 +20,7 @@ import type { ModeType } from "@/lib/store/slices/mode.slice";
 import { usePrefsStore } from "@/lib/store/store";
 import { usePrefsHydrated } from "@/lib/store/use-prefs-hydrated";
 import { useTRPC } from "@/lib/trpc/trpc";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const modeTypes = [
 	{ value: "ask", label: "Ask", disabled: false },

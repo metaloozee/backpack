@@ -2,7 +2,7 @@
 import { motion } from "motion/react";
 import type React from "react";
 import type { JSX } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 export interface TextShimmerProps {
 	as?: React.ElementType;

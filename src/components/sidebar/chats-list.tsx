@@ -22,7 +22,7 @@ import {
 import { Loader } from "@/components/ui/loader";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useTRPC } from "@/lib/trpc/trpc";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const DATABASE_SEARCH_LIMIT = 50;
 const INTERSECTION_ROOT_MARGIN = "200px";

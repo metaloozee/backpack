@@ -9,7 +9,7 @@ import {
 	type Variants,
 } from "motion/react";
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const WHITESPACE_SPLIT_REGEX = /(\s+)/;
 

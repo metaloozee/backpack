@@ -20,7 +20,7 @@ import type { ArtifactVersionSummary } from "@/lib/artifacts/types";
 import type { Artifact, ArtifactVersion } from "@/lib/db/schema/app";
 import { streamdownPlugins } from "@/lib/streamdown";
 import { useTRPC } from "@/lib/trpc/trpc";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 type ArtifactStatus = "idle" | "streaming";
 

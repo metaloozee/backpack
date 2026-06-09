@@ -12,7 +12,7 @@ import { ThemeColorMeta } from "@/components/theme-color-meta";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import TrpcProvider from "@/lib/trpc/client";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const geistSans = Geist({
 	subsets: ["latin"],

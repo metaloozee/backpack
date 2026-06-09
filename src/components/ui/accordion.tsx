@@ -13,7 +13,7 @@ import React, {
 	useContext,
 	useState,
 } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 export interface AccordionContextType {
 	expandedValue: React.Key | null;

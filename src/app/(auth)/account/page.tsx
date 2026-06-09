@@ -6,7 +6,7 @@ import { McpServerConfig } from "@/components/mcp-server-config";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { requireApprovedAuthSession } from "@/lib/auth/utils";
+import { requireApprovedAuthSession } from "@/lib/utils/auth";
 
 export default async function AccountPage() {
 	const { user } = await requireApprovedAuthSession();

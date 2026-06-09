@@ -7,7 +7,7 @@ import {
 	type Variants,
 } from "motion/react";
 import { Children, useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 export interface TextLoopProps {
 	children: React.ReactNode[];

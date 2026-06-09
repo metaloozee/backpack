@@ -45,7 +45,7 @@ import {
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { usePrefsStore } from "@/lib/store/store";
 import { usePrefsHydrated } from "@/lib/store/use-prefs-hydrated";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const groupedModels = availableModels.reduce(
 	(acc, model) => {

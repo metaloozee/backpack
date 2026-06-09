@@ -15,8 +15,8 @@ import { useState } from "react";
 import SuperJSON from "superjson";
 import type { AppRouter } from "@/lib/server/routers/_app";
 import { TRPCProvider } from "@/lib/trpc/trpc";
+import { getUrl } from "@/lib/utils/url";
 import { makeQueryClient } from "./query-client";
-import { getUrl } from "./utils";
 
 let browserQueryClient: QueryClient | undefined;
 

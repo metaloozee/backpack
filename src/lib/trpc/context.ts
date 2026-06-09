@@ -1,5 +1,5 @@
-import { getAuthAccessState } from "@/lib/auth/utils";
 import { db } from "@/lib/db/index";
+import { getAuthAccessState } from "@/lib/utils/auth";
 
 export async function createTRPCContext() {
 	const accessState = await getAuthAccessState();

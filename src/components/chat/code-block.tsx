@@ -10,7 +10,7 @@ import {
 } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 interface CodeBlockContextType {
 	code: string;

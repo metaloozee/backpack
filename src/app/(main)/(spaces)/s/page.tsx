@@ -1,7 +1,7 @@
 import { Cards } from "@/components/spaces/cards";
 import { Header } from "@/components/spaces/header";
-import { requireApprovedAuthSession } from "@/lib/auth/utils";
 import { caller } from "@/lib/trpc/server";
+import { requireApprovedAuthSession } from "@/lib/utils/auth";
 
 export default async function SpacesPage() {
 	const { user } = await requireApprovedAuthSession();

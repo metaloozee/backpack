@@ -1,7 +1,6 @@
 import { Chat } from "@/components/chat";
-import { requireApprovedAuthSession } from "@/lib/auth/utils";
-
 import { getServerPrefs } from "@/lib/store/server-prefs";
+import { requireApprovedAuthSession } from "@/lib/utils/auth";
 
 export default async function IndexPage() {
 	const { session } = await requireApprovedAuthSession();

@@ -48,7 +48,7 @@ import type {
 import { transitions } from "@/lib/animations";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useTRPC } from "@/lib/trpc/trpc";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 import { Spinner } from "./spinner";
 
 type ComposerLayout = "stickyFooter" | "inline" | "home";

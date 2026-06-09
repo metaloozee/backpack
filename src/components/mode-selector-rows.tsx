@@ -15,7 +15,7 @@ import {
 } from "@/lib/ai/tool-registry";
 import { getMcpStatus, isMcpServerDisabled } from "@/lib/mcp/status";
 import type { AppRouter } from "@/lib/server/routers/_app";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 export type AskToolsLayout = "drawer" | "dropdown";
 

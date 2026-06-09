@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { Chat as PreviewChat } from "@/components/chat";
-import { convertToUIMessages } from "@/lib/ai/utils";
-import { requireApprovedAuthSession } from "@/lib/auth/utils";
 import { getMessagesByChatId } from "@/lib/db/queries/chat";
 import { getSpaceByIdAndUserId } from "@/lib/db/queries/spaces";
 import { getServerPrefs } from "@/lib/store/server-prefs";
 import { caller } from "@/lib/trpc/server";
+import { convertToUIMessages } from "@/lib/utils/ai";
+import { requireApprovedAuthSession } from "@/lib/utils/auth";
 export default async function ChatPage({
 	params,
 }: {

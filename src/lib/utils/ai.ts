@@ -1,7 +1,7 @@
 import type { ModelMessage, UIMessage } from "ai";
 import { formatISO } from "date-fns";
+import type { ChatMessage } from "@/lib/ai/types";
 import type { Message } from "@/lib/db/schema/app";
-import type { ChatMessage } from "./types";
 
 type ResponseMessageWithoutId = ModelMessage | UIMessage;
 type ResponseMessage = ResponseMessageWithoutId & { id: string };
@@ -25,10 +25,6 @@ export function getTrailingMessageId({
 	return trailingMessage.id;
 }
 
-export function sanitizeText(text: string) {
-	return text.replace("<has_function_call>", "");
-}
-
 export function convertToUIMessages(messages: Message[]): ChatMessage[] {
 	return messages.map((message) => ({
 		id: message.id,
@@ -45,36 +41,4 @@ export function getTextFromMessage(message: ChatMessage): string {
 		.filter((part) => part.type === "text")
 		.map((part) => part.text)
 		.join("");
-}
-
-export const fetcher = async (url: string) => {
-	const response = await fetch(url);
-	if (!response.ok) {
-		const { code, cause } = await response.json();
-		throw new Error(`${code}: ${cause}`);
-	}
-
-	return response.json();
-};
-
-export async function fetchWithErrorHandlers(
-	input: RequestInfo | URL,
-	init?: RequestInit
-) {
-	try {
-		const response = await fetch(input, init);
-
-		if (!response.ok) {
-			const { code, cause } = await response.json();
-			throw new Error(`${code}: ${cause}`);
-		}
-
-		return response;
-	} catch (error: unknown) {
-		if (typeof navigator !== "undefined" && !navigator.onLine) {
-			throw new Error("No internet connection");
-		}
-
-		throw error;
-	}
 }

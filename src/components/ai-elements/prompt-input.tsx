@@ -27,7 +27,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 export interface PromptInputMessage {
 	files?: File[];

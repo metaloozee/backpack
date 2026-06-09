@@ -22,10 +22,7 @@ import {
 	updateChatTitleInBackground,
 } from "@/app/api/chat/_lib/title";
 import { buildToolRuntime } from "@/app/api/chat/_lib/tools";
-import { toUuidList } from "@/app/api/chat/_lib/utils";
 import { getModel } from "@/lib/ai/models";
-import { convertToUIMessages } from "@/lib/ai/utils";
-import { createAuthErrorResponse, getAuthAccessState } from "@/lib/auth/utils";
 import {
 	getChatByIdAndUserId,
 	getMessagesByChatIdAndUserId,
@@ -37,6 +34,9 @@ import { getMcpServerConfigsByIds } from "@/lib/db/queries/mcp";
 import { getMemoriesByUserId } from "@/lib/db/queries/memories";
 import { env } from "@/lib/env.mjs";
 import { BackpackError } from "@/lib/errors";
+import { convertToUIMessages } from "@/lib/utils/ai";
+import { createAuthErrorResponse, getAuthAccessState } from "@/lib/utils/auth";
+import { toUuidList } from "@/lib/utils/uuid";
 import { postRequestBodySchema } from "./schema";
 
 export const maxDuration = 60;

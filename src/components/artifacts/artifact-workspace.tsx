@@ -10,7 +10,7 @@ import type { ArtifactSnapshot } from "@/lib/artifacts/client-stream-state";
 import type { ArtifactVersionSummary } from "@/lib/artifacts/types";
 import type { Artifact, ArtifactVersion } from "@/lib/db/schema/app";
 import { useTRPC } from "@/lib/trpc/trpc";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 import { Spinner } from "../spinner";
 
 const EMPTY_UUID = "00000000-0000-0000-0000-000000000000";

@@ -4,7 +4,7 @@
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
 import type { ComponentPropsWithoutRef, ElementRef } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const Avatar = ({
 	className,

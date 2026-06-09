@@ -35,10 +35,11 @@ import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { Disclosure, DisclosureTrigger } from "@/components/ui/disclosure";
 import type { ChatMessage } from "@/lib/ai/types";
-import { getTextFromMessage, sanitizeText } from "@/lib/ai/utils";
 import { transitions } from "@/lib/animations";
 import { streamdownPlugins } from "@/lib/streamdown";
-import { cn } from "@/lib/utils";
+import { getTextFromMessage } from "@/lib/utils/ai";
+import { cn } from "@/lib/utils/cn";
+import { sanitizeText } from "@/lib/utils/sanitization";
 
 type MessagePart = ChatMessage["parts"][number];
 

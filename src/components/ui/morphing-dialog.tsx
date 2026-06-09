@@ -26,7 +26,7 @@ import {
 	modalVariants,
 } from "@/lib/animations";
 import useClickOutside from "@/lib/hooks/use-click-outside";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 export interface MorphingDialogContextType {
 	isOpen: boolean;

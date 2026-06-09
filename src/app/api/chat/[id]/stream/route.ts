@@ -1,6 +1,6 @@
-import { createAuthErrorResponse, getAuthAccessState } from "@/lib/auth/utils";
 import { getChatByIdAndUserId } from "@/lib/db/queries/chat";
 import { env } from "@/lib/env.mjs";
+import { createAuthErrorResponse, getAuthAccessState } from "@/lib/utils/auth";
 import { getStreamContext } from "../../_lib/resumable-stream";
 
 export async function GET(
