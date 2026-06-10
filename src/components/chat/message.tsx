@@ -351,7 +351,7 @@ function renderArtifactToolPart({
 				className="w-full rounded-md border bg-card px-4 py-3 text-muted-foreground text-sm dark:bg-neutral-900"
 				key={`${tool.toolCallId}-${tool.type}`}
 			>
-				Preparing artifact...
+				Preparing artifact…
 			</div>
 		);
 	}
@@ -460,12 +460,18 @@ function MessageReasoning({ reasoning }: { reasoning: string }) {
 								{isExpanded ? (
 									<>
 										Hide Reasoning
-										<ChevronUpIcon className="size-3" />
+										<ChevronUpIcon
+											aria-hidden="true"
+											className="size-3"
+										/>
 									</>
 								) : (
 									<>
 										Show Reasoning
-										<ChevronDownIcon className="size-3" />
+										<ChevronDownIcon
+											aria-hidden="true"
+											className="size-3"
+										/>
 									</>
 								)}
 							</motion.span>
@@ -701,7 +707,10 @@ export function Message({
 								tooltip="Regenerate response"
 								variant={"ghost"}
 							>
-								<RefreshCcwIcon className="size-3.5" />
+								<RefreshCcwIcon
+									aria-hidden="true"
+									className="size-3.5"
+								/>
 							</MessageAction>
 							<MessageAction
 								asChild

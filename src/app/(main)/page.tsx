@@ -20,6 +20,7 @@ export default async function IndexPage() {
 				initialMode={mode}
 				initialModel={modelId}
 				initialTools={tools}
+				key={id}
 				session={session}
 			/>
 		</div>

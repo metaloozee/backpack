@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noUnknownAtRules: plugin */
 @import "tailwindcss";
+@import "prosemirror-view/style/prosemirror.css";
 @import "streamdown/styles.css";
 @import "katex/dist/katex.min.css";
 
@@ -179,7 +180,7 @@
 
 /* Performance: defer rendering of off-screen message items */
 .message-item {
-	contain-intrinsic-size: 0 100px;
+	contain-intrinsic-size: auto 100px;
 	content-visibility: auto;
 }
 
@@ -210,6 +211,97 @@
 .streamdown-content img {
 	max-width: 100%;
 	height: auto;
+}
+
+.rich-text-editor .ProseMirror {
+	min-height: 100%;
+	font-size: 0.875rem;
+	line-height: 1.7;
+	overflow-wrap: anywhere;
+	outline: none;
+}
+
+.rich-text-editor .ProseMirror p {
+	margin-block: 0 0.75rem;
+}
+
+.rich-text-editor .ProseMirror h1 {
+	margin-block: 0 0.9rem;
+	font-size: 1.5rem;
+	font-weight: 650;
+	line-height: 1.25;
+}
+
+.rich-text-editor .ProseMirror h2 {
+	margin-block: 1rem 0.75rem;
+	font-size: 1.2rem;
+	font-weight: 650;
+	line-height: 1.3;
+}
+
+.rich-text-editor .ProseMirror h3,
+.rich-text-editor .ProseMirror h4,
+.rich-text-editor .ProseMirror h5,
+.rich-text-editor .ProseMirror h6 {
+	margin-block: 0.9rem 0.5rem;
+	font-size: 1rem;
+	font-weight: 650;
+	line-height: 1.4;
+}
+
+.rich-text-editor .ProseMirror ul,
+.rich-text-editor .ProseMirror ol {
+	padding-inline-start: 1.35rem;
+	margin-block: 0 0.75rem;
+}
+
+.rich-text-editor .ProseMirror ul {
+	list-style: disc;
+}
+
+.rich-text-editor .ProseMirror ol {
+	list-style: decimal;
+}
+
+.rich-text-editor .ProseMirror li {
+	margin-block: 0.15rem;
+}
+
+.rich-text-editor .ProseMirror blockquote {
+	padding-inline-start: 0.85rem;
+	margin-block: 0 0.75rem;
+	color: var(--muted-foreground);
+	border-inline-start: 2px solid var(--border);
+}
+
+.rich-text-editor .ProseMirror code {
+	padding: 0.12rem 0.3rem;
+	font-size: 0.85em;
+	background: var(--muted);
+	border-radius: calc(var(--radius) - 4px);
+}
+
+.rich-text-editor .ProseMirror pre {
+	padding: 0.8rem;
+	margin-block: 0 0.75rem;
+	overflow-x: auto;
+	background: var(--muted);
+	border-radius: calc(var(--radius) - 2px);
+}
+
+.rich-text-editor .ProseMirror pre code {
+	padding: 0;
+	background: transparent;
+}
+
+.rich-text-editor .ProseMirror a {
+	color: var(--primary);
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
+}
+
+.rich-text-editor .ProseMirror-selectednode {
+	outline: 2px solid var(--ring);
 }
 
 /* Safe-area utility classes for mobile sidebar */

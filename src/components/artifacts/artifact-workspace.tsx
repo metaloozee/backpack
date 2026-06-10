@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArtifactSelector } from "@/components/artifacts/artifact-selector";
 import { TextArtifact } from "@/components/artifacts/text-artifact";
 import { Loader } from "@/components/ui/loader";
 import type { ArtifactSnapshot } from "@/lib/artifacts/client-stream-state";
@@ -11,7 +10,6 @@ import type { ArtifactVersionSummary } from "@/lib/artifacts/types";
 import type { Artifact, ArtifactVersion } from "@/lib/db/schema/app";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils/cn";
-import { Spinner } from "../spinner";
 
 const EMPTY_UUID = "00000000-0000-0000-0000-000000000000";
 const UUID_PATTERN =
@@ -89,11 +87,10 @@ export function ArtifactWorkspace({
 		(snapshot ? createSnapshotArtifact(snapshot) : null);
 	const latestVersion = artifactData?.latestVersion ?? null;
 	const versions = artifactData?.versions ?? [];
-	const artifacts = artifactList ?? [];
-	const isStreaming =
+	const _artifacts = artifactList ?? [];
+	const _isStreaming =
 		snapshot?.artifactId === openArtifactId &&
 		snapshot.status === "streaming";
-	const showToolbar = artifacts.length > 1 || isStreaming;
 
 	if (!(artifact || isArtifactLoading)) {
 		return (
@@ -117,7 +114,7 @@ export function ArtifactWorkspace({
 				className
 			)}
 		>
-			{showToolbar ? (
+			{/* {showToolbar ? (
 				<div className="flex min-h-12 shrink-0 items-center justify-between gap-2 border-b px-4">
 					<div className="min-w-0 flex-1">
 						<ArtifactSelector
@@ -128,7 +125,7 @@ export function ArtifactWorkspace({
 					</div>
 					{isStreaming ? <Spinner /> : null}
 				</div>
-			) : null}
+			) : null} */}
 
 			{artifact ? (
 				<ArtifactWorkspaceSession

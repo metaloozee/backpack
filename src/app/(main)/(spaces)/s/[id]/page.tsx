@@ -43,6 +43,7 @@ export default async function SpacePage({
 				initialMode={mode}
 				initialModel={modelId}
 				initialTools={tools}
+				key={chatId}
 				session={session}
 			/>
 		</div>

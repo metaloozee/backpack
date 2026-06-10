@@ -35,7 +35,7 @@ export function ArtifactVersionDiff({
 	return (
 		<section
 			aria-label="Artifact version diff"
-			className="h-full min-h-0 min-w-0 overflow-auto overscroll-contain rounded-md border bg-background"
+			className="h-full min-h-0 min-w-0 overflow-auto overscroll-contain bg-background"
 		>
 			<FileDiff
 				fileDiff={fileDiff}

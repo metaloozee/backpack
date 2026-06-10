@@ -6,24 +6,22 @@ import type { ComponentPropsWithoutRef, ElementRef, RefObject } from "react";
 
 import { cn } from "@/lib/utils/cn";
 
-const Avatar = ({
+const AvatarFallback = ({
 	className,
 	ref,
 	...props
-}: ComponentPropsWithoutRef<typeof AvatarPrimitive.Root> & {
-	ref?: RefObject<ElementRef<typeof AvatarPrimitive.Root> | null>;
+}: ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback> & {
+	ref?: RefObject<ElementRef<typeof AvatarPrimitive.Fallback> | null>;
 }) => (
-	<AvatarPrimitive.Root
+	<AvatarPrimitive.Fallback
 		className={cn(
-			"relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+			"flex h-full w-full items-center justify-center rounded-full bg-muted",
 			className
 		)}
 		ref={ref}
 		{...props}
 	/>
 );
-Avatar.displayName = AvatarPrimitive.Root.displayName;
+AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
 
-export { AvatarFallback } from "./avatar-fallback";
-export { AvatarImage } from "./avatar-image";
-export { Avatar };
+export { AvatarFallback };

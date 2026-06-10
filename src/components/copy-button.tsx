@@ -4,6 +4,7 @@ import { CheckIcon, CopyIcon } from "lucide-react";
 import {
 	type ButtonHTMLAttributes,
 	type MouseEvent,
+	type RefObject,
 	useEffect,
 	useRef,
 	useState,
@@ -63,18 +64,19 @@ const CopyButton = ({
 	};
 
 	const handleCopy = async (event: MouseEvent<HTMLButtonElement>) => {
+		if (!value) {
+			onCopyError?.(new Error("No text to copy"));
+			onClick?.(event);
+			return;
+		}
+
+		if (typeof window === "undefined" || !navigator.clipboard?.writeText) {
+			onCopyError?.(new Error("Clipboard API not available"));
+			onClick?.(event);
+			return;
+		}
+
 		try {
-			if (!value) {
-				throw new Error("No text to copy");
-			}
-
-			if (
-				typeof window === "undefined" ||
-				!navigator.clipboard?.writeText
-			) {
-				throw new Error("Clipboard API not available");
-			}
-
 			await navigator.clipboard.writeText(value);
 			await onCopy?.();
 			setCopied(true);
@@ -85,9 +87,9 @@ const CopyButton = ({
 					? error
 					: new Error("Failed to copy to clipboard")
 			);
-		} finally {
-			onClick?.(event);
 		}
+
+		onClick?.(event);
 	};
 
 	const resolvedSize = sizeMap[size];

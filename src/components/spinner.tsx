@@ -4,6 +4,7 @@ import {
 	type ComponentPropsWithoutRef,
 	type ComponentRef,
 	type ElementRef,
+	type RefObject,
 	type SVGProps,
 	useId,
 } from "react";

@@ -58,12 +58,9 @@ function useQueryAppend({
 	}, [query, sendMessage, setQuery]);
 }
 
-function ignoreAsyncError(error: unknown) {
-	if (error instanceof Error) {
-		return;
-	}
-	return;
-}
+const ignoreAsyncError = () => {};
+
+const generateId = () => crypto.randomUUID();
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: complex chat component
 export function Chat({
@@ -140,7 +137,7 @@ export function Chat({
 		);
 		if (firstTextPart && "text" in firstTextPart) {
 			const text = firstTextPart.text.trim();
-			return text.length > 50 ? `${text.slice(0, 50)}...` : text;
+			return text.length > 50 ? `${text.slice(0, 50)}…` : text;
 		}
 		return "New Chat";
 	}, []);
@@ -218,7 +215,7 @@ export function Chat({
 	} = useChat<ChatMessage>({
 		id,
 		messages: initialMessages,
-		generateId: () => crypto.randomUUID(),
+		generateId,
 		experimental_throttle: 100,
 		transport: new DefaultChatTransport({
 			api: "/api/chat",

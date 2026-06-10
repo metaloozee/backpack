@@ -1,5 +1,5 @@
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
-import { normalizeModelId } from "@/lib/ai/models";
+import { normalizeModelId } from "@/lib/ai/model-metadata";
 import { getDefaultToolsState, type ToolsState } from "@/lib/ai/tool-registry";
 
 export const PREFS_COOKIE_NAME = "backpack-prefs" as const;
