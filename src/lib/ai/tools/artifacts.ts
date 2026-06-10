@@ -7,15 +7,15 @@ import {
 	updateTextArtifactPrompt,
 	writeArtifactData,
 } from "@/artifacts/text/server";
+import { MAX_ARTIFACT_CONTENT_LENGTH } from "@/lib/artifacts/types";
 import {
 	appendArtifactVersion,
 	assertArtifactBelongsToChat,
 	createArtifact,
+	deleteArtifactIfVersionless,
 	getLatestArtifactVersion,
 } from "@/lib/db/queries/artifacts";
 import type { ChatMessage } from "../types";
-
-const MAX_ARTIFACT_CONTENT_LENGTH = 250_000;
 
 const assertContentWithinLimit = (content: string) => {
 	if (content.length > MAX_ARTIFACT_CONTENT_LENGTH) {
@@ -100,6 +100,15 @@ export const createTextArtifactTool = ({
 					toolCallId,
 				};
 			} catch (error) {
+				try {
+					await deleteArtifactIfVersionless({
+						artifactId: createdArtifact.id,
+						userId,
+					});
+				} catch {
+					// Preserve the original artifact generation failure.
+				}
+
 				writeArtifactData(dataStream, {
 					event: "error",
 					artifactId: createdArtifact.id,

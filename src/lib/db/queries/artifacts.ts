@@ -116,6 +116,45 @@ export async function createArtifactWithVersion({
 	}
 }
 
+export async function deleteArtifactIfVersionless({
+	artifactId,
+	userId,
+}: {
+	artifactId: string;
+	userId: string;
+}): Promise<boolean> {
+	try {
+		return await db.transaction(async (tx) => {
+			const [existingVersion] = await tx
+				.select({ id: artifactVersion.id })
+				.from(artifactVersion)
+				.where(eq(artifactVersion.artifactId, artifactId))
+				.limit(1);
+
+			if (existingVersion) {
+				return false;
+			}
+
+			const [deletedArtifact] = await tx
+				.delete(artifact)
+				.where(
+					and(
+						eq(artifact.id, artifactId),
+						eq(artifact.userId, userId)
+					)
+				)
+				.returning({ id: artifact.id });
+
+			return Boolean(deletedArtifact);
+		});
+	} catch (error) {
+		throw BackpackError.database(
+			"Failed to delete versionless artifact",
+			error
+		);
+	}
+}
+
 export async function getArtifactsByChatIdAndUserId({
 	chatId,
 	userId,

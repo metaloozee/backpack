@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { MAX_ARTIFACT_CONTENT_LENGTH } from "@/lib/artifacts/types";
 import {
 	appendArtifactVersion,
 	getArtifactsByChatIdAndUserId,
@@ -11,8 +12,6 @@ import {
 import { getChatByIdAndUserId } from "@/lib/db/queries/chat";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 import { sanitizeUserInput } from "@/lib/utils/sanitization";
-
-const MAX_ARTIFACT_CONTENT_LENGTH = 250_000;
 
 const requireOwnedChat = async ({
 	chatId,
