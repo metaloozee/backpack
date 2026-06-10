@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { Chat } from "@/components/chat";
-import { requireApprovedAuthSession } from "@/lib/auth/utils";
-import { getSpaceByIdAndUserId } from "@/lib/db/queries";
+import { getSpaceByIdAndUserId } from "@/lib/db/queries/spaces";
 import { getServerPrefs } from "@/lib/store/server-prefs";
+import { requireApprovedAuthSession } from "@/lib/utils/auth";
 export default async function SpacePage({
 	params,
 }: {
@@ -43,6 +43,7 @@ export default async function SpacePage({
 				initialMode={mode}
 				initialModel={modelId}
 				initialTools={tools}
+				key={chatId}
 				session={session}
 			/>
 		</div>

@@ -9,7 +9,7 @@ import {
 	markKnowledgeFailed,
 	markKnowledgeProcessing,
 	markKnowledgeReady,
-} from "@/lib/db/queries";
+} from "@/lib/db/queries/knowledge";
 
 const SUMMARY_LIMIT = 500;
 const MAX_ERROR_LENGTH = 500;
@@ -21,10 +21,10 @@ interface WorkflowInput {
 
 interface KnowledgeRecord {
 	id: string;
-	spaceId: string;
-	knowledgeType: "webpage" | "pdf";
 	knowledgeName: string;
+	knowledgeType: "webpage" | "pdf";
 	sourceUrl: string | null;
+	spaceId: string;
 	status: "pending" | "processing" | "ready" | "failed";
 }
 
@@ -205,14 +205,13 @@ async function markFailed({
 	await markKnowledgeFailed({ knowledgeId, userId, errorMessage });
 }
 
-const normalizeText = (value: string) => {
-	return value
+const normalizeText = (value: string) =>
+	value
 		.replace(/\r\n/g, "\n")
 		.replace(/[ \t]+\n/g, "\n")
 		.replace(/\n{3,}/g, "\n\n")
 		.replace(/[ \t]{2,}/g, " ")
 		.trim();
-};
 
 const buildSummary = (value: string) => {
 	if (value.length <= SUMMARY_LIMIT) {

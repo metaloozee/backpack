@@ -5,16 +5,16 @@ import Image from "next/image";
 import type * as React from "react";
 import { createContext, useContext } from "react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 type AttachmentVariant = "grid" | "inline" | "list";
 
 interface AttachmentData {
-	id?: string;
-	url?: string;
-	mediaType?: string;
 	filename?: string;
+	id?: string;
+	mediaType?: string;
 	name?: string;
+	url?: string;
 }
 
 interface AttachmentContextValue {

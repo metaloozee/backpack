@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getAuthAccessState, getAuthRedirectPath } from "@/lib/auth/utils";
+import { getAuthAccessState, getAuthRedirectPath } from "@/lib/utils/auth";
 
 export async function proxy(request: NextRequest) {
 	const accessState = await getAuthAccessState(request.headers);

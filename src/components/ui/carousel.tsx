@@ -7,7 +7,7 @@ import useEmblaCarousel, {
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
@@ -16,8 +16,8 @@ type CarouselPlugin = UseCarouselParameters[1];
 
 interface CarouselProps {
 	opts?: CarouselOptions;
-	plugins?: CarouselPlugin;
 	orientation?: "horizontal" | "vertical";
+	plugins?: CarouselPlugin;
 	setApi?: (api: CarouselApi) => void;
 }
 
@@ -239,10 +239,10 @@ function CarouselNext({
 }
 
 export {
-	type CarouselApi,
 	Carousel,
+	type CarouselApi,
 	CarouselContent,
 	CarouselItem,
-	CarouselPrevious,
 	CarouselNext,
+	CarouselPrevious,
 };

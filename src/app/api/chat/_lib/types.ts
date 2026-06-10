@@ -1,16 +1,13 @@
-export interface ToolsState {
-	webSearch?: boolean;
-	knowledgeSearch?: boolean;
-	academicSearch?: boolean;
-	financeSearch?: boolean;
-}
+import type { ToolsState as RegistryToolsState } from "@/lib/ai/tool-registry";
+
+export type { ToolsState } from "@/lib/ai/tool-registry";
 
 export interface UserPrefs {
-	modelId: string;
-	mode: string;
-	selectedAgent: string | null;
-	toolsState: ToolsState;
 	mcpServersState: Record<string, boolean>;
+	mode: "ask" | "agent";
+	modelId: string;
+	selectedAgent: string | null;
+	toolsState: RegistryToolsState;
 }
 
 export type ActiveTool =
@@ -19,4 +16,6 @@ export type ActiveTool =
 	| "web_search"
 	| "knowledge_search"
 	| "academic_search"
-	| "finance_search";
+	| "finance_search"
+	| "create_text_artifact"
+	| "update_text_artifact";

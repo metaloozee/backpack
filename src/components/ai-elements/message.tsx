@@ -12,7 +12,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { normalizeCitationMarkup, streamdownPlugins } from "@/lib/streamdown";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 type Options = React.ComponentPropsWithoutRef<typeof Streamdown>;
 type Components = Options["components"];

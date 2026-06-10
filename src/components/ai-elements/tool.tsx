@@ -15,7 +15,7 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const TOOL_PREFIX_REGEX = /^tool-/;
 

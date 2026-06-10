@@ -1,5 +1,10 @@
-import type { UIMessageStreamWriter } from "ai";
+import type { LanguageModel, UIMessageStreamWriter } from "ai";
+import { buildActiveBuiltInRuntimeTools } from "@/lib/ai/tool-registry";
 import { academicSearchTool } from "@/lib/ai/tools/academic-search";
+import {
+	createTextArtifactTool,
+	updateTextArtifactTool,
+} from "@/lib/ai/tools/artifacts";
 import { extractTool } from "@/lib/ai/tools/extract";
 import { financeSearchTool } from "@/lib/ai/tools/finance-search";
 import { knowledgeSearchTool } from "@/lib/ai/tools/knowledge-search";
@@ -10,39 +15,31 @@ import type { McpServerConfig as DbMcpServerConfig } from "@/lib/db/schema/mcp";
 import { closeMcpClients, createMcpToolsForServers } from "@/lib/mcp/client";
 import type { ActiveTool, ToolsState } from "./types";
 
-const buildActiveTools = (toolsState: ToolsState): ActiveTool[] => {
-	const activeTools: ActiveTool[] = ["extract"];
-
-	if (toolsState.webSearch) {
-		activeTools.push("web_search");
-	}
-	if (toolsState.knowledgeSearch) {
-		activeTools.push("knowledge_search");
-	}
-	if (toolsState.academicSearch) {
-		activeTools.push("academic_search");
-	}
-	if (toolsState.financeSearch) {
-		activeTools.push("finance_search");
-	}
-
-	return activeTools;
-};
+const buildActiveTools = (toolsState: ToolsState): ActiveTool[] =>
+	buildActiveBuiltInRuntimeTools(toolsState) as ActiveTool[];
 
 export const buildToolRuntime = async ({
 	toolsState,
 	userId,
+	chatId,
 	requestEnv,
 	dataStream,
 	mcpServerConfigs,
+	artifactModel,
+	artifactContext,
 }: {
 	toolsState: ToolsState;
 	userId: string;
+	chatId: string;
 	requestEnv: {
 		inSpace: boolean;
 		spaceId?: string;
 	};
 	dataStream: UIMessageStreamWriter<ChatMessage>;
+	artifactModel: LanguageModel;
+	artifactContext?: {
+		activeArtifactId?: string;
+	};
 	mcpServerConfigs: Pick<
 		DbMcpServerConfig,
 		"name" | "url" | "enabled" | "apiKeyEncrypted"
@@ -82,13 +79,32 @@ export const buildToolRuntime = async ({
 		}),
 		academic_search: academicSearchTool({ dataStream }),
 		finance_search: financeSearchTool({ dataStream }),
+		create_text_artifact: createTextArtifactTool({
+			userId,
+			chatId,
+			model: artifactModel,
+			dataStream,
+		}),
+		update_text_artifact: updateTextArtifactTool({
+			userId,
+			chatId,
+			model: artifactModel,
+			dataStream,
+			activeArtifactId: artifactContext?.activeArtifactId,
+		}),
 		...mcpToolsResult.tools,
 	};
 
 	const mcpToolNames = Object.keys(mcpToolsResult.tools);
-	const allActiveTools = [...activeTools, ...mcpToolNames] as Array<
-		keyof typeof allTools
-	>;
+	const artifactToolNames = [
+		"create_text_artifact",
+		"update_text_artifact",
+	] as const;
+	const allActiveTools = [
+		...activeTools,
+		...artifactToolNames,
+		...mcpToolNames,
+	] as Array<keyof typeof allTools>;
 
 	return {
 		allTools,

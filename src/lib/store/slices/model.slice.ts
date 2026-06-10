@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
-import { normalizeModelId } from "@/lib/ai/models";
+import { normalizeModelId } from "@/lib/ai/model-metadata";
 import type { BoundStore } from "../store";
 
 export interface ModelSlice {

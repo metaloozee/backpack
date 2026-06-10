@@ -32,7 +32,7 @@ import {
 	slideVariants,
 	transitions,
 } from "@/lib/animations";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 function SidebarBrand({ state }: { state: "expanded" | "collapsed" }) {
 	return (

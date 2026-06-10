@@ -1,13 +1,13 @@
 "use client";
 import { motion, type Transition } from "motion/react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 export interface BorderTrailProps {
 	className?: string;
-	size?: number;
-	transition?: Transition;
 	onAnimationComplete?: () => void;
+	size?: number;
 	style?: React.CSSProperties;
+	transition?: Transition;
 }
 
 export function BorderTrail({

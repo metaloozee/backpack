@@ -3,13 +3,13 @@ import { SettingsDialog } from "@/components/spaces/settings-dialog";
 import type { Knowledge } from "@/lib/db/schema/app";
 
 interface SpaceIntroProps {
-	spaceId: string;
-	spaceTitle: string;
-	spaceDescription?: string;
-	spaceCustomInstructions?: string;
-	spaceStatus: "pending" | "error" | "success";
-	knowledgeStatus: "pending" | "error" | "success";
 	knowledgeData?: Knowledge[];
+	knowledgeStatus: "pending" | "error" | "success";
+	spaceCustomInstructions?: string;
+	spaceDescription?: string;
+	spaceId: string;
+	spaceStatus: "pending" | "error" | "success";
+	spaceTitle: string;
 }
 
 export function SpaceIntro({

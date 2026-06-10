@@ -14,6 +14,11 @@ const filePartSchema = z.object({
 
 export const postRequestBodySchema = z.object({
 	id: z.string().uuid(),
+	artifactContext: z
+		.object({
+			activeArtifactId: z.string().uuid().optional(),
+		})
+		.optional(),
 	env: z.object({
 		inSpace: z.boolean(),
 		spaceId: z.string().uuid().optional(),

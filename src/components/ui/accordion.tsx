@@ -13,7 +13,7 @@ import React, {
 	useContext,
 	useState,
 } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 export interface AccordionContextType {
 	expandedValue: React.Key | null;
@@ -37,9 +37,9 @@ function useAccordion() {
 
 export interface AccordionProviderProps {
 	children: ReactNode;
-	variants?: { expanded: Variant; collapsed: Variant };
 	expandedValue?: React.Key | null;
 	onValueChange?: (value: React.Key | null) => void;
+	variants?: { expanded: Variant; collapsed: Variant };
 }
 
 function AccordionProvider({
@@ -52,9 +52,9 @@ function AccordionProvider({
 		useState<React.Key | null>(null);
 
 	const expandedValue =
-		externalExpandedValue !== undefined
-			? externalExpandedValue
-			: internalExpandedValue;
+		externalExpandedValue === undefined
+			? internalExpandedValue
+			: externalExpandedValue;
 
 	const toggleItem = (value: React.Key) => {
 		const newValue = expandedValue === value ? null : value;
@@ -77,10 +77,10 @@ function AccordionProvider({
 export interface AccordionProps {
 	children: ReactNode;
 	className?: string;
-	transition?: Transition;
-	variants?: { expanded: Variant; collapsed: Variant };
 	expandedValue?: React.Key | null;
 	onValueChange?: (value: React.Key | null) => void;
+	transition?: Transition;
+	variants?: { expanded: Variant; collapsed: Variant };
 }
 
 function Accordion({
@@ -107,9 +107,9 @@ function Accordion({
 }
 
 export interface AccordionItemProps {
-	value: React.Key;
 	children: ReactNode;
 	className?: string;
+	value: React.Key;
 }
 
 function AccordionItem({ value, children, className }: AccordionItemProps) {
@@ -204,4 +204,4 @@ function AccordionContent({
 	);
 }
 
-export { Accordion, AccordionItem, AccordionTrigger, AccordionContent };
+export { Accordion, AccordionContent, AccordionItem, AccordionTrigger };

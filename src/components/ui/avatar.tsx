@@ -2,18 +2,17 @@
 "use client";
 
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
-import {
-	type ComponentPropsWithoutRef,
-	type ElementRef,
-	forwardRef,
-} from "react";
+import type { ComponentPropsWithoutRef, ElementRef, RefObject } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
-const Avatar = forwardRef<
-	ElementRef<typeof AvatarPrimitive.Root>,
-	ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
->(({ className, ...props }, ref) => (
+const Avatar = ({
+	className,
+	ref,
+	...props
+}: ComponentPropsWithoutRef<typeof AvatarPrimitive.Root> & {
+	ref?: RefObject<ElementRef<typeof AvatarPrimitive.Root> | null>;
+}) => (
 	<AvatarPrimitive.Root
 		className={cn(
 			"relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
@@ -22,34 +21,9 @@ const Avatar = forwardRef<
 		ref={ref}
 		{...props}
 	/>
-));
+);
 Avatar.displayName = AvatarPrimitive.Root.displayName;
 
-const AvatarImage = forwardRef<
-	ElementRef<typeof AvatarPrimitive.Image>,
-	ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
->(({ className, ...props }, ref) => (
-	<AvatarPrimitive.Image
-		className={cn("aspect-square h-full w-full", className)}
-		ref={ref}
-		{...props}
-	/>
-));
-AvatarImage.displayName = AvatarPrimitive.Image.displayName;
-
-const AvatarFallback = forwardRef<
-	ElementRef<typeof AvatarPrimitive.Fallback>,
-	ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
->(({ className, ...props }, ref) => (
-	<AvatarPrimitive.Fallback
-		className={cn(
-			"flex h-full w-full items-center justify-center rounded-full bg-muted",
-			className
-		)}
-		ref={ref}
-		{...props}
-	/>
-));
-AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
-
-export { Avatar, AvatarImage, AvatarFallback };
+export { AvatarFallback } from "./avatar-fallback";
+export { AvatarImage } from "./avatar-image";
+export { Avatar };

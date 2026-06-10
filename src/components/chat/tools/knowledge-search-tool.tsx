@@ -23,18 +23,18 @@ interface KnowledgeContext {
 }
 
 interface KnowledgeSearchResult {
-	keyword: string;
 	contexts: KnowledgeContext[];
+	keyword: string;
 }
 
 interface KnowledgeSearchToolProps {
-	toolCallId: string;
 	input?: {
 		knowledge_search_keywords?: string[];
 	};
 	output?: {
 		results?: KnowledgeSearchResult[];
 	};
+	toolCallId: string;
 }
 
 export function KnowledgeSearchTool({
@@ -76,12 +76,11 @@ export function KnowledgeSearchTool({
 												<div className="flex w-max flex-row gap-2">
 													{searchResult.contexts.map(
 														(
-															context: KnowledgeContext,
-															ctxIdx: number
+															context: KnowledgeContext
 														) => (
 															<div
 																className="w-64 shrink-0 rounded-lg border border-border/60 bg-card p-3 shadow-sm transition-shadow duration-200 hover:shadow-md dark:border-transparent dark:bg-neutral-950"
-																key={`${searchResult.keyword}-${ctxIdx}`}
+																key={`${searchResult.keyword}`}
 															>
 																<p className="line-clamp-2 font-medium text-primary text-sm">
 																	{

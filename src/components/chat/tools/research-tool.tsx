@@ -4,11 +4,11 @@ import { BrainIcon } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
 
 interface ResearchToolProps {
-	toolCallId: string;
 	input?: {
 		query?: string;
 	};
 	output?: unknown;
+	toolCallId: string;
 }
 
 export function ResearchTool({ input, output }: ResearchToolProps) {

@@ -9,32 +9,43 @@ import {
 	stepCountIs,
 	streamText,
 } from "ai";
-import { getModel } from "@/lib/ai/models";
-import { convertToUIMessages } from "@/lib/ai/utils";
-import { createAuthErrorResponse, getAuthAccessState } from "@/lib/auth/utils";
-import { env } from "@/lib/env.mjs";
-import { BackpackError } from "@/lib/errors";
-import { caller } from "@/lib/trpc/server";
-import { getChatRequestPrefs } from "./_lib/prefs";
-import { buildSystemPrompt } from "./_lib/prompt";
-import { getReasoningProviderOptions } from "./_lib/provider-options";
+import { getChatRequestPrefs } from "@/app/api/chat/_lib/prefs";
+import { buildSystemPrompt } from "@/app/api/chat/_lib/prompt";
+import { getReasoningProviderOptions } from "@/app/api/chat/_lib/provider-options";
 import {
 	createChatRequestLogPayload,
 	logChatRequestMetadata,
-} from "./_lib/request-logger";
-import { startResumableStream } from "./_lib/resumable-stream";
-import { DEFAULT_CHAT_TITLE, updateChatTitleInBackground } from "./_lib/title";
-import { buildToolRuntime } from "./_lib/tools";
-import { toUuidList } from "./_lib/utils";
+} from "@/app/api/chat/_lib/request-logger";
+import { startResumableStream } from "@/app/api/chat/_lib/resumable-stream";
+import {
+	DEFAULT_CHAT_TITLE,
+	updateChatTitleInBackground,
+} from "@/app/api/chat/_lib/title";
+import { buildToolRuntime } from "@/app/api/chat/_lib/tools";
+import { getModel } from "@/lib/ai/models";
+import {
+	getChatByIdAndUserId,
+	getMessagesByChatIdAndUserId,
+	saveChat,
+	saveMessages,
+	setChatActiveStreamId,
+} from "@/lib/db/queries/chat";
+import { getMcpServerConfigsByIds } from "@/lib/db/queries/mcp";
+import { getMemoriesByUserId } from "@/lib/db/queries/memories";
+import { env } from "@/lib/env.mjs";
+import { BackpackError } from "@/lib/errors";
+import { convertToUIMessages } from "@/lib/utils/ai";
+import { createAuthErrorResponse, getAuthAccessState } from "@/lib/utils/auth";
+import { toUuidList } from "@/lib/utils/uuid";
 import { postRequestBodySchema } from "./schema";
 
 export const maxDuration = 60;
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
 	let requestBody: ReturnType<typeof postRequestBodySchema.parse>;
 
 	try {
-		const json = await req.json();
+		const json = await request.json();
 		requestBody = postRequestBodySchema.parse(json);
 	} catch (error) {
 		return BackpackError.api(
@@ -46,7 +57,7 @@ export async function POST(req: Request) {
 
 	try {
 		const [accessState, prefs] = await Promise.all([
-			getAuthAccessState(req.headers),
+			getAuthAccessState(request.headers),
 			getChatRequestPrefs(),
 		]);
 
@@ -56,8 +67,12 @@ export async function POST(req: Request) {
 
 		const { session } = accessState.authSession;
 		const userId = session.userId;
-
-		const { message, id: chatId, env: requestEnv } = requestBody;
+		const {
+			message,
+			id: chatId,
+			env: requestEnv,
+			artifactContext,
+		} = requestBody;
 		const enabledMcpServerIds = toUuidList(prefs.mcpServersState);
 
 		const model = getModel(prefs.modelId);
@@ -68,33 +83,41 @@ export async function POST(req: Request) {
 			);
 		}
 
-		const { chat, previousMessages, userMemories, mcpServerConfigs } =
-			await caller.chat.getChatRuntimeData({
-				chatId,
-				mcpServerIds: enabledMcpServerIds,
-			});
+		const [chat, previousMessages, userMemories, mcpServerConfigs] =
+			await Promise.all([
+				getChatByIdAndUserId({ chatId, userId }),
+				getMessagesByChatIdAndUserId({ chatId, userId }),
+				getMemoriesByUserId({ userId }),
+				getMcpServerConfigsByIds({
+					ids: enabledMcpServerIds,
+					userId,
+				}),
+			]);
 
 		if (!chat) {
-			await caller.chat.saveChat({
+			await saveChat({
 				id: chatId,
+				userId,
 				title: DEFAULT_CHAT_TITLE,
 				spaceId: requestEnv.inSpace ? requestEnv.spaceId : undefined,
 			});
 
 			updateChatTitleInBackground({
 				chatId,
+				userId,
 				message,
 			});
 		}
 
-		await caller.chat.saveChatActiveStreamId({
+		await setChatActiveStreamId({
 			chatId,
+			userId,
 			activeStreamId: null,
 		});
 
 		const uiMessages = [...convertToUIMessages(previousMessages), message];
 
-		await caller.chat.saveMessages({
+		await saveMessages({
 			messages: [
 				{
 					chatId,
@@ -112,9 +135,12 @@ export async function POST(req: Request) {
 				const toolRuntime = await buildToolRuntime({
 					toolsState: prefs.toolsState,
 					userId,
+					chatId,
 					requestEnv,
 					dataStream,
 					mcpServerConfigs,
+					artifactModel: model.instance as LanguageModel,
+					artifactContext,
 				});
 
 				logChatRequestMetadata(
@@ -176,11 +202,10 @@ export async function POST(req: Request) {
 				);
 			},
 			generateId: () => crypto.randomUUID(),
-			onError: () => {
-				return "Oops, an error occurred while processing your request.";
-			},
+			onError: () =>
+				"Oops, an error occurred while processing your request.",
 			onFinish: async ({ messages }) => {
-				await caller.chat.saveMessages({
+				await saveMessages({
 					messages: messages.map((msg) => ({
 						id: msg.id,
 						role: msg.role,
@@ -191,8 +216,9 @@ export async function POST(req: Request) {
 					})),
 				});
 
-				await caller.chat.saveChatActiveStreamId({
+				await setChatActiveStreamId({
 					chatId,
+					userId,
 					activeStreamId: null,
 				});
 			},
@@ -208,6 +234,7 @@ export async function POST(req: Request) {
 				try {
 					await startResumableStream({
 						chatId,
+						userId,
 						stream: sseStream,
 					});
 				} catch (error) {

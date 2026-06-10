@@ -26,13 +26,13 @@ import {
 	modalVariants,
 } from "@/lib/animations";
 import useClickOutside from "@/lib/hooks/use-click-outside";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 export interface MorphingDialogContextType {
 	isOpen: boolean;
 	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-	uniqueId: string;
 	triggerRef: React.RefObject<HTMLDivElement | null>;
+	uniqueId: string;
 }
 
 const MorphingDialogContext =
@@ -401,9 +401,9 @@ function MorphingDialogDescription({
 }
 
 export interface MorphingDialogImageProps {
-	src: string;
 	alt: string;
 	className?: string;
+	src: string;
 	style?: React.CSSProperties;
 }
 
@@ -466,12 +466,12 @@ function MorphingDialogClose({
 
 export {
 	MorphingDialog,
-	MorphingDialogTrigger,
+	MorphingDialogClose,
 	MorphingDialogContainer,
 	MorphingDialogContent,
-	MorphingDialogClose,
-	MorphingDialogTitle,
-	MorphingDialogSubtitle,
 	MorphingDialogDescription,
 	MorphingDialogImage,
+	MorphingDialogSubtitle,
+	MorphingDialogTitle,
+	MorphingDialogTrigger,
 };

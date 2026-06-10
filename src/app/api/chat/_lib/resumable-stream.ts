@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
-import { caller } from "@/lib/trpc/server";
+import { createStream, setChatActiveStreamId } from "@/lib/db/queries/chat";
 
 export const getStreamContext = () => {
 	try {
@@ -12,9 +12,11 @@ export const getStreamContext = () => {
 
 export const startResumableStream = async ({
 	chatId,
+	userId,
 	stream,
 }: {
 	chatId: string;
+	userId: string;
 	stream: ReadableStream<string>;
 }): Promise<void> => {
 	const streamContext = getStreamContext();
@@ -25,15 +27,17 @@ export const startResumableStream = async ({
 
 	const streamId = crypto.randomUUID();
 
-	await caller.chat.createStream({
-		streamId,
+	await createStream({
+		id: streamId,
 		chatId,
+		createdAt: new Date(),
 	});
 
 	await streamContext.createNewResumableStream(streamId, () => stream);
 
-	await caller.chat.saveChatActiveStreamId({
+	await setChatActiveStreamId({
 		chatId,
+		userId,
 		activeStreamId: streamId,
 	});
 };

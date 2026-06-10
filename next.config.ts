@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
 				protocol: "https",
 				hostname: "prmwl2lhrsof7i4o.public.blob.vercel-storage.com",
 			},
+			{
+				protocol: "https",
+				hostname: "models.dev",
+			},
 		],
 	},
 	experimental: {

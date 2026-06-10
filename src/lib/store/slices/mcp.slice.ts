@@ -3,8 +3,8 @@ import type { BoundStore } from "../store";
 
 export interface McpSlice {
 	mcpServers: Record<string, boolean>;
-	setMcpServer: (id: string, value: boolean) => void;
 	setAllMcpServers: (servers: Record<string, boolean>) => void;
+	setMcpServer: (id: string, value: boolean) => void;
 }
 
 export const createMcpSlice: StateCreator<

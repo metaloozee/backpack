@@ -6,7 +6,7 @@ import {
 	getMcpServerConfigByIdAndUserId,
 	getMcpServerConfigsByUserId,
 	updateMcpServerConfig,
-} from "@/lib/db/queries";
+} from "@/lib/db/queries/mcp";
 import { testMcpConnection } from "@/lib/mcp/client";
 import {
 	decryptKey,

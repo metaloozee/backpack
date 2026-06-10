@@ -7,12 +7,12 @@ import { format } from "timeago.js";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Space {
-	id: string;
-	userId: string;
-	spaceTitle: string;
-	spaceDescription?: string | null;
-	spaceCustomInstructions?: string | null;
 	createdAt: Date;
+	id: string;
+	spaceCustomInstructions?: string | null;
+	spaceDescription?: string | null;
+	spaceTitle: string;
+	userId: string;
 }
 
 export function Cards({ spaces }: { spaces: Space[] }) {

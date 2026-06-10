@@ -32,7 +32,7 @@ import {
 } from "@/lib/animations";
 import type { Chat } from "@/lib/db/schema/app";
 import { useTRPC } from "@/lib/trpc/trpc";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 import { Spinner } from "../spinner";
 
 interface ChatCardProps {

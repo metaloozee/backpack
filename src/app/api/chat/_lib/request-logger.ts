@@ -4,22 +4,21 @@ import type { ActiveTool, ToolsState } from "./types";
 interface ChatRequestLogPayload {
 	chatId: string;
 	messageId: string;
-	userId: string;
 	mode: string;
-	selectedAgent: string | null;
-	query: string;
 	model: {
 		id: string;
 		name: string;
 		provider: string;
 		capabilities: ModelCapabilities;
 	};
+	query: string;
 	request: {
 		inSpace: boolean;
 		spaceId: string | null;
 		partCount: number;
 		attachmentCount: number;
 	};
+	selectedAgent: string | null;
 	tools: {
 		toggles: Required<ToolsState>;
 		enabled: ActiveTool[];
@@ -31,6 +30,7 @@ interface ChatRequestLogPayload {
 		};
 		availableToModel: string[];
 	};
+	userId: string;
 }
 
 const MAX_QUERY_LENGTH = 500;
@@ -116,33 +116,30 @@ export const createChatRequestLogPayload = ({
 	enabledMcpServerIds: string[];
 	mcpToolNames: string[];
 	allActiveTools: string[];
-}): ChatRequestLogPayload => {
-	return {
-		chatId,
-		messageId: message.id,
-		userId,
-		mode,
-		selectedAgent,
-		query: extractQueryText(message.parts),
-		model,
-		request: {
-			inSpace: requestEnv.inSpace,
-			spaceId: requestEnv.spaceId ?? null,
-			partCount: message.parts.length,
-			attachmentCount: message.parts.filter(
-				(part) => part.type === "file"
-			).length,
+}): ChatRequestLogPayload => ({
+	chatId,
+	messageId: message.id,
+	userId,
+	mode,
+	selectedAgent,
+	query: extractQueryText(message.parts),
+	model,
+	request: {
+		inSpace: requestEnv.inSpace,
+		spaceId: requestEnv.spaceId ?? null,
+		partCount: message.parts.length,
+		attachmentCount: message.parts.filter((part) => part.type === "file")
+			.length,
+	},
+	tools: {
+		toggles: getToolToggleSnapshot(toolsState),
+		enabled: activeBuiltInTools,
+		mcp: {
+			configuredServerIds: enabledMcpServerIds,
+			connectedToolNames: mcpToolNames,
+			totalConfiguredServers: enabledMcpServerIds.length,
+			totalConnectedTools: mcpToolNames.length,
 		},
-		tools: {
-			toggles: getToolToggleSnapshot(toolsState),
-			enabled: activeBuiltInTools,
-			mcp: {
-				configuredServerIds: enabledMcpServerIds,
-				connectedToolNames: mcpToolNames,
-				totalConfiguredServers: enabledMcpServerIds.length,
-				totalConnectedTools: mcpToolNames.length,
-			},
-			availableToModel: allActiveTools,
-		},
-	};
-};
+		availableToModel: allActiveTools,
+	},
+});

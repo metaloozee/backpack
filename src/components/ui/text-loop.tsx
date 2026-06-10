@@ -7,17 +7,17 @@ import {
 	type Variants,
 } from "motion/react";
 import { Children, useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 export interface TextLoopProps {
 	children: React.ReactNode[];
 	className?: string;
 	interval?: number;
-	transition?: Transition;
-	variants?: Variants;
-	onIndexChange?: (index: number) => void;
-	trigger?: boolean;
 	mode?: AnimatePresenceProps["mode"];
+	onIndexChange?: (index: number) => void;
+	transition?: Transition;
+	trigger?: boolean;
+	variants?: Variants;
 }
 
 export function TextLoop({

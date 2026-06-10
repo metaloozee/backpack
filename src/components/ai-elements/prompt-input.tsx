@@ -27,11 +27,11 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 export interface PromptInputMessage {
-	text?: string;
 	files?: File[];
+	text?: string;
 }
 
 interface PromptInputTooltipConfig {

@@ -22,7 +22,7 @@ import {
 import { Loader } from "@/components/ui/loader";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useTRPC } from "@/lib/trpc/trpc";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const DATABASE_SEARCH_LIMIT = 50;
 const INTERSECTION_ROOT_MARGIN = "200px";
@@ -35,11 +35,11 @@ interface ChatItemProps {
 	};
 	isActive: boolean;
 	isConfirming: boolean;
-	isPending: boolean;
-	onConfirmDelete: () => void;
-	onCancelDelete: () => void;
-	onDeleteClick: () => void;
 	isMobile: boolean;
+	isPending: boolean;
+	onCancelDelete: () => void;
+	onConfirmDelete: () => void;
+	onDeleteClick: () => void;
 }
 
 function ChatItem({

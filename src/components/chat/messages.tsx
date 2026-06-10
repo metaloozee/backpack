@@ -14,12 +14,18 @@ import type { ChatMessage } from "@/lib/ai/types";
 
 interface ChatMessageProps {
 	chatId: string;
-	status: UseChatHelpers<ChatMessage>["status"];
 	messages: ChatMessage[];
+	onOpenArtifact?: (artifactId: string) => void;
 	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
+	status: UseChatHelpers<ChatMessage>["status"];
 }
 
-function PureChatMessages({ status, messages, regenerate }: ChatMessageProps) {
+function PureChatMessages({
+	status,
+	messages,
+	regenerate,
+	onOpenArtifact,
+}: ChatMessageProps) {
 	const latestAssistantId = [...messages]
 		.reverse()
 		.find((message) => message.role === "assistant")?.id;
@@ -45,6 +51,7 @@ function PureChatMessages({ status, messages, regenerate }: ChatMessageProps) {
 							}
 							key={message.id}
 							message={message}
+							onOpenArtifact={onOpenArtifact}
 							regenerate={regenerate}
 						/>
 					))

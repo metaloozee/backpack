@@ -2,7 +2,7 @@
 
 import { cva, type VariantProps } from "class-variance-authority";
 import { Spinner } from "@/components/spinner";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const loaderVariants = cva("", {
 	variants: {
@@ -36,9 +36,9 @@ const speedMap = {
 
 interface LoaderProps extends VariantProps<typeof loaderVariants> {
 	className?: string;
+	"data-testid"?: string;
 	show?: boolean;
 	speed?: keyof typeof speedMap;
-	"data-testid"?: string;
 }
 
 function Loader({
@@ -62,4 +62,4 @@ function Loader({
 	);
 }
 
-export { Loader, loaderVariants, type LoaderProps };
+export { Loader, type LoaderProps, loaderVariants };

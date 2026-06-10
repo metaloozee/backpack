@@ -9,14 +9,21 @@ import { usePathname } from "next/navigation";
 import { parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ArtifactWorkspace } from "@/components/artifacts/artifact-workspace";
+import { useArtifactStreamState } from "@/components/artifacts/use-artifact-stream-state";
 import DisplayChats from "@/components/chat/display-chats";
 import { ChatMessages } from "@/components/chat/messages";
 import { SpaceIntro } from "@/components/chat/space-intro";
 import { Input as InputPanel } from "@/components/chat-input";
 import { useDataStream } from "@/components/data-stream-provider";
-import type { ToolsState } from "@/lib/ai/tools";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import type { ToolsState } from "@/lib/ai/tool-registry";
 import type { Attachment, ChatMessage } from "@/lib/ai/types";
-import { fetchWithErrorHandlers } from "@/lib/ai/utils";
 import type { Chat as ChatType, Knowledge } from "@/lib/db/schema/app";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useSetMobileHeader } from "@/lib/mobile-header-context";
@@ -25,6 +32,8 @@ import {
 	prependChatToInfiniteData,
 } from "@/lib/trpc/cache-utils";
 import { useTRPC } from "@/lib/trpc/trpc";
+import { cn } from "@/lib/utils/cn";
+import { fetchWithErrorHandlers } from "@/lib/utils/fetch";
 
 function useQueryAppend({
 	sendMessage,
@@ -48,6 +57,10 @@ function useQueryAppend({
 		}
 	}, [query, sendMessage, setQuery]);
 }
+
+const ignoreAsyncError = () => {};
+
+const generateId = () => crypto.randomUUID();
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: complex chat component
 export function Chat({
@@ -89,9 +102,34 @@ export function Chat({
 	const [input, setInput] = useState<string>("");
 	const [attachments, setAttachments] = useState<Attachment[]>([]);
 
-	const { setDataStream } = useDataStream();
+	const { dataStream, setDataStream } = useDataStream();
 	const queryClient = useQueryClient();
 	const trpc = useTRPC();
+
+	const invalidateArtifactQueries = (artifactId: string) => {
+		queryClient
+			.invalidateQueries({
+				queryKey: trpc.artifact.getById.queryOptions({
+					artifactId,
+				}).queryKey,
+			})
+			.catch(ignoreAsyncError);
+		queryClient
+			.invalidateQueries({
+				queryKey: trpc.artifact.listByChat.queryOptions({
+					chatId: id,
+				}).queryKey,
+			})
+			.catch(ignoreAsyncError);
+	};
+
+	const { openArtifactId, openArtifactSnapshot, setOpenArtifactId } =
+		useArtifactStreamState({
+			chatId: id,
+			dataStream,
+			onArtifactError: toast.error,
+			onArtifactFinished: invalidateArtifactQueries,
+		});
 
 	const generateTempTitle = useCallback((message: ChatMessage): string => {
 		const firstTextPart = message.parts.find(
@@ -99,7 +137,7 @@ export function Chat({
 		);
 		if (firstTextPart && "text" in firstTextPart) {
 			const text = firstTextPart.text.trim();
-			return text.length > 50 ? `${text.slice(0, 50)}...` : text;
+			return text.length > 50 ? `${text.slice(0, 50)}…` : text;
 		}
 		return "New Chat";
 	}, []);
@@ -177,7 +215,7 @@ export function Chat({
 	} = useChat<ChatMessage>({
 		id,
 		messages: initialMessages,
-		generateId: () => crypto.randomUUID(),
+		generateId,
 		experimental_throttle: 100,
 		transport: new DefaultChatTransport({
 			api: "/api/chat",
@@ -196,11 +234,15 @@ export function Chat({
 						id,
 						env,
 						message: messages.at(-1),
+						artifactContext: {
+							activeArtifactId: openArtifactId ?? undefined,
+						},
 						...body,
 					},
 				};
 			},
 		}),
+		resume: initialMessages.length > 0,
 		onData: (dataPart) => {
 			setDataStream((ds) =>
 				ds
@@ -259,6 +301,10 @@ export function Chat({
 		},
 		[]
 	);
+
+	useEffect(() => {
+		setDataStream([]);
+	}, [setDataStream]);
 
 	// Computed values
 	const showSpaceIntro = isSpaceChat && messages.length === 0;
@@ -334,16 +380,14 @@ export function Chat({
 		/>
 	);
 
-	return (
-		<div
-			className="flex min-h-0 w-full flex-1 flex-col"
-			suppressHydrationWarning
-		>
+	const chatContent = (
+		<div className="flex min-h-0 w-full flex-1 flex-col">
 			{messages.length > 0 ? (
 				<>
 					<ChatMessages
 						chatId={id}
 						messages={messages}
+						onOpenArtifact={setOpenArtifactId}
 						regenerate={regenerate}
 						status={status}
 					/>
@@ -393,7 +437,7 @@ export function Chat({
 			) : null}
 
 			{messages.length > 0 || showSpaceIntro ? null : (
-				<div className="container my-0 flex flex-1 flex-col items-center justify-center sm:my-10">
+				<div className="container mx-auto my-0 flex flex-1 flex-col items-center justify-center sm:my-10">
 					<div className="flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-0 md:px-6">
 						<InputPanel
 							{...inputPanelProps}
@@ -402,6 +446,64 @@ export function Chat({
 					</div>
 				</div>
 			)}
+		</div>
+	);
+
+	return (
+		<div
+			className="flex min-h-0 w-full flex-1 overflow-hidden"
+			suppressHydrationWarning
+		>
+			<div
+				className={cn(
+					"flex min-h-0 flex-1 flex-col",
+					openArtifactId && "lg:max-w-[52%]"
+				)}
+			>
+				{chatContent}
+			</div>
+
+			{openArtifactId ? (
+				<ArtifactWorkspace
+					chatId={id}
+					className="hidden lg:flex lg:w-[48%]"
+					onClose={() => setOpenArtifactId(null)}
+					onOpenArtifact={setOpenArtifactId}
+					openArtifactId={openArtifactId}
+					snapshot={openArtifactSnapshot}
+				/>
+			) : null}
+
+			<Dialog
+				onOpenChange={(open) => {
+					if (!open) {
+						setOpenArtifactId(null);
+					}
+				}}
+				open={Boolean(openArtifactId && isMobile)}
+			>
+				<DialogContent
+					className="h-dvh max-h-dvh w-screen max-w-none rounded-none border-0 p-0"
+					showCloseButton={false}
+				>
+					<DialogTitle className="sr-only">
+						Artifact workspace
+					</DialogTitle>
+					<DialogDescription className="sr-only">
+						Edit, preview, and compare artifact versions.
+					</DialogDescription>
+					{openArtifactId ? (
+						<ArtifactWorkspace
+							chatId={id}
+							className="border-l-0"
+							onClose={() => setOpenArtifactId(null)}
+							onOpenArtifact={setOpenArtifactId}
+							openArtifactId={openArtifactId}
+							snapshot={openArtifactSnapshot}
+						/>
+					) : null}
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

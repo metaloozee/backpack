@@ -7,19 +7,21 @@ import { start } from "workflow/api";
 import { z } from "zod";
 import {
 	createKnowledge,
-	createSpace,
 	deleteKnowledgeByIdAndUserId,
 	deleteKnowledgeEmbeddingsByKnowledgeId,
-	deleteSpaceByIdAndUserId,
 	getKnowledgeByIdSpaceAndUserId,
 	getKnowledgeBySpaceIdAndUserId,
+	renameKnowledgeByIdAndUserId,
+	resetKnowledgeForRetry,
+} from "@/lib/db/queries/knowledge";
+import {
+	createSpace,
+	deleteSpaceByIdAndUserId,
 	getSpaceByIdAndUserId,
 	getSpaceOverview,
 	getSpacesByUserId,
-	renameKnowledgeByIdAndUserId,
-	resetKnowledgeForRetry,
 	updateSpace,
-} from "@/lib/db/queries";
+} from "@/lib/db/queries/spaces";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 import { sanitizeFileName, sanitizeUserInput } from "@/lib/utils/sanitization";
 import { processKnowledgeWorkflow } from "@/workflows/knowledge-process";
@@ -318,12 +320,13 @@ export const spaceRouter = router({
 				spaceId: z.string().uuid(),
 			})
 		)
-		.query(async ({ ctx, input }) => {
-			return await getKnowledgeBySpaceIdAndUserId({
-				spaceId: input.spaceId,
-				userId: ctx.session.user.id,
-			});
-		}),
+		.query(
+			async ({ ctx, input }) =>
+				await getKnowledgeBySpaceIdAndUserId({
+					spaceId: input.spaceId,
+					userId: ctx.session.user.id,
+				})
+		),
 	retryKnowledge: protectedProcedure
 		.input(
 			z.object({

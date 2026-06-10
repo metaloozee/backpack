@@ -27,20 +27,20 @@ export const modeSettingsTriggerClass =
 	"ml-1 h-7 w-7 shrink-0 rounded-sm border-0 bg-transparent p-0 hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:hover:bg-neutral-800";
 
 interface ResponsiveSettingsMenuShellProps {
-	isMobile: boolean;
+	children: ReactNode;
+	desktopTriggerAriaLabel: string;
+	drawerBodyClassName: string;
+	drawerContentClassName: string;
+	drawerDescription?: ReactNode;
+	drawerFooter?: ReactNode;
 	drawerOpen: boolean;
-	onDrawerOpenChange: (open: boolean) => void;
+	drawerTitle: ReactNode;
+	dropdownContentClassName: string;
+	dropdownTooltip: string;
+	isMobile: boolean;
 	mobileExpanded: boolean;
 	mobileTriggerAriaLabel: string;
-	desktopTriggerAriaLabel: string;
-	dropdownTooltip: string;
-	drawerContentClassName: string;
-	drawerTitle: ReactNode;
-	drawerDescription?: ReactNode;
-	drawerBodyClassName: string;
-	drawerFooter?: ReactNode;
-	dropdownContentClassName: string;
-	children: ReactNode;
+	onDrawerOpenChange: (open: boolean) => void;
 }
 
 export function ResponsiveSettingsMenuShell({

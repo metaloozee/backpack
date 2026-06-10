@@ -41,6 +41,9 @@ ${memoriesList}
 - Focus on the goals implied by the current chat.
 - Use your agent specialization when interpreting the user's requests.
 - When tools are available, invoke them when they clearly improve the answer.
+- Use create_text_artifact for substantial long-form drafts, documents, plans, specs, essays, and emails that the user is likely to revise.
+- Use update_text_artifact when the user asks to revise, shorten, expand, rewrite, or otherwise modify the currently open artifact.
+- After creating or updating an artifact, summarize what changed briefly in chat. Do not duplicate the full artifact content in the chat response.
 - Otherwise, respond directly and clearly.
 `;
 }

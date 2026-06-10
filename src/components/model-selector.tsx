@@ -41,11 +41,11 @@ import {
 	getModel,
 	type Model,
 	normalizeModelId,
-} from "@/lib/ai/models";
+} from "@/lib/ai/model-metadata";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { usePrefsStore } from "@/lib/store/store";
 import { usePrefsHydrated } from "@/lib/store/use-prefs-hydrated";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const groupedModels = availableModels.reduce(
 	(acc, model) => {
@@ -67,6 +67,7 @@ const providerNames: Record<string, string> = {
 	mistral: "Mistral",
 	cerebras: "Cerebras",
 	nvidia: "NVIDIA",
+	"cloudflare-workers-ai": "Cloudflare",
 };
 
 const drawerSurface =
@@ -117,7 +118,10 @@ function ModelCapabilityBadges({ model }: { model: Model }) {
 						<Tooltip key={label}>
 							<TooltipTrigger asChild>
 								<Badge className="px-1" variant="secondary">
-									<Icon className="size-3" />
+									<Icon
+										aria-hidden="true"
+										className="size-3"
+									/>
 								</Badge>
 							</TooltipTrigger>
 							<TooltipContent>
@@ -143,12 +147,17 @@ function ModelOptionBody({
 	let checkOrSpacer: ReactNode = null;
 	if (layout === "mobile") {
 		checkOrSpacer = selected ? (
-			<Check className="size-3.5 shrink-0 text-primary" />
+			<Check
+				aria-hidden="true"
+				className="size-3.5 shrink-0 text-primary"
+			/>
 		) : (
 			<span className="inline-block size-3.5 shrink-0" />
 		);
 	} else if (selected) {
-		checkOrSpacer = <Check className="size-3 shrink-0" />;
+		checkOrSpacer = (
+			<Check aria-hidden="true" className="size-3 shrink-0" />
+		);
 	}
 
 	const leading = (
@@ -198,7 +207,7 @@ function ProviderLogo({
 	return (
 		<Image
 			alt=""
-			aria-hidden
+			aria-hidden="true"
 			className="dark:invert"
 			height={size}
 			src={`https://models.dev/logos/${provider}.svg`}
@@ -286,7 +295,7 @@ export function ModelSelector({ initialModelId }: { initialModelId?: string }) {
 												<button
 													aria-label={model.name}
 													className={cn(
-														"flex w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent dark:hover:bg-neutral-800",
+														"flex w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring dark:hover:bg-neutral-800",
 														selected &&
 															"bg-accent/80 dark:bg-neutral-800/80"
 													)}

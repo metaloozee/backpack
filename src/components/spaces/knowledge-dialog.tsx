@@ -26,8 +26,8 @@ import { Spinner } from "../spinner";
 import { KnowledgeTable } from "./knowledge-table";
 
 interface KnowledgeDialogProps {
-	spaceId: string;
 	knowledgeData: Knowledge[];
+	spaceId: string;
 }
 
 export function KnowledgeDialog({

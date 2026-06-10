@@ -5,7 +5,10 @@ import {
 	GOOGLE_EMBEDDING_DIMENSIONS,
 	GOOGLE_EMBEDDING_MODEL,
 } from "@/lib/ai/defaults";
-import { getClosestMemorySimilarity, insertMemories } from "@/lib/db/queries";
+import {
+	getClosestMemorySimilarity,
+	insertMemories,
+} from "@/lib/db/queries/memories";
 
 export const saveToMemoriesTool = ({
 	userId,

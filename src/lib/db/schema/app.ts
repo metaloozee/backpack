@@ -10,6 +10,7 @@ import {
 	primaryKey,
 	text,
 	timestamp,
+	uniqueIndex,
 	varchar,
 	vector,
 } from "drizzle-orm/pg-core";
@@ -258,6 +259,101 @@ export const message = pgTable(
 	})
 );
 export type Message = InferSelectModel<typeof message>;
+
+export const ArtifactKindEnum = pgEnum("artifact_kind_enum", ["text"]);
+export const ArtifactVersionSourceEnum = pgEnum(
+	"artifact_version_source_enum",
+	["assistant", "user", "restore"]
+);
+
+export const artifact = pgTable(
+	"artifact",
+	{
+		id: text("id")
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, {
+				onDelete: "cascade",
+				onUpdate: "cascade",
+			}),
+		chatId: text("chat_id")
+			.notNull()
+			.references(() => chat.id, {
+				onDelete: "cascade",
+				onUpdate: "cascade",
+			}),
+		kind: ArtifactKindEnum("kind").notNull().default("text"),
+		title: text("title").notNull(),
+		createdAt: timestamp("created_at", {
+			withTimezone: true,
+			mode: "date",
+		})
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", {
+			withTimezone: true,
+			mode: "date",
+		})
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => ({
+		chatUpdatedAtIdx: index("artifact_chat_updated_at_idx").on(
+			table.chatId,
+			table.updatedAt
+		),
+		userChatUpdatedAtIdx: index("artifact_user_chat_updated_at_idx").on(
+			table.userId,
+			table.chatId,
+			table.updatedAt
+		),
+	})
+);
+export type Artifact = InferSelectModel<typeof artifact>;
+
+export const artifactVersion = pgTable(
+	"artifact_version",
+	{
+		id: text("id")
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		artifactId: text("artifact_id")
+			.notNull()
+			.references(() => artifact.id, {
+				onDelete: "cascade",
+				onUpdate: "cascade",
+			}),
+		versionNumber: integer("version_number").notNull(),
+		content: text("content").notNull(),
+		source: ArtifactVersionSourceEnum("source").notNull(),
+		createdAt: timestamp("created_at", {
+			withTimezone: true,
+			mode: "date",
+		})
+			.notNull()
+			.defaultNow(),
+		messageId: text("message_id").references(() => message.id, {
+			onDelete: "set null",
+			onUpdate: "cascade",
+		}),
+		restoredFromVersionId: text("restored_from_version_id"),
+		metadata: jsonb("metadata").notNull().default({}),
+	},
+	(table) => ({
+		artifactCreatedAtIdx: index(
+			"artifact_version_artifact_created_at_idx"
+		).on(table.artifactId, table.createdAt),
+		artifactVersionNumberIdx: index(
+			"artifact_version_artifact_version_number_idx"
+		).on(table.artifactId, table.versionNumber),
+		artifactVersionNumberUniqueIdx: uniqueIndex(
+			"artifact_version_artifact_version_number_unique_idx"
+		).on(table.artifactId, table.versionNumber),
+	})
+);
+export type ArtifactVersion = InferSelectModel<typeof artifactVersion>;
 
 export const stream = pgTable(
 	"stream",

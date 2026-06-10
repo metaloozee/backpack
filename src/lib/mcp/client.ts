@@ -8,15 +8,15 @@ import {
 } from "@/lib/mcp/encryption";
 
 export interface McpServerConfig {
+	apiKey?: EncryptedKeyInput;
 	name: string;
 	url: string;
-	apiKey?: EncryptedKeyInput;
 }
 
 export interface TestConnectionResult {
+	error?: string;
 	success: boolean;
 	tools?: Array<{ name: string; description?: string }>;
-	error?: string;
 }
 
 export async function testMcpConnection(
@@ -106,16 +106,16 @@ export async function createMcpClientForServer(
 type McpToolSet = Record<string, unknown>;
 
 export interface McpToolInfo {
+	description?: string;
 	serverName: string;
 	toolName: string;
-	description?: string;
 }
 
 export interface McpToolsResult {
-	tools: McpToolSet;
 	clients: MCPClient[];
 	serverNames: Map<string, string>;
 	toolInfos: McpToolInfo[];
+	tools: McpToolSet;
 }
 
 export async function createMcpToolsForServers(

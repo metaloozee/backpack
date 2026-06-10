@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { MonitorCogIcon, MoonStarIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const THEME_OPTIONS = [
 	{
