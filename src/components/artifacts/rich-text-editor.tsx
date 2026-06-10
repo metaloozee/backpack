@@ -10,17 +10,33 @@ import {
 	ListOrderedIcon,
 	PilcrowIcon,
 	QuoteIcon,
+	Table2Icon,
+	Trash2Icon,
 } from "lucide-react";
+import MarkdownIt from "markdown-it";
 import { setBlockType, toggleMark, wrapIn } from "prosemirror-commands";
 import { exampleSetup } from "prosemirror-example-setup";
 import {
 	defaultMarkdownParser,
 	defaultMarkdownSerializer,
+	MarkdownParser,
+	MarkdownSerializer,
 	schema as markdownSchema,
 } from "prosemirror-markdown";
 import type { Node as ProseMirrorNode } from "prosemirror-model";
+import { Schema } from "prosemirror-model";
 import { wrapInList } from "prosemirror-schema-list";
 import { type Command, EditorState, type Transaction } from "prosemirror-state";
+import {
+	addColumnAfter,
+	addRowAfter,
+	deleteColumn,
+	deleteRow,
+	deleteTable,
+	isInTable,
+	tableNodes,
+	toggleHeaderRow,
+} from "prosemirror-tables";
 import { EditorView } from "prosemirror-view";
 import {
 	memo,
@@ -46,21 +62,95 @@ interface ToolbarItem {
 	isActive?: (view: EditorView) => boolean;
 }
 
+const tableNodesSpec = tableNodes({
+	tableGroup: "block",
+	cellContent: "inline*",
+	cellAttributes: {},
+});
+
+const schema = new Schema({
+	nodes: {
+		...markdownSchema.spec.nodes.toObject(),
+		...tableNodesSpec,
+	},
+	marks: markdownSchema.spec.marks.toObject(),
+});
+
+const md = MarkdownIt("commonmark", { html: false }).enable("table");
+
+const parser = new MarkdownParser(schema, md, {
+	...defaultMarkdownParser.tokens,
+	table: { block: "table" },
+	thead: { ignore: true },
+	tbody: { ignore: true },
+	tr: { block: "table_row" },
+	th: { block: "table_header" },
+	td: { block: "table_cell" },
+});
+
+const serializer = new MarkdownSerializer(
+	{
+		...defaultMarkdownSerializer.nodes,
+		table(state, node) {
+			let firstRow = true;
+
+			node.forEach((row) => {
+				if (!firstRow) {
+					state.ensureNewLine();
+				}
+				firstRow = false;
+
+				state.write("| ");
+
+				row.forEach((cell, _, cellIndex) => {
+					state.renderInline(cell);
+					state.write(cellIndex < row.childCount - 1 ? " | " : " |");
+				});
+
+				if (row.firstChild?.type.name === "table_header") {
+					state.ensureNewLine();
+
+					state.write("|");
+					for (let i = 0; i < row.childCount; i++) {
+						state.write("---");
+						if (i < row.childCount - 1) {
+							state.write("|");
+						}
+					}
+					state.write("|");
+				}
+			});
+
+			state.closeBlock(node);
+		},
+		table_row(state, node) {
+			state.renderContent(node);
+		},
+		table_cell(state, node) {
+			state.renderContent(node);
+		},
+		table_header(state, node) {
+			state.renderContent(node);
+		},
+	},
+	defaultMarkdownSerializer.marks
+);
+
 const parseMarkdownDocument = (content: string): ProseMirrorNode => {
 	try {
-		return defaultMarkdownParser.parse(content);
+		return parser.parse(content);
 	} catch {
-		const paragraph = markdownSchema.nodes.paragraph.create(
+		const paragraph = schema.nodes.paragraph.create(
 			null,
-			content ? markdownSchema.text(content.replace(/\s+/g, " ")) : null
+			content ? schema.text(content.replace(/\s+/g, " ")) : null
 		);
 
-		return markdownSchema.nodes.doc.create(null, paragraph);
+		return schema.nodes.doc.create(null, paragraph);
 	}
 };
 
 const serializeMarkdownDocument = (doc: ProseMirrorNode): string =>
-	defaultMarkdownSerializer.serialize(doc);
+	serializer.serialize(doc);
 
 const runCommand = (view: EditorView | null, command: Command): void => {
 	if (!view) {
@@ -75,7 +165,7 @@ const canRunCommand = (view: EditorView | null, command: Command): boolean =>
 	Boolean(view && command(view.state));
 
 const isMarkActive = (view: EditorView, markName: string): boolean => {
-	const markType = markdownSchema.marks[markName];
+	const markType = schema.marks[markName];
 	if (!markType) {
 		return false;
 	}
@@ -95,7 +185,7 @@ const isTextblockActive = (
 	nodeName: string,
 	attrs?: Record<string, unknown>
 ): boolean => {
-	const nodeType = markdownSchema.nodes[nodeName];
+	const nodeType = schema.nodes[nodeName];
 	if (!nodeType) {
 		return false;
 	}
@@ -113,7 +203,7 @@ const isTextblockActive = (
 };
 
 const isWrappedInNode = (view: EditorView, nodeName: string): boolean => {
-	const nodeType = markdownSchema.nodes[nodeName];
+	const nodeType = schema.nodes[nodeName];
 	if (!nodeType) {
 		return false;
 	}
@@ -128,68 +218,123 @@ const isWrappedInNode = (view: EditorView, nodeName: string): boolean => {
 	return false;
 };
 
+const insertTable = (
+	state: EditorState,
+	dispatch?: (tr: Transaction) => void
+): boolean => {
+	if (isInTable(state)) {
+		return false;
+	}
+
+	const { table, table_row, table_header, table_cell } = schema.nodes;
+
+	const headerCells = Array.from(
+		{ length: 3 },
+		() => table_header.createAndFill()!
+	);
+	const dataRows = Array.from({ length: 2 }, () => {
+		const cells = Array.from(
+			{ length: 3 },
+			() => table_cell.createAndFill()!
+		);
+		return table_row.create(null, cells);
+	});
+
+	const tableNode = table.create(null, [
+		table_row.create(null, headerCells),
+		...dataRows,
+	]);
+
+	if (dispatch) {
+		dispatch(state.tr.replaceSelectionWith(tableNode).scrollIntoView());
+	}
+
+	return true;
+};
+
 const useEditorToolbarItems = (): ToolbarItem[] =>
 	useMemo(
 		() => [
 			{
 				ariaLabel: "Paragraph",
-				command: setBlockType(markdownSchema.nodes.paragraph),
+				command: setBlockType(schema.nodes.paragraph),
 				icon: PilcrowIcon,
-				isActive: (view) => isTextblockActive(view, "paragraph"),
+				isActive: (view: EditorView) =>
+					isTextblockActive(view, "paragraph"),
 			},
 			{
 				ariaLabel: "Heading 1",
-				command: setBlockType(markdownSchema.nodes.heading, {
+				command: setBlockType(schema.nodes.heading, {
 					level: 1,
 				}),
 				icon: Heading1Icon,
-				isActive: (view) =>
+				isActive: (view: EditorView) =>
 					isTextblockActive(view, "heading", { level: 1 }),
 			},
 			{
 				ariaLabel: "Heading 2",
-				command: setBlockType(markdownSchema.nodes.heading, {
+				command: setBlockType(schema.nodes.heading, {
 					level: 2,
 				}),
 				icon: Heading2Icon,
-				isActive: (view) =>
+				isActive: (view: EditorView) =>
 					isTextblockActive(view, "heading", { level: 2 }),
 			},
 			{
 				ariaLabel: "Bold",
-				command: toggleMark(markdownSchema.marks.strong),
+				command: toggleMark(schema.marks.strong),
 				icon: BoldIcon,
-				isActive: (view) => isMarkActive(view, "strong"),
+				isActive: (view: EditorView) => isMarkActive(view, "strong"),
 			},
 			{
 				ariaLabel: "Italic",
-				command: toggleMark(markdownSchema.marks.em),
+				command: toggleMark(schema.marks.em),
 				icon: ItalicIcon,
-				isActive: (view) => isMarkActive(view, "em"),
+				isActive: (view: EditorView) => isMarkActive(view, "em"),
 			},
 			{
 				ariaLabel: "Inline code",
-				command: toggleMark(markdownSchema.marks.code),
+				command: toggleMark(schema.marks.code),
 				icon: Code2Icon,
-				isActive: (view) => isMarkActive(view, "code"),
+				isActive: (view: EditorView) => isMarkActive(view, "code"),
 			},
 			{
 				ariaLabel: "Bullet list",
-				command: wrapInList(markdownSchema.nodes.bullet_list),
+				command: wrapInList(schema.nodes.bullet_list),
 				icon: ListIcon,
-				isActive: (view) => isWrappedInNode(view, "bullet_list"),
+				isActive: (view: EditorView) =>
+					isWrappedInNode(view, "bullet_list"),
 			},
 			{
 				ariaLabel: "Ordered list",
-				command: wrapInList(markdownSchema.nodes.ordered_list),
+				command: wrapInList(schema.nodes.ordered_list),
 				icon: ListOrderedIcon,
-				isActive: (view) => isWrappedInNode(view, "ordered_list"),
+				isActive: (view: EditorView) =>
+					isWrappedInNode(view, "ordered_list"),
 			},
 			{
 				ariaLabel: "Quote",
-				command: wrapIn(markdownSchema.nodes.blockquote),
+				command: wrapIn(schema.nodes.blockquote),
 				icon: QuoteIcon,
-				isActive: (view) => isWrappedInNode(view, "blockquote"),
+				isActive: (view: EditorView) =>
+					isWrappedInNode(view, "blockquote"),
+			},
+			{
+				ariaLabel: "Insert table",
+				command: insertTable,
+				icon: Table2Icon,
+			},
+			{
+				ariaLabel: "Toggle header row",
+				command: toggleHeaderRow,
+				icon: Table2Icon,
+				isActive: () => false,
+			},
+			{
+				ariaLabel: "Delete table",
+				command: deleteTable,
+				icon: Trash2Icon,
+				isActive: () => false,
 			},
 		],
 		[]
@@ -240,7 +385,7 @@ function PureRichTextEditor({
 		const state = EditorState.create({
 			doc: parseMarkdownDocument(initialContentRef.current),
 			plugins: exampleSetup({
-				schema: markdownSchema,
+				schema,
 				menuBar: false,
 			}),
 		});
