@@ -42,7 +42,7 @@ export const buildToolRuntime = async ({
 	};
 	mcpServerConfigs: Pick<
 		DbMcpServerConfig,
-		"name" | "url" | "enabled" | "apiKeyEncrypted"
+		"id" | "name" | "url" | "enabled" | "apiKeyEncrypted"
 	>[];
 }) => {
 	const activeTools = buildActiveTools(toolsState);
@@ -50,6 +50,7 @@ export const buildToolRuntime = async ({
 	const mcpServersForTools = mcpServerConfigs
 		.filter((config) => config.enabled)
 		.map((config) => ({
+			id: config.id,
 			name: config.name,
 			url: config.url,
 			apiKey: config.apiKeyEncrypted ?? undefined,
@@ -61,7 +62,6 @@ export const buildToolRuntime = async ({
 			: {
 					tools: {},
 					clients: [],
-					serverNames: new Map(),
 					toolInfos: [],
 				};
 

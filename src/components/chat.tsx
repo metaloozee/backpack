@@ -155,7 +155,12 @@ export function Chat({
 			};
 
 			queryClient.setQueryData(
-				trpc.chat.getChats.infiniteQueryOptions({ limit: 20 }).queryKey,
+				trpc.chat.getChats.infiniteQueryOptions(
+					{ limit: 20 },
+					{
+						getNextPageParam: (lastPage) => lastPage.nextCursor,
+					}
+				).queryKey,
 				(oldData: ChatInfiniteData | undefined) => {
 					if (!oldData) {
 						return {
@@ -174,10 +179,15 @@ export function Chat({
 
 			if (env.spaceId) {
 				queryClient.setQueryData(
-					trpc.chat.getChats.infiniteQueryOptions({
-						limit: 20,
-						spaceId: env.spaceId,
-					}).queryKey,
+					trpc.chat.getChats.infiniteQueryOptions(
+						{
+							limit: 20,
+							spaceId: env.spaceId,
+						},
+						{
+							getNextPageParam: (lastPage) => lastPage.nextCursor,
+						}
+					).queryKey,
 					(oldData: ChatInfiniteData | undefined) => {
 						if (!oldData) {
 							return {

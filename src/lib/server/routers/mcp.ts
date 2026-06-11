@@ -13,6 +13,7 @@ import {
 	encryptKey,
 	parseEncryptedKey,
 } from "@/lib/mcp/encryption";
+import { assertPublicHttpsUrl } from "@/lib/server/security/url-policy";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 
 const MCP_CONNECTION_TIMEOUT_MS = 5000;
@@ -68,6 +69,7 @@ export const mcpRouter = router({
 		)
 		.mutation(async ({ ctx, input }) => {
 			try {
+				const safeUrl = await assertPublicHttpsUrl(input.url);
 				const apiKeyEncrypted = input.apiKey
 					? JSON.stringify(encryptKey(input.apiKey))
 					: undefined;
@@ -75,7 +77,7 @@ export const mcpRouter = router({
 				const config = await createMcpServerConfig({
 					userId: ctx.session.user.id,
 					name: input.name,
-					url: input.url,
+					url: safeUrl,
 					apiKeyEncrypted,
 					enabled: input.enabled,
 				});
@@ -124,13 +126,17 @@ export const mcpRouter = router({
 			const authOrUrlChanged =
 				input.url !== undefined ||
 				(input.apiKey !== undefined && input.apiKey !== "");
+			const safeUrl =
+				input.url === undefined
+					? undefined
+					: await assertPublicHttpsUrl(input.url);
 
 			try {
 				const config = await updateMcpServerConfig({
 					id: input.id,
 					userId: ctx.session.user.id,
 					name: input.name,
-					url: input.url,
+					url: safeUrl,
 					apiKeyEncrypted,
 					enabled: input.enabled,
 					...(authOrUrlChanged && {
@@ -283,8 +289,9 @@ async function resolveConnectionParams(
 	}
 
 	if (input.url) {
+		const safeUrl = await assertPublicHttpsUrl(input.url);
 		return {
-			url: input.url,
+			url: safeUrl,
 			apiKey: input.apiKey,
 		};
 	}

@@ -1,4 +1,7 @@
-import { getChatByIdAndUserId } from "@/lib/db/queries/chat";
+import {
+	getChatByIdAndUserId,
+	setChatActiveStreamId,
+} from "@/lib/db/queries/chat";
 import { env } from "@/lib/env.mjs";
 import { createAuthErrorResponse, getAuthAccessState } from "@/lib/utils/auth";
 import { getStreamContext } from "../../_lib/resumable-stream";
@@ -31,9 +34,18 @@ export async function GET(
 		return new Response(null, { status: 204 });
 	}
 
-	const stream = await streamContext.resumeExistingStream(
-		chat.activeStreamId
-	);
+	let stream: ReadableStream<string> | null | undefined;
+	try {
+		stream = await streamContext.resumeExistingStream(chat.activeStreamId);
+	} catch (error) {
+		console.error("Failed to resume chat stream", error);
+		await setChatActiveStreamId({
+			chatId,
+			userId: accessState.authSession.session.userId,
+			activeStreamId: null,
+		});
+		return new Response(null, { status: 204 });
+	}
 
 	if (!stream) {
 		return new Response(null, { status: 204 });

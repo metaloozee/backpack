@@ -6,9 +6,11 @@ import {
 	type EncryptedKeyInput,
 	parseEncryptedKey,
 } from "@/lib/mcp/encryption";
+import { assertPublicHttpsUrl } from "@/lib/server/security/url-policy";
 
 export interface McpServerConfig {
 	apiKey?: EncryptedKeyInput;
+	id?: string;
 	name: string;
 	url: string;
 }
@@ -24,6 +26,7 @@ export async function testMcpConnection(
 	apiKey?: string
 ): Promise<TestConnectionResult> {
 	const client = new Client({ name: "backpack-test", version: "1.0.0" });
+	const safeUrl = await assertPublicHttpsUrl(url);
 
 	try {
 		const transportInit: RequestInit | undefined = apiKey
@@ -34,7 +37,7 @@ export async function testMcpConnection(
 				}
 			: undefined;
 
-		const transport = new StreamableHTTPClientTransport(new URL(url), {
+		const transport = new StreamableHTTPClientTransport(new URL(safeUrl), {
 			requestInit: transportInit,
 		});
 
@@ -75,47 +78,63 @@ export async function testMcpConnection(
 	}
 }
 
-export async function createMcpClientForServer(
-	server: McpServerConfig
-): Promise<Client> {
-	const client = new Client({
-		name: `backpack-${server.name}`,
-		version: "1.0.0",
-	});
-
-	const decryptedApiKey = server.apiKey
-		? decryptKey(parseEncryptedKey(server.apiKey))
-		: undefined;
-
-	const transportInit: RequestInit | undefined = decryptedApiKey
-		? {
-				headers: {
-					Authorization: `Bearer ${decryptedApiKey}`,
-				},
-			}
-		: undefined;
-
-	const transport = new StreamableHTTPClientTransport(new URL(server.url), {
-		requestInit: transportInit,
-	});
-
-	await client.connect(transport);
-	return client;
-}
-
 type McpToolSet = Record<string, unknown>;
 
 export interface McpToolInfo {
 	description?: string;
+	id: string;
 	serverName: string;
 	toolName: string;
 }
 
 export interface McpToolsResult {
 	clients: MCPClient[];
-	serverNames: Map<string, string>;
 	toolInfos: McpToolInfo[];
 	tools: McpToolSet;
+}
+
+const MCP_TOOL_ID_PATTERN = /[^a-zA-Z0-9_-]+/g;
+const MAX_MCP_TOOL_ID_LENGTH = 64;
+
+const sanitizeToolIdSegment = (value: string): string =>
+	value
+		.replace(MCP_TOOL_ID_PATTERN, "_")
+		.replace(/^_+|_+$/g, "")
+		.slice(0, MAX_MCP_TOOL_ID_LENGTH)
+		.toLowerCase();
+
+const deterministicHash = (value: string): string => {
+	let hash = 0x811c_9dc5;
+	for (const char of value) {
+		hash ^= char.charCodeAt(0);
+		hash = Math.imul(hash, 0x0100_0193);
+	}
+	return (hash >>> 0).toString(36);
+};
+
+function createMcpToolId({
+	server,
+	toolName,
+	existingIds,
+}: {
+	server: McpServerConfig;
+	toolName: string;
+	existingIds: Record<string, unknown>;
+}): string {
+	const serverSegment = sanitizeToolIdSegment(server.id ?? server.name);
+	const toolSegment = sanitizeToolIdSegment(toolName) || "tool";
+	const baseId = `mcp_${serverSegment || "server"}_${toolSegment}`.slice(
+		0,
+		MAX_MCP_TOOL_ID_LENGTH
+	);
+
+	if (!(baseId in existingIds)) {
+		return baseId;
+	}
+
+	const hash = deterministicHash(`${server.id ?? server.name}:${toolName}`);
+	const suffix = `_${hash}`;
+	return `${baseId.slice(0, MAX_MCP_TOOL_ID_LENGTH - suffix.length)}${suffix}`;
 }
 
 export async function createMcpToolsForServers(
@@ -123,11 +142,11 @@ export async function createMcpToolsForServers(
 ): Promise<McpToolsResult> {
 	const allTools: McpToolSet = {};
 	const clients: MCPClient[] = [];
-	const serverNames = new Map<string, string>();
 	const toolInfos: McpToolInfo[] = [];
 
 	for (const server of servers) {
 		try {
+			const safeUrl = await assertPublicHttpsUrl(server.url);
 			const decryptedApiKey = server.apiKey
 				? decryptKey(parseEncryptedKey(server.apiKey))
 				: undefined;
@@ -135,7 +154,7 @@ export async function createMcpToolsForServers(
 			const mcpClient = await createMCPClient({
 				transport: {
 					type: "http",
-					url: server.url,
+					url: safeUrl,
 					headers: decryptedApiKey
 						? { Authorization: `Bearer ${decryptedApiKey}` }
 						: undefined,
@@ -147,13 +166,17 @@ export async function createMcpToolsForServers(
 			const tools = await mcpClient.tools();
 
 			for (const [toolName, tool] of Object.entries(tools)) {
-				const prefixedName = `mcp_${server.name}_${toolName}`;
+				const prefixedName = createMcpToolId({
+					server,
+					toolName,
+					existingIds: allTools,
+				});
 				allTools[prefixedName] = tool;
-				serverNames.set(prefixedName, server.name);
 
 				// Extract description from tool if available
 				const toolWithMeta = tool as { description?: string };
 				toolInfos.push({
+					id: prefixedName,
 					serverName: server.name,
 					toolName,
 					description: toolWithMeta.description,
@@ -169,7 +192,7 @@ export async function createMcpToolsForServers(
 		}
 	}
 
-	return { tools: allTools, clients, serverNames, toolInfos };
+	return { tools: allTools, clients, toolInfos };
 }
 
 export async function closeMcpClients(clients: MCPClient[]): Promise<void> {
@@ -182,54 +205,4 @@ export async function closeMcpClients(clients: MCPClient[]): Promise<void> {
 			console.error("Error closing MCP client:", errorMessage);
 		}
 	}
-}
-
-export async function getMcpToolsForServers(
-	servers: McpServerConfig[]
-): Promise<Record<string, object>> {
-	const allTools: Record<string, object> = {};
-	const clients: Client[] = [];
-
-	try {
-		for (const server of servers) {
-			try {
-				const client = await createMcpClientForServer(server);
-				clients.push(client);
-
-				const { tools } = await client.listTools();
-
-				for (const tool of tools) {
-					const prefixedName = `${server.name}_${tool.name}`;
-					allTools[prefixedName] = {
-						name: prefixedName,
-						description: tool.description,
-						inputSchema: tool.inputSchema,
-					};
-				}
-			} catch (error) {
-				const errorMessage =
-					error instanceof Error ? error.message : String(error);
-				console.error(
-					`Failed to get tools from server ${server.name}:`,
-					errorMessage
-				);
-			}
-		}
-	} catch (error) {
-		const errorMessage =
-			error instanceof Error ? error.message : String(error);
-		console.error("Failed to get MCP tools:", errorMessage);
-	} finally {
-		for (const client of clients) {
-			try {
-				await client.close();
-			} catch (error) {
-				const errorMessage =
-					error instanceof Error ? error.message : String(error);
-				console.error("Error closing MCP client:", errorMessage);
-			}
-		}
-	}
-
-	return allTools;
 }

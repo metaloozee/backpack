@@ -165,9 +165,6 @@ export async function deleteChatById({
 	userId: string;
 }): Promise<Chat | undefined> {
 	try {
-		await db.delete(vote).where(eq(vote.chatId, id));
-		await db.delete(message).where(eq(message.chatId, id));
-
 		const [deletedChat] = await db
 			.delete(chat)
 			.where(and(eq(chat.id, id), eq(chat.userId, userId)))

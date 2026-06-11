@@ -1,10 +1,11 @@
 "use client";
 
 import type { UseChatHelpers } from "@ai-sdk/react";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronDownIcon, ChevronUpIcon, RefreshCcwIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
-import { type ComponentProps, type ReactNode, useState } from "react";
+import { type ComponentProps, type ReactNode, useMemo, useState } from "react";
 import { Streamdown } from "streamdown";
 import {
 	Attachment,
@@ -37,6 +38,7 @@ import { Disclosure, DisclosureTrigger } from "@/components/ui/disclosure";
 import type { ChatMessage } from "@/lib/ai/types";
 import { transitions } from "@/lib/animations";
 import { streamdownPlugins } from "@/lib/streamdown";
+import { useTRPC } from "@/lib/trpc/trpc";
 import { getTextFromMessage } from "@/lib/utils/ai";
 import { cn } from "@/lib/utils/cn";
 import { sanitizeText } from "@/lib/utils/sanitization";
@@ -44,6 +46,8 @@ import { sanitizeText } from "@/lib/utils/sanitization";
 type MessagePart = ChatMessage["parts"][number];
 
 const TOOL_PREFIX_REGEX = /^tool-/;
+const UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function createToolCallId(part: MessagePart, fallbackId: string) {
 	return "toolCallId" in part && typeof part.toolCallId === "string"
@@ -145,6 +149,28 @@ function parseMcpToolName(toolName: string): {
 		serverName: withoutPrefix.slice(0, firstUnderscore),
 		toolName: withoutPrefix.slice(firstUnderscore + 1),
 	};
+}
+
+function useMcpServerName(serverIdOrName: string): string {
+	const trpc = useTRPC();
+	const { data } = useQuery(
+		trpc.mcp.getServers.queryOptions(undefined, {
+			enabled: UUID_REGEX.test(serverIdOrName),
+			staleTime: 60_000,
+		})
+	);
+
+	return useMemo(() => {
+		if (!UUID_REGEX.test(serverIdOrName)) {
+			return serverIdOrName;
+		}
+
+		const server = data?.servers.find(
+			(candidate) => candidate.id === serverIdOrName
+		);
+
+		return server?.name ?? serverIdOrName;
+	}, [data?.servers, serverIdOrName]);
 }
 
 function renderExtractTool(
@@ -376,14 +402,15 @@ function renderArtifactToolPart({
 	}
 }
 
-function renderMcpToolPart(
-	tool: NonNullable<ReturnType<typeof getNormalizedToolData>>
-) {
-	if (!tool.toolName.startsWith("mcp_")) {
-		return null;
-	}
-
-	const { serverName, toolName } = parseMcpToolName(tool.toolName);
+function McpToolPart({
+	tool,
+}: {
+	tool: NonNullable<ReturnType<typeof getNormalizedToolData>>;
+}) {
+	const { serverName: serverIdOrName, toolName } = parseMcpToolName(
+		tool.toolName
+	);
+	const serverName = useMcpServerName(serverIdOrName);
 	const isError = tool.state === "output-error";
 	const isLoading =
 		tool.state === "input-streaming" || tool.state === "input-available";
@@ -408,6 +435,16 @@ function renderMcpToolPart(
 			toolName={toolName}
 		/>
 	);
+}
+
+function renderMcpToolPart(
+	tool: NonNullable<ReturnType<typeof getNormalizedToolData>>
+) {
+	if (!tool.toolName.startsWith("mcp_")) {
+		return null;
+	}
+
+	return <McpToolPart key={`${tool.toolCallId}-${tool.type}`} tool={tool} />;
 }
 
 function MessageReasoning({ reasoning }: { reasoning: string }) {

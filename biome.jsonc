@@ -1,4 +1,7 @@
 {
+  "files": {
+    "includes": ["!.agents", "!.claude"]
+  },
   "linter": {
     "includes": ["!.agents/**", "!.claude/**"]
   },

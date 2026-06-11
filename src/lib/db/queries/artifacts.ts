@@ -17,6 +17,14 @@ import { BackpackError } from "@/lib/errors";
 export type ArtifactKind = "text";
 export type ArtifactVersionSource = "assistant" | "user" | "restore";
 
+const MAX_ARTIFACT_VERSION_INSERT_ATTEMPTS = 3;
+const POSTGRES_UNIQUE_VIOLATION_CODE = "23505";
+
+const isUniqueViolation = (error: unknown): boolean =>
+	error instanceof Error &&
+	"code" in error &&
+	(error as { code?: string }).code === POSTGRES_UNIQUE_VIOLATION_CODE;
+
 export interface ArtifactWithLatestVersion extends Artifact {
 	latestVersion: ArtifactVersion | null;
 }
@@ -356,62 +364,80 @@ export async function appendArtifactVersion({
 	messageId?: string;
 	restoredFromVersionId?: string;
 }): Promise<ArtifactVersion> {
-	try {
-		return await db.transaction(async (tx) => {
-			const [selectedArtifact] = await tx
-				.select()
-				.from(artifact)
-				.where(
-					and(
-						eq(artifact.id, artifactId),
-						eq(artifact.userId, userId)
+	for (
+		let attempt = 1;
+		attempt <= MAX_ARTIFACT_VERSION_INSERT_ATTEMPTS;
+		attempt++
+	) {
+		try {
+			return await db.transaction(async (tx) => {
+				const [selectedArtifact] = await tx
+					.select()
+					.from(artifact)
+					.where(
+						and(
+							eq(artifact.id, artifactId),
+							eq(artifact.userId, userId)
+						)
 					)
-				)
-				.limit(1);
+					.limit(1);
 
-			if (!selectedArtifact) {
-				throw new Error("Artifact not found");
+				if (!selectedArtifact) {
+					throw new Error("Artifact not found");
+				}
+
+				const [maxVersion] = await tx
+					.select({
+						value: sql<number>`coalesce(max(${artifactVersion.versionNumber}), 0)`,
+					})
+					.from(artifactVersion)
+					.where(eq(artifactVersion.artifactId, artifactId));
+
+				const nextVersionNumber = (maxVersion?.value ?? 0) + 1;
+
+				const [createdVersion] = await tx
+					.insert(artifactVersion)
+					.values({
+						artifactId,
+						versionNumber: nextVersionNumber,
+						content,
+						source,
+						messageId,
+						restoredFromVersionId,
+						createdAt: new Date(),
+					})
+					.returning();
+
+				if (!createdVersion) {
+					throw new Error("Artifact version insert returned no rows");
+				}
+
+				await tx
+					.update(artifact)
+					.set({ updatedAt: new Date() })
+					.where(
+						and(
+							eq(artifact.id, artifactId),
+							eq(artifact.userId, userId)
+						)
+					);
+
+				return createdVersion;
+			});
+		} catch (error) {
+			const shouldRetry =
+				isUniqueViolation(error) &&
+				attempt < MAX_ARTIFACT_VERSION_INSERT_ATTEMPTS;
+			if (!shouldRetry) {
+				throw BackpackError.database(
+					"Failed to append artifact version",
+					error
+				);
 			}
-
-			const [maxVersion] = await tx
-				.select({
-					value: sql<number>`coalesce(max(${artifactVersion.versionNumber}), 0)`,
-				})
-				.from(artifactVersion)
-				.where(eq(artifactVersion.artifactId, artifactId));
-
-			const nextVersionNumber = (maxVersion?.value ?? 0) + 1;
-
-			const [createdVersion] = await tx
-				.insert(artifactVersion)
-				.values({
-					artifactId,
-					versionNumber: nextVersionNumber,
-					content,
-					source,
-					messageId,
-					restoredFromVersionId,
-					createdAt: new Date(),
-				})
-				.returning();
-
-			if (!createdVersion) {
-				throw new Error("Artifact version insert returned no rows");
-			}
-
-			await tx
-				.update(artifact)
-				.set({ updatedAt: new Date() })
-				.where(eq(artifact.id, artifactId));
-
-			return createdVersion;
-		});
-	} catch (error) {
-		throw BackpackError.database(
-			"Failed to append artifact version",
-			error
-		);
+		}
 	}
+
+	throw BackpackError.database("Failed to append artifact version");
 }
 
 export async function renameArtifact({

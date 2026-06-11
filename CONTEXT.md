@@ -1,5 +1,42 @@
 # Context Glossary
 
+## User
+
+A person authenticated into Backpack who owns Chats, Spaces, Memories, and MCP
+Server configurations.
+
+## Chat
+
+A user-owned conversation with the assistant.
+
+## Message
+
+A saved entry in a Chat, such as a user prompt, assistant response, system
+message, or tool-data message.
+
+## Vote
+
+A user feedback marker attached to a Message within a Chat.
+
+## Space
+
+A user-owned research workspace that groups Chats and Knowledge around a shared
+topic or project.
+
+## Knowledge
+
+A source document or webpage added to a Space so the assistant can search and
+reference it.
+
+## Memory
+
+A user-owned saved fact or preference that can be recalled across Chats.
+
+## MCP Server
+
+A user-configured external Model Context Protocol server that can provide tools
+to the assistant.
+
 ## Artifact
 
 A persistent, chat-owned workspace item for long-form user-visible content.

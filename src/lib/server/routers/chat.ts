@@ -4,7 +4,6 @@ import { elevenlabs } from "@ai-sdk/elevenlabs";
 import { TRPCError } from "@trpc/server";
 import { experimental_transcribe as transcribe } from "ai";
 import { and, eq, gte } from "drizzle-orm";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import {
@@ -15,7 +14,6 @@ import {
 	getMessagesByChatIdAndUserId,
 	getVotesByChatId,
 	saveChat,
-	saveMessages as saveMessagesQuery,
 	searchChatsByUserId,
 	setChatActiveStreamId,
 	updateChatTitleIfDefault,
@@ -23,9 +21,20 @@ import {
 } from "@/lib/db/queries/chat";
 import { getMcpServerConfigsByIds } from "@/lib/db/queries/mcp";
 import { getMemoriesByUserId } from "@/lib/db/queries/memories";
-import { chat, type Message, message } from "@/lib/db/schema/app";
+import { chat, message } from "@/lib/db/schema/app";
 import { BackpackError } from "@/lib/errors";
 import { protectedProcedure, router } from "@/lib/server/trpc";
+
+const MAX_TRANSCRIPTION_AUDIO_BYTES = 25 * 1024 * 1024;
+const ALLOWED_TRANSCRIPTION_MIME_TYPES = new Set([
+	"audio/mpeg",
+	"audio/mp3",
+	"audio/mp4",
+	"audio/wav",
+	"audio/webm",
+	"audio/ogg",
+	"audio/x-m4a",
+]);
 
 export const chatRouter = router({
 	getChatRuntimeData: protectedProcedure
@@ -113,29 +122,6 @@ export const chatRouter = router({
 				limit: input.limit,
 			});
 			return { chats };
-		}),
-	saveMessages: protectedProcedure
-		.input(
-			z.object({
-				messages: z.array(
-					z.object({
-						id: z.string().uuid(),
-						chatId: z.string().uuid(),
-						role: z.enum(["user", "data", "assistant", "system"]),
-						parts: z.array(z.any()).default([]),
-						attachments: z.array(z.any()).default([]),
-						createdAt: z.coerce.date(),
-					})
-				),
-			})
-		)
-		.mutation(async ({ input }) => {
-			const messageInsertSchema = createInsertSchema(message);
-			const parsedMessages = input.messages.map((message: Message) =>
-				messageInsertSchema.parse(message)
-			);
-			await saveMessagesQuery({ messages: parsedMessages });
-			return { success: true };
 		}),
 	saveChat: protectedProcedure
 		.input(
@@ -259,11 +245,32 @@ export const chatRouter = router({
 	transcribe: protectedProcedure
 		.input(z.instanceof(FormData))
 		.mutation(async ({ input }) => {
-			const audioFile = (await input.get("audio")) as File;
-			if (!audioFile) {
+			const audioFile = input.get("audio");
+			if (!(audioFile instanceof File)) {
 				throw new TRPCError({
 					code: "BAD_REQUEST",
 					message: "No audio file provided",
+				});
+			}
+
+			if (audioFile.size === 0) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Audio file is empty",
+				});
+			}
+
+			if (audioFile.size > MAX_TRANSCRIPTION_AUDIO_BYTES) {
+				throw new TRPCError({
+					code: "PAYLOAD_TOO_LARGE",
+					message: "Audio file must be 25 MB or smaller",
+				});
+			}
+
+			if (!ALLOWED_TRANSCRIPTION_MIME_TYPES.has(audioFile.type)) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Unsupported audio file type",
 				});
 			}
 

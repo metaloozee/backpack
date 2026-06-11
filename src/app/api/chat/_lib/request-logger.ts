@@ -2,8 +2,14 @@ import type { ModelCapabilities } from "@/lib/ai/models";
 import type { ActiveTool, ToolsState } from "./types";
 
 interface ChatRequestLogPayload {
-	chatId: string;
-	messageId: string;
+	debug?: {
+		chatId: string;
+		connectedMcpToolNames: string[];
+		enabledMcpServerIds: string[];
+		messageId: string;
+		query: string;
+		userId: string;
+	};
 	mode: string;
 	model: {
 		id: string;
@@ -11,26 +17,22 @@ interface ChatRequestLogPayload {
 		provider: string;
 		capabilities: ModelCapabilities;
 	};
-	query: string;
 	request: {
 		inSpace: boolean;
-		spaceId: string | null;
 		partCount: number;
 		attachmentCount: number;
+		queryLength: number;
 	};
 	selectedAgent: string | null;
 	tools: {
 		toggles: Required<ToolsState>;
 		enabled: ActiveTool[];
 		mcp: {
-			configuredServerIds: string[];
-			connectedToolNames: string[];
 			totalConfiguredServers: number;
 			totalConnectedTools: number;
 		};
-		availableToModel: string[];
+		availableToModelCount: number;
 	};
-	userId: string;
 }
 
 const MAX_QUERY_LENGTH = 500;
@@ -64,6 +66,10 @@ const getToolToggleSnapshot = (
 	academicSearch: toolsState.academicSearch ?? false,
 	financeSearch: toolsState.financeSearch ?? false,
 });
+
+const shouldIncludeRawChatRequestLogFields = (): boolean =>
+	process.env.NODE_ENV === "development" &&
+	process.env.CHAT_REQUEST_RAW_LOGGING === "true";
 
 export const logChatRequestMetadata = (payload: ChatRequestLogPayload) => {
 	console.log(
@@ -117,29 +123,33 @@ export const createChatRequestLogPayload = ({
 	mcpToolNames: string[];
 	allActiveTools: string[];
 }): ChatRequestLogPayload => ({
-	chatId,
-	messageId: message.id,
-	userId,
 	mode,
 	selectedAgent,
-	query: extractQueryText(message.parts),
 	model,
 	request: {
 		inSpace: requestEnv.inSpace,
-		spaceId: requestEnv.spaceId ?? null,
 		partCount: message.parts.length,
 		attachmentCount: message.parts.filter((part) => part.type === "file")
 			.length,
+		queryLength: extractQueryText(message.parts).length,
 	},
 	tools: {
 		toggles: getToolToggleSnapshot(toolsState),
 		enabled: activeBuiltInTools,
 		mcp: {
-			configuredServerIds: enabledMcpServerIds,
-			connectedToolNames: mcpToolNames,
 			totalConfiguredServers: enabledMcpServerIds.length,
 			totalConnectedTools: mcpToolNames.length,
 		},
-		availableToModel: allActiveTools,
+		availableToModelCount: allActiveTools.length,
 	},
+	...(shouldIncludeRawChatRequestLogFields() && {
+		debug: {
+			chatId,
+			messageId: message.id,
+			userId,
+			query: extractQueryText(message.parts),
+			enabledMcpServerIds,
+			connectedMcpToolNames: mcpToolNames,
+		},
+	}),
 });
