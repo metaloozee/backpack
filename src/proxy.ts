@@ -14,7 +14,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-	matcher: [
-		"/((?!api|_next/static|_next/image|sign-in|.*\\.png$|\\.well-known/workflow/).*)",
-	],
+	matcher: ["/((?!api|_next/static|_next/image|sign-in|.*\\.png$).*)"],
 };

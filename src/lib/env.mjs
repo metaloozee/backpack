@@ -36,6 +36,8 @@ export const env = createEnv({
 		DEEPGRAM_API_KEY: z.string().min(1),
 
 		MCP_ENCRYPTION_KEY: z.string().min(32),
+
+		TRIGGER_SECRET_KEY: z.string().min(1),
 	},
 	client: {
 		// NEXT_PUBLIC_PUBLISHABLE_KEY: z.string().min(1),

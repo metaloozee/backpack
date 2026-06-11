@@ -1,9 +1,9 @@
 /** biome-ignore-all lint/suspicious/noConsole: console.log */
 
+import { auth } from "@trigger.dev/sdk";
 import { TRPCError } from "@trpc/server";
 import { del, put } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
-import { start } from "workflow/api";
 import { z } from "zod";
 import {
 	createKnowledge,
@@ -24,12 +24,49 @@ import {
 } from "@/lib/db/queries/spaces";
 import { protectedProcedure, router } from "@/lib/server/trpc";
 import { sanitizeFileName, sanitizeUserInput } from "@/lib/utils/sanitization";
-import { processKnowledgeWorkflow } from "@/workflows/knowledge-process";
+import { processKnowledgeTask } from "@/trigger/knowledge";
 
 const MAX_PDF_SIZE_MB = 25;
 const BYTES_PER_KILOBYTE = 1024;
 const KILOBYTES_PER_MEGABYTE = 1024;
 const BYTES_PER_MB = BYTES_PER_KILOBYTE * KILOBYTES_PER_MEGABYTE;
+const KNOWLEDGE_REALTIME_TOKEN_TTL = "2h";
+
+const getSpaceTag = (spaceId: string) => `space:${spaceId}`;
+const getKnowledgeTag = (knowledgeId: string) => `knowledge:${knowledgeId}`;
+
+const triggerKnowledgeProcessing = async ({
+	knowledgeId,
+	userId,
+	spaceId,
+	knowledgeType,
+}: {
+	knowledgeId: string;
+	userId: string;
+	spaceId: string;
+	knowledgeType: "webpage" | "pdf";
+}) => {
+	const run = await processKnowledgeTask.trigger(
+		{
+			knowledgeId,
+			userId,
+		},
+		{
+			tags: [getSpaceTag(spaceId), getKnowledgeTag(knowledgeId)],
+			metadata: {
+				spaceId,
+				knowledgeId,
+				knowledgeType,
+			},
+		}
+	);
+
+	return {
+		id: run.id,
+		publicAccessToken: run.publicAccessToken,
+		taskIdentifier: run.taskIdentifier,
+	};
+};
 
 export const spaceRouter = router({
 	getSpaceOverview: protectedProcedure
@@ -257,15 +294,15 @@ export const spaceRouter = router({
 				});
 			}
 
-			await start(processKnowledgeWorkflow, [
-				{
-					knowledgeId: knowledgeData.id,
-					userId: ctx.session.user.id,
-				},
-			]);
+			const run = await triggerKnowledgeProcessing({
+				knowledgeId: knowledgeData.id,
+				userId: ctx.session.user.id,
+				spaceId: parsedSpaceId.data,
+				knowledgeType: "pdf",
+			});
 
 			revalidatePath(`/s/${parsedSpaceId.data}`);
-			return { success: true };
+			return { success: true, knowledgeId: knowledgeData.id, run };
 		}),
 	saveWebPage: protectedProcedure
 		.input(
@@ -304,15 +341,46 @@ export const spaceRouter = router({
 				});
 			}
 
-			await start(processKnowledgeWorkflow, [
-				{
-					knowledgeId: knowledgeData.id,
-					userId: ctx.session.user.id,
-				},
-			]);
+			const run = await triggerKnowledgeProcessing({
+				knowledgeId: knowledgeData.id,
+				userId: ctx.session.user.id,
+				spaceId: input.spaceId,
+				knowledgeType: "webpage",
+			});
 
 			revalidatePath(`/s/${input.spaceId}`);
-			return { success: true };
+			return { success: true, knowledgeId: knowledgeData.id, run };
+		}),
+	getKnowledgeRealtimeAccess: protectedProcedure
+		.input(
+			z.object({
+				spaceId: z.string().uuid(),
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			const spaceExists = await getSpaceByIdAndUserId({
+				spaceId: input.spaceId,
+				userId: ctx.session.user.id,
+			});
+
+			if (!spaceExists) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Space not found",
+				});
+			}
+
+			const spaceTag = getSpaceTag(input.spaceId);
+			const accessToken = await auth.createPublicToken({
+				scopes: {
+					read: {
+						tags: spaceTag,
+					},
+				},
+				expirationTime: KNOWLEDGE_REALTIME_TOKEN_TTL,
+			});
+
+			return { accessToken, spaceTag };
 		}),
 	getKnowledge: protectedProcedure
 		.input(
@@ -360,15 +428,15 @@ export const spaceRouter = router({
 				userId: ctx.session.user.id,
 			});
 
-			await start(processKnowledgeWorkflow, [
-				{
-					knowledgeId: input.knowledgeId,
-					userId: ctx.session.user.id,
-				},
-			]);
+			const run = await triggerKnowledgeProcessing({
+				knowledgeId: input.knowledgeId,
+				userId: ctx.session.user.id,
+				spaceId: input.spaceId,
+				knowledgeType: knowledgeRecord.knowledgeType,
+			});
 
 			revalidatePath(`/s/${input.spaceId}`);
-			return { success: true };
+			return { success: true, knowledgeId: input.knowledgeId, run };
 		}),
 	renameKnowledge: protectedProcedure
 		.input(

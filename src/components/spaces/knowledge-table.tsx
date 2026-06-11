@@ -9,6 +9,7 @@ import {
 	getPaginationRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
+import { useRealtimeRun, useRealtimeStream } from "@trigger.dev/react-hooks";
 import {
 	ExternalLinkIcon,
 	PencilIcon,
@@ -21,6 +22,8 @@ import { toast } from "sonner";
 import { format } from "timeago.js";
 import type { Knowledge } from "@/lib/db/schema/app";
 import { useTRPC } from "@/lib/trpc/trpc";
+import type { processKnowledgeTask } from "@/trigger/knowledge";
+import { logStream } from "@/trigger/streams";
 import { Button } from "../ui/button";
 import {
 	Dialog,
@@ -70,40 +73,6 @@ const baseColumns: ColumnDef<Knowledge>[] = [
 		},
 	},
 	{
-		accessorKey: "status",
-		header: "Status",
-		cell: ({ row }) => {
-			const status = row.original.status ?? "pending";
-			const errorMessage = row.original.errorMessage;
-			const statusLabelMap = {
-				pending: "Pending",
-				processing: "Processing",
-				ready: "Ready",
-				failed: "Failed",
-			} as const;
-
-			const statusClassMap = {
-				pending: "bg-amber-500/10 text-amber-300",
-				processing: "bg-blue-500/10 text-blue-300",
-				ready: "bg-emerald-500/10 text-emerald-300",
-				failed: "bg-rose-500/10 text-rose-300",
-			} as const;
-
-			const statusLabel = statusLabelMap[status] ?? "Pending";
-			const statusClass =
-				statusClassMap[status] ?? "bg-amber-500/10 text-amber-300";
-
-			return (
-				<span
-					className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${statusClass}`}
-					title={errorMessage ?? undefined}
-				>
-					{statusLabel}
-				</span>
-			);
-		},
-	},
-	{
 		accessorKey: "uploadedAt",
 		header: "Uploaded",
 		cell: ({ row }) => (
@@ -111,6 +80,105 @@ const baseColumns: ColumnDef<Knowledge>[] = [
 		),
 	},
 ];
+
+export type KnowledgeRealtimeRun = {
+	accessToken: string;
+	runId: string;
+};
+
+type KnowledgeRunHandle = {
+	id: string;
+	publicAccessToken: string;
+	taskIdentifier: "process-knowledge";
+};
+
+const statusLabelMap = {
+	pending: "Pending",
+	processing: "Processing",
+	ready: "Ready",
+	failed: "Failed",
+} as const;
+
+const statusClassMap = {
+	pending: "bg-amber-500/10 text-amber-300",
+	processing: "bg-blue-500/10 text-blue-300",
+	ready: "bg-emerald-500/10 text-emerald-300",
+	failed: "bg-rose-500/10 text-rose-300",
+} as const;
+
+function KnowledgeStatusCell({
+	knowledge,
+	realtimeRun,
+}: {
+	knowledge: Knowledge;
+	realtimeRun?: KnowledgeRealtimeRun;
+}) {
+	const trpc = useTRPC();
+	const queryClient = useQueryClient();
+	const hasRealtimeRun = Boolean(
+		realtimeRun?.runId && realtimeRun.accessToken
+	);
+	const { run } = useRealtimeRun<typeof processKnowledgeTask>(
+		realtimeRun?.runId,
+		{
+			accessToken: realtimeRun?.accessToken,
+			enabled: hasRealtimeRun,
+			onComplete: () => {
+				queryClient
+					.invalidateQueries(trpc.space.getKnowledge.pathFilter())
+					.catch(() => {});
+			},
+		}
+	);
+	const { parts } = useRealtimeStream(logStream, realtimeRun?.runId ?? "", {
+		accessToken: realtimeRun?.accessToken,
+		enabled: hasRealtimeRun,
+		timeoutInSeconds: 120,
+	});
+	const latestMessage = parts.at(-1);
+
+	const status = knowledge.status ?? "pending";
+	const statusLabel = statusLabelMap[status] ?? "Pending";
+	const statusClass = statusClassMap[status] ?? statusClassMap.pending;
+	const liveMessage = latestMessage;
+	const liveProgress = run?.isSuccess ? 100 : Math.min(parts.length * 20, 90);
+	const isLive =
+		hasRealtimeRun &&
+		!run?.isCompleted &&
+		(status === "pending" || status === "processing");
+
+	if (isLive || liveMessage) {
+		return (
+			<div
+				className="flex min-w-[8rem] flex-col gap-1"
+				title={knowledge.errorMessage ?? undefined}
+			>
+				<span
+					className={`inline-flex w-fit items-center rounded-full px-2 py-0.5 text-xs ${statusClass}`}
+				>
+					{run?.isFailed ? "Failed" : (liveMessage ?? statusLabel)}
+				</span>
+				<div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
+					<div
+						className="h-full rounded-full bg-primary transition-all duration-300"
+						style={{
+							width: `${Math.max(0, Math.min(liveProgress, 100))}%`,
+						}}
+					/>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<span
+			className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${statusClass}`}
+			title={knowledge.errorMessage ?? undefined}
+		>
+			{statusLabel}
+		</span>
+	);
+}
 
 interface RenameKnowledgeDialogProps {
 	knowledge: Knowledge | null;
@@ -455,9 +523,13 @@ export function DataTable<TData, TValue>({
 
 export function KnowledgeTable({
 	knowledgeData,
+	knowledgeRuns,
+	onKnowledgeRun,
 	spaceId,
 }: {
 	knowledgeData: Knowledge[];
+	knowledgeRuns?: Record<string, KnowledgeRealtimeRun>;
+	onKnowledgeRun?: (knowledgeId: string, run: KnowledgeRunHandle) => void;
 	spaceId: string;
 }) {
 	const trpc = useTRPC();
@@ -480,7 +552,8 @@ export function KnowledgeTable({
 
 	const retryMutation = useMutation({
 		...trpc.space.retryKnowledge.mutationOptions(),
-		onSuccess: async () => {
+		onSuccess: async (result) => {
+			onKnowledgeRun?.(result.knowledgeId, result.run);
 			await queryClient.invalidateQueries(
 				trpc.space.getKnowledge.pathFilter()
 			);
@@ -492,7 +565,18 @@ export function KnowledgeTable({
 	});
 
 	const columns: ColumnDef<Knowledge>[] = [
-		...baseColumns,
+		baseColumns[0],
+		{
+			accessorKey: "status",
+			header: "Status",
+			cell: ({ row }) => (
+				<KnowledgeStatusCell
+					knowledge={row.original}
+					realtimeRun={knowledgeRuns?.[row.original.id]}
+				/>
+			),
+		},
+		...baseColumns.slice(1),
 		{
 			id: "actions",
 			header: "Actions",

@@ -42,6 +42,8 @@
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-table": "^8.21.3",
     "@tavily/core": "^0.5.14",
+    "@trigger.dev/react-hooks": "4.4.6",
+    "@trigger.dev/sdk": "4.4.6",
     "@trpc/client": "^11.17.0",
     "@trpc/next": "^11.17.0",
     "@trpc/server": "^11.17.0",
@@ -103,7 +105,6 @@
     "use-stick-to-bottom": "^1.1.6",
     "usehooks-ts": "^3.1.1",
     "vaul": "^1.1.2",
-    "workflow": "^4.4.0",
     "ws": "^8.21.0",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
@@ -112,6 +113,7 @@
     "@biomejs/biome": "2.4.16",
     "@tailwindcss/postcss": "^4.3.0",
     "@tanstack/react-query-devtools": "^5.101.0",
+    "@trigger.dev/build": "4.4.6",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^25.9.3",
     "@types/react": "^19.2.8",
@@ -137,7 +139,7 @@
   },
   "name": "backpack",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "bun x concurrently --kill-others --names \"next,trigger\" --prefix-colors \"yellow, blue\" \"next dev --turbopack\" \"bun run trigger:dev\"",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit --incremental false",
@@ -153,7 +155,8 @@
     "db:studio": "drizzle-kit studio",
     "db:check": "drizzle-kit check",
     "prepare": "husky",
-    "doctor": "npx react-doctor@latest"
+    "doctor": "bun x react-doctor@latest",
+    "trigger:dev": "bun x trigger.dev@latest dev"
   },
   "version": "0.2.0",
   "private": true,

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRealtimeRunsWithTag } from "@trigger.dev/react-hooks";
 import { BookCopyIcon, PlusIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
@@ -22,13 +23,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { iconVariants } from "@/lib/animations";
 import type { Knowledge } from "@/lib/db/schema/app";
 import { useTRPC } from "@/lib/trpc/trpc";
+import type { processKnowledgeTask } from "@/trigger/knowledge";
 import { Spinner } from "../spinner";
-import { KnowledgeTable } from "./knowledge-table";
+import { type KnowledgeRealtimeRun, KnowledgeTable } from "./knowledge-table";
 
 interface KnowledgeDialogProps {
 	knowledgeData: Knowledge[];
 	spaceId: string;
 }
+
+type TriggerRunHandle = {
+	id: string;
+	publicAccessToken: string;
+	taskIdentifier: "process-knowledge";
+};
+
+const getKnowledgeIdFromTags = (tags: string[]) => {
+	const knowledgeTag = tags.find((tag) => tag.startsWith("knowledge:"));
+	return knowledgeTag?.slice("knowledge:".length) ?? null;
+};
 
 export function KnowledgeDialog({
 	spaceId,
@@ -36,6 +49,60 @@ export function KnowledgeDialog({
 }: KnowledgeDialogProps) {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
+	const [triggeredRuns, setTriggeredRuns] = useState<
+		Record<string, TriggerRunHandle>
+	>({});
+	const [isOpen, setIsOpen] = useState(false);
+
+	const realtimeAccessQuery = useQuery({
+		...trpc.space.getKnowledgeRealtimeAccess.queryOptions({ spaceId }),
+		enabled: isOpen,
+		staleTime: 60 * 60 * 1000,
+	});
+	const realtimeAccessToken = realtimeAccessQuery.data?.accessToken;
+	const spaceTag = realtimeAccessQuery.data?.spaceTag ?? "";
+	const { runs: taggedRuns } = useRealtimeRunsWithTag<
+		typeof processKnowledgeTask
+	>(spaceTag, {
+		accessToken: realtimeAccessToken,
+		createdAt: "1h",
+		enabled: Boolean(isOpen && realtimeAccessToken && spaceTag),
+	});
+
+	const knowledgeRuns = useMemo<Record<string, KnowledgeRealtimeRun>>(() => {
+		const runsByKnowledgeId: Record<string, KnowledgeRealtimeRun> = {};
+
+		for (const [knowledgeId, run] of Object.entries(triggeredRuns)) {
+			runsByKnowledgeId[knowledgeId] = {
+				accessToken: realtimeAccessToken ?? run.publicAccessToken,
+				runId: run.id,
+			};
+		}
+
+		for (const run of taggedRuns) {
+			const knowledgeId = getKnowledgeIdFromTags(run.tags);
+			if (!(knowledgeId && realtimeAccessToken)) {
+				continue;
+			}
+
+			runsByKnowledgeId[knowledgeId] = {
+				accessToken: realtimeAccessToken,
+				runId: run.id,
+			};
+		}
+
+		return runsByKnowledgeId;
+	}, [realtimeAccessToken, taggedRuns, triggeredRuns]);
+
+	const registerKnowledgeRun = useCallback(
+		(knowledgeId: string, run: TriggerRunHandle) => {
+			setTriggeredRuns((current) => ({
+				...current,
+				[knowledgeId]: run,
+			}));
+		},
+		[]
+	);
 
 	const webpageKnowledge = knowledgeData.filter(
 		(k) => k.knowledgeType === "webpage"
@@ -67,8 +134,6 @@ export function KnowledgeDialog({
 		},
 	});
 
-	const [isOpen, setIsOpen] = useState(false);
-
 	const MAX_PDF_SIZE_MB = 25;
 	const BYTES_PER_KILOBYTE = 1024;
 	const KILOBYTES_PER_MEGABYTE = 1024;
@@ -84,10 +149,11 @@ export function KnowledgeDialog({
 			}
 
 			try {
-				await webPageMutation.mutateAsync({
+				const result = await webPageMutation.mutateAsync({
 					spaceId,
 					url,
 				});
+				registerKnowledgeRun(result.knowledgeId, result.run);
 
 				setIsOpen(false);
 				setUrl("");
@@ -96,7 +162,7 @@ export function KnowledgeDialog({
 				toast.error("uh Oh!", { description: (err as Error).message });
 			}
 		},
-		[spaceId, url, webPageMutation]
+		[registerKnowledgeRun, spaceId, url, webPageMutation]
 	);
 
 	const handlePdfSubmit = useCallback(
@@ -126,7 +192,8 @@ export function KnowledgeDialog({
 				formData.append("file", file);
 
 				try {
-					await pdfMutation.mutateAsync(formData);
+					const result = await pdfMutation.mutateAsync(formData);
+					registerKnowledgeRun(result.knowledgeId, result.run);
 					toast.success(`${file.name} queued for processing`);
 				} catch (err) {
 					toast.error(`Failed to queue ${file.name}`, {
@@ -139,7 +206,13 @@ export function KnowledgeDialog({
 			setPdfFiles([]);
 			setIsOpen(false);
 		},
-		[MAX_PDF_SIZE_BYTES, pdfFiles, pdfMutation, spaceId]
+		[
+			MAX_PDF_SIZE_BYTES,
+			pdfFiles,
+			pdfMutation,
+			registerKnowledgeRun,
+			spaceId,
+		]
 	);
 
 	const uploadForm = useMemo(() => {
@@ -257,6 +330,8 @@ export function KnowledgeDialog({
 						<ScrollArea className="min-h-0 flex-1 pr-2">
 							<KnowledgeTable
 								knowledgeData={webpageKnowledge}
+								knowledgeRuns={knowledgeRuns}
+								onKnowledgeRun={registerKnowledgeRun}
 								spaceId={spaceId}
 							/>
 						</ScrollArea>
@@ -271,6 +346,8 @@ export function KnowledgeDialog({
 						<ScrollArea className="min-h-0 flex-1 pr-2">
 							<KnowledgeTable
 								knowledgeData={pdfKnowledge}
+								knowledgeRuns={knowledgeRuns}
+								onKnowledgeRun={registerKnowledgeRun}
 								spaceId={spaceId}
 							/>
 						</ScrollArea>
