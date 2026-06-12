@@ -105,7 +105,6 @@
     "use-stick-to-bottom": "^1.1.6",
     "usehooks-ts": "^3.1.1",
     "vaul": "^1.1.2",
-    "ws": "^8.21.0",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
@@ -119,7 +118,6 @@
     "@types/react": "^19.2.8",
     "@types/react-dom": "19.2.3",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "@types/ws": "^8.18.1",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "husky": "^9.1.7",
@@ -156,7 +154,8 @@
     "db:check": "drizzle-kit check",
     "prepare": "husky",
     "doctor": "bun x react-doctor@latest",
-    "trigger:dev": "bun x trigger.dev@latest dev"
+    "trigger:dev": "bun x trigger.dev@latest dev",
+    "trigger:deploy": "bun x trigger.dev@latest deploy"
   },
   "version": "0.2.0",
   "private": true,
@@ -165,8 +164,7 @@
     "@types/react-dom": "19.2.3",
     "postcss": "8.5.15",
     "prosemirror-model": "1.25.8",
-    "prosemirror-view": "1.41.8",
-    "ws": "8.21.0"
+    "prosemirror-view": "1.41.8"
   },
   "packageManager": "bun"
 }

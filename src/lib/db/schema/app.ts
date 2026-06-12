@@ -86,7 +86,6 @@ export const KnowledgeTypeEnum = pgEnum("knowledge_type_enum", [
 ]);
 export const KnowledgeStatusEnum = pgEnum("knowledge_status_enum", [
 	"pending",
-	"processing",
 	"ready",
 	"failed",
 ]);

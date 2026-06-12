@@ -1,4 +1,5 @@
-import { logger, task } from "@trigger.dev/sdk";
+import { logger, schemaTask } from "@trigger.dev/sdk";
+import { z } from "zod";
 import { generateEmbeddings } from "@/lib/ai/embedding";
 import { extractRawText, sanitizeData } from "@/lib/ai/extract-web-page";
 import { extractTextFromPdfUrl } from "@/lib/ai/mistral-ocr";
@@ -7,18 +8,16 @@ import {
 	getKnowledgeByIdAndUserId,
 	insertKnowledgeEmbeddings,
 	markKnowledgeFailed,
-	markKnowledgeProcessing,
 	markKnowledgeReady,
 } from "@/lib/db/queries/knowledge";
 import { logStream } from "./streams";
 
 const SUMMARY_LIMIT = 500;
-const MAX_ERROR_LENGTH = 500;
 
-type KnowledgePayload = {
-	knowledgeId: string;
-	userId: string;
-};
+export const payloadSchema = z.object({
+	knowledgeId: z.string(),
+	userId: z.string(),
+});
 
 type EmbeddingPayload = Array<{ embedding: number[]; content: string }>;
 
@@ -43,23 +42,14 @@ const buildSummary = (value: string) => {
 	return `${value.slice(0, SUMMARY_LIMIT)}...`;
 };
 
-const getErrorMessage = (error: unknown) => {
-	if (error instanceof Error) {
-		return error.message.slice(0, MAX_ERROR_LENGTH);
-	}
-
-	return "Unknown error";
-};
-
 const failKnowledge = async ({
 	knowledgeId,
 	userId,
 	message,
-}: KnowledgePayload & {
+}: z.infer<typeof payloadSchema> & {
 	message: string;
 }): Promise<KnowledgeTaskOutput> => {
 	logger.error(message, { knowledgeId, userId });
-	await logStream.append(message);
 	await markKnowledgeFailed({
 		knowledgeId,
 		userId,
@@ -69,16 +59,12 @@ const failKnowledge = async ({
 	return { status: "failed", knowledgeId };
 };
 
-export const processKnowledgeTask = task<
-	"process-knowledge",
-	KnowledgePayload,
-	KnowledgeTaskOutput
->({
+export const processKnowledgeTask = schemaTask({
 	id: "process-knowledge",
+	schema: payloadSchema,
 	maxDuration: 3600,
-	run: async (payload, { ctx }) => {
-		logger.log("Starting knowledge processing workflow", { payload, ctx });
-		await logStream.append("Loading...");
+	run: async (payload) => {
+		logger.log("Starting knowledge processing workflow");
 
 		const record = await getKnowledgeByIdAndUserId({
 			knowledgeId: payload.knowledgeId,
@@ -93,7 +79,6 @@ export const processKnowledgeTask = task<
 		}
 
 		if (record.status === "ready") {
-			await logStream.append("Knowledge is already ready.");
 			return { status: "ready", knowledgeId: record.id };
 		}
 
@@ -107,19 +92,7 @@ export const processKnowledgeTask = task<
 			});
 		}
 
-		const processingRecord = await markKnowledgeProcessing({
-			knowledgeId: payload.knowledgeId,
-			userId: payload.userId,
-		});
-
-		if (!processingRecord) {
-			return await failKnowledge({
-				...payload,
-				message: "Knowledge record not found",
-			});
-		}
-
-		logger.log("Knowledge record found", { payload, ctx });
+		logger.log("Knowledge record found");
 
 		let rawText = "";
 		if (record.knowledgeType === "webpage") {
@@ -131,7 +104,7 @@ export const processKnowledgeTask = task<
 				});
 			}
 
-			logger.log("Processing Webpage...", { payload, ctx, url });
+			logger.log("Processing Webpage...");
 			await logStream.append("Processing Webpage...");
 
 			const { success, result } = await extractRawText({ url });
@@ -169,11 +142,7 @@ export const processKnowledgeTask = task<
 				});
 			}
 
-			logger.log("Processing PDF", {
-				payload,
-				ctx,
-				url: record.sourceUrl,
-			});
+			logger.log("Processing PDF");
 			await logStream.append("Processing PDF...");
 
 			const textFromPdf = await extractTextFromPdfUrl(record.sourceUrl);
@@ -195,7 +164,7 @@ export const processKnowledgeTask = task<
 			});
 		}
 
-		logger.log("Knowledge Processed", { payload, ctx });
+		logger.log("Knowledge Processed");
 		await logStream.append("Embedding...");
 
 		const embeddings = (await generateEmbeddings(
@@ -224,7 +193,6 @@ export const processKnowledgeTask = task<
 			knowledgeSummary: buildSummary(normalizedText),
 		});
 
-		await logStream.append("Done.");
 		return { status: "ready", knowledgeId: payload.knowledgeId };
 	},
 });

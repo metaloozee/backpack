@@ -537,8 +537,7 @@ export function useKnowledgeOverview(spaceId?: string) {
 
 			const data = queryState.state?.data as Knowledge[] | undefined;
 			const hasInProgress = data?.some(
-				(item) =>
-					item.status === "pending" || item.status === "processing"
+				(item) => item.status === "pending"
 			);
 			return hasInProgress ? 5000 : false;
 		},

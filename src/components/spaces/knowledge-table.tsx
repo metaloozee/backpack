@@ -18,12 +18,16 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { parseAsString, useQueryState } from "nuqs";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { format } from "timeago.js";
 import type { Knowledge } from "@/lib/db/schema/app";
+import { useKnowledgeRunsStore } from "@/lib/store/knowledge-runs";
 import { useTRPC } from "@/lib/trpc/trpc";
+import { cn } from "@/lib/utils/cn";
 import type { processKnowledgeTask } from "@/trigger/knowledge";
 import { logStream } from "@/trigger/streams";
+import { Spinner } from "../spinner";
 import { Button } from "../ui/button";
 import {
 	Dialog,
@@ -81,16 +85,12 @@ const baseColumns: ColumnDef<Knowledge>[] = [
 	},
 ];
 
-export type KnowledgeRealtimeRun = {
-	accessToken: string;
-	runId: string;
-};
-
-type KnowledgeRunHandle = {
-	id: string;
-	publicAccessToken: string;
-	taskIdentifier: "process-knowledge";
-};
+const statusClassMap = {
+	pending: "bg-amber-500/10 text-amber-300",
+	processing: "bg-blue-500/10 text-blue-300",
+	ready: "bg-emerald-500/10 text-emerald-300",
+	failed: "bg-rose-500/10 text-rose-300",
+} as const;
 
 const statusLabelMap = {
 	pending: "Pending",
@@ -99,80 +99,113 @@ const statusLabelMap = {
 	failed: "Failed",
 } as const;
 
-const statusClassMap = {
-	pending: "bg-amber-500/10 text-amber-300",
-	processing: "bg-blue-500/10 text-blue-300",
-	ready: "bg-emerald-500/10 text-emerald-300",
-	failed: "bg-rose-500/10 text-rose-300",
-} as const;
-
-function KnowledgeStatusCell({
-	knowledge,
-	realtimeRun,
+function LiveKnowledgeStatus({
+	knowledgeId,
+	runId,
+	publicAccessToken,
 }: {
-	knowledge: Knowledge;
-	realtimeRun?: KnowledgeRealtimeRun;
+	knowledgeId: string;
+	runId: string;
+	publicAccessToken: string;
 }) {
-	const trpc = useTRPC();
+	const removeRun = useKnowledgeRunsStore((state) => state.removeRun);
 	const queryClient = useQueryClient();
-	const hasRealtimeRun = Boolean(
-		realtimeRun?.runId && realtimeRun.accessToken
-	);
-	const { run } = useRealtimeRun<typeof processKnowledgeTask>(
-		realtimeRun?.runId,
-		{
-			accessToken: realtimeRun?.accessToken,
-			enabled: hasRealtimeRun,
-			onComplete: () => {
-				queryClient
-					.invalidateQueries(trpc.space.getKnowledge.pathFilter())
-					.catch(() => {});
-			},
-		}
-	);
-	const { parts } = useRealtimeStream(logStream, realtimeRun?.runId ?? "", {
-		accessToken: realtimeRun?.accessToken,
-		enabled: hasRealtimeRun,
-		timeoutInSeconds: 120,
+	const trpc = useTRPC();
+	const { run, error } = useRealtimeRun<typeof processKnowledgeTask>(runId, {
+		accessToken: publicAccessToken,
 	});
-	const latestMessage = parts.at(-1);
+	const { parts } = useRealtimeStream(logStream, runId, {
+		accessToken: publicAccessToken,
+		throttleInMs: 200,
+	});
 
-	const status = knowledge.status ?? "pending";
-	const statusLabel = statusLabelMap[status] ?? "Pending";
-	const statusClass = statusClassMap[status] ?? statusClassMap.pending;
-	const liveMessage = latestMessage;
-	const liveProgress = run?.isSuccess ? 100 : Math.min(parts.length * 20, 90);
-	const isLive =
-		hasRealtimeRun &&
-		!run?.isCompleted &&
-		(status === "pending" || status === "processing");
+	const currentMessage = parts.at(-1);
 
-	if (isLive || liveMessage) {
+	useEffect(() => {
+		if (run?.status === "COMPLETED" || run?.status === "FAILED" || error) {
+			removeRun(knowledgeId);
+			queryClient.invalidateQueries(trpc.space.getKnowledge.pathFilter());
+		}
+	}, [run?.status, error, knowledgeId, removeRun, queryClient, trpc]);
+
+	if (!run && !error) {
 		return (
-			<div
-				className="flex min-w-[8rem] flex-col gap-1"
-				title={knowledge.errorMessage ?? undefined}
+			<span
+				className={cn(
+					`inline-flex gap-1 w-fit items-center rounded-full px-2 py-0.5 text-xs`,
+					statusClassMap.pending
+				)}
 			>
-				<span
-					className={`inline-flex w-fit items-center rounded-full px-2 py-0.5 text-xs ${statusClass}`}
-				>
-					{run?.isFailed ? "Failed" : (liveMessage ?? statusLabel)}
-				</span>
-				<div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
-					<div
-						className="h-full rounded-full bg-primary transition-all duration-300"
-						style={{
-							width: `${Math.max(0, Math.min(liveProgress, 100))}%`,
-						}}
-					/>
-				</div>
-			</div>
+				<Spinner className="size-3" />
+				Starting...
+			</span>
+		);
+	}
+
+	if (error) {
+		return (
+			<span
+				className={cn(
+					`inline-flex gap-1 w-fit items-center rounded-full px-2 py-0.5 text-xs`,
+					statusClassMap.failed
+				)}
+			>
+				Failed
+			</span>
+		);
+	}
+
+	if (!run) {
+		return (
+			<span
+				className={cn(
+					`inline-flex gap-1 w-fit items-center rounded-full px-2 py-0.5 text-xs`,
+					statusClassMap.pending
+				)}
+			>
+				No Data Available
+			</span>
 		);
 	}
 
 	return (
 		<span
-			className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${statusClass}`}
+			className={cn(
+				`inline-flex gap-1 w-fit items-center rounded-full px-2 py-0.5 text-xs`,
+				statusClassMap.processing
+			)}
+		>
+			<Spinner className="size-3" />
+			{currentMessage}
+		</span>
+	);
+}
+
+function KnowledgeStatusCell({ knowledge }: { knowledge: Knowledge }) {
+	const activeRun = useKnowledgeRunsStore(
+		(state) => state.runs[knowledge.id]
+	);
+
+	if (activeRun) {
+		return (
+			<LiveKnowledgeStatus
+				knowledgeId={knowledge.id}
+				publicAccessToken={activeRun.publicAccessToken}
+				runId={activeRun.runId}
+			/>
+		);
+	}
+
+	const status = knowledge.status ?? "pending";
+	const statusLabel = statusLabelMap[status] ?? "Pending";
+	const statusClass = statusClassMap[status] ?? statusClassMap.pending;
+
+	return (
+		<span
+			className={cn(
+				"inline-flex items-center rounded-full px-2 py-0.5 text-xs",
+				statusClass
+			)}
 			title={knowledge.errorMessage ?? undefined}
 		>
 			{statusLabel}
@@ -523,13 +556,9 @@ export function DataTable<TData, TValue>({
 
 export function KnowledgeTable({
 	knowledgeData,
-	knowledgeRuns,
-	onKnowledgeRun,
 	spaceId,
 }: {
 	knowledgeData: Knowledge[];
-	knowledgeRuns?: Record<string, KnowledgeRealtimeRun>;
-	onKnowledgeRun?: (knowledgeId: string, run: KnowledgeRunHandle) => void;
 	spaceId: string;
 }) {
 	const trpc = useTRPC();
@@ -553,7 +582,10 @@ export function KnowledgeTable({
 	const retryMutation = useMutation({
 		...trpc.space.retryKnowledge.mutationOptions(),
 		onSuccess: async (result) => {
-			onKnowledgeRun?.(result.knowledgeId, result.run);
+			useKnowledgeRunsStore.getState().addRun(result.knowledgeId, {
+				runId: result.run.id,
+				publicAccessToken: result.run.publicAccessToken,
+			});
 			await queryClient.invalidateQueries(
 				trpc.space.getKnowledge.pathFilter()
 			);
@@ -569,12 +601,7 @@ export function KnowledgeTable({
 		{
 			accessorKey: "status",
 			header: "Status",
-			cell: ({ row }) => (
-				<KnowledgeStatusCell
-					knowledge={row.original}
-					realtimeRun={knowledgeRuns?.[row.original.id]}
-				/>
-			),
+			cell: ({ row }) => <KnowledgeStatusCell knowledge={row.original} />,
 		},
 		...baseColumns.slice(1),
 		{

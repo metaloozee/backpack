@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
 	type Knowledge,
@@ -126,36 +126,6 @@ export async function getKnowledgeByIdAndUserId({
 	} catch (error) {
 		throw BackpackError.database(
 			"Failed to get knowledge by id and user",
-			error
-		);
-	}
-}
-
-export async function markKnowledgeProcessing({
-	knowledgeId,
-	userId,
-}: {
-	knowledgeId: string;
-	userId: string;
-}) {
-	try {
-		const [updated] = await db
-			.update(knowledge)
-			.set({
-				status: "processing",
-				processingAttempts: sql<number>`${knowledge.processingAttempts} + 1`,
-				lastProcessingAt: new Date(),
-				processedAt: null,
-				errorMessage: null,
-			})
-			.where(
-				and(eq(knowledge.id, knowledgeId), eq(knowledge.userId, userId))
-			)
-			.returning({ id: knowledge.id });
-		return updated;
-	} catch (error) {
-		throw BackpackError.database(
-			"Failed to mark knowledge processing",
 			error
 		);
 	}

@@ -351,37 +351,7 @@ export const spaceRouter = router({
 			revalidatePath(`/s/${input.spaceId}`);
 			return { success: true, knowledgeId: knowledgeData.id, run };
 		}),
-	getKnowledgeRealtimeAccess: protectedProcedure
-		.input(
-			z.object({
-				spaceId: z.string().uuid(),
-			})
-		)
-		.query(async ({ ctx, input }) => {
-			const spaceExists = await getSpaceByIdAndUserId({
-				spaceId: input.spaceId,
-				userId: ctx.session.user.id,
-			});
 
-			if (!spaceExists) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Space not found",
-				});
-			}
-
-			const spaceTag = getSpaceTag(input.spaceId);
-			const accessToken = await auth.createPublicToken({
-				scopes: {
-					read: {
-						tags: spaceTag,
-					},
-				},
-				expirationTime: KNOWLEDGE_REALTIME_TOKEN_TTL,
-			});
-
-			return { accessToken, spaceTag };
-		}),
 	getKnowledge: protectedProcedure
 		.input(
 			z.object({
