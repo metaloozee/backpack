@@ -1,11 +1,6 @@
 - [x] Zustand
-- [ ] Daytona
+- [ ] Sandbox
 - [ ] Research Agent
-- [ ] Artifacts
+- [x] Artifacts
+- [ ] fix: Invalidation after manually editing and saving a version
 - [ ] Skill Support
-- [x] MCP Support
-- [x] Vercel Workflows
-- [x] fix: Image Display
-- [x] refactor: Space Page
-- [x] Knowledge Base Dialog in Space
-- [x] Space Settings

@@ -63,66 +63,67 @@ export async function createArtifact({
 	}
 }
 
-export async function createArtifactWithVersion({
-	userId,
-	chatId,
-	title,
-	kind = "text",
-	content,
-	source,
-	messageId,
-}: {
-	userId: string;
-	chatId: string;
-	title: string;
-	kind?: ArtifactKind;
-	content: string;
-	source: ArtifactVersionSource;
-	messageId?: string;
-}): Promise<{ artifact: Artifact; version: ArtifactVersion }> {
-	try {
-		return await db.transaction(async (tx) => {
-			const [createdArtifact] = await tx
-				.insert(artifact)
-				.values({
-					userId,
-					chatId,
-					title,
-					kind,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				})
-				.returning();
+// export async function createArtifactWithVersion({
+// 	userId,
+// 	chatId,
+// 	title,
+// 	kind = "text",
+// 	content,
+// 	source,
+// 	messageId,
+// }: {
+// 	userId: string;
+// 	chatId: string;
+// 	title: string;
+// 	kind?: ArtifactKind;
+// 	content: string;
+// 	source: ArtifactVersionSource;
+// 	messageId?: string;
+// }): Promise<{ artifact: Artifact; version: ArtifactVersion }> {
+// 	try {
+// 		const [createdArtifact] = await db
+// 			.insert(artifact)
+// 			.values({
+// 				userId,
+// 				chatId,
+// 				title,
+// 				kind,
+// 				createdAt: new Date(),
+// 				updatedAt: new Date(),
+// 			})
+// 			.returning();
 
-			if (!createdArtifact) {
-				throw new Error("Artifact insert returned no rows");
-			}
+// 		if (!createdArtifact) {
+// 			throw new Error("Artifact insert returned no rows");
+// 		}
 
-			const [createdVersion] = await tx
-				.insert(artifactVersion)
-				.values({
-					artifactId: createdArtifact.id,
-					versionNumber: 1,
-					content,
-					source,
-					messageId,
-					createdAt: new Date(),
-				})
-				.returning();
+// 		const [createdVersion] = await db
+// 			.insert(artifactVersion)
+// 			.values({
+// 				artifactId: createdArtifact.id,
+// 				versionNumber: 1,
+// 				content,
+// 				source,
+// 				messageId,
+// 				createdAt: new Date(),
+// 			})
+// 			.returning();
 
-			if (!createdVersion) {
-				throw new Error("Artifact version insert returned no rows");
-			}
+// 		if (!createdVersion) {
+// 			throw new Error("Artifact version insert returned no rows");
+// 		}
 
-			return { artifact: createdArtifact, version: createdVersion };
-		});
-	} catch (error) {
-		throw BackpackError.database(
-			"Failed to create artifact with version",
-			error
-		);
-	}
-}
+// 		return {
+// 			artifact: createdArtifact,
+// 			version: createdVersion,
+// 		};
+// 	} catch (error) {
+// 		throw BackpackError.database(
+// 			"Failed to create artifact with version",
+// 			error
+// 		);
+// 	}
+// }
 
 export async function deleteArtifactIfVersionless({
 	artifactId,
@@ -132,29 +133,24 @@ export async function deleteArtifactIfVersionless({
 	userId: string;
 }): Promise<boolean> {
 	try {
-		return await db.transaction(async (tx) => {
-			const [existingVersion] = await tx
-				.select({ id: artifactVersion.id })
-				.from(artifactVersion)
-				.where(eq(artifactVersion.artifactId, artifactId))
-				.limit(1);
+		const [existingVersion] = await db
+			.select({ id: artifactVersion.id })
+			.from(artifactVersion)
+			.where(eq(artifactVersion.artifactId, artifactId))
+			.limit(1);
 
-			if (existingVersion) {
-				return false;
-			}
+		if (existingVersion) {
+			return false;
+		}
 
-			const [deletedArtifact] = await tx
-				.delete(artifact)
-				.where(
-					and(
-						eq(artifact.id, artifactId),
-						eq(artifact.userId, userId)
-					)
-				)
-				.returning({ id: artifact.id });
+		const [deletedArtifact] = await db
+			.delete(artifact)
+			.where(
+				and(eq(artifact.id, artifactId), eq(artifact.userId, userId))
+			)
+			.returning({ id: artifact.id });
 
-			return Boolean(deletedArtifact);
-		});
+		return Boolean(deletedArtifact);
 	} catch (error) {
 		throw BackpackError.database(
 			"Failed to delete versionless artifact",
@@ -370,60 +366,58 @@ export async function appendArtifactVersion({
 		attempt++
 	) {
 		try {
-			return await db.transaction(async (tx) => {
-				const [selectedArtifact] = await tx
-					.select()
-					.from(artifact)
-					.where(
-						and(
-							eq(artifact.id, artifactId),
-							eq(artifact.userId, userId)
-						)
+			const [selectedArtifact] = await db
+				.select()
+				.from(artifact)
+				.where(
+					and(
+						eq(artifact.id, artifactId),
+						eq(artifact.userId, userId)
 					)
-					.limit(1);
+				)
+				.limit(1);
 
-				if (!selectedArtifact) {
-					throw new Error("Artifact not found");
-				}
+			if (!selectedArtifact) {
+				throw new Error("Artifact not found");
+			}
 
-				const [maxVersion] = await tx
-					.select({
-						value: sql<number>`coalesce(max(${artifactVersion.versionNumber}), 0)`,
-					})
-					.from(artifactVersion)
-					.where(eq(artifactVersion.artifactId, artifactId));
+			const [maxVersion] = await db
+				.select({
+					value: sql<number>`coalesce(max(${artifactVersion.versionNumber}), 0)`,
+				})
+				.from(artifactVersion)
+				.where(eq(artifactVersion.artifactId, artifactId));
 
-				const nextVersionNumber = (maxVersion?.value ?? 0) + 1;
+			const nextVersionNumber = (maxVersion?.value ?? 0) + 1;
 
-				const [createdVersion] = await tx
-					.insert(artifactVersion)
-					.values({
-						artifactId,
-						versionNumber: nextVersionNumber,
-						content,
-						source,
-						messageId,
-						restoredFromVersionId,
-						createdAt: new Date(),
-					})
-					.returning();
+			const [createdVersion] = await db
+				.insert(artifactVersion)
+				.values({
+					artifactId,
+					versionNumber: nextVersionNumber,
+					content,
+					source,
+					messageId,
+					restoredFromVersionId,
+					createdAt: new Date(),
+				})
+				.returning();
 
-				if (!createdVersion) {
-					throw new Error("Artifact version insert returned no rows");
-				}
+			if (!createdVersion) {
+				throw new Error("Artifact version insert returned no rows");
+			}
 
-				await tx
-					.update(artifact)
-					.set({ updatedAt: new Date() })
-					.where(
-						and(
-							eq(artifact.id, artifactId),
-							eq(artifact.userId, userId)
-						)
-					);
+			await db
+				.update(artifact)
+				.set({ updatedAt: new Date() })
+				.where(
+					and(
+						eq(artifact.id, artifactId),
+						eq(artifact.userId, userId)
+					)
+				);
 
-				return createdVersion;
-			});
+			return createdVersion;
 		} catch (error) {
 			const shouldRetry =
 				isUniqueViolation(error) &&
