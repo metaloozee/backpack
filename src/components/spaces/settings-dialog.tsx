@@ -37,7 +37,7 @@ import {
 	modalVariants,
 	staggerVariants,
 	transitions,
-} from "@/lib/animations";
+} from "@/lib/motion";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { Spinner } from "../spinner";
 
@@ -100,7 +100,7 @@ function SettingsDialogForm({
 			animate="visible"
 			className="w-full min-w-0 space-y-4"
 			initial="hidden"
-			transition={transitions.smooth}
+			transition={transitions.normal}
 			variants={modalVariants}
 		>
 			<DialogHeader>
@@ -214,7 +214,7 @@ function SettingsDialogForm({
 					className="space-y-2"
 					onOpenChange={setIsDangerSectionOpen}
 					open={isDangerSectionOpen}
-					transition={transitions.smooth}
+					transition={transitions.normal}
 				>
 					<DisclosureTrigger>
 						<div className="flex cursor-pointer items-center justify-between rounded-2xl border border-red-500/30 bg-red-50 p-4 shadow-sm transition-colors hover:border-red-500/40 hover:bg-red-50 dark:border-red-500/25 dark:bg-red-950/20 dark:hover:bg-red-950/30">
@@ -235,7 +235,7 @@ function SettingsDialogForm({
 								animate={{
 									rotate: isDangerSectionOpen ? 180 : 0,
 								}}
-								transition={transitions.smooth}
+								transition={transitions.normal}
 							>
 								<ChevronDownIcon className="size-5 text-red-700/70 dark:text-red-200/70" />
 							</motion.div>

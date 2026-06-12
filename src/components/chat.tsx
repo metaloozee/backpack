@@ -5,9 +5,11 @@ import { useChat } from "@ai-sdk/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DefaultChatTransport } from "ai";
 import type { Session } from "better-auth";
+import { AnimatePresence } from "motion/react";
 import { usePathname } from "next/navigation";
 import { parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ImperativePanelHandle } from "react-resizable-panels";
 import { toast } from "sonner";
 import { ArtifactWorkspace } from "@/components/artifacts/artifact-workspace";
 import { useArtifactStreamState } from "@/components/artifacts/use-artifact-stream-state";
@@ -22,6 +24,11 @@ import {
 	DialogDescription,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import {
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import type { ToolsState } from "@/lib/ai/tool-registry";
 import type { Attachment, ChatMessage } from "@/lib/ai/types";
 import type { Chat as ChatType, Knowledge } from "@/lib/db/schema/app";
@@ -357,6 +364,16 @@ export function Chat({
 	);
 
 	const isMobile = useIsMobile();
+	const workspacePanelRef = useRef<ImperativePanelHandle>(null);
+	const [isDragging, setIsDragging] = useState(false);
+
+	useEffect(() => {
+		if (openArtifactId && !isMobile) {
+			workspacePanelRef.current?.expand(52);
+		} else {
+			workspacePanelRef.current?.collapse();
+		}
+	}, [openArtifactId, isMobile]);
 	const resolvedSpaceId = spaceOverview?.spaceData.id ?? env.spaceId ?? "";
 
 	const inputPanelProps = {
@@ -464,25 +481,61 @@ export function Chat({
 			className="flex min-h-0 w-full flex-1 overflow-hidden"
 			suppressHydrationWarning
 		>
-			<div
-				className={cn(
-					"flex min-h-0 flex-1 flex-col",
-					openArtifactId && "lg:max-w-[52%]"
-				)}
-			>
-				{chatContent}
-			</div>
-
-			{openArtifactId ? (
-				<ArtifactWorkspace
-					chatId={id}
-					className="hidden lg:flex lg:w-[48%]"
-					onClose={() => setOpenArtifactId(null)}
-					onOpenArtifact={setOpenArtifactId}
-					openArtifactId={openArtifactId}
-					snapshot={openArtifactSnapshot}
-				/>
-			) : null}
+			{!isMobile ? (
+				<ResizablePanelGroup
+					className="hidden lg:flex"
+					direction="horizontal"
+				>
+					<ResizablePanel
+						className={cn(
+							!isDragging &&
+								"transition-[flex-grow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+						)}
+						defaultSize={openArtifactId ? 48 : 100}
+						minSize={30}
+						order={1}
+					>
+						<div className="flex min-h-0 flex-1 flex-col h-full mr-1.5">
+							{chatContent}
+						</div>
+					</ResizablePanel>
+					{openArtifactId && (
+						<ResizableHandle
+							onDragging={setIsDragging}
+							withHandle
+						/>
+					)}
+					<ResizablePanel
+						className={cn(
+							"dark:bg-neutral-900",
+							!isDragging &&
+								"transition-[flex-grow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+						)}
+						collapsible
+						defaultSize={openArtifactId ? 52 : 0}
+						minSize={35}
+						order={2}
+						ref={workspacePanelRef}
+					>
+						<AnimatePresence mode="wait">
+							{openArtifactId && (
+								<ArtifactWorkspace
+									chatId={id}
+									className="h-full"
+									onClose={() => setOpenArtifactId(null)}
+									onOpenArtifact={setOpenArtifactId}
+									openArtifactId={openArtifactId}
+									snapshot={openArtifactSnapshot}
+								/>
+							)}
+						</AnimatePresence>
+					</ResizablePanel>
+				</ResizablePanelGroup>
+			) : (
+				<div className="flex min-h-0 flex-1 flex-col">
+					{chatContent}
+				</div>
+			)}
 
 			<Dialog
 				onOpenChange={(open) => {

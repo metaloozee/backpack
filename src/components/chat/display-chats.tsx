@@ -22,6 +22,7 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Chat } from "@/lib/db/schema/app";
 import {
 	buttonVariants,
 	fadeVariants,
@@ -29,8 +30,7 @@ import {
 	modalVariants,
 	staggerVariants,
 	transitions,
-} from "@/lib/animations";
-import type { Chat } from "@/lib/db/schema/app";
+} from "@/lib/motion";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils/cn";
 import { Spinner } from "../spinner";
@@ -55,7 +55,7 @@ function ChatCard({ chat, isDeleting, onDelete }: ChatCardProps) {
 			initial="hidden"
 			key={chat.id}
 			layout
-			transition={transitions.smooth}
+			transition={transitions.normal}
 			variants={messageVariants}
 			whileHover={{ scale: 1.01 }}
 			whileTap={{ scale: 0.99 }}

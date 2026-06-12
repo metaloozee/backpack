@@ -14,15 +14,15 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ToggleTheme } from "@/components/ui/theme-toggle";
+import { authClient } from "@/lib/auth/client";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import {
 	buttonVariants,
 	fadeVariants,
 	iconVariants,
 	slideVariants,
 	transitions,
-} from "@/lib/animations";
-import { authClient } from "@/lib/auth/client";
-import { useIsMobile } from "@/lib/hooks/use-mobile";
+} from "@/lib/motion";
 import { cn } from "@/lib/utils/cn";
 import { AvatarFallback, AvatarImage } from "./ui/avatar";
 

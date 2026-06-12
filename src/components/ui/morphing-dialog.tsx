@@ -20,12 +20,12 @@ import React, {
 	useRef,
 	useState,
 } from "react";
+import useClickOutside from "@/lib/hooks/use-click-outside";
 import {
 	backdropVariants,
 	layoutTransition,
 	modalVariants,
-} from "@/lib/animations";
-import useClickOutside from "@/lib/hooks/use-click-outside";
+} from "@/lib/motion";
 import { cn } from "@/lib/utils/cn";
 
 export interface MorphingDialogContextType {

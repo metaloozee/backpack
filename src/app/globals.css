@@ -360,6 +360,17 @@
 	padding-bottom: max(var(--safe-area-bottom), 0px);
 }
 
+/* Active press scale down for buttons for premium feedback */
+[data-slot="button"],
+button {
+	transition: transform 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+[data-slot="button"]:not(:disabled):active,
+button:not(:disabled):active {
+	transform: scale(0.97);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,
@@ -367,5 +378,9 @@
 		transition-duration: 0.01ms !important;
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
+	}
+	[data-slot="button"]:not(:disabled):active,
+	button:not(:disabled):active {
+		transform: none !important;
 	}
 }

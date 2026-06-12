@@ -45,8 +45,8 @@ import type {
 	ChatMessage,
 	Attachment as PendingAttachment,
 } from "@/lib/ai/types";
-import { transitions } from "@/lib/animations";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
+import { transitions } from "@/lib/motion";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils/cn";
 import { Spinner } from "./spinner";
@@ -669,7 +669,7 @@ const ComposerActionButton = React.memo(function ComposerActionButton({
 					exit="exit"
 					initial="initial"
 					key={hasInput ? "send" : recordingState}
-					transition={transitions.smooth}
+					transition={transitions.normal}
 					variants={actionIconMotion}
 				>
 					{hasInput ? (

@@ -14,8 +14,8 @@ import {
 import { ResponsiveSettingsMenuShell } from "@/components/responsive-settings-shell";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ToolsState } from "@/lib/ai/tool-registry";
-import { slideVariants, transitions } from "@/lib/animations";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
+import { slideVariants, transitions } from "@/lib/motion";
 import type { ModeType } from "@/lib/store/slices/mode.slice";
 import { usePrefsStore } from "@/lib/store/store";
 import { usePrefsHydrated } from "@/lib/store/use-prefs-hydrated";
@@ -113,13 +113,13 @@ export function ModeSelector({
 		<motion.div
 			className="flex flex-row items-center justify-start gap-2"
 			layout
-			transition={transitions.smooth}
+			transition={transitions.normal}
 		>
 			<motion.div
 				animate="visible"
 				className="flex items-center"
 				initial="hidden"
-				transition={transitions.smooth}
+				transition={transitions.normal}
 				variants={slideVariants.up}
 			>
 				<Tabs onValueChange={handleModeChange} value={activeMode}>

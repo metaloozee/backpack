@@ -36,7 +36,7 @@ import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { Disclosure, DisclosureTrigger } from "@/components/ui/disclosure";
 import type { ChatMessage } from "@/lib/ai/types";
-import { transitions } from "@/lib/animations";
+import { transitions } from "@/lib/motion";
 import { streamdownPlugins } from "@/lib/streamdown";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { getTextFromMessage } from "@/lib/utils/ai";

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TextArtifact } from "@/components/artifacts/text-artifact";
@@ -8,6 +9,7 @@ import { Loader } from "@/components/ui/loader";
 import type { ArtifactSnapshot } from "@/lib/artifacts/client-stream-state";
 import type { ArtifactVersionSummary } from "@/lib/artifacts/types";
 import type { Artifact, ArtifactVersion } from "@/lib/db/schema/app";
+import { workspaceVariants } from "@/lib/motion";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils/cn";
 
@@ -108,11 +110,15 @@ export function ArtifactWorkspace({
 	}
 
 	return (
-		<div
+		<motion.div
+			animate="visible"
 			className={cn(
-				"flex h-full min-h-0 flex-col border-l bg-background",
+				"flex h-full min-h-0 flex-col border-l dark:bg-neutral-900",
 				className
 			)}
+			exit="exit"
+			initial="hidden"
+			variants={workspaceVariants}
 		>
 			{/* {showToolbar ? (
 				<div className="flex min-h-12 shrink-0 items-center justify-between gap-2 border-b px-4">
@@ -127,23 +133,41 @@ export function ArtifactWorkspace({
 				</div>
 			) : null} */}
 
-			{artifact ? (
-				<ArtifactWorkspaceSession
-					artifact={artifact}
-					chatId={effectiveChatId}
-					key={openArtifactId}
-					latestVersion={latestVersion}
-					onClose={onClose}
-					openArtifactId={openArtifactId}
-					snapshot={snapshot}
-					versions={versions}
-				/>
-			) : (
-				<div className="flex min-h-0 flex-1 items-center justify-center">
-					<Loader />
-				</div>
-			)}
-		</div>
+			<AnimatePresence mode="wait">
+				{artifact ? (
+					<motion.div
+						animate={{ opacity: 1, y: 0 }}
+						className="flex min-h-0 flex-1 flex-col"
+						exit={{ opacity: 0, y: -8 }}
+						initial={{ opacity: 0, y: 8 }}
+						key="session"
+						transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+					>
+						<ArtifactWorkspaceSession
+							artifact={artifact}
+							chatId={effectiveChatId}
+							key={openArtifactId}
+							latestVersion={latestVersion}
+							onClose={onClose}
+							openArtifactId={openArtifactId}
+							snapshot={snapshot}
+							versions={versions}
+						/>
+					</motion.div>
+				) : (
+					<motion.div
+						animate={{ opacity: 1 }}
+						className="flex min-h-0 flex-1 items-center justify-center"
+						exit={{ opacity: 0 }}
+						initial={{ opacity: 0 }}
+						key="loader"
+						transition={{ duration: 0.15 }}
+					>
+						<Loader />
+					</motion.div>
+				)}
+			</AnimatePresence>
+		</motion.div>
 	);
 }
 

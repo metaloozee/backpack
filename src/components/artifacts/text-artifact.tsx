@@ -9,7 +9,8 @@ import {
 	SaveIcon,
 	XIcon,
 } from "lucide-react";
-import { useId, useMemo, useReducer } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { useMemo, useReducer } from "react";
 import { ArtifactVersionDiff } from "@/components/artifacts/artifact-version-diff";
 import { RichTextEditor } from "@/components/artifacts/rich-text-editor";
 import { CopyButton } from "@/components/copy-button";
@@ -23,6 +24,11 @@ import {
 } from "@/components/ui/select";
 import type { ArtifactVersionSummary } from "@/lib/artifacts/types";
 import type { Artifact, ArtifactVersion } from "@/lib/db/schema/app";
+import {
+	contentVariants,
+	staggerContainerVariants,
+	staggerItemVariants,
+} from "@/lib/motion";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils/cn";
 
@@ -226,7 +232,7 @@ export function TextArtifact({
 	};
 
 	return (
-		<div className="flex h-full min-h-0 flex-col bg-neutral-900">
+		<div className="flex h-full min-h-0 flex-col dark:bg-neutral-900">
 			<header className="shrink-0 border-b">
 				<div className="flex min-h-14 items-center justify-between gap-3 px-4">
 					<div className="min-w-0 flex-1">
@@ -277,15 +283,16 @@ export function TextArtifact({
 					<div className="flex shrink-0 items-center gap-1">
 						<div
 							aria-label="Artifact view"
-							className="mr-1 flex items-center rounded-md border bg-muted/40 p-0.5"
+							className="relative mr-1 flex items-center rounded-md border bg-muted/40 p-0.5"
 						>
 							<Button
 								aria-label="Show editor"
 								aria-pressed={view === "edit"}
 								className={cn(
-									"size-8",
-									view === "edit" &&
-										"bg-background text-foreground shadow-xs"
+									"relative size-8 z-10",
+									view === "edit"
+										? "text-foreground"
+										: "text-muted-foreground hover:text-foreground"
 								)}
 								onClick={() =>
 									dispatch({ type: "setView", view: "edit" })
@@ -294,18 +301,30 @@ export function TextArtifact({
 								type="button"
 								variant="ghost"
 							>
+								{view === "edit" && (
+									<motion.div
+										className="absolute inset-0 rounded-sm bg-background shadow-xs z-[-1]"
+										layoutId="active-view-indicator"
+										transition={{
+											type: "spring",
+											stiffness: 380,
+											damping: 30,
+										}}
+									/>
+								)}
 								<FilePenLineIcon
 									aria-hidden="true"
-									className="size-4"
+									className="size-4 z-10"
 								/>
 							</Button>
 							<Button
 								aria-label="Show diff"
 								aria-pressed={view === "diff"}
 								className={cn(
-									"size-8",
-									view === "diff" &&
-										"bg-background text-foreground shadow-xs"
+									"relative size-8 z-10",
+									view === "diff"
+										? "text-foreground"
+										: "text-muted-foreground hover:text-foreground"
 								)}
 								onClick={() =>
 									dispatch({ type: "setView", view: "diff" })
@@ -314,9 +333,20 @@ export function TextArtifact({
 								type="button"
 								variant="ghost"
 							>
+								{view === "diff" && (
+									<motion.div
+										className="absolute inset-0 rounded-sm bg-background shadow-xs z-[-1]"
+										layoutId="active-view-indicator"
+										transition={{
+											type: "spring",
+											stiffness: 380,
+											damping: 30,
+										}}
+									/>
+								)}
 								<DiffIcon
 									aria-hidden="true"
-									className="size-4"
+									className="size-4 z-10"
 								/>
 							</Button>
 						</div>
@@ -362,62 +392,94 @@ export function TextArtifact({
 					</div>
 				</div>
 				{view === "diff" && sortedVersions.length > 0 ? (
-					<div className="flex flex-wrap items-center gap-2 px-4 pb-3">
-						<VersionSelect
-							label="From"
-							onValueChange={(value) =>
-								dispatch({
-									type: "setFromVersionId",
-									fromVersionId: value,
-								})
-							}
-							value={fromVersionId}
-							versions={sortedVersions}
-						/>
-						<VersionSelect
-							label="To"
-							onValueChange={(value) =>
-								dispatch({
-									type: "setToVersionId",
-									toVersionId: value,
-								})
-							}
-							value={toVersionId}
-							versions={sortedVersions}
-						/>
-						<Button
-							disabled={!fromVersion || isRestoring}
-							onClick={requestRestore}
-							size="sm"
-							type="button"
-							variant="outline"
-						>
-							<RotateCcwIcon
-								aria-hidden="true"
-								className="size-3.5"
+					<motion.div
+						animate="visible"
+						className="flex flex-wrap items-center gap-2 px-4 pb-3"
+						exit="exit"
+						initial="hidden"
+						variants={staggerContainerVariants}
+					>
+						<motion.div variants={staggerItemVariants}>
+							<VersionSelect
+								label="From"
+								onValueChange={(value) =>
+									dispatch({
+										type: "setFromVersionId",
+										fromVersionId: value,
+									})
+								}
+								value={fromVersionId}
+								versions={sortedVersions}
 							/>
-							Restore from
-						</Button>
-					</div>
+						</motion.div>
+						<motion.div variants={staggerItemVariants}>
+							<VersionSelect
+								label="To"
+								onValueChange={(value) =>
+									dispatch({
+										type: "setToVersionId",
+										toVersionId: value,
+									})
+								}
+								value={toVersionId}
+								versions={sortedVersions}
+							/>
+						</motion.div>
+						<motion.div variants={staggerItemVariants}>
+							<Button
+								disabled={!fromVersion || isRestoring}
+								onClick={requestRestore}
+								size="sm"
+								type="button"
+								variant="outline"
+							>
+								<RotateCcwIcon
+									aria-hidden="true"
+									className="size-3.5"
+								/>
+								Restore from
+							</Button>
+						</motion.div>
+					</motion.div>
 				) : null}
 			</header>
 
 			<div className="min-h-0 flex-1 overflow-hidden">
-				{view === "edit" ? (
-					<RichTextEditor
-						content={content}
-						onChangeContent={onChangeContent}
-						status={status}
-					/>
-				) : (
-					<DiffContent
-						artifactId={artifact.id}
-						fromVersion={fromVersion}
-						isActive={view === "diff"}
-						title={artifact.title}
-						toVersion={toVersion}
-					/>
-				)}
+				<AnimatePresence mode="wait">
+					{view === "edit" ? (
+						<motion.div
+							animate="visible"
+							className="h-full w-full"
+							exit="exit"
+							initial="hidden"
+							key="edit"
+							variants={contentVariants}
+						>
+							<RichTextEditor
+								content={content}
+								onChangeContent={onChangeContent}
+								status={status}
+							/>
+						</motion.div>
+					) : (
+						<motion.div
+							animate="visible"
+							className="h-full w-full"
+							exit="exit"
+							initial="hidden"
+							key={`diff-${fromVersionId}-${toVersionId}`}
+							variants={contentVariants}
+						>
+							<DiffContent
+								artifactId={artifact.id}
+								fromVersion={fromVersion}
+								isActive={view === "diff"}
+								title={artifact.title}
+								toVersion={toVersion}
+							/>
+						</motion.div>
+					)}
+				</AnimatePresence>
 			</div>
 		</div>
 	);

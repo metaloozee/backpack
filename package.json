@@ -88,6 +88,7 @@
     "react-dom": "^19.2.7",
     "react-hook-form": "^7.78.0",
     "react-jsx-parser": "^2.4.1",
+    "react-resizable-panels": "^2.1.7",
     "react-scan": "^0.4.3",
     "react-syntax-highlighter": "^15.6.6",
     "redis": "^5.12.1",

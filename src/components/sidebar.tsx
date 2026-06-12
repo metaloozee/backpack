@@ -31,7 +31,7 @@ import {
 	iconVariants,
 	slideVariants,
 	transitions,
-} from "@/lib/animations";
+} from "@/lib/motion";
 import { cn } from "@/lib/utils/cn";
 
 function SidebarBrand({ state }: { state: "expanded" | "collapsed" }) {
@@ -51,7 +51,7 @@ function SidebarBrand({ state }: { state: "expanded" | "collapsed" }) {
 							exit="exit"
 							initial="hidden"
 							key="expanded"
-							transition={transitions.smooth}
+							transition={transitions.normal}
 							variants={fadeVariants}
 						>
 							<motion.div
@@ -72,7 +72,7 @@ function SidebarBrand({ state }: { state: "expanded" | "collapsed" }) {
 							exit="exit"
 							initial="hidden"
 							key="collapsed"
-							transition={transitions.smooth}
+							transition={transitions.normal}
 							variants={fadeVariants}
 						>
 							<motion.div
@@ -179,7 +179,7 @@ export function AppSidebar() {
 							: "items-center justify-center"
 					)}
 					initial="hidden"
-					transition={transitions.smooth}
+					transition={transitions.normal}
 					variants={slideVariants.left}
 				>
 					<SidebarNavButton
