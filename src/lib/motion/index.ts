@@ -424,12 +424,12 @@ export const messageVariants = {
 	},
 };
 
-export const loadingVariants = {
+export const loadingVariants: Variants = {
 	spin: {
 		rotate: 360,
 		transition: {
 			duration: 0.8,
-			ease: "linear",
+			ease: "linear" as const,
 			repeat: Number.POSITIVE_INFINITY,
 		},
 	},
@@ -437,7 +437,7 @@ export const loadingVariants = {
 		scale: [1, 1.03, 1],
 		transition: {
 			duration: 1.2,
-			ease: "easeInOut",
+			ease: "easeInOut" as const,
 			repeat: Number.POSITIVE_INFINITY,
 		},
 	},
@@ -445,7 +445,7 @@ export const loadingVariants = {
 		y: [0, -4, 0],
 		transition: {
 			duration: 0.5,
-			ease: "easeInOut",
+			ease: "easeInOut" as const,
 			repeat: Number.POSITIVE_INFINITY,
 		},
 	},

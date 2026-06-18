@@ -1,9 +1,9 @@
 import type { AnthropicProviderOptions } from "@ai-sdk/anthropic";
 import type { GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 import type { OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
-import type { Model } from "@/lib/ai/models";
+import type { RuntimeModel } from "@/lib/ai/models.server";
 
-export const getReasoningProviderOptions = (model: Model) => {
+export const getReasoningProviderOptions = (model: RuntimeModel) => {
 	if (!model.capabilities.reasoning) {
 		return;
 	}

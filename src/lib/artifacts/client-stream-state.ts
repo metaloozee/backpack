@@ -1,3 +1,4 @@
+import { produce } from "immer";
 import type { ArtifactStreamEvent } from "@/lib/artifacts/types";
 
 export const ARTIFACT_STREAM_FLUSH_MS = 100;
@@ -41,96 +42,64 @@ export function reduceArtifactStreamEvents({
 }): ArtifactStreamUpdateResult {
 	const finishedArtifactIds: string[] = [];
 	const errorMessages: string[] = [];
-	let nextState = state;
 
-	for (const event of events) {
-		switch (event.event) {
-			case "open": {
-				nextState = {
-					...nextState,
-					openArtifactId: event.artifactId,
-					snapshots: {
-						...nextState.snapshots,
-						[event.artifactId]: {
-							artifactId: event.artifactId,
-							chatId: event.chatId,
-							kind: event.kind,
-							title: event.title,
-							content: event.content,
-							status: event.status,
-							versionNumber: event.versionNumber,
-						},
-					},
-				};
-				break;
-			}
-			case "delta": {
-				const existing = nextState.snapshots[event.artifactId];
-				if (!existing) {
+	const nextState = produce(state, (draft) => {
+		for (const event of events) {
+			switch (event.event) {
+				case "open": {
+					draft.openArtifactId = event.artifactId;
+					draft.snapshots[event.artifactId] = {
+						artifactId: event.artifactId,
+						chatId: event.chatId,
+						kind: event.kind,
+						title: event.title,
+						content: event.content,
+						status: event.status,
+						versionNumber: event.versionNumber,
+					};
 					break;
 				}
+				case "delta": {
+					const existing = draft.snapshots[event.artifactId];
+					if (!existing) {
+						break;
+					}
 
-				nextState = {
-					...nextState,
-					snapshots: {
-						...nextState.snapshots,
-						[event.artifactId]: {
-							...existing,
-							content: `${existing.content}${event.delta}`,
-							status: "streaming",
-						},
-					},
-				};
-				break;
-			}
-			case "finish": {
-				const existing = nextState.snapshots[event.artifactId];
-				if (!existing) {
+					existing.content += event.delta;
+					existing.status = "streaming";
 					break;
 				}
+				case "finish": {
+					const existing = draft.snapshots[event.artifactId];
+					if (!existing) {
+						break;
+					}
 
-				nextState = {
-					...nextState,
-					snapshots: {
-						...nextState.snapshots,
-						[event.artifactId]: {
-							...existing,
-							content: event.content,
-							status: "idle",
-							versionNumber: event.versionNumber,
-						},
-					},
-				};
-				finishedArtifactIds.push(event.artifactId);
-				break;
-			}
-			case "error": {
-				errorMessages.push(event.message);
-				if (!event.artifactId) {
+					existing.content = event.content;
+					existing.status = "idle";
+					existing.versionNumber = event.versionNumber;
+					finishedArtifactIds.push(event.artifactId);
 					break;
 				}
+				case "error": {
+					errorMessages.push(event.message);
+					if (!event.artifactId) {
+						break;
+					}
 
-				const existing = nextState.snapshots[event.artifactId];
-				if (!existing) {
+					const existing = draft.snapshots[event.artifactId];
+					if (!existing) {
+						break;
+					}
+
+					existing.status = "idle";
 					break;
 				}
-
-				nextState = {
-					...nextState,
-					snapshots: {
-						...nextState.snapshots,
-						[event.artifactId]: {
-							...existing,
-							status: "idle",
-						},
-					},
-				};
-				break;
+				default:
+					break;
 			}
-			default:
-				break;
 		}
-	}
+	});
 
 	return {
 		state: nextState,

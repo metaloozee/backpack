@@ -36,12 +36,8 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-	availableModels,
-	getModel,
-	type Model,
-	normalizeModelId,
-} from "@/lib/ai/model-metadata";
+import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
+import { availableModels, getModel, type Model } from "@/lib/ai/models";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { usePrefsStore } from "@/lib/store/store";
 import { usePrefsHydrated } from "@/lib/store/use-prefs-hydrated";
@@ -75,6 +71,14 @@ const drawerSurface =
 
 function providerDisplayName(providerKey: string): string {
 	return providerNames[providerKey] ?? providerKey;
+}
+
+function getDefaultModel(): Model {
+	const defaultModel = getModel(DEFAULT_MODEL_ID);
+	if (!defaultModel) {
+		throw new Error(`Default model is not available: ${DEFAULT_MODEL_ID}`);
+	}
+	return defaultModel;
 }
 
 const capabilityBadgeDefs: {
@@ -224,11 +228,12 @@ export function ModelSelector({ initialModelId }: { initialModelId?: string }) {
 	const [desktopOpen, setDesktopOpen] = useState(false);
 	const [drawerOpen, setDrawerOpen] = useState(false);
 	const listboxId = useId();
-	const selectedModelId = normalizeModelId(
-		hasHydrated ? modelId : (initialModelId ?? modelId)
-	);
-	const selectedModelData = getModel(selectedModelId) ?? availableModels[0];
-	const provider = selectedModelData?.provider ?? "openai";
+	const requestedModelId = hasHydrated
+		? modelId
+		: (initialModelId ?? modelId);
+	const selectedModelData = getModel(requestedModelId) ?? getDefaultModel();
+	const selectedModelId = selectedModelData.id;
+	const provider = selectedModelData.provider;
 
 	const selectModel = (id: string) => {
 		setModelId(id);

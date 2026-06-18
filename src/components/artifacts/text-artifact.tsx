@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useReducer } from "react";
+import { MessageResponse } from "@/components/ai-elements/message";
 import { ArtifactVersionDiff } from "@/components/artifacts/artifact-version-diff";
 import { RichTextEditor } from "@/components/artifacts/rich-text-editor";
 import { CopyButton } from "@/components/copy-button";
@@ -26,6 +27,7 @@ import type { ArtifactVersionSummary } from "@/lib/artifacts/types";
 import type { Artifact, ArtifactVersion } from "@/lib/db/schema/app";
 import {
 	contentVariants,
+	loadingVariants,
 	staggerContainerVariants,
 	staggerItemVariants,
 } from "@/lib/motion";
@@ -169,9 +171,12 @@ export function TextArtifact({
 	const toVersionId = versionExists(sortedVersions, diffSelection.toVersionId)
 		? diffSelection.toVersionId
 		: latestVersion?.id;
-	const isDirty = latestVersion
-		? content !== latestVersion.content
-		: content.trim().length > 0;
+	const isStreaming = status === "streaming";
+	const isDirty =
+		!isStreaming &&
+		(latestVersion
+			? content !== latestVersion.content
+			: content.trim().length > 0);
 	const isRenaming = renameDraft !== null;
 	const visibleTitleDraft = renameDraft ?? artifact.title;
 	const versionStatusLabel = getVersionStatusLabel({
@@ -370,9 +375,7 @@ export function TextArtifact({
 						</Button>
 						<Button
 							aria-label="Save artifact"
-							disabled={
-								!isDirty || isSaving || status === "streaming"
-							}
+							disabled={!isDirty || isSaving || isStreaming}
 							onClick={requestSave}
 							size="icon"
 							type="button"
@@ -452,14 +455,18 @@ export function TextArtifact({
 							className="h-full w-full"
 							exit="exit"
 							initial="hidden"
-							key="edit"
+							key={isStreaming ? "streaming-preview" : "editor"}
 							variants={contentVariants}
 						>
-							<RichTextEditor
-								content={content}
-								onChangeContent={onChangeContent}
-								status={status}
-							/>
+							{isStreaming ? (
+								<StreamingArtifactPreview content={content} />
+							) : (
+								<RichTextEditor
+									content={content}
+									onChangeContent={onChangeContent}
+									status={status}
+								/>
+							)}
 						</motion.div>
 					) : (
 						<motion.div
@@ -482,6 +489,31 @@ export function TextArtifact({
 				</AnimatePresence>
 			</div>
 		</div>
+	);
+}
+
+function StreamingArtifactPreview({ content }: { content: string }) {
+	return (
+		<section
+			aria-busy="true"
+			aria-label="AI editing preview"
+			className="flex h-full min-h-0 flex-col overflow-hidden bg-card dark:bg-neutral-900"
+		>
+			<div className="flex min-h-11 shrink-0 items-center gap-2 border-b bg-card px-4 text-muted-foreground text-sm dark:bg-neutral-900">
+				<motion.span
+					animate="pulse"
+					aria-hidden="true"
+					className="size-2 rounded-full bg-primary"
+					variants={loadingVariants}
+				/>
+				<span>AI is editing</span>
+			</div>
+			<div className="min-h-0 flex-1 overflow-auto px-5 py-4">
+				<MessageResponse className="max-w-none text-pretty text-sm leading-7">
+					{content}
+				</MessageResponse>
+			</div>
+		</section>
 	);
 }
 

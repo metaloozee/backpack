@@ -1,5 +1,5 @@
 import { DEFAULT_MODEL_ID } from "@/lib/ai/defaults";
-import { normalizeModelId } from "@/lib/ai/model-metadata";
+import { isAvailableModelId, type ModelId } from "@/lib/ai/models";
 import { getDefaultToolsState, type ToolsState } from "@/lib/ai/tool-registry";
 
 export const PREFS_COOKIE_NAME = "backpack-prefs" as const;
@@ -9,7 +9,7 @@ export type PrefsMode = "ask" | "agent";
 export interface BackpackPrefs {
 	mcpServers: Record<string, boolean>;
 	mode: PrefsMode;
-	modelId: string;
+	modelId: ModelId;
 	selectedAgent: string | null;
 	tools: ToolsState;
 }
@@ -42,10 +42,16 @@ const parseBooleanRecord = (
 const parseMode = (value: unknown): PrefsMode =>
 	value === "agent" ? "agent" : "ask";
 
+const parseModelId = (value: unknown): ModelId => {
+	if (typeof value === "string" && isAvailableModelId(value)) {
+		return value;
+	}
+
+	return DEFAULT_MODEL_ID;
+};
+
 const toPrefs = (state: PersistedPrefsState): BackpackPrefs => ({
-	modelId: normalizeModelId(
-		typeof state.modelId === "string" ? state.modelId : DEFAULT_MODEL_ID
-	),
+	modelId: parseModelId(state.modelId),
 	mode: parseMode(state.mode),
 	selectedAgent:
 		typeof state.selectedAgent === "string" ? state.selectedAgent : null,
@@ -77,7 +83,7 @@ export const parsePrefsCookie = (
 };
 
 export const serializePrefsState = (prefs: BackpackPrefs) => ({
-	modelId: normalizeModelId(prefs.modelId),
+	modelId: parseModelId(prefs.modelId),
 	mode: prefs.mode,
 	selectedAgent: prefs.selectedAgent,
 	tools: prefs.tools,

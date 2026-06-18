@@ -3,6 +3,7 @@
 import {
 	BoldIcon,
 	Code2Icon,
+	Columns3Icon,
 	Heading1Icon,
 	Heading2Icon,
 	ItalicIcon,
@@ -10,6 +11,7 @@ import {
 	ListOrderedIcon,
 	PilcrowIcon,
 	QuoteIcon,
+	Rows3Icon,
 	Table2Icon,
 	Trash2Icon,
 } from "lucide-react";
@@ -39,6 +41,7 @@ import {
 } from "prosemirror-tables";
 import { EditorView } from "prosemirror-view";
 import {
+	Fragment,
 	memo,
 	useCallback,
 	useEffect,
@@ -55,11 +58,15 @@ interface RichTextEditorProps {
 	status: "idle" | "streaming";
 }
 
+type ToolbarGroup = "block" | "mark" | "list" | "table";
+
 interface ToolbarItem {
 	ariaLabel: string;
 	command: Command;
+	group: ToolbarGroup;
 	icon: typeof BoldIcon;
 	isActive?: (view: EditorView) => boolean;
+	requiresTable?: boolean;
 }
 
 const tableNodesSpec = tableNodes({
@@ -258,6 +265,7 @@ const useEditorToolbarItems = (): ToolbarItem[] =>
 			{
 				ariaLabel: "Paragraph",
 				command: setBlockType(schema.nodes.paragraph),
+				group: "block",
 				icon: PilcrowIcon,
 				isActive: (view: EditorView) =>
 					isTextblockActive(view, "paragraph"),
@@ -267,6 +275,7 @@ const useEditorToolbarItems = (): ToolbarItem[] =>
 				command: setBlockType(schema.nodes.heading, {
 					level: 1,
 				}),
+				group: "block",
 				icon: Heading1Icon,
 				isActive: (view: EditorView) =>
 					isTextblockActive(view, "heading", { level: 1 }),
@@ -276,6 +285,7 @@ const useEditorToolbarItems = (): ToolbarItem[] =>
 				command: setBlockType(schema.nodes.heading, {
 					level: 2,
 				}),
+				group: "block",
 				icon: Heading2Icon,
 				isActive: (view: EditorView) =>
 					isTextblockActive(view, "heading", { level: 2 }),
@@ -283,24 +293,28 @@ const useEditorToolbarItems = (): ToolbarItem[] =>
 			{
 				ariaLabel: "Bold",
 				command: toggleMark(schema.marks.strong),
+				group: "mark",
 				icon: BoldIcon,
 				isActive: (view: EditorView) => isMarkActive(view, "strong"),
 			},
 			{
 				ariaLabel: "Italic",
 				command: toggleMark(schema.marks.em),
+				group: "mark",
 				icon: ItalicIcon,
 				isActive: (view: EditorView) => isMarkActive(view, "em"),
 			},
 			{
 				ariaLabel: "Inline code",
 				command: toggleMark(schema.marks.code),
+				group: "mark",
 				icon: Code2Icon,
 				isActive: (view: EditorView) => isMarkActive(view, "code"),
 			},
 			{
 				ariaLabel: "Bullet list",
 				command: wrapInList(schema.nodes.bullet_list),
+				group: "list",
 				icon: ListIcon,
 				isActive: (view: EditorView) =>
 					isWrappedInNode(view, "bullet_list"),
@@ -308,6 +322,7 @@ const useEditorToolbarItems = (): ToolbarItem[] =>
 			{
 				ariaLabel: "Ordered list",
 				command: wrapInList(schema.nodes.ordered_list),
+				group: "list",
 				icon: ListOrderedIcon,
 				isActive: (view: EditorView) =>
 					isWrappedInNode(view, "ordered_list"),
@@ -315,6 +330,7 @@ const useEditorToolbarItems = (): ToolbarItem[] =>
 			{
 				ariaLabel: "Quote",
 				command: wrapIn(schema.nodes.blockquote),
+				group: "list",
 				icon: QuoteIcon,
 				isActive: (view: EditorView) =>
 					isWrappedInNode(view, "blockquote"),
@@ -322,19 +338,52 @@ const useEditorToolbarItems = (): ToolbarItem[] =>
 			{
 				ariaLabel: "Insert table",
 				command: insertTable,
+				group: "table",
 				icon: Table2Icon,
 			},
 			{
 				ariaLabel: "Toggle header row",
 				command: toggleHeaderRow,
+				group: "table",
 				icon: Table2Icon,
 				isActive: () => false,
+				requiresTable: true,
+			},
+			{
+				ariaLabel: "Add column",
+				command: addColumnAfter,
+				group: "table",
+				icon: Columns3Icon,
+				requiresTable: true,
+			},
+			{
+				ariaLabel: "Add row",
+				command: addRowAfter,
+				group: "table",
+				icon: Rows3Icon,
+				requiresTable: true,
+			},
+			{
+				ariaLabel: "Delete column",
+				command: deleteColumn,
+				group: "table",
+				icon: Columns3Icon,
+				requiresTable: true,
+			},
+			{
+				ariaLabel: "Delete row",
+				command: deleteRow,
+				group: "table",
+				icon: Rows3Icon,
+				requiresTable: true,
 			},
 			{
 				ariaLabel: "Delete table",
 				command: deleteTable,
+				group: "table",
 				icon: Trash2Icon,
 				isActive: () => false,
+				requiresTable: true,
 			},
 		],
 		[]
@@ -450,6 +499,10 @@ function PureRichTextEditor({
 		latestContentRef.current = content;
 	}, [content]);
 
+	const view = editorRef.current;
+	const isInsideTable = Boolean(view && isInTable(view.state));
+	let currentToolbarGroup: ToolbarGroup | null = null;
+
 	return (
 		<section
 			aria-label="Rich text editor"
@@ -458,6 +511,44 @@ function PureRichTextEditor({
 				status === "streaming" && "opacity-80"
 			)}
 		>
+			<div
+				aria-label="Editor formatting toolbar"
+				className="flex shrink-0 items-center gap-1 overflow-x-auto border-b bg-card px-3 py-1.5 dark:bg-neutral-900"
+				role="toolbar"
+			>
+				{toolbarItems.map((item) => {
+					if (item.requiresTable && !isInsideTable) {
+						return null;
+					}
+
+					const needsSeparator = Boolean(
+						currentToolbarGroup &&
+							currentToolbarGroup !== item.group
+					);
+					currentToolbarGroup = item.group;
+					const isActive = view ? item.isActive?.(view) : false;
+					const isDisabled =
+						status === "streaming" ||
+						!canRunCommand(view, item.command);
+
+					return (
+						<Fragment key={item.ariaLabel}>
+							{needsSeparator ? (
+								<div
+									aria-hidden="true"
+									className="mx-1 h-5 w-px bg-border"
+								/>
+							) : null}
+							<EditorToolbarButton
+								isActive={isActive}
+								isDisabled={isDisabled}
+								item={item}
+								onRun={(command) => runCommand(view, command)}
+							/>
+						</Fragment>
+					);
+				})}
+			</div>
 			<div className="rich-text-editor min-h-0 flex-1 overflow-auto px-5 py-4">
 				<div ref={containerRef} />
 			</div>
@@ -487,6 +578,11 @@ function EditorToolbarButton({
 				isActive && "bg-accent text-accent-foreground"
 			)}
 			disabled={isDisabled}
+			onClick={(event) => {
+				if (event.detail === 0) {
+					onRun(item.command);
+				}
+			}}
 			onMouseDown={(event) => {
 				event.preventDefault();
 				onRun(item.command);

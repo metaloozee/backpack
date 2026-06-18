@@ -22,7 +22,7 @@ import {
 	updateChatTitleInBackground,
 } from "@/app/api/chat/_lib/title";
 import { buildToolRuntime } from "@/app/api/chat/_lib/tools";
-import { getModel } from "@/lib/ai/models";
+import { getRuntimeModel } from "@/lib/ai/models.server";
 import {
 	getChatByIdAndUserId,
 	getMessagesByChatIdAndUserId,
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
 		} = requestBody;
 		const enabledMcpServerIds = toUuidList(prefs.mcpServersState);
 
-		const model = getModel(prefs.modelId);
+		const model = getRuntimeModel(prefs.modelId);
 		if (!model) {
 			throw BackpackError.api(
 				"bad_request",
