@@ -7,6 +7,14 @@ export const MAX_ARTIFACT_CONTENT_LENGTH = 250_000;
 export type ArtifactKind = (typeof artifactKinds)[number];
 export type ArtifactVersionSource = ArtifactVersion["source"];
 
+export type ArtifactOperationKind = "create" | "update" | "delete" | "rewrite";
+export type ArtifactStreamPhase =
+	| "planning"
+	| "editing"
+	| "deleting"
+	| "rewriting"
+	| "saving";
+
 export type ArtifactStreamEvent =
 	| {
 			event: "open";
@@ -17,11 +25,19 @@ export type ArtifactStreamEvent =
 			versionNumber?: number;
 			content: string;
 			status: "streaming" | "idle";
+			operation: ArtifactOperationKind;
 	  }
 	| {
 			event: "delta";
 			artifactId: string;
 			delta: string;
+			target: "create-preview";
+	  }
+	| {
+			event: "progress";
+			artifactId: string;
+			phase: ArtifactStreamPhase;
+			message: string;
 	  }
 	| {
 			event: "finish";
@@ -29,6 +45,7 @@ export type ArtifactStreamEvent =
 			versionId: string;
 			versionNumber: number;
 			content: string;
+			summary?: string;
 	  }
 	| {
 			event: "error";

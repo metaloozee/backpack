@@ -55,22 +55,6 @@ export const createTextArtifactPrompt = ({
 User instructions:
 ${instructions}`;
 
-export const updateTextArtifactPrompt = ({
-	currentContent,
-	instructions,
-}: {
-	currentContent: string;
-	instructions: string;
-}): string => `Revise the existing markdown text artifact.
-
-User instructions:
-${instructions}
-
-Current artifact content:
-${currentContent}
-
-Return the complete revised artifact content.`;
-
 export const writeArtifactData = (
 	dataStream: UIMessageStreamWriter<ChatMessage>,
 	data: ArtifactStreamEvent

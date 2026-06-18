@@ -1,5 +1,9 @@
 import { produce } from "immer";
-import type { ArtifactStreamEvent } from "@/lib/artifacts/types";
+import type {
+	ArtifactOperationKind,
+	ArtifactStreamEvent,
+	ArtifactStreamPhase,
+} from "@/lib/artifacts/types";
 
 export const ARTIFACT_STREAM_FLUSH_MS = 100;
 
@@ -8,6 +12,9 @@ export interface ArtifactSnapshot {
 	chatId: string;
 	content: string;
 	kind: "text";
+	operation: ArtifactOperationKind;
+	progressMessage?: string;
+	progressPhase?: ArtifactStreamPhase;
 	status: "idle" | "streaming";
 	title: string;
 	versionNumber?: number;
@@ -55,6 +62,7 @@ export function reduceArtifactStreamEvents({
 						title: event.title,
 						content: event.content,
 						status: event.status,
+						operation: event.operation,
 						versionNumber: event.versionNumber,
 					};
 					break;
@@ -65,7 +73,20 @@ export function reduceArtifactStreamEvents({
 						break;
 					}
 
-					existing.content += event.delta;
+					if (existing.operation === "create") {
+						existing.content += event.delta;
+					}
+					existing.status = "streaming";
+					break;
+				}
+				case "progress": {
+					const existing = draft.snapshots[event.artifactId];
+					if (!existing) {
+						break;
+					}
+
+					existing.progressPhase = event.phase;
+					existing.progressMessage = event.message;
 					existing.status = "streaming";
 					break;
 				}
@@ -78,6 +99,7 @@ export function reduceArtifactStreamEvents({
 					existing.content = event.content;
 					existing.status = "idle";
 					existing.versionNumber = event.versionNumber;
+					existing.progressMessage = event.summary;
 					finishedArtifactIds.push(event.artifactId);
 					break;
 				}

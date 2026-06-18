@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useReducer } from "react";
+import { Streamdown } from "streamdown";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { ArtifactVersionDiff } from "@/components/artifacts/artifact-version-diff";
 import { RichTextEditor } from "@/components/artifacts/rich-text-editor";
@@ -23,7 +24,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { ArtifactVersionSummary } from "@/lib/artifacts/types";
+import type {
+	ArtifactOperationKind,
+	ArtifactVersionSummary,
+} from "@/lib/artifacts/types";
 import type { Artifact, ArtifactVersion } from "@/lib/db/schema/app";
 import {
 	contentVariants,
@@ -33,6 +37,7 @@ import {
 } from "@/lib/motion";
 import { useTRPC } from "@/lib/trpc/trpc";
 import { cn } from "@/lib/utils/cn";
+import { TextShimmer } from "../ui/text-shimmer";
 
 type ArtifactStatus = "idle" | "streaming";
 
@@ -106,6 +111,8 @@ interface TextArtifactProps {
 	onRename: (title: string) => Promise<void>;
 	onRestore: (versionId: string) => Promise<void>;
 	onSave: (content: string, baseVersionNumber?: number) => Promise<void>;
+	operation: ArtifactOperationKind;
+	progressMessage?: string;
 	status: ArtifactStatus;
 	versions: ArtifactVersionSummary[];
 }
@@ -149,6 +156,8 @@ export function TextArtifact({
 	onRename,
 	onRestore,
 	onClose,
+	operation,
+	progressMessage,
 }: TextArtifactProps) {
 	const [state, dispatch] = useReducer(
 		textArtifactReducer,
@@ -459,7 +468,11 @@ export function TextArtifact({
 							variants={contentVariants}
 						>
 							{isStreaming ? (
-								<StreamingArtifactPreview content={content} />
+								<StreamingArtifactPreview
+									content={content}
+									operation={operation}
+									progressMessage={progressMessage}
+								/>
 							) : (
 								<RichTextEditor
 									content={content}
@@ -492,26 +505,37 @@ export function TextArtifact({
 	);
 }
 
-function StreamingArtifactPreview({ content }: { content: string }) {
+function StreamingArtifactPreview({
+	content,
+	operation,
+	progressMessage,
+}: {
+	content: string;
+	operation: ArtifactOperationKind;
+	progressMessage?: string;
+}) {
+	const statusLabel =
+		operation === "delete"
+			? "AI is deleting"
+			: operation === "rewrite"
+				? "AI is rewriting"
+				: operation === "update"
+					? "AI is editing"
+					: "AI is drafting";
+
 	return (
 		<section
 			aria-busy="true"
-			aria-label="AI editing preview"
+			aria-label={statusLabel}
 			className="flex h-full min-h-0 flex-col overflow-hidden bg-card dark:bg-neutral-900"
 		>
 			<div className="flex min-h-11 shrink-0 items-center gap-2 border-b bg-card px-4 text-muted-foreground text-sm dark:bg-neutral-900">
-				<motion.span
-					animate="pulse"
-					aria-hidden="true"
-					className="size-2 rounded-full bg-primary"
-					variants={loadingVariants}
-				/>
-				<span>AI is editing</span>
+				<TextShimmer>{statusLabel}</TextShimmer>
 			</div>
 			<div className="min-h-0 flex-1 overflow-auto px-5 py-4">
-				<MessageResponse className="max-w-none text-pretty text-sm leading-7">
+				<pre className="max-w-none text-pretty text-sm leading-7">
 					{content}
-				</MessageResponse>
+				</pre>
 			</div>
 		</section>
 	);

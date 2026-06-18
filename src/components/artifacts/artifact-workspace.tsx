@@ -7,7 +7,11 @@ import { toast } from "sonner";
 import { TextArtifact } from "@/components/artifacts/text-artifact";
 import { Loader } from "@/components/ui/loader";
 import type { ArtifactSnapshot } from "@/lib/artifacts/client-stream-state";
-import type { ArtifactVersionSummary } from "@/lib/artifacts/types";
+import type {
+	ArtifactOperationKind,
+	ArtifactVersionSummary,
+} from "@/lib/artifacts/types";
+import { selectArtifactWorkspaceContent } from "@/lib/artifacts/workspace-content";
 import type { Artifact, ArtifactVersion } from "@/lib/db/schema/app";
 import { workspaceVariants } from "@/lib/motion";
 import { useTRPC } from "@/lib/trpc/trpc";
@@ -200,13 +204,21 @@ function ArtifactWorkspaceSession({
 		trpc.artifact.restoreVersion.mutationOptions()
 	);
 
-	const sourceContent =
-		snapshot?.artifactId === openArtifactId
-			? snapshot.content
-			: (latestVersion?.content ?? "");
-	const content = draftContent ?? sourceContent;
+	const content = selectArtifactWorkspaceContent({
+		draftContent,
+		latestVersionContent: latestVersion?.content,
+		latestVersionNumber: latestVersion?.versionNumber,
+		openArtifactId,
+		snapshot,
+	});
 	const status =
 		snapshot?.artifactId === openArtifactId ? snapshot.status : "idle";
+	const operation: ArtifactOperationKind =
+		snapshot?.artifactId === openArtifactId ? snapshot.operation : "update";
+	const progressMessage =
+		snapshot?.artifactId === openArtifactId
+			? snapshot.progressMessage
+			: undefined;
 
 	const artifactQueryKey = trpc.artifact.getById.queryOptions({
 		artifactId: openArtifactId,
@@ -295,6 +307,8 @@ function ArtifactWorkspaceSession({
 			onRename={handleRename}
 			onRestore={handleRestore}
 			onSave={handleSave}
+			operation={operation}
+			progressMessage={progressMessage}
 			status={status}
 			versions={versions}
 		/>

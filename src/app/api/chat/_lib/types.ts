@@ -18,4 +18,6 @@ export type ActiveTool =
 	| "academic_search"
 	| "finance_search"
 	| "create_text_artifact"
-	| "update_text_artifact";
+	| "update_text_artifact"
+	| "delete_text_artifact_content"
+	| "rewrite_text_artifact";

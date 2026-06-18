@@ -3,6 +3,8 @@ import { buildActiveBuiltInRuntimeTools } from "@/lib/ai/tool-registry";
 import { academicSearchTool } from "@/lib/ai/tools/academic-search";
 import {
 	createTextArtifactTool,
+	deleteTextArtifactContentTool,
+	rewriteTextArtifactTool,
 	updateTextArtifactTool,
 } from "@/lib/ai/tools/artifacts";
 import { extractTool } from "@/lib/ai/tools/extract";
@@ -92,6 +94,20 @@ export const buildToolRuntime = async ({
 			dataStream,
 			activeArtifactId: artifactContext?.activeArtifactId,
 		}),
+		delete_text_artifact_content: deleteTextArtifactContentTool({
+			userId,
+			chatId,
+			model: artifactModel,
+			dataStream,
+			activeArtifactId: artifactContext?.activeArtifactId,
+		}),
+		rewrite_text_artifact: rewriteTextArtifactTool({
+			userId,
+			chatId,
+			model: artifactModel,
+			dataStream,
+			activeArtifactId: artifactContext?.activeArtifactId,
+		}),
 		...mcpToolsResult.tools,
 	};
 
@@ -99,6 +115,8 @@ export const buildToolRuntime = async ({
 	const artifactToolNames = [
 		"create_text_artifact",
 		"update_text_artifact",
+		"delete_text_artifact_content",
+		"rewrite_text_artifact",
 	] as const;
 	const allActiveTools = [
 		...activeTools,
